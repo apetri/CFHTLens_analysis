@@ -1,4 +1,4 @@
-CFHTLens_analysis
+Weak gravitational lensing CFHTLens analysis
 =================
 
-Weak gravitational lensing analysis pipeline for CFHTLens
+*Convergence map analysis:*
