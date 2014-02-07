@@ -9,8 +9,8 @@ import os
 import scipy.ndimage as snd
 import matplotlib.pyplot as plt
 ######### uncomment one of the following 2 lines, depends on astropy or pyfits is installed ###
-#import astropy.io.fits as pyfits
-import pyfits
+import astropy.io.fits as pyfits
+#import pyfits
 
 ###################################
 #### CFHT list of redshifts
