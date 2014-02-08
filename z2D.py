@@ -24,7 +24,7 @@ Dc2z = lambda Dc0: (optimize.root(Dcroot,0.1,args=(Dc0),method='hybr')).x # find
 
 ### actual calculations ######
 #### our lensing planes comoving distance: first 40, then one per 80 Mpc
-Dc_arr = arange(40,5250,80)# these are our lensing planes
+Dc_arr = arange(40,5350,80)# these are our lensing planes
 z_arr = array(map(Dc2z,Dc_arr))# these are corresponding redshifts for Dc in Dc_arr
 print (array([Dc_arr,z_arr]).T)
 
