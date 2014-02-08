@@ -18,6 +18,7 @@
 \author{}
 \date{}
 
+\maketitle
 
 \section*{Specifications}
 
@@ -25,12 +26,22 @@ We will run N-body simulations with Gadget2 according to the following specifica
 
 \begin{table}[h!]
 \begin{center}
-\begin{tabular}{cc} 
-Number of particles & $512^3$ \\ \hline
+\begin{tabular}{ccc} \hline
+Series name & CFHT1 & \\
+Number of particles & $512^3$ & \\ 
+Number of snapshots per simulation & 60 & \\
+Disk usage per simulation (including velocities) & 246\,GB& \\ \hline
+\multicolumn{3}{c}{\textbf{Cosmological models to run}} \\
+Id & $(\Omega_m,w,\sigma_8,h,\Omega_bh^2,n_s)$ & Number of simulations\\ \hline
+Fiducial & (0.26,-1.0,0.8,0.7,0.0227,0.96) & 5 \\
+Variation 1 & (0.29,-1.0,0.8,0.7,0.0227,0.96) & 5 \\
+Variation 2 & (0.26,-0.8,0.8,0.7,0.0227,0.96) & 5 \\
+Variation 3 & (0.26,-1.0,0.85,0.7,0.027,0.96) & 5 \\ \hline
 \end{tabular}
 \end{center}
 \end{table}
 
-\maketitle
+\section*{Note on Gadget memory usage}
+The size of our simulations is limited by the computing resources we can use on Blue Gene Q; with a 128 node partition at full usage, we are able to run 16 simulations of $512^3$ particles in parallel, which take order of 30 hours to complete. 
 
 \end{document}
