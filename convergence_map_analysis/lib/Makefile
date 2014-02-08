@@ -1,16 +1,16 @@
 CC = clang
-CFLAGS = -g -Wall $(INCLUDES)
+CFLAGS = -Wall $(INCLUDES)
 
 INCLUDES = -I../include -I/usr/local/include
 
-LIBOBJS = coordinates.o differentials.o minkmom.o noise_generator.o noise_templates.o peaks.o power_spectrum.o smooth.o
+LIBOBJS = coordinates.o differentials.o minkmom.o noise_generator.o noise_templates.o peaks.o power_spectrum.o smooth.o inout.o
 
 libconvergence: $(LIBOBJS)
-	ar -r libconvergence.a $(LIBOBJS);
+	ar -r libconvergence.a $(LIBOBJS)
 	ranlib libconvergence.a
 
-%.o: %.c ../include/coordinates.h ../differentials.h ../systematics.h
-	$(CC) $(CFLAGS) $< -o $@
+%.o: %.c ../include/coordinates.h ../include/differentials.h ../include/systematics.h ../include/inout.h
+	$(CC) -c $(CFLAGS) $< -o $@
 
 .PHONY: clean
 clean:
