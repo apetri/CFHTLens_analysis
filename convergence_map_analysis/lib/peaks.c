@@ -37,7 +37,8 @@ void peak_count(float *map,long map_size, float sigma, int Nthresh, float *thres
 				for(k=0;k<Nbins;k++){
 					
 					if(map[coordinate(i,j,map_size)]>=thresholds[k]*sigma && map[coordinate(i,j,map_size)]<thresholds[k+1]*sigma){
-						peaks[k]+= 1.0/(thresholds[k+1]-thresholds[k]);
+						//peaks[k]+= 1.0/(thresholds[k+1]-thresholds[k]);
+						peaks[k] += 1.0;
 					}
 					
 				}
