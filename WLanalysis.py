@@ -49,17 +49,19 @@ def gnom_fun(center):
 	Ref: http://mathworld.wolfram.com/GnomonicProjection.html
 	'''
 	ra0, dec0 = center
+	ra0 -= 180 #convert from ra to longitude
 	ra0 = ra0*pi/180
 	dec0 = dec0*pi/180
 	def gnom(radec):
 		ra,dec = radec
+		ra -= 180
 		ra = ra*pi/180
 		dec = dec*pi/180
 		### the angular separation between (ra,dec) and (ra0,dec0)
 		cosc = sin(dec0)*sin(dec)+cos(dec0)*cos(dec)*cos(ra-ra0)
 		x=cos(dec)*sin(ra0-ra)/cosc
 		y=(cos(dec0)*sin(dec)-sin(dec0)*cos(dec)*cos(ra-ra0))/cosc
-		return x,y
+		return x, y
 	return gnom
 
 def gnom_inv(xy,center):
@@ -77,13 +79,14 @@ def gnom_inv(xy,center):
 	'''
 	x, y = xy
 	ra0, dec0 = center
+	ra0 -= 180
 	ra0 = ra0*pi/180
 	dec0 = dec0*pi/180
 	rho = sqrt(x**2+y**2)
 	c = arctan(rho)
 	dec = arcsin(cos(c)*sin(dec0)+y*sin(c)*cos(dec0)/rho)
 	ra = ra0-arctan(x*sin(c)/(rho*cos(dec0)*cos(c)-y*sin(dec0)*sin(c)))
-	return degrees(ra), degrees(dec)
+	return degrees(ra)+180, degrees(dec)
 
 def readFits (fitsfile):
 	'''Input: 
@@ -137,7 +140,7 @@ def RebinMatrix (matrix, shape, avg=False):
 	return matrix_new
 
 def InterpPDF (x1, P, x2, edges=None):
-	'''Interpolate from discrete PDF with bin centers at x1, to a new PDF centered at x2. x1 and PDF must have same dimensions. x1 must be equally spaced, but x2 can be uneven.
+	'''Interpolate from discrete PDF with bin centers at x1, to a new PDF centered at x2[1:-1]. x1 and PDF must have same dimensions. x1 must be equally spaced, but x2 can be uneven. Note P.size = x2.size - 2!
 	Test (resulting plot: http://goo.gl/Pw5QeW):
 	>> x1 = arange(0.025,3.5,.05)
 	>> P = array([3.32000000e-09, 8.81000000e-10, 7.06000000e-10, 4.09000000e-09,
@@ -155,7 +158,7 @@ def InterpPDF (x1, P, x2, edges=None):
 	6.92000000e-15, 9.91000000e-16, 1.86000000e-16, 3.01000000e-17, 2.69000000e-18, 
 	1.01000000e-19, 1.74000000e-21, 3.71000000e-23, 4.94000000e-25, 6.25000000e-27, 
 	5.51000000e-29])
-	>> x2 = sort(rand(5000))*2
+	>> x2 = sort(rand(50000))*2
 	>> newP = InterpPDF(x1,P,x2)
 	>> custm = stats.rv_discrete(name='custm', values=(arange(len(x2)-2), newP))
 	>> R = custm.rvs(size=100000) 
@@ -169,11 +172,14 @@ def InterpPDF (x1, P, x2, edges=None):
          '''
 	P /= sum(P) #normalize PDF in case its sum is not 1.
 	f = interpolate.InterpolatedUnivariateSpline(x1, P) # interpolate the PDF with a 3rd order spline function
-	fint = lambda edge:f.integral(edge[0],edge[1]) # integrate the region between bin left and right
-	if not edges: # find edges for each bin, if not already provided
+	fint = lambda edge: f.integral(edge[0],edge[1]) # integrate the region between bin left and right
+	if not bool(edges.any()): # find edges for each bin, if not already provided
 		step = (x2[1:]-x2[:-1])/2
-		binwidth = step[1:]+step[:-1]
-		edges = array([x2[1:-1]-binwidth,x2[1:-1]+binwidth]).T
+		binwidth = (step[1:]+step[:-1])/2
+		midedges = array([x2[1:-1]-binwidth,x2[1:-1]+binwidth]).T
+		leftedge = [2*x2[0]-midedges[0,0],midedges[0,0]]
+		rightedge= [midedges[-1,-1], 2*x2[-1]-midedges[-1,-1]]
+		edges = concatenate(([leftedge],midedges,[rightedge]))
 	newP = array(map(fint,edges)).T
 	newP /= sum(newP)
 	return newP
