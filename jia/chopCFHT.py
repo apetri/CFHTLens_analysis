@@ -36,10 +36,12 @@
 # 2) input for ray tracing code (x, y, 3 redshifts), totally 13 subfields
 
 from WLanalysis import * #this includes scipy *, numpy as np
+from multiprocessing import Pool
 
 ## directories, etc ####
 split_dir = split_dir = '/vega/astro/users/jl3509/CFHT_cat/'
 subfields = genfromtxt('/vega/astro/users/jl3509/CFHTLens_analysis/jia/subfieldcenters.ls')
+splitfiles = genfromtxt('/vega/astro/users/jl3509/CFHT_cat/files.ls',dtype='S3')
 
 ### jia's local directories
 #split_dir = split_dir = '/Users/jia/weaklensing/CFHTLenS/catalogue/split/'
@@ -149,5 +151,7 @@ def OrganizeSplitFile(ifile):
 		savetxt(split_dir+'full_subfield%i_%s'%(isf,ifile),array_full)
 		savetxt(split_dir+'raytrace_subfield%i_%s'%(isf,ifile),array_raytrace)
 
-ifile = str(sys.argv[1])#'xfu'
-OrganizeSplitFile(ifile)
+#ifile = str(sys.argv[1])#'xfu'
+#OrganizeSplitFile(ifile)
+processes = Pool(151)
+processes.map(OrganizeSplitFile, splitfiles)
