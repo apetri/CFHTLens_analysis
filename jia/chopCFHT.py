@@ -1,3 +1,4 @@
+#!/vega/astro/users/jl3509/tarball/anacondaa/bin/python
 # Jia Liu 2014/2/9
 # Overview: this code chops the 4 CFHT fields into 13 subfields 
 # that fits to maps size of 2048x2048 pix, 3.46x3.46deg^2
@@ -55,7 +56,7 @@ step = (x2[1:]-x2[:-1])/2
 binwidth = (step[1:]+step[:-1])/2
 midedges = array([x2[1:-1]-binwidth,x2[1:-1]+binwidth]).T
 leftedge = [2*x2[0]-midedges[0,0],midedges[0,0]]
-rightedge= [midedges[-1,-1], 2*x2[-1]-midedges[-1,-1]]
+rightedge= [midedges[-1,-1], 3.5] # the last bin has edges [2.03957899, 3.5] to cover possible high redshifts
 edges = concatenate(([leftedge],midedges,[rightedge]))
 
 ## functions
@@ -111,7 +112,30 @@ def list2subfield(radeclist):
 		else:
 			j+=len(sort_subfs[i])
 	return xylist
-	
+
+full_fmt=['%.8e',]*5+['%.8e',]*2+['%.5e',]*2+['%.3e',]*2+['%.5e','%i','%.4e','%.2e','%.1f']+['%.5e',]*3+['%.8e',]*70
+#ixylist,iPrand,idatas,iPz
+# 1. ALPHA_J2000     
+# 2. DELTA_J2000     
+# 3. KRON_RADIUS     
+# 4. FLUX_RADIUS
+# 5. e1      
+# 6. e2      
+# 7. weight  
+# 8. fitclass        
+# 9. scalelength     
+# 10. SNratio 
+# 11. MASK    
+# 12. m       
+# 13. c2 
+# 84. MAG_i
+# e.g. array([  3.28127916e+01,  -6.94027732e+00,   radius3.69069000e+00,
+#         radius3.37342000e+00,   e16.67400000e-01,   e22.21800000e-01,
+#         w1.53539000e+01,   class 0.00000000e+00,   scale 3.20810000e+00,
+#         3.89000000e+01,   0.00000000e+00,  -1.85604000e-04,
+#         2.66558000e-04,   2.26114000e+01])
+ray_fmt=['%.8e',]*5
+#ixylist,iPrand
 def OrganizeSplitFile(ifile):
 	field = genfromtxt(split_dir+ifile,usecols=0,dtype=str)
 	field = array(map(field2int,field))
@@ -141,17 +165,20 @@ def OrganizeSplitFile(ifile):
 		idatas = datas[idx]
 		iPz = Pz[idx]
 		
-		ixylist = xylist[idx]
+		ixylist = xylist[idx][:,1:]
 		iPrand = Prand[idx]
 		
 		array_raytrace = concatenate((ixylist,iPrand),axis=1)
 		array_full = concatenate((ixylist,iPrand,idatas,iPz),axis=1)
 		print 'array_raytrace.shape, array_full.shape',array_raytrace.shape, array_full.shape
 		
-		savetxt(split_dir+'full_subfield%i_%s'%(isf,ifile),array_full)
-		savetxt(split_dir+'raytrace_subfield%i_%s'%(isf,ifile),array_raytrace)
+		savetxt(split_dir+'full_subfield%i_%s'%(isf,ifile),array_full,fmt=full_fmt)
+		savetxt(split_dir+'raytrace_subfield%i_%s'%(isf,ifile),array_raytrace,fmt=ray_fmt)
 
 #ifile = str(sys.argv[1])#'xfu'
 #OrganizeSplitFile(ifile)
 processes = Pool(151)
 processes.map(OrganizeSplitFile, splitfiles)
+
+done=rand(5)
+savetxt(split_dir+'done.txt',done)
