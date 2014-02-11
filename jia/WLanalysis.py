@@ -172,8 +172,8 @@ def InterpPDF (x1, P, x2, edges=None):
 	>> show()
          '''
 	P /= sum(P) #normalize PDF in case its sum is not 1.
-	x1 = concatenate(([0],x1))
-	P = concatenate(([0],P))
+	x1 = concatenate(([-0.075, -0.025, 0],x1))
+	P = concatenate(([0, 0, 0],P))#force PDF to be 0 at 0
 	f = interpolate.InterpolatedUnivariateSpline(x1, P) # interpolate the PDF with a 3rd order spline function
 	fint = lambda edge: f.integral(edge[0],edge[1]) # integrate the region between bin left and right
 	if not bool(edges.any()): # find edges for each bin, if not already provided
