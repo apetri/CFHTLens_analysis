@@ -2,6 +2,9 @@
 #include <math.h>
 #include <fftw3.h>
 
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+
 extern "C"{
 #include "coordinates.h"
 #include "systematics.h"
@@ -79,11 +82,15 @@ void smooth_map_gaussian(float *map,long map_size,float pix_filter_size){
 }
 
 //Bilateral smoothing using opencv
-void smooth_map_bilateral(float *map,long map_size,float pix_filter_size,float sigma_color){
+void smooth_map_bilateral(float *map,long map_size,double pix_filter_size,double sigma_color){
 
-	map[0] = map[0];
-	map_size++;
-	pix_filter_size++;
-	sigma_color++;
+	//This will make the bilateral filter work in place
+	cv::Mat imgOut(map_size,map_size,CV_32F,map);
+
+	//Input image to smooth
+	cv::Mat imgIn = imgOut.clone();
+
+	//Apply the bilateral filter
+	cv::bilateralFilter(imgIn,imgOut,-1,sigma_color,pix_filter_size);
 
 }
