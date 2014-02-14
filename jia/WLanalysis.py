@@ -200,3 +200,68 @@ def DrawFromPDF (x, P, n):
 	rndx = lambda R: x[R]
 	return rndx(R)
 
+PPR512=8468.416479647716#pixels per radians
+PPA512=2.4633625#pixels per arcmin, PPR/degrees(1)/60
+APP512=0.40594918531072871#arcmin per pix, degrees(1/PPR)*60
+
+def weighted_smooth_CFHT(x, y, e1, e2c, w, m, size=512, sigmaG=1):
+	'''returns 2 smoothed shear maps, and galaxy counts. This calculation includes weights and c2 and m correction.
+	
+	Input:
+	x, y: x, y in radians, (0, 0) at map center
+	e1, e2c: ellipticity (e2c = e2-c2, correted galaxy by galaxy base).
+	w: weight
+	m: multiplicity factor, shouldn't be used on galaxy by galaxy base.
+	(see Miller et al. 2013 eq 15-17 for description.
+	
+	Output:
+	smooth_e1, smooth_e2, galn (galaxy counts per pixel)
+	(written 2/14/2014)
+	'''
+	rad2pix=lambda x: around(size/2.0-0.5 + x*PPR512).astype(int)
+	x = rad2pix(x)
+	y = rad2pix(y)
+	# first put galaxies to grid, note some pixels may have multiple galaxies
+	Me1 = zeros(shape=(size,size))
+	Me2 = zeros(shape=(size,size))
+	Mw  = zeros(shape=(size,size))
+	Mm  = zeros(shape=(size,size))
+	galn= zeros(shape=(size,size),dtype=int)
+	
+	## put e1,e2,w,galcount into grid, taken into account the 
+	xy = x+y*1j #so to sort xy as one array
+	sorted_idx = argsort(xy) #get the index that gives a sorted array for xy
+	ar = xy[sorted_idx] #sorted xy
+	left_idx = arange(len(ar)) #left over idx that are used to put data into grid
+	ar0 = ar.copy()
+
+	j=0
+	while len(left_idx) > 0: # len(left_idx) = #gals to be put into the grid
+		a, b=unique(ar0, return_index=True)
+		# a is the unique pixels
+		# b is the index of those unique pixels
+		
+		if j>0:
+			b=b[1:]# b[0]=-1 from j=1
+		
+		#put unique values into matrix
+		ix = sorted_idx[b]
+		print ix, x[ix], y[ix]
+		Me1[x[ix],y[ix]] += e1[ix]
+		Me2[x[ix],y[ix]] += e2[ix]
+		Mw[x[ix],y[ix]]  += w[ix]
+		Mm[x[ix],y[ix]]  += m[ix]
+		galn[x[ix],y[ix]]+= 1
+
+		left_idx=setdiff1d(left_idx, b)# Return the sorted, unique values in 'left_idx' that are not in 'b'.
+		ar0[b] = -1 # a number that's smaller than other indices (0..)
+		j += 1 #j is the repeating #gal count, inside one pix
+	sigma = sigmaG * PPA512 # argmin x pixels/arcmin
+	smooth_m = snd.filters.gaussian_filter((1+Mm)*Mw,sigma,mode='constant')
+	smooth_e1 = snd.filters.gaussian_filter(Me1*Mw,sigma,mode='constant')
+	smooth_e2 = snd.filters.gaussian_filter(Me2*Mw,sigma,mode='constant')
+	smooth_e1 /= smooth_m
+	smooth_e2 /= smooth_m
+	smooth_e1[isnan(smooth_e1)] = 0
+	smooth_e2[isnan(smooth_e2)] = 0
+	return smooth_e1, smooth_e2, galn
