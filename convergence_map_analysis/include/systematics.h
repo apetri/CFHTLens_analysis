@@ -1,7 +1,7 @@
-#include <fftw3.h>
-
 #ifndef __SYSTEMATICS_H
 #define __SYSTEMATICS_H
+
+#include <fftw3.h>
 
 /*prototypes*/
 

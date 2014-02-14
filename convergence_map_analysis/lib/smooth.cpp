@@ -2,7 +2,10 @@
 #include <math.h>
 #include <fftw3.h>
 
+extern "C"{
 #include "coordinates.h"
+#include "systematics.h"
+}
 
 float smoothing_kernel(int i,int j,long map_size,float pix_filter_size){
 	
@@ -26,7 +29,7 @@ void smooth_map_gaussian(float *map,long map_size,float pix_filter_size){
 	fftw_complex *in,*out;
 	fftw_plan plan_forward,plan_backward;
 	
-	in=fftw_malloc(sizeof(fftw_complex)*map_size*map_size);
+	in=(fftw_complex *)fftw_malloc(sizeof(fftw_complex)*map_size*map_size);
 	
 	//initialize input
 	for(k=0;k<map_size*map_size;k++){
@@ -34,7 +37,7 @@ void smooth_map_gaussian(float *map,long map_size,float pix_filter_size){
 		in[k][1]=0.0;
 	}
 	
-	out=fftw_malloc(sizeof(fftw_complex)*map_size*map_size);
+	out=(fftw_complex *)fftw_malloc(sizeof(fftw_complex)*map_size*map_size);
 	
 	//fourier transform the map
 	
