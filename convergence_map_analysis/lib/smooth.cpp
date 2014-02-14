@@ -7,6 +7,8 @@ extern "C"{
 #include "systematics.h"
 }
 
+#include "bilateral.hpp"
+
 float smoothing_kernel(int i,int j,long map_size,float pix_filter_size){
 	
 	float kx,ky,ker;
@@ -74,4 +76,14 @@ void smooth_map_gaussian(float *map,long map_size,float pix_filter_size){
 	fftw_free(out);
 	
 	
+}
+
+//Bilateral smoothing using opencv
+void smooth_map_bilateral(float *map,long map_size,float pix_filter_size,float sigma_color){
+
+	map[0] = map[0];
+	map_size++;
+	pix_filter_size++;
+	sigma_color++;
+
 }
