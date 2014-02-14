@@ -51,3 +51,24 @@ void get_key_float(char *map_file_name, char *keyword, float *value){
 	fits_close_file(map_file,&status);
 	
 }
+
+//Save a 1D float array into a 2D fits map
+void save_map(char *map_file_name,float *map,long map_size){
+	
+	fitsfile *map_file;
+	int status,naxis;
+	long naxes[2],fpixel[2];
+	
+	status=0;
+	naxis=2;
+	naxes[0]=map_size;
+	naxes[1]=map_size;
+	fpixel[0]=1;
+	fpixel[1]=1;
+	
+	fits_create_file(&map_file,map_file_name,&status);
+	fits_create_img(map_file,FLOAT_IMG,naxis,naxes,&status);
+	fits_write_pix(map_file,TFLOAT,fpixel,map_size*map_size,map,&status);
+	fits_close_file(map_file,&status);
+	
+}
