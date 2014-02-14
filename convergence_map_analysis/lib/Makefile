@@ -1,5 +1,8 @@
 CC = clang
+CXX = clang++
+
 CFLAGS = -Wall $(INCLUDES)
+CPPFLAGS = -Wall $(INCLUDES)
 
 INCLUDES = -I../include -I/usr/local/include
 
@@ -11,6 +14,8 @@ libconvergence: $(LIBOBJS)
 
 %.o: %.c ../include/coordinates.h ../include/differentials.h ../include/systematics.h ../include/inout.h
 	$(CC) -c $(CFLAGS) $< -o $@
+
+smooth.o: smooth.cpp
 
 .PHONY: clean
 clean:
