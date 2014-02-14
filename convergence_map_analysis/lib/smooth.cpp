@@ -82,7 +82,7 @@ void smooth_map_gaussian(float *map,long map_size,float pix_filter_size){
 }
 
 //Bilateral smoothing using opencv
-void smooth_map_bilateral(float *map,long map_size,double pix_filter_size,double sigma_color){
+extern "C" void smooth_map_bilateral(float *map,long map_size,double pix_filter_size,double sigma_color){
 
 	//This will make the bilateral filter work in place
 	cv::Mat imgOut(map_size,map_size,CV_32F,map);
