@@ -1,7 +1,7 @@
-#include <fftw3.h>
-
 #ifndef __SYSTEMATICS_H
 #define __SYSTEMATICS_H
+
+#include <fftw3.h>
 
 /*prototypes*/
 
@@ -27,9 +27,9 @@ void peak_count(float *,long,float,int,float *,float *);
 
 //noise
 float generate_gaussian(float,float,float);
-void noise_map_fourier(float(*template)(float,float *),float,float *,fftw_complex *,long,int);
-void noise_map_real(float(*template)(float,float *),float *,float,long,int,double *);
-void add_noise_to_map(float(*template)(float,float *),float *,float,long,int,float *);
+void noise_map_fourier(float(*)(float,float *),float,float *,fftw_complex *,long,int);
+void noise_map_real(float(*)(float,float *),float *,float,long,int,double *);
+void add_noise_to_map(float(*)(float,float *),float *,float,long,int,float *);
 void add_white_noise_to_map(float *,long,float,int);
 
 //noise templates

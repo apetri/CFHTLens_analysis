@@ -2,7 +2,15 @@
 #include <math.h>
 #include <fftw3.h>
 
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+
+extern "C"{
 #include "coordinates.h"
+#include "systematics.h"
+}
+
+#include "bilateral.hpp"
 
 float smoothing_kernel(int i,int j,long map_size,float pix_filter_size){
 	
@@ -26,7 +34,7 @@ void smooth_map_gaussian(float *map,long map_size,float pix_filter_size){
 	fftw_complex *in,*out;
 	fftw_plan plan_forward,plan_backward;
 	
-	in=fftw_malloc(sizeof(fftw_complex)*map_size*map_size);
+	in=(fftw_complex *)fftw_malloc(sizeof(fftw_complex)*map_size*map_size);
 	
 	//initialize input
 	for(k=0;k<map_size*map_size;k++){
@@ -34,7 +42,7 @@ void smooth_map_gaussian(float *map,long map_size,float pix_filter_size){
 		in[k][1]=0.0;
 	}
 	
-	out=fftw_malloc(sizeof(fftw_complex)*map_size*map_size);
+	out=(fftw_complex *)fftw_malloc(sizeof(fftw_complex)*map_size*map_size);
 	
 	//fourier transform the map
 	
@@ -71,4 +79,18 @@ void smooth_map_gaussian(float *map,long map_size,float pix_filter_size){
 	fftw_free(out);
 	
 	
+}
+
+//Bilateral smoothing using opencv
+void smooth_map_bilateral(float *map,long map_size,double pix_filter_size,double sigma_color){
+
+	//This will make the bilateral filter work in place
+	cv::Mat imgOut(map_size,map_size,CV_32F,map);
+
+	//Input image to smooth
+	cv::Mat imgIn = imgOut.clone();
+
+	//Apply the bilateral filter
+	cv::bilateralFilter(imgIn,imgOut,-1,sigma_color,pix_filter_size);
+
 }
