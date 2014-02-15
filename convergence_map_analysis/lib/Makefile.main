@@ -4,7 +4,7 @@ libconvergence: $(LIBOBJS)
 	ar -r libconvergence.a $(LIBOBJS)
 	ranlib libconvergence.a
 
-%.o: %.c ../include/coordinates.h ../include/differentials.h ../include/convergence.h ../include/inout.h ../include/smooth.hpp
+%.o: %.c ../include/coordinates.h ../include/differentials.h ../include/convergence.h ../include/inout.h ../include/smooth.h
 	$(CC) -c $(CFLAGS) $< -o $@
 
 smooth.o: smooth.cpp

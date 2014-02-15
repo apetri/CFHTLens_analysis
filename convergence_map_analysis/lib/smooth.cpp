@@ -12,7 +12,7 @@ extern "C"{
 
 #define __SMOOTH_IS_CPP
 
-#include "smooth.hpp"
+#include "smooth.h"
 
 extern "C" float smoothing_kernel(int i,int j,long map_size,float pix_filter_size){
 	
