@@ -1,13 +1,9 @@
-#ifndef __SYSTEMATICS_H
-#define __SYSTEMATICS_H
+#ifndef __CONVERGENCE_H
+#define __CONVERGENCE_H
 
 #include <fftw3.h>
 
 /*prototypes*/
-
-//smooth
-float smoothing_kernel(int,int,long,float);
-void smooth_map_gaussian(float *,long,float);
 
 //binning
 void bin_interval_linear(float *,float,float,int);

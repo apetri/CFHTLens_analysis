@@ -7,12 +7,14 @@
 
 extern "C"{
 #include "coordinates.h"
-#include "systematics.h"
+#include "convergence.h"
 }
 
-#include "bilateral.hpp"
+#define __SMOOTH_IS_CPP
 
-float smoothing_kernel(int i,int j,long map_size,float pix_filter_size){
+#include "smooth.hpp"
+
+extern "C" float smoothing_kernel(int i,int j,long map_size,float pix_filter_size){
 	
 	float kx,ky,ker;
 	
@@ -26,7 +28,7 @@ float smoothing_kernel(int i,int j,long map_size,float pix_filter_size){
 }
 
 //Gaussian map smoothing using fftw
-void smooth_map_gaussian(float *map,long map_size,float pix_filter_size){
+extern "C" void smooth_map_gaussian(float *map,long map_size,float pix_filter_size){
 	
 	long i,j;
 	long k;
@@ -94,3 +96,5 @@ extern "C" void smooth_map_bilateral(float *map,long map_size,double pix_filter_
 	cv::bilateralFilter(imgIn,imgOut,-1,sigma_color,pix_filter_size);
 
 }
+
+#undef __SMOOTH_IS_CPP
