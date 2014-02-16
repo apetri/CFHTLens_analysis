@@ -1,17 +1,17 @@
-#!/vega/astro/users/jl3509/tarball/anacondaa/bin/python
 # Jia Liu 2014/2/7 
 # functions and routines used in my weak lensing analysis
 
 import numpy as np
 from scipy import *
-from scipy import interpolate, stats
+from scipy import interpolate, stats, fftpack
 from pylab import *
 import os
 import scipy.ndimage as snd
 import matplotlib.pyplot as plt
-######### uncomment one of the following 2 lines, depends on astropy or pyfits is installed ###
+######### uncomment one of the following 2 lines######
 import astropy.io.fits as pyfits
 #import pyfits
+import KSI
 
 ###################################
 #### CFHT list of redshifts
@@ -36,6 +36,24 @@ SIMz = array([ 0.00962476,  0.02898505,  0.04849778,  0.0681688 ,  0.08800411,
 idx2SIMz = lambda idx:SIMz[idx]
 
 ######### functions ############
+def readFits (fitsfile):
+	'''Input: 
+	fitsfile = file name of the fitsfile
+	Output:
+	data array for the fitsfile.
+	'''
+	hdulist = pyfits.open(fitsfile)
+	data = np.array(hdulist[0].data)
+	return data
+
+def writeFits (data, filename):
+	'''Input:
+	data = to be written
+	filename = the file name of the fitsfile, note this needs to be the full path, otherwise will write to current directory.
+	'''
+	hdu = pyfits.PrimaryHDU(data)
+	hdu.writeto(filename)
+
 def gnom_fun(center):
 	'''Create a function that calculate the location of a sky position (ra, dec) on a grid, centered at (ra0, dec0), using Gnomonic projection (flat sky approximation). 
 	Input:
@@ -88,24 +106,6 @@ def gnom_inv(xy,center):
 	dec = arcsin(cos(c)*sin(dec0)+y*sin(c)*cos(dec0)/rho)
 	ra = ra0-arctan(x*sin(c)/(rho*cos(dec0)*cos(c)-y*sin(dec0)*sin(c)))
 	return degrees(ra)+180, degrees(dec)
-
-def readFits (fitsfile):
-	'''Input: 
-	fitsfile = file name of the fitsfile
-	Output:
-	data array for the fitsfile.
-	'''
-	hdulist = pyfits.open(fitsfile)
-	data = np.array(hdulist[0].data)
-	return data
-
-def writeFits (data, filename):
-	'''Input:
-	data = to be written
-	filename = the file name of the fitsfile, note this needs to be the full path, otherwise will write to current directory.
-	'''
-	hdu = pyfits.PrimaryHDU(data)
-	hdu.writeto(filename)
 
 def ShrinkMatrix (matrix, ratio, avg=False):
 	'''Shrink the matrix by ratio, if shape/ratio is not integer, then pad some 0s at the end to make newshape/ratio devisible. So if accurate shrinking is needed, the last row and column should be discarded.
@@ -200,11 +200,12 @@ def DrawFromPDF (x, P, n):
 	rndx = lambda R: x[R]
 	return rndx(R)
 
+########## start: CFHT catalogue to smoothed shear maps #########
 PPR512=8468.416479647716#pixels per radians
 PPA512=2.4633625#pixels per arcmin, PPR/degrees(1)/60
 APP512=0.40594918531072871#arcmin per pix, degrees(1/PPR)*60
 
-def weighted_smooth_CFHT(x, y, e1, e2c, w, m, size=512, sigmaG=1):
+def weighted_smooth_CFHT(x, y, e1, e2, w, m, size=512, sigmaG=1):
 	'''returns 2 smoothed shear maps, and galaxy counts. This calculation includes weights and c2 and m correction.
 	
 	Input:
@@ -246,7 +247,6 @@ def weighted_smooth_CFHT(x, y, e1, e2c, w, m, size=512, sigmaG=1):
 		
 		#put unique values into matrix
 		ix = sorted_idx[b]
-		print ix, x[ix], y[ix]
 		Me1[x[ix],y[ix]] += e1[ix]
 		Me2[x[ix],y[ix]] += e2[ix]
 		Mw[x[ix],y[ix]]  += w[ix]
@@ -265,3 +265,75 @@ def weighted_smooth_CFHT(x, y, e1, e2c, w, m, size=512, sigmaG=1):
 	smooth_e1[isnan(smooth_e1)] = 0
 	smooth_e2[isnan(smooth_e2)] = 0
 	return smooth_e1, smooth_e2, galn
+
+########## end: CFHT catalogue to smoothed shear maps #########
+
+########## begin: mass construcion (shear to convergence) #####
+
+########## method 1, Kaiser-Square 93, convolution ##########
+def D_kernel(size): 
+	'''Create the kernel as shown in Schneider review eq 41.
+	Size = width of the kernel.
+	size = 51 seem sufficient for 2048x2048.
+	Note: needs complex conjugate of D, see eq 44
+	'''
+	y, x = np.indices((size,size),dtype=float)
+	center = np.array([(x.max()-x.min())/2.0, (x.max()-x.min())/2.0])
+	x -= center[0]
+	y -= center[1]
+	D = -1/(x-y*1j)**2
+	D[np.isnan(D)]=0+0j	
+	return conjugate(D)
+
+def KS93(shear1, shear2):
+	'''KS-inversion from shear to convergence, using Schneider eq 44.
+	Requires cython code KSI.pyx'''
+	smap=shear1+shear2*1.0j	
+	smap=smap
+	smap=smap.astype(complex128)
+	D = D_kernel(31)
+	D = D.astype(complex128)
+	kmap = KSI.KSI_calc(smap, D)
+	return real(kmap)
+
+###### method 2 (also KS93): in fourier space (Van Wearbeke eq. 7) #####
+def KSvw(shear1, shear2):
+	'''Kaiser-Squire93 inversion, follow Van Waerbeke 2013 eq 7'''
+	shear1_fft = fftpack.fft2(shear1.astype(float))
+	shear2_fft = fftpack.fft2(shear2.astype(float))
+	n0, n1=shear1.shape
+	#freq0 = array([arange(0.5,n0/2),-arange(0.5,n0/2)[::-1]]).flatten()
+	#freq1 = array([arange(0.5,n1/2),-arange(0.5,n1/2)[::-1]]).flatten()
+	freq0 = fftfreq(n0,d=1.0/n0)+0.5
+	freq1 = fftfreq(n1,d=1.0/n1)+0.5
+	k1,k2 = meshgrid(freq1,freq0)
+	kappa_fft = 0.5*(k1**2-k2**2)/(k1**2+k2**2)*shear1_fft+k1*k2/(k1**2+k2**2)*shear2_fft
+	kappa = fftpack.ifft2(kappa_fft)
+	return real(kappa)
+
+
+####### method 3: Aperture mass (Bard 2013 eq. 1)##############
+Q = lambda x: 1.0/(1+exp(6.0-160*x)+exp(-47.0+50.0*x))*tanh(x/0.15)/(x/0.15) 
+#x = ti/tmax, where tmax=theta_max, the radius where the filter is tuned.
+tmax = 14#13.79483 #theta_max = 5.6 arcmin 
+
+def Q_kernel(size,tmax = tmax):
+	y, x = np.indices((size,size),dtype=float)
+	center = np.array([(x.max()-x.min())/2.0, (x.max()-x.min())/2.0])
+	x -= center[0]
+	y -= center[1]
+	#y = center[1]-y
+	r = np.hypot(x, y)/tmax
+	phi = np.angle(x+y*1.0j) # phi is the angle with respect to the horizontal axis between positions theta0 and theta in the map. 
+	Q0 = Q(r)
+	Q0[isnan(Q0)]=0
+	return Q0, phi
+	
+def apMass(shear1, shear2, size=2*tmax+7, tmax=tmax):
+	shear1 = snd.filters.gaussian_filter(shear1,0)#smooth(shear1,0) #to get rid of the endien problem
+	shear2 = snd.filters.gaussian_filter(shear2,0)#smooth(shear2,0)
+	Q0, phi = Q_kernel(size)
+	apMmap = KSI.apMass_calc(shear1,shear2,Q0,phi)
+	return apMmap
+
+########## end: mass construcion (shear to convergence) #####
