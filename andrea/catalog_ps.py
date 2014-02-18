@@ -27,7 +27,7 @@ if(rank==0):
 	print "Catalog contains %d galaxies"%numGal
 
 #Decide binning of the 2pt function (theta is the midpoint of each bin)
-step = (x.max()-x.min())/10
+step = (x.max()-x.min())/50
 theta = np.arange(step/2,x.max()-x.min()-step/2,step)
 Nbins = len(theta)
 
