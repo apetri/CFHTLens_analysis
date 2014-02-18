@@ -16,22 +16,24 @@ if(len(sys.argv)<3 and rank==0):
 	exit(1)
 
 #Read total number of galaxies from catalog file
-numGal = np.loadtxt(sys.argv[1]).shape[0]
+x = np.loadtxt(sys.argv[1])[:,0]
+numGal = len(x)
 numGalPerTask = numGal/size
 
+#Decide binning of the 2pt function (theta is the midpoint of each bin)
+step = (x.max()-x.min())/10
+theta = np.arange(step/2,x.max()-x.min()-step/2,step)
+Nbins = len(theta)
+
 #Load info from catalog: columns (0,1,9,10,11,16,17)=(x,y,w,e1,e2,m,c2)
-x,y,w,e1,e2,m,c2 = np.loadtxt(sys.argv[1],usecols=[0,1,9,10,11,16,17])[rank*numGalPerTask:(rank+1)*numGalPerTask].transpose()
+x,y,w,e1,e2,m,c2 = np.loadtxt(sys.argv[1],usecols=[0,1,9,10,11,16,17])[rank*numGalPerTask:(rank+1)*numGalPerTask,:].transpose()
 
 #Build outer products
 e1_ij = np.outer(e1,e1)
 e2_ij = np.outer(e2,e2)
 w_ij = np.outer(w,w)
 
-#Decide binning of the 2pt function (theta is the midpoint of each bin)
-Nbins = 10
-step = (x.max()-x.min())/Nbins
-theta = np.arange(step/2,x.max()-x.min()-step/2,step)
-
+#Define containers for binned 2pt function
 corrLoc = np.zeros(Nbins)
 corrGlob = np.zeros(Nbins)
 weightLoc = np.zeros(Nbins)
