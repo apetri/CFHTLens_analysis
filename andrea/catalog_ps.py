@@ -31,6 +31,9 @@ step = (x.max()-x.min())/10
 theta = np.arange(step/2,x.max()-x.min()-step/2,step)
 Nbins = len(theta)
 
+if(task==0):
+	print Nbins
+
 #Load info from catalog: columns (0,1,9,10,11,16,17)=(x,y,w,e1,e2,m,c2)
 if(rank==0):
 	print "Reading catalog..."
@@ -77,7 +80,6 @@ if(rank==0):
 	print "Reducing from all tasks..."
 
 comm.Barrier()
-print rank
 comm.Reduce([corrLoc,MPI.DOUBLE],[corrGlob,MPI.DOUBLE],op=MPI.SUM,root=0)
 comm.Reduce([weightLoc,MPI.DOUBLE],[weightGlob,MPI.DOUBLE],op=MPI.SUM,root=0)
 
