@@ -16,9 +16,15 @@ if(len(sys.argv)<3 and rank==0):
 	exit(1)
 
 #Read total number of galaxies from catalog file
+if(rank==0):
+	print "Determining catalog size..."
+
 x = np.loadtxt(sys.argv[1])[:,0]
 numGal = len(x)
 numGalPerTask = numGal/size
+
+if(rank==0):
+	print "Catalog contains %d galaxies"%numGal
 
 #Decide binning of the 2pt function (theta is the midpoint of each bin)
 step = (x.max()-x.min())/10
@@ -26,6 +32,8 @@ theta = np.arange(step/2,x.max()-x.min()-step/2,step)
 Nbins = len(theta)
 
 #Load info from catalog: columns (0,1,9,10,11,16,17)=(x,y,w,e1,e2,m,c2)
+if(rank==0):
+	print "Reading catalog..."
 x,y,w,e1,e2,m,c2 = np.loadtxt(sys.argv[1],usecols=[0,1,9,10,11,16,17])[rank*numGalPerTask:(rank+1)*numGalPerTask,:].transpose()
 
 #Build outer products
@@ -59,15 +67,17 @@ for i in range(Nbins):
 	#Vectorize
 	I = np.array(list(pUse)).transpose()
 
-	#Sum over the pairs
-	corrLoc[i] = ((e1_ij[I[0],I[1]] + e2_ij[I[0],I[1]])*w_ij[I[0],I[1]]).sum()
-	weightLoc[i] = w_ij[I[0],I[1]].sum()
+	if(len(I.shape)==2):
+		#Sum over the pairs
+		corrLoc[i] = ((e1_ij[I[0],I[1]] + e2_ij[I[0],I[1]])*w_ij[I[0],I[1]]).sum()
+		weightLoc[i] = w_ij[I[0],I[1]].sum()
 
 #Reduce results from all tasks
 if(rank==0):
 	print "Reducing from all tasks..."
 
 comm.Barrier()
+print rank
 comm.Reduce([corrLoc,MPI.DOUBLE],[corrGlob,MPI.DOUBLE],op=MPI.SUM,root=0)
 comm.Reduce([weightLoc,MPI.DOUBLE],[weightGlob,MPI.DOUBLE],op=MPI.SUM,root=0)
 
