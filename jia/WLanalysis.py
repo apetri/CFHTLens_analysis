@@ -250,14 +250,14 @@ def weighted_smooth_CFHT(x, y, e1, e2, w, m, size=512, sigmaG=1):
 		Me1[x[ix],y[ix]] += e1[ix]
 		Me2[x[ix],y[ix]] += e2[ix]
 		Mw[x[ix],y[ix]]  += w[ix]
-		Mm[x[ix],y[ix]]  += m[ix]
+		Mm[x[ix],y[ix]]  += m[ix]+1
 		galn[x[ix],y[ix]]+= 1
 
 		left_idx=setdiff1d(left_idx, b)# Return the sorted, unique values in 'left_idx' that are not in 'b'.
 		ar0[b] = -1 # a number that's smaller than other indices (0..)
 		j += 1 #j is the repeating #gal count, inside one pix
 	sigma = sigmaG * PPA512 # argmin x pixels/arcmin
-	smooth_m = snd.filters.gaussian_filter((1+Mm)*Mw,sigma,mode='constant')
+	smooth_m = snd.filters.gaussian_filter(Mm*Mw,sigma,mode='constant')
 	smooth_e1 = snd.filters.gaussian_filter(Me1*Mw,sigma,mode='constant')
 	smooth_e2 = snd.filters.gaussian_filter(Me2*Mw,sigma,mode='constant')
 	smooth_e1 /= smooth_m
@@ -332,6 +332,8 @@ def Q_kernel(size,tmax = tmax):
 def apMass(shear1, shear2, size=2*tmax+7, tmax=tmax):
 	shear1 = snd.filters.gaussian_filter(shear1,0)#smooth(shear1,0) #to get rid of the endien problem
 	shear2 = snd.filters.gaussian_filter(shear2,0)#smooth(shear2,0)
+	shear1=shear1.astype(float64)
+	shear2=shear2.astype(float64)
 	Q0, phi = Q_kernel(size)
 	apMmap = KSI.apMass_calc(shear1,shear2,Q0,phi)
 	return apMmap
