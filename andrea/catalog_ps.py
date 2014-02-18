@@ -47,7 +47,9 @@ kdt = cKDTree(X)
 for i in range(Nbins):
 	
 	#Select pairs separated by theta[i] querying the tree
-	print "Computing correlation bin %d"%(i+1)
+	if(rank==0):
+		print "Computing correlation bin %d"%(i+1)
+	
 	pUse = kdt.query_pairs(theta[i]+step/2)
 	pRem = kdt.query_pairs(theta[i]-step/2)
 	pUse.difference_update(pRem)
@@ -60,6 +62,9 @@ for i in range(Nbins):
 	weightLoc[i] = w_ij[I[0],I[1]].sum()
 
 #Reduce results from all tasks
+if(rank==0):
+	print "Reducing from all tasks..."
+
 comm.Barrier()
 comm.Reduce([corrLoc,MPI.DOUBLE],[corrGlob,MPI.DOUBLE],op=MPI.SUM,root=0)
 comm.Reduce([weightLoc,MPI.DOUBLE],[weightGlob,MPI.DOUBLE],op=MPI.SUM,root=0)
