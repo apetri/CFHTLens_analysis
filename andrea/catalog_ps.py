@@ -31,8 +31,8 @@ step = (x.max()-x.min())/10
 theta = np.arange(step/2,x.max()-x.min()-step/2,step)
 Nbins = len(theta)
 
-if(task==0):
-	print Nbins
+if(rank==0):
+	print "Number of bins used: %d"%Nbins
 
 #Load info from catalog: columns (0,1,9,10,11,16,17)=(x,y,w,e1,e2,m,c2)
 if(rank==0):
