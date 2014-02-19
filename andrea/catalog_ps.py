@@ -11,6 +11,10 @@ if(len(sys.argv)<3):
 #Load info from catalog: columns (0,1,9,10,11,16,17)=(x,y,w,e1,e2,m,c2)
 x,y,w,e1,e2,m,c2 = np.loadtxt(sys.argv[1],usecols=[0,1,9,10,11,16,17]).transpose()
 
+#Convert angles in arcmin
+x = x*180*60/np.pi
+y = y*180*60/np.pi
+
 #Print size of catalog
 print "This catalog contains %d galaxies"%len(x)
 
@@ -36,7 +40,7 @@ kdt = cKDTree(X)
 for i in range(Nbins):
 	
 	#Select pairs separated by theta[i] querying the tree
-	print "Computing correlation bin %d: theta=%.5f"%(i+1,theta[i])
+	print "Computing correlation bin %d: theta=%.2f'"%(i+1,theta[i])
 	pUse = kdt.query_pairs(theta[i]+step/2)
 	pRem = kdt.query_pairs(theta[i]-step/2)
 	pUse.difference_update(pRem)
