@@ -37,18 +37,16 @@ for i in range(Nbins):
 	
 	#Select pairs separated by theta[i] querying the tree
 	print "Computing correlation bin %d: theta=%.5f"%(i+1,theta[i])
-	p = kdt.query_pairs(theta[i]+step/2)
+	pUse = kdt.query_pairs(theta[i]+step/2)
+	pRem = kdt.query_pairs(theta[i]-step/2)
+	pUse.difference_update(pRem)
 
 	#Vectorize
-	I = np.array(list(p)).transpose()
+	I = np.array(list(pUse)).transpose()
 
 	#Sum over the pairs
 	corr[i] = ((e1_ij[I[0],I[1]] + e2_ij[I[0],I[1]])*w_ij[I[0],I[1]]).sum()
 	weight[i] = w_ij[I[0],I[1]].sum()
-
-#What we computed is a cumulative correlation function, let's recover the differential one
-corr[1:] = corr[1:] - corr[:Nbins-1]
-weight[1:] = weight[1:] - weight[:Nbins-1]
 
 #Output the correlation function
 np.save(sys.argv[2],np.array([theta,corr/weight]))
