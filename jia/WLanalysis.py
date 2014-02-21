@@ -176,7 +176,7 @@ def InterpPDF (x1, P, x2, edges=None):
 	P = concatenate(([0, 0, 0],P))#force PDF to be 0 at 0
 	f = interpolate.InterpolatedUnivariateSpline(x1, P) # interpolate the PDF with a 3rd order spline function
 	fint = lambda edge: f.integral(edge[0],edge[1]) # integrate the region between bin left and right
-	if not bool(edges.any()): # find edges for each bin, if not already provided
+	if edges==None:#not bool(edges.any()): # find edges for each bin, if not already provided
 		step = (x2[1:]-x2[:-1])/2
 		binwidth = (step[1:]+step[:-1])/2
 		midedges = array([x2[1:-1]-binwidth,x2[1:-1]+binwidth]).T
@@ -205,7 +205,7 @@ PPR512=8468.416479647716#pixels per radians
 PPA512=2.4633625#pixels per arcmin, PPR/degrees(1)/60
 APP512=0.40594918531072871#arcmin per pix, degrees(1/PPR)*60
 
-def weighted_smooth_CFHT(x, y, e1, e2, w, m, size=512, sigmaG=1):
+def coords2grid(x, y, e1, e2, c2, w, m, size=512):
 	'''returns 2 smoothed shear maps, and galaxy counts. This calculation includes weights and c2 and m correction.
 	
 	Input:
@@ -219,9 +219,10 @@ def weighted_smooth_CFHT(x, y, e1, e2, w, m, size=512, sigmaG=1):
 	smooth_e1, smooth_e2, galn (galaxy counts per pixel)
 	(written 2/14/2014)
 	'''
-	rad2pix=lambda x: around(size/2.0-0.5 + x*PPR512).astype(int)
+	rad2pix=lambda x: around(size/2.0-0.5 + x*PPR512*(size/512.0)).astype(int)
 	x = rad2pix(x)
 	y = rad2pix(y)
+	e2 = e2-c2
 	# first put galaxies to grid, note some pixels may have multiple galaxies
 	Me1 = zeros(shape=(size,size))
 	Me2 = zeros(shape=(size,size))
@@ -256,7 +257,10 @@ def weighted_smooth_CFHT(x, y, e1, e2, w, m, size=512, sigmaG=1):
 		left_idx=setdiff1d(left_idx, b)# Return the sorted, unique values in 'left_idx' that are not in 'b'.
 		ar0[b] = -1 # a number that's smaller than other indices (0..)
 		j += 1 #j is the repeating #gal count, inside one pix
-	sigma = sigmaG * PPA512 # argmin x pixels/arcmin
+	return Me1, Me2, Mw, Mm, galn
+
+def weighted_smooth_shear_CFHT(Me1, Me2, Mw, Mm, PPA=PPA512, sigmaG=1):
+	sigma = sigmaG * PPA # argmin x pixels/arcmin
 	smooth_m = snd.filters.gaussian_filter(Mm*Mw,sigma,mode='constant')
 	smooth_e1 = snd.filters.gaussian_filter(Me1*Mw,sigma,mode='constant')
 	smooth_e2 = snd.filters.gaussian_filter(Me2*Mw,sigma,mode='constant')
@@ -264,7 +268,16 @@ def weighted_smooth_CFHT(x, y, e1, e2, w, m, size=512, sigmaG=1):
 	smooth_e2 /= smooth_m
 	smooth_e1[isnan(smooth_e1)] = 0
 	smooth_e2[isnan(smooth_e2)] = 0
-	return smooth_e1, smooth_e2, galn
+	return smooth_e1, smooth_e2
+
+def weighted_smooth_conv_CFHT(Conv, Mw, Mm, PPA=PPA512, sigmaG=1):
+	sigma = sigmaG * PPA # argmin x pixels/arcmin
+	smooth_m = snd.filters.gaussian_filter(Mm*Mw,sigma,mode='constant')
+	smooth_conv = snd.filters.gaussian_filter(Conv*Mw,sigma,mode='constant')
+	
+	smooth_conv /= smooth_m
+	smooth_conv[isnan(smooth_conv)] = 0
+	return smooth_conv
 
 ########## end: CFHT catalogue to smoothed shear maps #########
 
@@ -329,13 +342,100 @@ def Q_kernel(size,tmax = tmax):
 	Q0[isnan(Q0)]=0
 	return Q0, phi
 	
-def apMass(shear1, shear2, size=2*tmax+7, tmax=tmax):
+def apMass(shear1, shear2, Mw = None, Mm = None, size = 2*tmax+7, tmax=tmax):
+	if Mw.any():
+		shear1*=Mw
+		shear2*=Mw
 	shear1 = snd.filters.gaussian_filter(shear1,0)#smooth(shear1,0) #to get rid of the endien problem
 	shear2 = snd.filters.gaussian_filter(shear2,0)#smooth(shear2,0)
 	shear1=shear1.astype(float64)
 	shear2=shear2.astype(float64)
 	Q0, phi = Q_kernel(size)
 	apMmap = KSI.apMass_calc(shear1,shear2,Q0,phi)
+	if Mm.any():
+		weight = (Mw*Mm).astype(float64)
+		apM_norm = KSI.apMass_norm(weight,Q0)
+		apMmap /= apM_norm
+		apMmap[isnan(apMmap)] = 0
 	return apMmap
 
 ########## end: mass construcion (shear to convergence) #####
+
+########## begin: power spectrum ############################
+def azimuthalAverage(image, center=None, edges=None):
+	"""
+	Calculate the azimuthally averaged radial profile.
+	Input:
+	image = The 2D image
+	center = The [x,y] pixel coordinates used as the center. The default is None, which then uses the center of the image (including fracitonal pixels).
+	Output:
+	ell_arr = the ell's, lower edge
+	tbin = power spectrum
+	"""
+	# Calculate the indices from the image
+	y, x = np.indices(image.shape)
+	if not center:
+		center = np.array([(x.max()-x.min())/2.0, (x.max()-x.min())/2.0])
+	r = np.hypot(x - center[0], y - center[1])#distance to center pixel, for each pixel
+
+	# Get sorted radii
+	ind = np.argsort(r.flat)
+	r_sorted = r.flat[ind]
+	i_sorted = image.flat[ind]
+
+	# find index that's corresponding to the lower edge of each bin
+	kmin=1.0
+	kmax=image.shape[0]/2.0
+	if edges == None:
+		edges = linspace(kmin,kmax+0.001,1001)	
+	hist_ind, ell_arr = np.histogram(r_sorted,bins=edges) # hist_ind: the number in each ell bins, sum them up is the index of lower edge of each bin
+	
+	ind2=hist_ind+4	# the first 4 is lower than kmin, so include in ell=1
+	hist_ind[0]+=4 # per last line
+	ind3=np.cumsum(hist_ind) # sum up to get index for lower edge of each bin
+		
+	# Cumulative sum to figure out sums for each radius bin
+	csim = np.cumsum(i_sorted, dtype=float)	
+	tbin=zeros(shape=len(edges)-1)
+	tbin[0]=csim[ind3[0]] # the first bin is the same as csim first bin
+	tbin[1:]=csim[ind3[1:]]-csim[ind3[:-1]] # the other bins is csim[n] - csim[n-1], because they're cumulative
+	tbin/=hist_ind # weighted by # of bins in that ell bin
+	
+	#### tbin2: powers normalized l(l+1) before binning, not used in the final code
+	#ii_sorted = (image*r*(r+1)).flat[ind]#weighted by ell(ell+1), for tbin2 only
+	#csim2 = np.cumsum(ii_sorted, dtype=float)	
+	#tbin2=zeros(shape=1000)
+	#tbin2[0]=csim2[ind3[0]]
+	#tbin2[1:]=csim2[ind3[1:]]-csim2[ind3[:-1]]
+	#tbin2/=hist_ind
+	#tbin2/=(ell_arr[:-1]*(ell_arr[:-1]+1))
+
+	return edges[:-1], tbin#, tbin2
+
+def PowerSpectrum(img, sizedeg=12.0, edges=None):#edges should be pixels
+	'''Calculate the power spectrum for a square image, with normalization.
+	Input:
+	img = input square image in numpy array.
+	sizedeg = image real size in deg^2
+	edges = ell bin edges, length = nbin + 1, if not provided, then do 1000 bins.
+	Output:
+	powspec = the power at the bins
+	ell_arr = lower bound of the binedges
+	'''
+	size = img.shape[0]
+	#F = fftpack.fftshift(fftpack.fft2(img))
+	F = fftshift(fftpack.fft2(img))
+	psd2D = np.abs(F)**2
+	ell_arr, psd1D = azimuthalAverage(psd2D, center=None, edges=edges)
+	ell_arr *= 360./sqrt(sizedeg)# normalized to our current map size
+	x = ell_arr
+	norm = ((2*pi*sqrt(sizedeg)/360.0)**2)/(size**2)**2
+	powspec = x*(x+1)/(2*pi) * norm * psd1D
+	return ell_arr, powspec
+########## end: power spectrum ############################
+
+########## begin: peak counts ############################
+peaks_mat = lambda kmap: KSI.findpeak_mat(kmap.astype(float))
+peaks_list = lambda kmap: array(KSI.findpeak_list(kmap.astype(float)))
+
+########## end: peak counts ############################
