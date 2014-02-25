@@ -17,12 +17,14 @@ int main(int argc,char **argv){
 		exit(1);
 	}
 
+	int i;
+
 	//read in the map
 	long mapsize = map_size(argv[1]);
 	float *map = (float*)malloc(sizeof(float)*mapsize*mapsize);
 	get_map(argv[1],map,mapsize);
-	float map_angle;
-	get_key_float(argv[1],"ANGLE",&map_angle);
+	float map_angle = sqrt(12.0);
+	//get_key_float(argv[1],"ANGLE",&map_angle);
 	float sigma = sqrt(variance_map(map,mapsize));
 
 	//set power spectrum and peaks bin edges
@@ -33,6 +35,15 @@ int main(int argc,char **argv){
 	power = (double*)malloc(sizeof(double)*POW_NBINS);
 	peak_bin_edges = (float*)malloc(sizeof(float)*(PEAK_NBINS+1));
 	peaks = (float*)malloc(sizeof(float)*PEAK_NBINS);
+
+	//initialize to 0
+	for(i=0;i<POW_NBINS;i++){
+		power[i] = 0.0;
+	}
+
+	for(i=0;i<PEAK_NBINS;i++){
+		peaks[i] = 0.0;
+	}
 
 	//set bin values
 	bin_interval_linear(power_bin_edges,0.0,1.063e+05,POW_NBINS+1);
@@ -51,7 +62,6 @@ int main(int argc,char **argv){
 	sprintf(peak_hist_filename,"%s%s",argv[2],"peak_histogram_snr.txt");
 
 	//output results to files
-	int i;
 
 	FILE *powout = fopen(power_filename,"w");
 	if(powout==NULL){
