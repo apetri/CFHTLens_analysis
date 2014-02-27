@@ -22,7 +22,7 @@ Andrea
 
 There is a python script in the "andrea" directory, which computes the two point angular correlation function of the galaxy shear by summing over galaxy pairs (this algorithm doesn't require pixelization, but it's not very efficient, even with heavy vectorization). They way you use it is 
 
-    python catalog_ps.py  <catalog_filename>  <output_filename.npy>
+    python catalog_ps.py  <catalog_filename>  <output_filename_corr.npy>  <output_filename_power.npy>
 
 The output format is a numpy array with two columns: one with the angle in arcmin, the other with the corresponding level of correlation
 
