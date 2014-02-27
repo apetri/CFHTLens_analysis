@@ -26,9 +26,10 @@ e2_ij = np.outer(e2,e2)
 w_ij = np.outer(w,w)
 
 #Decide binning of the 2pt function (theta is the midpoint of each bin)
-Nbins = 10
-step = (x.max()-x.min())/Nbins
+Ndivisions = 10
+step = (x.max()-x.min())/Ndivisions
 theta = np.arange(step/2,x.max()-x.min()-step/2,step)
+Nbins = len(theta)
 corr = np.zeros(Nbins)
 weight = np.zeros(Nbins)
 
@@ -55,6 +56,7 @@ for i in range(Nbins):
 	weight[i] = w_ij[I[0],I[1]].sum()
 
 #Compute the power spectrum with a hankel transform
+print "Computing power spectrum via Hankel transform..."
 l,Pl = fht(0,theta*np.pi/(180*60),corr/weight)
 
 #Output the correlation function
