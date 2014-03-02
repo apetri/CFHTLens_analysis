@@ -3,9 +3,11 @@ import sys
 import numpy as np
 from scipy.spatial import cKDTree
 
+from hankel import fht,ifht
+
 #Prompt user for correct usage
-if(len(sys.argv)<3):
-	print "Usage python %s <catalog_file> <output_file>"%sys.argv[0]
+if(len(sys.argv)<4):
+	print "Usage python %s <catalog_file> <output_file_corr> <output_file_power>"%sys.argv[0]
 	exit(1)
 
 #Load info from catalog: columns (0,1,9,10,11,16,17)=(x,y,w,e1,e2,m,c2)
@@ -24,9 +26,10 @@ e2_ij = np.outer(e2,e2)
 w_ij = np.outer(w,w)
 
 #Decide binning of the 2pt function (theta is the midpoint of each bin)
-Nbins = 10
-step = (x.max()-x.min())/Nbins
+Ndivisions = 10
+step = (x.max()-x.min())/Ndivisions
 theta = np.arange(step/2,x.max()-x.min()-step/2,step)
+Nbins = len(theta)
 corr = np.zeros(Nbins)
 weight = np.zeros(Nbins)
 
@@ -52,7 +55,14 @@ for i in range(Nbins):
 	corr[i] = ((e1_ij[I[0],I[1]] + e2_ij[I[0],I[1]])*w_ij[I[0],I[1]]).sum()
 	weight[i] = w_ij[I[0],I[1]].sum()
 
+#Compute the power spectrum with a hankel transform
+print "Computing power spectrum via Hankel transform..."
+l,Pl = fht(0,theta*np.pi/(180*60),corr/weight)
+
 #Output the correlation function
 np.save(sys.argv[2],np.array([theta,corr/weight]))
+
+#Output the power spectrum
+np.save(sys.argv[3],np.array([l,Pl]))
 
 print "Done!"
