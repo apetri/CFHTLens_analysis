@@ -114,29 +114,32 @@ def list2subfield(radeclist):
 	return xylist
 
 full_fmt=['%.8e',]*5+['%.8e',]*2+['%.5e',]*2+['%.3e',]*2+['%.5e','%i','%.4e','%.2e','%.1f']+['%.5e',]*3+['%.8e',]*70
-#ixylist,iPrand,idatas,iPz
-# 1. ALPHA_J2000     
-# 2. DELTA_J2000     
-# 3. KRON_RADIUS     
-# 4. FLUX_RADIUS
-# 5. e1      
-# 6. e2      
-# 7. weight  
-# 8. fitclass        
-# 9. scalelength     
-# 10. SNratio 
-# 11. MASK    
-# 12. m       
-# 13. c2 
-# 84. MAG_i
-# e.g. array([  3.28127916e+01,  -6.94027732e+00,   radius3.69069000e+00,
-#         radius3.37342000e+00,   e16.67400000e-01,   e22.21800000e-01,
-#         w1.53539000e+01,   class 0.00000000e+00,   scale 3.20810000e+00,
-#         3.89000000e+01,   0.00000000e+00,  -1.85604000e-04,
-#         2.66558000e-04,   2.26114000e+01])
 ray_fmt=['%.8e',]*5
 #ixylist,iPrand
 def OrganizeSplitFile(ifile):
+	'''Organize original CFHT catalogue file into 13 subfields. Output 2 files:
+	1)full_subfield#, with columns:
+	ixylist,iPrand,idatas,iPz
+	0,1: x, y
+	2-4: redshifts (2: peak, 3&4 random draw)
+	5:ALPHA_J2000     
+	6. DELTA_J2000     
+	7. KRON_RADIUS     
+	8. FLUX_RADIUS
+	9. e1      
+	10. e2      
+	11. weight  
+	12. fitclass        
+	13. scalelength     
+	14. SNratio 
+	15. MASK    
+	16. m       
+	17. c2      
+	18. MAG_i
+	19-88. 70 PDF Pz
+	
+	2)raytrace_subfield#
+	'''
 	field = genfromtxt(split_dir+ifile,usecols=0,dtype=str)
 	field = array(map(field2int,field))
 	print 'field',field.shape,field
@@ -175,10 +178,66 @@ def OrganizeSplitFile(ifile):
 		savetxt(split_dir+'full_subfield%i_%s'%(isf,ifile),array_full,fmt=full_fmt)
 		savetxt(split_dir+'raytrace_subfield%i_%s'%(isf,ifile),array_raytrace,fmt=ray_fmt)
 
-#ifile = str(sys.argv[1])#'xfu'
-#OrganizeSplitFile(ifile)
-processes = Pool(151)
-processes.map(OrganizeSplitFile, splitfiles)
+############ original non-MPI pool to organize subfields #####
+#processes = Pool(151)
+#processes.map(OrganizeSplitFile, splitfiles)
 
-done=rand(5)
-savetxt(split_dir+'done.txt',done)
+############ 3/2/2014 add good/bad field tag ########
+
+from emcee.utils import MPIPool
+pool = MPIPool()
+
+GoodFields = ['W1m0m0', 'W1m0m3', 'W1m0m4', 'W1m0p1', 'W1m0p2', 'W1m0p3', 'W1m1m0', 'W1m1m2', 'W1m1m3', 'W1m1m4', 'W1m1p3', 'W1m2m1', 'W1m2m2', 'W1m2m3', 'W1m2p1', 'W1m2p2', 'W1m3m0', 'W1m3m2', 'W1m3m4', 'W1m3p1', 'W1m3p3', 'W1m4m0', 'W1m4m1', 'W1m4m3', 'W1m4m4', 'W1m4p1', 'W1p1m1', 'W1p1m2', 'W1p1m3', 'W1p1m4', 'W1p1p1', 'W1p1p2', 'W1p1p3', 'W1p2m0', 'W1p2m2', 'W1p2m3', 'W1p2m4', 'W1p2p1', 'W1p2p2', 'W1p2p3', 'W1p3m1', 'W1p3m2', 'W1p3m3', 'W1p3m4', 'W1p3p1', 'W1p3p2', 'W1p3p3', 'W1p4m0', 'W1p4m1', 'W1p4m2', 'W1p4m3', 'W1p4m4', 'W1p4p1', 'W1p4p2', 'W1p4p3', 'W2m0m0', 'W2m0m1', 'W2m0p1', 'W2m0p2', 'W2m1m0', 'W2m1m1', 'W2m1p1', 'W2m1p3', 'W2p1m0', 'W2p1p1', 'W2p1p2', 'W2p2m0', 'W2p2m1', 'W2p2p1', 'W2p2p2', 'W2p3m0', 'W2p3m1', 'W2p3p1', 'W2p3p3', 'W3m0m1', 'W3m0m2', 'W3m0m3', 'W3m0p2', 'W3m0p3', 'W3m1m0', 'W3m1m2', 'W3m1m3', 'W3m1p1', 'W3m1p2', 'W3m1p3', 'W3m2m1', 'W3m2m2', 'W3m2m3', 'W3m2p1', 'W3m2p2', 'W3m3m0', 'W3m3m1', 'W3m3m2', 'W3m3m3', 'W3m3p1', 'W3m3p2', 'W3p1m0', 'W3p1m1', 'W3p1m2', 'W3p1m3', 'W3p1p2', 'W3p1p3', 'W3p2m0', 'W3p2m3', 'W3p2p3', 'W3p3m1', 'W3p3m3', 'W3p3p1', 'W3p3p2', 'W3p3p3', 'W4m0m2', 'W4m0p1', 'W4m1m0', 'W4m1m1', 'W4m1m2', 'W4m1p1', 'W4m2m0', 'W4m2p1', 'W4m2p3', 'W4m3m0', 'W4m3p1', 'W4m3p2', 'W4m3p3', 'W4p1m0', 'W4p1m1', 'W4p1m2', 'W4p2m0', 'W4p2m1', 'W4p2m2']
+
+BadFields = ['W1m0m1', 'W1m0m2', 'W1m1m1', 'W1m1p1', 'W1m1p2', 'W1m2m0', 'W1m2m4', 'W1m2p3', 'W1m3m1', 'W1m3m3', 'W1m3p2', 'W1m4m2', 'W1m4p2', 'W1m4p3', 'W1p1m0', 'W1p1p1', 'W1p2m1', 'W1p2p2', 'W1p3m0', 'W1p3p1', 'W1p4p2', 'W2m0p3', 'W2m1p2', 'W2p1m1', 'W2p1p1', 'W2p1p3', 'W2p2p2', 'W2p2p3', 'W2p3p2', 'W3m0m0', 'W3m0m1', 'W3m0p1', 'W3m1m1', 'W3m1p3', 'W3m2m0', 'W3m2m1', 'W3m2p1', 'W3m2p3', 'W3m2p3', 'W3m3p1', 'W3m3p3', 'W3p1p1', 'W3p2m1', 'W3p2m2', 'W3p2m3', 'W3p2p1', 'W3p2p2', 'W3p3m0', 'W3p3m1', 'W3p3m2', 'W3p3m2', 'W3p3p2', 'W4m0m0', 'W4m0m1', 'W4m1m1', 'W4m1p1', 'W4m1p2', 'W4m1p3', 'W4m2p2', 'W4p1p1']
+
+def AppendGoodBadFields(ifile):
+	'''append good/bad field identifier at the already 
+	to be edited.
+	(3/2/2014)
+	'''
+	field = genfromtxt(split_dir+ifile,usecols=0,dtype=str)
+	field = array(map(field2int,field))
+	print 'field',field.shape,field
+
+	datas = genfromtxt(split_dir+ifile,usecols=range(1,14)+[84])
+	print 'datas',datas.shape,datas
+
+	# generate random P
+	Pz = genfromtxt(split_dir+ifile,usecols=arange(14,84),dtype=str)
+	Pz = (np.core.defchararray.replace(Pz,',','')).astype(float)
+	Prand = array(map(DrawRedshifts,Pz))
+	print 'Prand',Prand.shape,datas
+
+	# get subfield, x, y
+	radeclist = concatenate((field.reshape(-1,1),datas[:,[0,1]]),axis=1)	
+	xylist = list2subfield(radeclist)#a function needs cleaning up
+	print 'xylist', xylist.shape, xylist
+
+	subfields = unique(xylist[:,0])
+	subfields = delete(subfields, where(subfields==0)[0]).astype(int)
+
+	for isf in subfields: #save to individual files, isf = (1,2,3..13)
+		print 'isf',isf
+		idx = where(xylist[:,0]==isf)[0]
+		#ifield = field[idx]
+		idatas = datas[idx]
+		iPz = Pz[idx]
+		
+		ixylist = xylist[idx][:,1:]
+		iPrand = Prand[idx]
+		
+		array_raytrace = concatenate((ixylist,iPrand),axis=1)
+		array_full = concatenate((ixylist,iPrand,idatas,iPz),axis=1)
+		print 'array_raytrace.shape, array_full.shape',array_raytrace.shape, array_full.shape
+		
+		savetxt(split_dir+'full_subfield%i_%s'%(isf,ifile),array_full,fmt=full_fmt)
+		savetxt(split_dir+'raytrace_subfield%i_%s'%(isf,ifile),array_raytrace,fmt=ray_fmt)
+		
+# Make sure the thread we're running on is the master
+if not pool.is_master():
+    pool.wait()
+    sys.exit(0)
+
+
+savetxt(split_dir+'done.txt','done')
