@@ -26,11 +26,14 @@ sigmaG_arr = (0.5, 1, 1.8, 3.5, 5.3, 8.9)
 	
 ########### functions #########
 def fileGen(i):
-	Me1_fn = KS_dir+'CFHT_subfield%02d_Me1.fits'%(i+1)
-	Me2_fn = KS_dir+'CFHT_subfield%02d_Me2.fits'%(i+1)
-	Mw_fn = KS_dir+'CFHT_subfield%02d_Mw.fits'%(i+1)
-	galn_fn = KS_dir+'CFHT_subfield%02d_galn.fits'%(i+1)
+	'''i range from (1, 2..13)
+	'''
+	Me1_fn = KS_dir+'CFHT_subfield%02d_Me1.fits'%(i)
+	Me2_fn = KS_dir+'CFHT_subfield%02d_Me2.fits'%(i)
+	Mw_fn = KS_dir+'CFHT_subfield%02d_Mw.fits'%(i)
+	galn_fn = KS_dir+'CFHT_subfield%02d_galn.fits'%(i)
 	
+	print 'fileGen', i
 	if WLanalysis.TestComplete((Me1_fn,Me2_fn,Mw_fn,galn_fn),rm = True):
 		Me1 = WLanalysis.readFits(Me1_fn)
 		Me2 = WLanalysis.readFits(Me2_fn)
@@ -60,8 +63,9 @@ def fileGen(i):
 def KSmap (i):
 	Me1, Me2, Mw, galn = fileGen(i)
 	for sigmaG in sigmaG_arr:	
-		KS_fn = KS_dir+'CFHT_KS_sigma%02d_subfield%02d.fits'%(sigmaG,i+1)
-		mask_fn = KS_dir+'CFHT_mask_ngal%i_sigma%02d_subfield%02d.fits'%(ngal_arcmin,sigmaG,i+1)
+		print 'KSmap i, sigmaG', i, sigmaG
+		KS_fn = KS_dir+'CFHT_KS_sigma%02d_subfield%02d.fits'%(sigmaG,i)
+		mask_fn = KS_dir+'CFHT_mask_ngal%i_sigma%02d_subfield%02d.fits'%(ngal_arcmin,sigmaG,i)
 		
 		if WLanalysis.TestComplete((KS_fn,mask_fn),rm=True):
 			kmap = WLanalysis.readFits(KS_fn)
@@ -80,7 +84,7 @@ def KSmap (i):
 			WLanalysis.writeFits(kmap, KS_fn)
 			WLanalysis.writeFits(Mmask, KS_dir)
 			
-KSmap (0)
+KSmap (1)
 savetxt(KS_dir+'done.ls',zeros(5))
 # Initialize the MPI pool
 #pool = MPIPool()
