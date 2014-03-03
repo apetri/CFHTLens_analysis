@@ -54,6 +54,26 @@ def writeFits (data, filename):
 	hdu = pyfits.PrimaryHDU(data)
 	hdu.writeto(filename)
 
+def TestComplete(file_ls,rm = False):
+	'''Test if a list of file all exist.
+	Input:
+	file_ls: a list of files
+	rm: if this list is imcomplete (some files don't exist), remove the other files if rm==True, else do nothing.
+	Output:
+	True if all files exist.
+	Flase if not all files exist.
+	'''
+	allfiles = True
+	for ifile in file_ls:
+		if not os.path.isfile(ifile):
+			allfiles = False
+			break
+	if allfiles == False and rm:
+		for ifile in file_ls:
+			if os.path.isfile(ifile):
+				os.remove(ifile)
+	return allfiles
+
 def gnom_fun(center):
 	'''Create a function that calculate the location of a sky position (ra, dec) on a grid, centered at (ra0, dec0), using Gnomonic projection (flat sky approximation). 
 	Input:
