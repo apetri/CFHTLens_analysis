@@ -9,6 +9,7 @@
 import WLanalysis
 from emcee.utils import MPIPool
 import os
+import numpy as np
 
 ########## define constants ############
 ngal_arcmin = 5.0
