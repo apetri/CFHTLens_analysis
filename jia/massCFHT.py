@@ -40,7 +40,7 @@ def fileGen(i):
 		Mw =  WLanalysis.readFits(Mw_fn)
 		galn =WLanalysis.readFits(galn_fn)
 	else:
-		ifile = genfromtxt(full_dir+'full_subfield'+str(i) ,usecols=[0, 1, 2, 3, 4, 9, 10, 11, 16, 17])
+		ifile = np.genfromtxt(full_dir+'full_subfield'+str(i) ,usecols=[0, 1, 2, 3, 4, 9, 10, 11, 16, 17])
 		# cols: y, x, z_peak, z_rnd1, z_rnd2, e1, e2, w, m, c2
 
 		#redshift cut 0.2< z <1.3
