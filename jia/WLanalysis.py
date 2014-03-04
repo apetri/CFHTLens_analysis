@@ -265,8 +265,8 @@ def coords2grid(x, y, k, size=512):
 		
 		#put unique values into matrix
 		ix = sorted_idx[b]
-		for k in range(Mk.shape[0]):
-			Mk[k][x[ix],y[ix]] += k[k][ix]
+		for l in range(Mk.shape[0]):
+			Mk[l][x[ix],y[ix]] += k[l][ix]
 		galn[x[ix],y[ix]]+= 1
 
 		left_idx=setdiff1d(left_idx, b)# Return the sorted, unique values in 'left_idx' that are not in 'b'.
