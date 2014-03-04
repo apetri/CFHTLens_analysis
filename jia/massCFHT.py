@@ -1,4 +1,5 @@
-#!/vega/astro/users/jl3509/tarball/anacondaa/bin/python
+#!/afs/rhic.bnl.gov/@sys/opt/astro/SL64/anaconda/bin
+# yeti: /vega/astro/users/jl3509/tarball/anacondaa/bin/python
 # Jia Liu 2014/2/18
 # Overview: this code creates mass maps from CFHT catalogues
 ################ steps #####################
@@ -23,9 +24,16 @@ PPR512=8468.416479647716#pixels per radians
 PPA512=2.4633625
 rad2pix=lambda x: around(512/2.0-0.5 + x*PPR512).astype(int) #from radians to pixel location
 
-full_dir = '/vega/astro/users/jl3509/CFHT_cat/full_subfields/'
-KS_dir = '/vega/astro/users/jl3509/CFHT_cat/KS/'
-plot_dir = '/vega/astro/users/jl3509/plot/'
+full_dir = '/direct/astro+astronfs01/workarea/jia/CFHT/full_subfields/'
+KS_dir = '/direct/astro+astronfs01/workarea/jia/CFHT/KS/'
+plot_dir = '/direct/astro+astronfs01/workarea/jia/CFHT/plot/'
+
+# yeti
+#full_dir = '/vega/astro/users/jl3509/CFHT_cat/full_subfields/'
+#KS_dir = '/vega/astro/users/jl3509/CFHT_cat/KS/'
+#plot_dir = '/vega/astro/users/jl3509/plot/'
+
+# my laptop
 #plot_dir = '/Users/jia/Documents/weaklensing/CFHTLenS/plot/'
 #full_dir = '/Users/jia/Documents/weaklensing/CFHTLenS/mass/'
 #KS_dir = '/Users/jia/Documents/weaklensing/CFHTLenS/mass/'
