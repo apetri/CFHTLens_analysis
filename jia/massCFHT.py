@@ -42,21 +42,21 @@ sigmaG_arr = (0.5, 1, 1.8, 3.5, 5.3, 8.9)
 
 ############# junk, plotting #############
 
-from pylab import *
-def plotimshow(img,ititle,vmin=None,vmax=None):		
-	#if vmin == None and vmax == None:
-	imgnonzero=img[nonzero(img)]
-	if vmin == None:
-		std0 = std(imgnonzero)
-		x0 = median(imgnonzero)
-		vmin = x0-3*std0
-		vmax = x0+3*std0
-	im=imshow(img,interpolation='nearest',origin='lower',aspect='auto',vmin=vmin,vmax=vmax)
-	im.set_extent([37.1410+sqrt(12)/2,37.1410-sqrt(12)/2,-9.5622-sqrt(12)/2,-9.5622+sqrt(12)/2])
-	colorbar()
-	title(ititle)
-	savefig(plot_dir+'CFHT_'+ititle+'.jpg')
-	close()	
+#from pylab import *
+#def plotimshow(img,ititle,vmin=None,vmax=None):		
+	##if vmin == None and vmax == None:
+	#imgnonzero=img[nonzero(img)]
+	#if vmin == None:
+		#std0 = std(imgnonzero)
+		#x0 = median(imgnonzero)
+		#vmin = x0-3*std0
+		#vmax = x0+3*std0
+	#im=imshow(img,interpolation='nearest',origin='lower',aspect='auto',vmin=vmin,vmax=vmax)
+	#im.set_extent([37.1410+sqrt(12)/2,37.1410-sqrt(12)/2,-9.5622-sqrt(12)/2,-9.5622+sqrt(12)/2])
+	#colorbar()
+	#title(ititle)
+	#savefig(plot_dir+'CFHT_'+ititle+'.jpg')
+	#close()	
 ########### functions #########
 def fileGen(i):
 	'''
@@ -126,8 +126,8 @@ def KSmap (i):
 			WLanalysis.writeFits(kmap, KS_fn)
 			WLanalysis.writeFits(Mmask, mask_fn)
 			
-		plotimshow(kmap, 'sigma%02d_subfield%02d_KS'%(sigmaG*10,i))
-		plotimshow(Mmask, 'sigma%02d_subfield%02d_mask'%(sigmaG*10,i),vmin=0,vmax=1)
+		#plotimshow(kmap, 'sigma%02d_subfield%02d_KS'%(sigmaG*10,i))
+		#plotimshow(Mmask, 'sigma%02d_subfield%02d_mask'%(sigmaG*10,i),vmin=0,vmax=1)
 
 # Initialize the MPI pool
 pool = MPIPool()
