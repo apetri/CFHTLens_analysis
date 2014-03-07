@@ -4,8 +4,7 @@
 # Overview: this code creates mass maps from CFHT catalogues
 ################ steps #####################
 #1) smoothing (on the fly?), take into account c2, m, w correction
-#2) KS93, KSvw, aperture mass(this needs smaller smoothing)
-#3) count peaks, MF, powerspectrum 
+#2) KSvw
 
 import WLanalysis
 from emcee.utils import MPIPool
