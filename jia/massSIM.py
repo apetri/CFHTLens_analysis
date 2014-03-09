@@ -99,7 +99,7 @@ def fileGen(i, R, cosmo):
 	Mw_fn = KS_dir+'SIM_Mw_subfield%i.fit'%(i) # same for all R
 
 	Marr = (Mw_fn, Ms1_pz_fn, Ms2_pz_fn, Ms1_rz1_fn, Ms2_rz1_fn, Ms1_rz2_fn, Ms2_rz2_fn)
-	print 'fileGen', i, R+'r', cosmo
+	print 'fileGen', i, str(R)+'r', cosmo
 	if WLanalysis.TestComplete(Marr, rm = False):
 		Mw = WLanalysis.readFits(Mw_fn)
 		Ms1_pz  = WLanalysis.readFits(Ms1_pz_fn )
