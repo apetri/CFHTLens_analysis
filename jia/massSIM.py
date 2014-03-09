@@ -45,7 +45,7 @@ def rndrot (e1, e2, iseed=None):
 	if iseed:
 		random.seed(iseed)
 	ells = e1+1j*e2
-	ells_new = -ells*exp(-4j*pi*rand(len(a)))
+	ells_new = -ells*exp(-4j*pi*rand(len(e1)))
 	return real(ells_new), imag(ells_new)
 
 #### test
