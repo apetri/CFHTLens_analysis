@@ -53,39 +53,14 @@ def rndrot (e1, e2, iseed=None):
 # b=rndrot(a)
 # abs(a)==abs(b) #return True
 
-#### begin - create index file for z cut ####
-#def zcut_idx (i, zmin=zmin, zmax=zmax):
-	#'''return index for z cut
-	#'''
-	#fn = full_dir+'zcut_idx_subfield%i'%(i)
-	
-	#if WLanalysis.TestComplete((fn,),rm=False):
-		#idx = genfromtxt(fn).astype(int)
-	
-	#else:
-		#zs = np.genfromtxt(full_dir+'full_subfield'+str(i) ,usecols=[2, 3, 4])
-		## z_peak, z_rnd1, z_rnd2
 
-		## redshift cut 0.2< z <1.3
-		#print 'zs', i
-		#idx = np.where((amax(zs,axis=1) <= zmax) & (amin(zs,axis=1) >= zmin))[0]
-		#savetxt(fn,idx)
-	#return idx
-#### end - create index file for z cut ####
-zcut_idx = lambda i: genfromtxt(full_dir+'zcut_idx_subfield%i'%(i)).astype(int)
+zcut_idx = lambda i: WLanalysis.readFits(full_dir+'zcut_idx_subfield%i.fit'%(i))
 
 def eobs_fun (g1, g2, k, e1, e2):
 	g = (g1+1j*g2)/(1-k)
 	eint = e1+1j*e2
 	eobs = (g+eint)/(1-g*eint)
 	return real(eobs), imag(eobs)
-
-### 3/9, put field 1 config here ########
-i=1
-idx = zcut_idx (i)
-
-y, x, e1, e2, w, c2 = (np.genfromtxt(full_dir+'full_subfield'+str(i) ,usecols=[0, 1, 9, 10, 11, 17])[idx]).T
-### end field 1 config ###
 
 def fileGen(i, R, cosmo):
 	'''
@@ -133,7 +108,7 @@ def fileGen(i, R, cosmo):
 		
 		s1_pz, s2_pz, k_pz, s1_rz1, s2_rz1, k_rz1, s1_rz2, s2_rz2, k_rz2 = (WLanalysis.readFits(SIMfn(i,cosmo,R))[idx].T)[[0,1,2,4,5,6,8,9,10]]
 		
-		eint1, eint2 = rndrot(e1, e2-c2, iseed=R)#random rotation
+		eint1, eint2 = rndrot(e1, e2, iseed=R)#random rotation
 			
 		## get reduced shear
 		e1_pz, e2_pz = eobs_fun(s1_pz, s2_pz, k_pz, eint1, eint2)
@@ -189,40 +164,16 @@ def KSmap(iiRcosmo):
 
 # test KSmap(1, 1, fidu), pass
 
-#for i in (1,2):
-	#j=0
-
-	#idx = zcut_idx (i)
-	#y, x, e1, e2, w, c2 = (np.genfromtxt(full_dir+'full_subfield'+str(i) ,usecols=[0, 1, 9, 10, 11, 17])[idx]).T
-	
-	#print 'idx'
-	#for cosmo in (fidu,hi_m,hi_w,hi_s):
-		#print 'cosmo', cosmo
-		#iRcosmo=[[1,1,''],]*128
-		#for R in arange(1,129):
-			#iRcosmo[j]=[i,R,cosmo]
-				#j+=1
-
-	### Initialize the MPI pool
-		#pool = MPIPool()
-		### Make sure the thread we're running on is the master
-		#if not pool.is_master():
-			#pool.wait()
-			#sys.exit(0)
-		### logger.debug("Running with MPI...")
-		#pool.map(KSmap, iRcosmo)
-
-
-	
-print 'idx'
-i=1
-for cosmo in (fidu, hi_m, hi_w, hi_s):
-	print 'cosmo', cosmo
-	iRcosmo=[[1,1,''],]*128
+for i in (1,2):
 	j=0
+	iRcosmo=[[1,1,''],]*(128*4)
 	for R in arange(1,129):
-		iRcosmo[j]=[i,R,cosmo]
-		j+=1
+		for cosmo in (fidu,hi_m,hi_w,hi_s):
+			iRcosmo[j]=[i,R,cosmo]
+			j+=1
+
+	idx = zcut_idx (i)
+	y, x, e1, e2, w = (WLanalysis.readFits(full_dir+'yxew_zcut0213_subfield%i.fit'%(i))).T
 
 	## Initialize the MPI pool
 	pool = MPIPool()
@@ -230,8 +181,8 @@ for cosmo in (fidu, hi_m, hi_w, hi_s):
 	#if not pool.is_master():
 		#pool.wait()
 		#sys.exit(0)
-	#### logger.debug("Running with MPI...")
-	
+	## logger.debug("Running with MPI...")
 	pool.map(KSmap, iRcosmo)
-		
+
+	
 savetxt(KS_dir+'done.ls',zeros(5))
