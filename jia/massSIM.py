@@ -180,16 +180,6 @@ def KSmap(iiRcosmo):
 
 # test KSmap(1, 1, fidu), pass
 
-## Initialize the MPI pool
-pool = MPIPool()
-
-## Make sure the thread we're running on is the master
-if not pool.is_master():
-    pool.wait()
-    sys.exit(0)
-## logger.debug("Running with MPI...")
-
-
 for i in (1,2):
 	print 'i', i
 	j=0
@@ -201,6 +191,13 @@ for i in (1,2):
 			iRcosmo[j]=[i,R,cosmo]
 			j+=1
 
+	## Initialize the MPI pool
+	pool = MPIPool()
+	## Make sure the thread we're running on is the master
+	if not pool.is_master():
+	pool.wait()
+	sys.exit(0)
+	## logger.debug("Running with MPI...")
 	pool.map(KSmap, iRcosmo)
 
 savetxt(KS_dir+'done.ls',zeros(5))
