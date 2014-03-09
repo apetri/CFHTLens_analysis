@@ -59,7 +59,7 @@ def zcut_idx (i, zmin=zmin, zmax=zmax):
 	'''
 	fn = full_dir+'zcut_idx_subfield%i'%(i)
 	
-	if WLanalysis.TestComplete(fn):
+	if WLanalysis.TestComplete((fn,),rm=False):
 		idx = genfromtxt(fn)
 	
 	else:
@@ -71,6 +71,7 @@ def zcut_idx (i, zmin=zmin, zmax=zmax):
 		idx = np.where((amax(zs,axis=1) <= zmax) & (amin(zs,axis=1) >= zmin))[0]
 		savetxt(fn,idx)
 	return idx
+#idx_fcn = lambda i: genfromtxt(full_dir+'zcut_idx_subfield%i'%(i))
 
 def eobs_fun (g1, g2, k, e1, e2):
 	g = (g1+1j*g2)/(1-k)
