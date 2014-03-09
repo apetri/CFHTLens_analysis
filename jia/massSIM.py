@@ -150,12 +150,12 @@ def fileGen(i, R, cosmo):
 		
 	return Ms1_pz, Ms2_pz, Ms1_rz1, Ms2_rz1, Ms1_rz2, Ms2_rz2, Mw
 
-### test 
-Ms1_pz, Ms2_pz, Ms1_rz1, Ms2_rz1, Ms1_rz2, Ms2_rz2, Mw = fileGen(1, 1, fidu)
+### test, pass, still need to check actual map 
+# Ms1_pz, Ms2_pz, Ms1_rz1, Ms2_rz1, Ms1_rz2, Ms2_rz2, Mw = fileGen(1, 1, fidu)
 
 ####### smooth and KS inversion #########
 	
-def KSmap(i, R, cosmo):
+def KSmap(iiRcosmo):
 	'''Input:
 	i: subfield range from (1, 2..13)
 	R: realization range from (1..128)
@@ -163,6 +163,7 @@ def KSmap(i, R, cosmo):
 	Return:
 	KS inverted map
 	'''
+	i, R, cosmo = iiRcosmo
 	Ms1_pz, Ms2_pz, Ms1_rz1, Ms2_rz1, Ms1_rz2, Ms2_rz2, Mw = fileGen(i, R, cosmo)
 	Ms_arr = ((Ms1_pz, Ms2_pz), (Ms1_rz1, Ms2_rz1), (Ms1_rz2, Ms2_rz2))
 	zgs=('pz', 'rz1', 'rz2')
@@ -180,24 +181,24 @@ def KSmap(i, R, cosmo):
 				kmap = WLanalysis.KSvw(Me1_smooth, Me2_smooth)
 				WLanalysis.writeFits(kmap, KS_fn)
 
-# Initialize the MPI pool
-#pool = MPIPool()
+# test KSmap(1, 1, fidu), pass
+
+## Initialize the MPI pool
+pool = MPIPool()
 
 ## Make sure the thread we're running on is the master
-#if not pool.is_master():
-    #pool.wait()
-    #sys.exit(0)
+if not pool.is_master():
+    pool.wait()
+    sys.exit(0)
 ## logger.debug("Running with MPI...")
-## def KSmap(i, R, cosmo)
 
-##iRcosmo=ndarray(shape=(2*128*4,3),dtype=['int32','|S51','int32'])
-#iRcosmo=[[1,1,''],]*(2*128*4)
-#j=0
-#for i in (1,2):
-	#for R in arange(1,129):
-		#for cosmo in (fidu,hi_m,hi_w,hi_s):
-			#iRcosmo[j]=[i,R,cosmo]
-			#j+=1
+iRcosmo=[[1,1,''],]*(2*128*4)
+j=0
+for i in (1,2):
+	for R in arange(1,129):
+		for cosmo in (fidu,hi_m,hi_w,hi_s):
+			iRcosmo[j]=[i,R,cosmo]
+			j+=1
 
-#pool.map(KSmap, iRcosmo)
-#savetxt(KS_dir+'done.ls',zeros(5))
+pool.map(KSmap, iRcosmo)
+savetxt(KS_dir+'done.ls',zeros(5))
