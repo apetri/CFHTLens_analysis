@@ -195,8 +195,8 @@ for i in (1,2):
 	pool = MPIPool()
 	## Make sure the thread we're running on is the master
 	if not pool.is_master():
-	pool.wait()
-	sys.exit(0)
+		pool.wait()
+		sys.exit(0)
 	## logger.debug("Running with MPI...")
 	pool.map(KSmap, iRcosmo)
 
