@@ -118,12 +118,11 @@ def fileGen(i, R, cosmo):
 		createfiles = 2 #flag to create everything
 
 	if createfiles:
-		idx = zcut_idx (i)#redshift cut
+		#idx = zcut_idx (i)#redshift cut
 		#simfile = WLanalysis.readFits(SIMfn(i,cosmo,R))[idx, [0,1,2,4,5,6,8,9,10]]#simulation file at redshift cut
 		#s1_pz, s2_pz, k_pz, s1_rz1, s2_rz1, k_rz1, s1_rz2, s2_rz2, k_rz2 = simfile.T
 		
 		s1_pz, s2_pz, k_pz, s1_rz1, s2_rz1, k_rz1, s1_rz2, s2_rz2, k_rz2 = (WLanalysis.readFits(SIMfn(i,cosmo,R))[idx].T)[[0,1,2,4,5,6,8,9,10]]
-		y, x, e1, e2, w, c2 = (np.genfromtxt(full_dir+'full_subfield'+str(i) ,usecols=[0, 1, 9, 10, 11, 17])[idx]).T
 		
 		eint1, eint2 = rndrot(e1, e2-c2, iseed=R)#random rotation
 			
@@ -192,13 +191,17 @@ if not pool.is_master():
     sys.exit(0)
 ## logger.debug("Running with MPI...")
 
-iRcosmo=[[1,1,''],]*(2*128*4)
-j=0
+
 for i in (1,2):
+	j=0
+	iRcosmo=[[1,1,''],]*(128*4)
+	idx = zcut_idx (i)
+	y, x, e1, e2, w, c2 = (np.genfromtxt(full_dir+'full_subfield'+str(i) ,usecols=[0, 1, 9, 10, 11, 17])[idx]).T
 	for R in arange(1,129):
 		for cosmo in (fidu,hi_m,hi_w,hi_s):
 			iRcosmo[j]=[i,R,cosmo]
 			j+=1
 
-pool.map(KSmap, iRcosmo)
+	pool.map(KSmap, iRcosmo)
+
 savetxt(KS_dir+'done.ls',zeros(5))
