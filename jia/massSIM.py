@@ -43,7 +43,7 @@ def rndrot (e1, e2, iseed=None):
 	'''rotate galaxy with ellipticity (e1, e2), by a random angle.
 	'''
 	if iseed:
-		seed(iseed)
+		random.seed(iseed)
 	ells = e1+1j*e2
 	ells_new = -ells*exp(-4j*pi*rand(len(a)))
 	return real(ells_new), imag(ells_new)
