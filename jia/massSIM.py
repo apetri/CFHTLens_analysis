@@ -111,7 +111,7 @@ def fileGen(i, R, cosmo):
 		createfiles = 0
 	
 	elif WLanalysis.TestComplete((Mw_fn,),rm = False):
-		Mw = WLanalysis.readFits(Mw_fn)
+		#Mw = WLanalysis.readFits(Mw_fn)
 		WLanalysis.TestComplete(Marr[1:], rm = True)
 		createfiles = 1 #flag to create Ms's
 	else:
@@ -133,10 +133,8 @@ def fileGen(i, R, cosmo):
 			
 		kk = array([k_rz1, e1_pz*w, e2_pz*w, e1_rz1*w, e2_rz1*w, e1_rz2*w, e2_rz2*w, w])
 		print 'coords2grid'
-		if createfiles == 1:
-			Mk, Ms1_pz, Ms2_pz, Ms1_rz1, Ms2_rz1, Ms1_rz2, Ms2_rz2 = WLanalysis.coords2grid(x, y, kk[:-1])[0]
+		Mk, Ms1_pz, Ms2_pz, Ms1_rz1, Ms2_rz1, Ms1_rz2, Ms2_rz2, Mw = WLanalysis.coords2grid(x, y, kk)[0]
 		elif createfiles == 2:
-			Mk, Ms1_pz, Ms2_pz, Ms1_rz1, Ms2_rz1, Ms1_rz2, Ms2_rz2, Mw = WLanalysis.coords2grid(x, y, kk)[0]
 			WLanalysis.writeFits(Mw, Mw_fn)
 		#Marr = (Mw_fn, Ms1_pz_fn, Ms2_pz_fn, Ms1_rz1_fn, Ms2_rz1_fn, Ms1_rz2_fn, Ms2_rz2_fn)
 		j = 1
@@ -193,6 +191,7 @@ if not pool.is_master():
 
 
 for i in (1,2):
+	print 'i', i
 	j=0
 	iRcosmo=[[1,1,''],]*(128*4)
 	idx = zcut_idx (i)
