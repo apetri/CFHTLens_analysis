@@ -78,6 +78,12 @@ def eobs_fun (g1, g2, k, e1, e2):
 	eobs = (g+eint)/(1-g*eint)
 	return real(eobs), imag(eobs)
 
+### 3/9, put field 1 config here ########
+i=1
+idx = zcut_idx (i)
+y, x, e1, e2, w, c2 = (np.genfromtxt(full_dir+'full_subfield'+str(i) ,usecols=[0, 1, 9, 10, 11, 17])[idx]).T
+### end field 1 config ###
+
 def fileGen(i, R, cosmo):
 	'''
 	Input:
@@ -180,18 +186,40 @@ def KSmap(iiRcosmo):
 
 # test KSmap(1, 1, fidu), pass
 
-for i in (1,2):
-	print 'i', i
-	j=0
-	iRcosmo=[[1,1,''],]*(128*4)
-	idx = zcut_idx (i)
-	y, x, e1, e2, w, c2 = (np.genfromtxt(full_dir+'full_subfield'+str(i) ,usecols=[0, 1, 9, 10, 11, 17])[idx]).T
+#for i in (1,2):
+	#j=0
+
+	#idx = zcut_idx (i)
+	#y, x, e1, e2, w, c2 = (np.genfromtxt(full_dir+'full_subfield'+str(i) ,usecols=[0, 1, 9, 10, 11, 17])[idx]).T
+	
+	#print 'idx'
+	#for cosmo in (fidu,hi_m,hi_w,hi_s):
+		#print 'cosmo', cosmo
+		#iRcosmo=[[1,1,''],]*128
+		#for R in arange(1,129):
+			#iRcosmo[j]=[i,R,cosmo]
+				#j+=1
+
+	### Initialize the MPI pool
+		#pool = MPIPool()
+		### Make sure the thread we're running on is the master
+		#if not pool.is_master():
+			#pool.wait()
+			#sys.exit(0)
+		### logger.debug("Running with MPI...")
+		#pool.map(KSmap, iRcosmo)
+
+
+	
+print 'idx'
+for cosmo in (fidu, hi_m, hi_w, hi_s):
+	print 'cosmo', cosmo
+	iRcosmo=[[1,1,''],]*128
 	for R in arange(1,129):
-		for cosmo in (fidu,hi_m,hi_w,hi_s):
-			iRcosmo[j]=[i,R,cosmo]
+		iRcosmo[j]=[i,R,cosmo]
 			j+=1
 
-	## Initialize the MPI pool
+## Initialize the MPI pool
 	pool = MPIPool()
 	## Make sure the thread we're running on is the master
 	if not pool.is_master():
@@ -199,5 +227,5 @@ for i in (1,2):
 		sys.exit(0)
 	## logger.debug("Running with MPI...")
 	pool.map(KSmap, iRcosmo)
-
+		
 savetxt(KS_dir+'done.ls',zeros(5))
