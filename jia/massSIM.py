@@ -134,7 +134,7 @@ def fileGen(i, R, cosmo):
 		kk = array([k_rz1, e1_pz*w, e2_pz*w, e1_rz1*w, e2_rz1*w, e1_rz2*w, e2_rz2*w, w])
 		print 'coords2grid'
 		Mk, Ms1_pz, Ms2_pz, Ms1_rz1, Ms2_rz1, Ms1_rz2, Ms2_rz2, Mw = WLanalysis.coords2grid(x, y, kk)[0]
-		elif createfiles == 2:
+		if createfiles == 2:
 			WLanalysis.writeFits(Mw, Mw_fn)
 		#Marr = (Mw_fn, Ms1_pz_fn, Ms2_pz_fn, Ms1_rz1_fn, Ms2_rz1_fn, Ms1_rz2_fn, Ms2_rz2_fn)
 		j = 1
