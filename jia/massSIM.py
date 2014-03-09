@@ -192,7 +192,7 @@ def iRcosmo_fcn(i_arr, R_arr, cosmo_arr):
 	return iRcosmo
 
 
-iRcosmo = iRcosmo_fcn(i)
+iRcosmo = iRcosmo_fcn(i_arr, R_arr, cosmo_arr)
 
 ## Initialize the MPI pool
 pool = MPIPool()
