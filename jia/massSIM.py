@@ -212,13 +212,14 @@ def KSmap(iiRcosmo):
 
 	
 print 'idx'
+i=1
 for cosmo in (fidu, hi_m, hi_w, hi_s):
 	print 'cosmo', cosmo
 	iRcosmo=[[1,1,''],]*128
 	j=0
 	for R in arange(1,129):
 		iRcosmo[j]=[i,R,cosmo]
-			j+=1
+		j+=1
 
 ## Initialize the MPI pool
 	pool = MPIPool()
