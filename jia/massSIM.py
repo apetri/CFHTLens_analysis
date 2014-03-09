@@ -53,25 +53,26 @@ def rndrot (e1, e2, iseed=None):
 # b=rndrot(a)
 # abs(a)==abs(b) #return True
 
-## create index file for z cut ###
-def zcut_idx (i, zmin=zmin, zmax=zmax):
-	'''return index for z cut
-	'''
-	fn = full_dir+'zcut_idx_subfield%i'%(i)
+#### begin - create index file for z cut ####
+#def zcut_idx (i, zmin=zmin, zmax=zmax):
+	#'''return index for z cut
+	#'''
+	#fn = full_dir+'zcut_idx_subfield%i'%(i)
 	
-	if WLanalysis.TestComplete((fn,),rm=False):
-		idx = genfromtxt(fn)
+	#if WLanalysis.TestComplete((fn,),rm=False):
+		#idx = genfromtxt(fn).astype(int)
 	
-	else:
-		zs = np.genfromtxt(full_dir+'full_subfield'+str(i) ,usecols=[2, 3, 4])
-		# z_peak, z_rnd1, z_rnd2
+	#else:
+		#zs = np.genfromtxt(full_dir+'full_subfield'+str(i) ,usecols=[2, 3, 4])
+		## z_peak, z_rnd1, z_rnd2
 
-		# redshift cut 0.2< z <1.3
-		print 'zs', i
-		idx = np.where((amax(zs,axis=1) <= zmax) & (amin(zs,axis=1) >= zmin))[0]
-		savetxt(fn,idx)
-	return idx
-#idx_fcn = lambda i: genfromtxt(full_dir+'zcut_idx_subfield%i'%(i))
+		## redshift cut 0.2< z <1.3
+		#print 'zs', i
+		#idx = np.where((amax(zs,axis=1) <= zmax) & (amin(zs,axis=1) >= zmin))[0]
+		#savetxt(fn,idx)
+	#return idx
+#### end - create index file for z cut ####
+zcut_idx = lambda i: genfromtxt(full_dir+'zcut_idx_subfield%i'%(i)).astype(int)
 
 def eobs_fun (g1, g2, k, e1, e2):
 	g = (g1+1j*g2)/(1-k)
@@ -82,6 +83,7 @@ def eobs_fun (g1, g2, k, e1, e2):
 ### 3/9, put field 1 config here ########
 i=1
 idx = zcut_idx (i)
+
 y, x, e1, e2, w, c2 = (np.genfromtxt(full_dir+'full_subfield'+str(i) ,usecols=[0, 1, 9, 10, 11, 17])[idx]).T
 ### end field 1 config ###
 
