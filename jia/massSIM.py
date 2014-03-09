@@ -122,7 +122,7 @@ def fileGen(i, R, cosmo):
 		#simfile = WLanalysis.readFits(SIMfn(i,cosmo,R))[idx, [0,1,2,4,5,6,8,9,10]]#simulation file at redshift cut
 		#s1_pz, s2_pz, k_pz, s1_rz1, s2_rz1, k_rz1, s1_rz2, s2_rz2, k_rz2 = simfile.T
 		
-		s1_pz, s2_pz, k_pz, s1_rz1, s2_rz1, k_rz1, s1_rz2, s2_rz2, k_rz2 = (WLanalysis.readFits(SIMfn(i,cosmo,R))[idx].T)[[0,1,2,4,5,6,8,9,10]]
+		k_pz, s1_pz, s2_pz, k_rz1, s1_rz1, s2_rz1, k_rz2, s1_rz2, s2_rz2 = (WLanalysis.readFits(SIMfn(i,cosmo,R))[idx].T)[[0,1,2,4,5,6,8,9,10]]
 		
 		eint1, eint2 = rndrot(e1, e2, iseed=R)#random rotation
 			
