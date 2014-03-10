@@ -205,4 +205,4 @@ pool = MPIPool()
 pool.map(KSmap, iRcosmo)
 	
 savetxt(KS_dir+'done.ls','done')
-sys.exit(0)
+pool.close()
