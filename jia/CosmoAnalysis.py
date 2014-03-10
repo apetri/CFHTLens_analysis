@@ -154,15 +154,16 @@ def peaksmat (iRcosmo, cosmo=fidu, zg='rz1', Rtol=Rtol, R0 = 1):
 	print 'i, bins, sigmaG', i, bins, sigmaG
 	peaksfn = peaks_fn(i, cosmo, Rtol, sigmaG, zg, bins)
 	if os.path.isfile(peaksfn):
-		continue
+		peaks_mat=WLanalysis.readFits(peaksfn)
 	else:
 		
 		map_fcn = peaks_list (i, sigmaG, zg, bins, cosmo)
 		#pool = MPIPool()
 		#pool.map(map_fcn, R_arr)
-		peaks_mat = map(map_fcn,R_arr)
+		peaks_mat = array(map(map_fcn,R_arr))
 		WLanalysis.writeFits(peaks_mat,peaksfn)
 		#pool.close()
+	return peaks_mat
 					
 #for i in i_arr:
 	#for cosmo in cosmo_arr:
