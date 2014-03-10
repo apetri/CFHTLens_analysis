@@ -9,6 +9,7 @@ from emcee.utils import MPIPool
 import os
 import numpy as np
 from scipy import *
+import sys
 #import scipy.ndimage as snd
 
 ################ steps #####################

@@ -13,6 +13,7 @@ import os
 import numpy as np
 from scipy import *
 import scipy.ndimage as snd
+import sys
 
 ########## define constants ############
 ngal_arcmin = 5.0
