@@ -45,6 +45,7 @@ hi_m='mQ3-512b240_Om0.290_Ol0.710_w-1.000_ns0.960_si0.800'
 i_arr=[1,2]
 R_arr=arange(1,129)
 cosmo_arr=(fidu,hi_m,hi_w,hi_s)
+Rtol=len(R_arr)
 ####### end: define constant ####
 
 ########## functions ###########
@@ -57,18 +58,22 @@ KSsim_fn = lambda i, cosmo, R, sigmaG, zg: KSsim_dir+'%s/SIM_KS_sigma%02d_subfie
 # this is one matrix for Rtol realizations, where Rtol is the total number of realizations
 peaks_fn = lambda i, cosmo, Rtol, sigmaG, zg, bins: KSsim_dir+'peaks/SIM_peaks_sigma%02d_subfield%i_%s_%s_%04dR_%03dbins.fit'%(cosmo, sigmaG*10, i, zg, cosmo, R, bins)
 
-powspec_fn = lambda i, cosmo, Rtol, sigmaG, zg, bins: KSsim_dir+'powspec/SIM_powspec_sigma%02d_subfield%i_%s_%s_%04dR.fit'%(cosmo, sigmaG*10, i, zg, cosmo, R, bins)
+powspec_fn = lambda i, cosmo, Rtol, sigmaG, zg: KSsim_dir+'powspec/SIM_powspec_sigma%02d_subfield%i_%s_%s_%04dR.fit'%(cosmo, sigmaG*10, i, zg, cosmo, R)
 
-def peaks_list (i, sigmaG, zg, bins, cosmo, kmin=kmin, kmax=kmax):
+def peaks_list (i, sigmaG, zg, bins, cosmo, kmin=kmin, kmax=kmax, ps=False):
 	'''need test.'''
 	def ipeaks_list (R):#, sigmaG, zg, bins):
 		kmap = WLanalysis.readFits(KSsim_fn(i, cosmo, R, sigmaG, zg))
-		mask = WLanalysis.readFits(Mask_fn(i, sigmaG))
-		peaks_hist = WLanalysis.peaks_mask_hist(kmap, mask, bins, kmin=kmin, kmax=kmax)
-		return peaks_hist
+		if ps:#powspec
+			ell_arr, powspec = WLanalysis.PowerSpectrum(kmap, sizedeg=12.0)
+			return powspec
+		else:#peaks
+			mask = WLanalysis.readFits(Mask_fn(i, sigmaG))
+			peaks_hist = WLanalysis.peaks_mask_hist(kmap, mask, bins, kmin=kmin, kmax=kmax)
+			return peaks_hist
 	return ipeaks_list
 
-def peaksmat(i, cosmo, Rtol, zg, bins = False, sigmaG = False, R0 = 1):
+def peaksmat(i, cosmo, zg, Rtol, bins = False, sigmaG = False, R0 = 1):
 	'''Return peak histogram, for bins in bins_arr.
 	Input:
 	i: subfield
@@ -85,6 +90,7 @@ def peaksmat(i, cosmo, Rtol, zg, bins = False, sigmaG = False, R0 = 1):
 		peaksfn = peaks_fn(i, cosmo, Rtol, sigmaG, zg, bins)
 		if os.path.isfile(peaksfn):
 			peaks_mat = WLanalysis.readFits(peaksfn)
+			return peaks_mat
 		else:
 			print 'Need to run peaksmat first with (bins = False, sigmaG = False).'
 	elif bins == False and sigmaG == False:
@@ -101,9 +107,32 @@ def peaksmat(i, cosmo, Rtol, zg, bins = False, sigmaG = False, R0 = 1):
 					WLanalysis.writeFits(peaks_mat,peaksfn)
 
 
-
-
-
-
+def psmat(i, cosmo, zg, Rtol, sigmaG = False, R0 = 1):#bins = False
+	'''see peaksmat?'''
+	if sigmaG:
+		# assume the mass run is already complete
+		psfn = powspec_fn(i, cosmo, Rtol, sigmaG, zg)
+		if os.path.isfile(peaksfn):
+			ps_mat = WLanalysis.readFits(psfn)
+			return ps_mat
+		else:
+			print 'Need to run psmat first with (sigmaG = False).'
+	elif sigmaG == False:
+		for sigmaG in sigmaG_arr:
+			psfn = powspec_fn(i, cosmo, Rtol, sigmaG, zg)
+			if os.path.isfile(peaksfn):
+				continue
+			else:
+				map_fcn = peaks_list (i, sigmaG, zg, 10, cosmo, ps=True)#bins=10, no real use
+				pool = MPIPool()
+				ps_mat = pool.map(map_fcn, R_arr)
+				ps_mat = array(peaks_mat)
+				WLanalysis.writeFits(ps_mat,psfn)	
+	
+for i in i_arr:
+	for cosmo in cosmo_arr:
+		for zg in zg_arr:
+			peaksmat(i, cosmo, zg, Rtol, bins = False, sigmaG = False, R0 = 1)
+			psmat(i, cosmo, zg, Rtol, sigmaG = False, R0 = 1)
 
 sys.exit(0)
