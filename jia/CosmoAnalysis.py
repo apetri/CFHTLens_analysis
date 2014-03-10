@@ -76,7 +76,7 @@ def peaks_list (i, sigmaG, zg, bins, cosmo, kmin=kmin, kmax=kmax, ps=False):
 			return peaks_hist
 	return ipeaks_list
 
-def peaksmat(i, cosmo, zg, Rtol, bins = False, sigmaG = False, R0 = 1):
+def peaksmat_junk(i, cosmo, zg, Rtol, bins = False, sigmaG = False, R0 = 1):
 	'''Return peak histogram, for bins in bins_arr.
 	Input:
 	i: subfield
@@ -105,21 +105,14 @@ def peaksmat(i, cosmo, zg, Rtol, bins = False, sigmaG = False, R0 = 1):
 				else:
 					
 					map_fcn = peaks_list (i, sigmaG, zg, bins, cosmo)
-					#print 'test simple map'
-					#map(map_fcn, (1,2,3))
-					#print 'OK!'
-					#def ipeaks_list (R):#, sigmaG, zg, bins):
-						#kmap = WLanalysis.readFits(KSsim_fn(i, cosmo, R, sigmaG, zg))
-						#mask = WLanalysis.readFits(Mask_fn(i, sigmaG))
-						#peaks_hist = WLanalysis.peaks_mask_hist(kmap, mask, bins, kmin=kmin, kmax=kmax)
-						#return peaks_hist
-					pool = MPIPool()
-					pool.map(map_fcn, R_arr)
-					#WLanalysis.writeFits(peaks_mat,peaksfn)
-					pool.close()
+					#pool = MPIPool()
+					#pool.map(map_fcn, R_arr)
+					peaks_mat = map(map_fcn,R_arr)
+					WLanalysis.writeFits(peaks_mat,peaksfn)
+					#pool.close()
 
 
-def psmat(i, cosmo, zg, Rtol, sigmaG = False, R0 = 1):#bins = False
+def psmat_junk(i, cosmo, zg, Rtol, sigmaG = False, R0 = 1):#bins = False
 	'''see peaksmat?'''
 	if sigmaG:
 		# assume the mass run is already complete
@@ -141,14 +134,50 @@ def psmat(i, cosmo, zg, Rtol, sigmaG = False, R0 = 1):#bins = False
 					ell_arr, powspec = WLanalysis.PowerSpectrum(kmap, sizedeg=12.0)
 					return powspec
 				pool = MPIPool()
-				ps_mat = pool.map(map_fcn, R_arr)
-				ps_mat = array(peaks_mat)
-				WLanalysis.writeFits(ps_mat,psfn)
+				pool.map(map_fcn, R_arr)
+				#WLanalysis.writeFits(ps_mat,psfn)
 				pool.close()
-	
-for i in i_arr:
-	for cosmo in cosmo_arr:
-		for zg in zg_arr:
-			peaksmat(i, cosmo, zg, Rtol, bins = False, sigmaG = False, R0 = 1)
-			#psmat(i, cosmo, zg, Rtol, sigmaG = False, R0 = 1)
 
+def peaksmat (iRcosmo, cosmo=fidu, zg='rz1', Rtol=Rtol, R0 = 1):
+	'''Return peak histogram, for bins in bins_arr.
+	Input:
+	i: subfield
+	cosmo: one of the 4 cosmology
+	Rtol: total number of realizations, and count peaks for realizations #(R0, R0+1, .. R0+Rtotl-1)
+	R0: the first realization, if not starting from 1
+	zg: = (pz, rz1, rz2), one of the 3 z group
+	Return:
+	If bins and sigmaG are not False, return a maxtrix of shape=(Rtol x bins)
+	otherwise, returns nothing.
+	'''
+	i, bins, sigmaG = iRcosmo
+	print 'i, bins, sigmaG', i, bins, sigmaG
+	peaksfn = peaks_fn(i, cosmo, Rtol, sigmaG, zg, bins)
+	if os.path.isfile(peaksfn):
+		continue
+	else:
+		
+		map_fcn = peaks_list (i, sigmaG, zg, bins, cosmo)
+		#pool = MPIPool()
+		#pool.map(map_fcn, R_arr)
+		peaks_mat = map(map_fcn,R_arr)
+		WLanalysis.writeFits(peaks_mat,peaksfn)
+		#pool.close()
+					
+#for i in i_arr:
+	#for cosmo in cosmo_arr:
+		#for zg in zg_arr:
+			#peaksmat(i, cosmo, zg, Rtol, bins = False, sigmaG = False, R0 = 1)
+			##psmat(i, cosmo, zg, Rtol, sigmaG = False, R0 = 1)
+
+pool = MPIPool()
+## Make sure the thread we're running on is the master
+#if not pool.is_master():
+	#pool.wait()
+	#sys.exit(0)
+## logger.debug("Running with MPI...")
+iRcosmo=WLanalysis.cartesian([i_arr, bins_arr, sigmaG_arr])
+pool.map(peaksmat, iRcosmo)
+pool.close()
+
+savetxt(KSsim_dir+'done.ls','done')
