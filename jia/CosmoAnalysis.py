@@ -61,7 +61,9 @@ peaks_fn = lambda i, cosmo, Rtol, sigmaG, zg, bins: KSsim_dir+'peaks/SIM_peaks_s
 powspec_fn = lambda i, cosmo, Rtol, sigmaG, zg: KSsim_dir+'powspec/SIM_powspec_sigma%02d_subfield%i_%s_%s_%04dR.fit'%(sigmaG*10, i, zg, cosmo, Rtol)
 
 def peaks_list (i, sigmaG, zg, bins, cosmo, kmin=kmin, kmax=kmax, ps=False):
-	'''need test.'''
+	'''return a function that:
+	takes in i, sigmaG, zg, bins, cosmo. 
+	return ipeaks_list (R)'''
 	def ipeaks_list (R):#, sigmaG, zg, bins):
 		kmap = WLanalysis.readFits(KSsim_fn(i, cosmo, R, sigmaG, zg))
 		if ps:#powspec
@@ -100,7 +102,11 @@ def peaksmat(i, cosmo, zg, Rtol, bins = False, sigmaG = False, R0 = 1):
 				if os.path.isfile(peaksfn):
 					continue
 				else:
+					
 					map_fcn = peaks_list (i, sigmaG, zg, bins, cosmo)
+					print 'test simple map'
+					map(map_fcn, (1,2,3))
+					print 'OK!'
 					pool = MPIPool()
 					peaks_mat = pool.map(map_fcn, R_arr)
 					peaks_mat = array(peaks_mat)
