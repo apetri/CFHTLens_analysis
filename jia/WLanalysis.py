@@ -437,5 +437,15 @@ def PowerSpectrum(img, sizedeg = 12.0, edges = None, logbins = True):#edges shou
 ########## begin: peak counts ############################
 peaks_mat = lambda kmap: KSI.findpeak_mat(kmap.astype(float))
 peaks_list = lambda kmap: array(KSI.findpeak_list(kmap.astype(float)))
-
+def peaks_mask_hist (kmap, mask, bins, kmin = -0.04, kmax = 0.12):
+	'''If kamp has a mask, return only peaks have no mask on them, histogramed to binedges.
+	mask = 1 for good non-mask regions, 0 for mask.
+	'''
+	kmap_masked = kmap*mask
+	kmap_masked[where(mask==0)] = kmax*10#give a high value to mask region, so even it's considered a peak, it will fall out of the histogram
+	peaks = peaks_list(kmap_masked)
+	peaks_hist = histogram(peaks,range=(kmin,kmax),bins=bins)[0]
+	return peaks_hist
+	
+	
 ########## end: peak counts ############################
