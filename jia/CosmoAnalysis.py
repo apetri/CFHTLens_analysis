@@ -103,12 +103,17 @@ def peaksmat(i, cosmo, zg, Rtol, bins = False, sigmaG = False, R0 = 1):
 					continue
 				else:
 					
-					map_fcn = peaks_list (i, sigmaG, zg, bins, cosmo)
-					print 'test simple map'
-					map(map_fcn, (1,2,3))
-					print 'OK!'
+					#map_fcn = peaks_list (i, sigmaG, zg, bins, cosmo)
+					#print 'test simple map'
+					#map(map_fcn, (1,2,3))
+					#print 'OK!'
+					def ipeaks_list (R):#, sigmaG, zg, bins):
+						kmap = WLanalysis.readFits(KSsim_fn(i, cosmo, R, sigmaG, zg))
+						mask = WLanalysis.readFits(Mask_fn(i, sigmaG))
+						peaks_hist = WLanalysis.peaks_mask_hist(kmap, mask, bins, kmin=kmin, kmax=kmax)
+						return peaks_hist
 					pool = MPIPool()
-					peaks_mat = pool.map(map_fcn, R_arr)
+					peaks_mat = pool.map(ipeaks_list, R_arr)
 					peaks_mat = array(peaks_mat)
 					WLanalysis.writeFits(peaks_mat,peaksfn)
 
@@ -129,7 +134,11 @@ def psmat(i, cosmo, zg, Rtol, sigmaG = False, R0 = 1):#bins = False
 			if os.path.isfile(peaksfn):
 				continue
 			else:
-				map_fcn = peaks_list (i, sigmaG, zg, 10, cosmo, ps=True)#bins=10, no real use
+				#map_fcn = peaks_list (i, sigmaG, zg, 10, cosmo, ps=True)#bins=10, no real use
+				def ipeaks_list (R):#, sigmaG, zg, bins):
+					kmap = WLanalysis.readFits(KSsim_fn(i, cosmo, R, sigmaG, zg))
+					ell_arr, powspec = WLanalysis.PowerSpectrum(kmap, sizedeg=12.0)
+					return powspec
 				pool = MPIPool()
 				ps_mat = pool.map(map_fcn, R_arr)
 				ps_mat = array(peaks_mat)
