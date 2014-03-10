@@ -65,6 +65,7 @@ def peaks_list (i, sigmaG, zg, bins, cosmo, kmin=kmin, kmax=kmax, ps=False):
 	takes in i, sigmaG, zg, bins, cosmo. 
 	return ipeaks_list (R)'''
 	def ipeaks_list (R):#, sigmaG, zg, bins):
+		print 'R', R
 		kmap = WLanalysis.readFits(KSsim_fn(i, cosmo, R, sigmaG, zg))
 		if ps:#powspec
 			ell_arr, powspec = WLanalysis.PowerSpectrum(kmap, sizedeg=12.0)
@@ -103,19 +104,19 @@ def peaksmat(i, cosmo, zg, Rtol, bins = False, sigmaG = False, R0 = 1):
 					continue
 				else:
 					
-					#map_fcn = peaks_list (i, sigmaG, zg, bins, cosmo)
+					map_fcn = peaks_list (i, sigmaG, zg, bins, cosmo)
 					#print 'test simple map'
 					#map(map_fcn, (1,2,3))
 					#print 'OK!'
-					def ipeaks_list (R):#, sigmaG, zg, bins):
-						kmap = WLanalysis.readFits(KSsim_fn(i, cosmo, R, sigmaG, zg))
-						mask = WLanalysis.readFits(Mask_fn(i, sigmaG))
-						peaks_hist = WLanalysis.peaks_mask_hist(kmap, mask, bins, kmin=kmin, kmax=kmax)
-						return peaks_hist
+					#def ipeaks_list (R):#, sigmaG, zg, bins):
+						#kmap = WLanalysis.readFits(KSsim_fn(i, cosmo, R, sigmaG, zg))
+						#mask = WLanalysis.readFits(Mask_fn(i, sigmaG))
+						#peaks_hist = WLanalysis.peaks_mask_hist(kmap, mask, bins, kmin=kmin, kmax=kmax)
+						#return peaks_hist
 					pool = MPIPool()
-					peaks_mat = pool.map(ipeaks_list, R_arr)
-					peaks_mat = array(peaks_mat)
-					WLanalysis.writeFits(peaks_mat,peaksfn)
+					pool.map(map_fcn, R_arr)
+					#WLanalysis.writeFits(peaks_mat,peaksfn)
+					pool.close()
 
 
 def psmat(i, cosmo, zg, Rtol, sigmaG = False, R0 = 1):#bins = False
@@ -142,12 +143,12 @@ def psmat(i, cosmo, zg, Rtol, sigmaG = False, R0 = 1):#bins = False
 				pool = MPIPool()
 				ps_mat = pool.map(map_fcn, R_arr)
 				ps_mat = array(peaks_mat)
-				WLanalysis.writeFits(ps_mat,psfn)	
+				WLanalysis.writeFits(ps_mat,psfn)
+				pool.close()
 	
 for i in i_arr:
 	for cosmo in cosmo_arr:
 		for zg in zg_arr:
 			peaksmat(i, cosmo, zg, Rtol, bins = False, sigmaG = False, R0 = 1)
-			psmat(i, cosmo, zg, Rtol, sigmaG = False, R0 = 1)
+			#psmat(i, cosmo, zg, Rtol, sigmaG = False, R0 = 1)
 
-sys.exit(0)
