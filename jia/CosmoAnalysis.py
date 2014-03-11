@@ -10,6 +10,8 @@ import os
 import numpy as np
 from scipy import *
 import sys
+from multiprocessing import Pool # has bug on my laptop, but fine with astro
+#[Errno 35] Resource temporarily unavailable
 #import scipy.ndimage as snd
 
 ################ steps #####################
@@ -60,11 +62,11 @@ peaks_fn = lambda i, cosmo, Rtol, sigmaG, zg, bins: KSsim_dir+'peaks/SIM_peaks_s
 
 powspec_fn = lambda i, cosmo, Rtol, sigmaG, zg: KSsim_dir+'powspec/SIM_powspec_sigma%02d_subfield%i_%s_%s_%04dR.fit'%(sigmaG*10, i, zg, cosmo, Rtol)
 
-def peaks_list (i, sigmaG, zg, bins, cosmo, kmin=kmin, kmax=kmax, ps=False):
+def Psingle (i, sigmaG, zg, bins, cosmo, kmin=kmin, kmax=kmax, ps=False):
 	'''return a function that:
 	takes in i, sigmaG, zg, bins, cosmo. 
 	return ipeaks_list (R)'''
-	def ipeaks_list (R):#, sigmaG, zg, bins):
+	def ips_pk_single (R):#, sigmaG, zg, bins):
 		print 'R', R
 		kmap = WLanalysis.readFits(KSsim_fn(i, cosmo, R, sigmaG, zg))
 		if ps:#powspec
@@ -74,112 +76,51 @@ def peaks_list (i, sigmaG, zg, bins, cosmo, kmin=kmin, kmax=kmax, ps=False):
 			mask = WLanalysis.readFits(Mask_fn(i, sigmaG))
 			peaks_hist = WLanalysis.peaks_mask_hist(kmap, mask, bins, kmin=kmin, kmax=kmax)
 			return peaks_hist
-	return ipeaks_list
+	return ips_pk_single
 
-def peaksmat_junk(i, cosmo, zg, Rtol, bins = False, sigmaG = False, R0 = 1):
-	'''Return peak histogram, for bins in bins_arr.
+def Pmat (iRcosmo, Rtol=Rtol, R0 = 1):
+	'''
 	Input:
-	i: subfield
-	cosmo: one of the 4 cosmology
+	iRcosmo = (i, bins, sigmaG, cosmo, zg)
 	Rtol: total number of realizations, and count peaks for realizations #(R0, R0+1, .. R0+Rtotl-1)
 	R0: the first realization, if not starting from 1
-	zg: = (pz, rz1, rz2), one of the 3 z group
+	if bins = 0 return power spectrum, else return peak counts.
 	Return:
-	If bins and sigmaG are not False, return a maxtrix of shape=(Rtol x bins)
-	otherwise, returns nothing.
+	A maxtrix of shape=(Rtol x bins)
 	'''
-	if bins and sigmaG:
-		# assume the mass run is already complete
-		peaksfn = peaks_fn(i, cosmo, Rtol, sigmaG, zg, bins)
-		if os.path.isfile(peaksfn):
-			peaks_mat = WLanalysis.readFits(peaksfn)
-			return peaks_mat
-		else:
-			print 'Need to run peaksmat first with (bins = False, sigmaG = False).'
-	elif bins == False and sigmaG == False:
-		for bins in bins_arr:
-			for sigmaG in sigmaG_arr:
-				peaksfn = peaks_fn(i, cosmo, Rtol, sigmaG, zg, bins)
-				if os.path.isfile(peaksfn):
-					continue
-				else:
-					
-					map_fcn = peaks_list (i, sigmaG, zg, bins, cosmo)
-					#pool = MPIPool()
-					#pool.map(map_fcn, R_arr)
-					peaks_mat = map(map_fcn,R_arr)
-					WLanalysis.writeFits(peaks_mat,peaksfn)
-					#pool.close()
-
-
-def psmat_junk(i, cosmo, zg, Rtol, sigmaG = False, R0 = 1):#bins = False
-	'''see peaksmat?'''
-	if sigmaG:
-		# assume the mass run is already complete
-		psfn = powspec_fn(i, cosmo, Rtol, sigmaG, zg)
-		if os.path.isfile(peaksfn):
-			ps_mat = WLanalysis.readFits(psfn)
-			return ps_mat
-		else:
-			print 'Need to run psmat first with (sigmaG = False).'
-	elif sigmaG == False:
-		for sigmaG in sigmaG_arr:
-			psfn = powspec_fn(i, cosmo, Rtol, sigmaG, zg)
-			if os.path.isfile(peaksfn):
-				continue
-			else:
-				#map_fcn = peaks_list (i, sigmaG, zg, 10, cosmo, ps=True)#bins=10, no real use
-				def ipeaks_list (R):#, sigmaG, zg, bins):
-					kmap = WLanalysis.readFits(KSsim_fn(i, cosmo, R, sigmaG, zg))
-					ell_arr, powspec = WLanalysis.PowerSpectrum(kmap, sizedeg=12.0)
-					return powspec
-				pool = MPIPool()
-				pool.map(map_fcn, R_arr)
-				#WLanalysis.writeFits(ps_mat,psfn)
-				pool.close()
-
-def peaksmat (iRcosmo, cosmo=fidu, zg='rz1', Rtol=Rtol, R0 = 1):
-	'''Return peak histogram, for bins in bins_arr.
-	Input:
-	i: subfield
-	cosmo: one of the 4 cosmology
-	Rtol: total number of realizations, and count peaks for realizations #(R0, R0+1, .. R0+Rtotl-1)
-	R0: the first realization, if not starting from 1
-	zg: = (pz, rz1, rz2), one of the 3 z group
-	Return:
-	If bins and sigmaG are not False, return a maxtrix of shape=(Rtol x bins)
-	otherwise, returns nothing.
-	'''
-	i, bins, sigmaG = iRcosmo
+	i, sigmaG, zg, bins, cosmo = iRcosmo
 	print 'i, bins, sigmaG', i, bins, sigmaG
-	peaksfn = peaks_fn(i, cosmo, Rtol, sigmaG, zg, bins)
-	if os.path.isfile(peaksfn):
-		peaks_mat=WLanalysis.readFits(peaksfn)
+	if bins == 0:#powspec
+		fn = powspec_fn(i, cosmo, Rtol, sigmaG, zg)
+	else:#peaks
+		fn = peaks_fn(i, cosmo, Rtol, sigmaG, zg, bins)
+	if os.path.isfile(fn):
+		mat = WLanalysis.readFits(fn)
 	else:
-		
-		map_fcn = peaks_list (i, sigmaG, zg, bins, cosmo)
-		#pool = MPIPool()
-		#pool.map(map_fcn, R_arr)
-		peaks_mat = array(map(map_fcn,R_arr))
-		WLanalysis.writeFits(peaks_mat,peaksfn)
-		#pool.close()
-	return peaks_mat
-					
-#for i in i_arr:
-	#for cosmo in cosmo_arr:
-		#for zg in zg_arr:
-			#peaksmat(i, cosmo, zg, Rtol, bins = False, sigmaG = False, R0 = 1)
-			##psmat(i, cosmo, zg, Rtol, sigmaG = False, R0 = 1)
+		map_fcn = Psingle (i, sigmaG, zg, bins, cosmo, ps=bins)
+		p = Pool(Rtol/4)#use multiprocessing on 1 single core
+		ipeaks_mat = array(p.map(map_fcn,R_arr))
+		WLanalysis.writeFits(ipeaks_mat, fn)
+	return mat
 
-pool = MPIPool()
+
 ## Make sure the thread we're running on is the master
 #if not pool.is_master():
 	#pool.wait()
 	#sys.exit(0)
 ## logger.debug("Running with MPI...")
-iRcosmo=[[i, bins, sigmaG] for i in i_arr for bins in bins_arr for sigmaG in sigmaG_arr]
-xx = pool.map(peaksmat, iRcosmo[:2])
-print 'xx',xx
-pool.close()
+iRcosmo_pk = [[i, sigmaG, zg, bins, cosmo] for i in i_arr for sigmaG in sigmaG_arr for zg in zg_arr for bins in bins_arr for cosmo in cosmo_arr]
 
-savetxt(KSsim_dir+'done.ls','done')
+iRcosmo_ps = [[i, 0.5, zg, 0, cosmo] for i in i_arr for zg in zg_arr for bins in bins_arr for cosmo in cosmo_arr]
+
+pool1 = MPIPool()
+pool1.map(Pmat, iRcosmo_pk)
+pool1.close()
+savetxt(KSsim_dir+'done_pk.ls','done')
+
+pool2 = MPIPool()
+pool2.map(Pmat, iRcosmo_ps)
+pool2.close()
+savetxt(KSsim_dir+'done_ps.ls','done')
+
+print 'done-done-done!'
