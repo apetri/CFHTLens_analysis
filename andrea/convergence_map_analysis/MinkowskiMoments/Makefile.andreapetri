@@ -1,0 +1,13 @@
+CC = mpicc
+PYTHON = python
+
+CFLAGS = -g -Wall $(INCLUDES)
+LDFLAGS = -g
+LDLIBS = $(LINK)
+
+INCLUDES = $(FITSINC) -I../include
+LINK = $(FITSLINK) -L../lib -lconvergence
+
+#Point to your cfitsio installation
+FITSINC = 
+FITSLINK = -lcfitsio
