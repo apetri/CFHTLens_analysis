@@ -1,6 +1,6 @@
 minkmomMeasure: minkmomMeasure.o options.o ini.o
 
-minkmomMeasure.o: minkmomMeasure.c
+minkmomMeasure.o: minkmomMeasure.c options.c
 
 options.o: options.c
 
@@ -11,4 +11,4 @@ options.c: build_options.py
 
 .PHONY: clean
 clean:
-	rm -rf *.o minkmomMeasure *.dSYM 
+	rm -rf *.o minkmomMeasure *.dSYM options.c options.h 

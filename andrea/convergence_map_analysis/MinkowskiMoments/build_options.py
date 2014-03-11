@@ -19,8 +19,16 @@ maps=[
 ("maps","num_realizations",int,3)
 ]
 
+bins=[
+("mf_bins","num_mf_bins",int,100),
+("mf_bins","lowest_threshold",float,-0.01),
+("mf_bins","highest_threshold",float,0.01),
+("mf_bins","bin_spacing",str,"lin")
+]
+
 scalar_options=[
-("Maps to analyze",maps)
+("Maps to analyze",maps),
+("Minkowski functionals binning",bins)
 ]
 
 #Vector options (num_par = Size_of_the_vector; arr_name = Name_of_the_vector)
