@@ -62,19 +62,19 @@ peaks_fn = lambda i, cosmo, Rtol, sigmaG, zg, bins: KSsim_dir+'peaks/SIM_peaks_s
 
 powspec_fn = lambda i, cosmo, Rtol, sigmaG, zg: KSsim_dir+'powspec/SIM_powspec_sigma%02d_subfield%i_%s_%s_%04dR.fit'%(sigmaG*10, i, zg, cosmo, Rtol)
 
-def Psingle (i, sigmaG, zg, bins, cosmo, kmin=kmin, kmax=kmax, ps=False):
+def Psingle (i, sigmaG, zg, bins, cosmo, kmin=kmin, kmax=kmax, pk=True):
 	'''return a function that:
 	takes in i, sigmaG, zg, bins, cosmo. 
 	return ipeaks_list (R)'''
 	def ips_pk_single (R):#, sigmaG, zg, bins):
 		kmap = WLanalysis.readFits(KSsim_fn(i, cosmo, R, sigmaG, zg))
-		if ps:#powspec
-			ell_arr, powspec = WLanalysis.PowerSpectrum(kmap, sizedeg=12.0)
-			return powspec
-		else:#peaks
+		if pk:#peaks
 			mask = WLanalysis.readFits(Mask_fn(i, sigmaG))
 			peaks_hist = WLanalysis.peaks_mask_hist(kmap, mask, bins, kmin=kmin, kmax=kmax)
 			return peaks_hist
+		else:#powspec
+			ell_arr, powspec = WLanalysis.PowerSpectrum(kmap, sizedeg=12.0)
+			return powspec
 	return ips_pk_single
 
 def Pmat (iRcosmo, Rtol=Rtol, R0 = 1):
@@ -96,7 +96,7 @@ def Pmat (iRcosmo, Rtol=Rtol, R0 = 1):
 		mat = WLanalysis.readFits(fn)
 	else:
 		print 'i, bins, sigmaG', i, bins, sigmaG
-		map_fcn = Psingle (i, sigmaG, zg, bins, cosmo, ps=bins)
+		map_fcn = Psingle (i, sigmaG, zg, bins, cosmo, pk=bins)
 		#p = Pool(Rtol/4)#use multiprocessing on 1 single core
 		mat = array(map(map_fcn,R_arr))
 		WLanalysis.writeFits(mat, fn)
@@ -111,10 +111,6 @@ def Pmat (iRcosmo, Rtol=Rtol, R0 = 1):
 iRcosmo_pk = [[i, sigmaG, zg, bins, cosmo] for i in i_arr for sigmaG in sigmaG_arr for zg in zg_arr for bins in bins_arr for cosmo in cosmo_arr]
 
 iRcosmo_ps = [[i, 0.5, zg, 0, cosmo] for i in i_arr for zg in zg_arr for bins in bins_arr for cosmo in cosmo_arr]
-
-#pool = MPIPool()
-#pool.map(Pmat, iRcosmo_pk)
-#savetxt(KSsim_dir+'done_pk.ls','done')
 
 pool = MPIPool()
 pool.map(Pmat, iRcosmo_ps+iRcosmo_pk)
