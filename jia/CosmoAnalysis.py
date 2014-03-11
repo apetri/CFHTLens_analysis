@@ -188,6 +188,6 @@ savetxt(fit_rz2_fn, fits_rz2)
 savetxt(fit_pz_fn, fits_pz)
 
 ############# end: calculate ###############
-savetxt(KSsim_dir+'done.ls','done')
+savetxt(KSsim_dir+'done.ls',zeros(5))
 print 'done-done-done!'
 sys.exit(0)
