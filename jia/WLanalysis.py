@@ -54,6 +54,26 @@ def writeFits (data, filename):
 	hdu = pyfits.PrimaryHDU(data)
 	hdu.writeto(filename)
 
+def TestComplete(file_ls,rm = False):
+	'''Test if a list of file all exist.
+	Input:
+	file_ls: a list of files
+	rm: if this list is imcomplete (some files don't exist), remove the other files if rm==True, else do nothing.
+	Output:
+	True if all files exist.
+	Flase if not all files exist.
+	'''
+	allfiles = True
+	for ifile in file_ls:
+		if not os.path.isfile(ifile):
+			allfiles = False
+			break
+	if allfiles == False and rm:
+		for ifile in file_ls:
+			if os.path.isfile(ifile):
+				os.remove(ifile)
+	return allfiles
+
 def gnom_fun(center):
 	'''Create a function that calculate the location of a sky position (ra, dec) on a grid, centered at (ra0, dec0), using Gnomonic projection (flat sky approximation). 
 	Input:
@@ -200,34 +220,31 @@ def DrawFromPDF (x, P, n):
 	rndx = lambda R: x[R]
 	return rndx(R)
 
-########## start: CFHT catalogue to smoothed shear maps #########
+########## begin: CFHT catalogue to smoothed shear maps #########
 PPR512=8468.416479647716#pixels per radians
 PPA512=2.4633625#pixels per arcmin, PPR/degrees(1)/60
 APP512=0.40594918531072871#arcmin per pix, degrees(1/PPR)*60
 
-def coords2grid(x, y, e1, e2, c2, w, m, size=512):
-	'''returns 2 smoothed shear maps, and galaxy counts. This calculation includes weights and c2 and m correction.
+def coords2grid(x, y, k, size=512):
+	'''returns a grid map, and galaxy counts.
 	
 	Input:
 	x, y: x, y in radians, (0, 0) at map center
-	e1, e2c: ellipticity (e2c = e2-c2, correted galaxy by galaxy base).
-	w: weight
-	m: multiplicity factor, shouldn't be used on galaxy by galaxy base.
-	(see Miller et al. 2013 eq 15-17 for description.
+	k: the quantity in catalogue, to be put onto a grid.
+	note: k can be 1-D arry of length N (=len(x)), but also can be multiple dimension (M, N), if so, also return a multiple dimension grid.
 	
 	Output:
-	smooth_e1, smooth_e2, galn (galaxy counts per pixel)
+	Mk, galn (galaxy counts per pixel)
 	(written 2/14/2014)
 	'''
 	rad2pix=lambda x: around(size/2.0-0.5 + x*PPR512*(size/512.0)).astype(int)
 	x = rad2pix(x)
 	y = rad2pix(y)
-	e2 = e2-c2
 	# first put galaxies to grid, note some pixels may have multiple galaxies
-	Me1 = zeros(shape=(size,size))
-	Me2 = zeros(shape=(size,size))
-	Mw  = zeros(shape=(size,size))
-	Mm  = zeros(shape=(size,size))
+	if len(k.shape)>1:
+		Mk = zeros(shape=(k.shape[0],size,size))
+	else:
+		Mk = zeros(shape=(1,size,size))
 	galn= zeros(shape=(size,size),dtype=int)
 	
 	## put e1,e2,w,galcount into grid, taken into account the 
@@ -248,37 +265,27 @@ def coords2grid(x, y, e1, e2, c2, w, m, size=512):
 		
 		#put unique values into matrix
 		ix = sorted_idx[b]
-		Me1[x[ix],y[ix]] += e1[ix]
-		Me2[x[ix],y[ix]] += e2[ix]
-		Mw[x[ix],y[ix]]  += w[ix]
-		Mm[x[ix],y[ix]]  += m[ix]+1
+		for l in range(Mk.shape[0]):
+			Mk[l][x[ix],y[ix]] += k[l][ix]
 		galn[x[ix],y[ix]]+= 1
 
 		left_idx=setdiff1d(left_idx, b)# Return the sorted, unique values in 'left_idx' that are not in 'b'.
 		ar0[b] = -1 # a number that's smaller than other indices (0..)
 		j += 1 #j is the repeating #gal count, inside one pix
-	return Me1, Me2, Mw, Mm, galn
+	return Mk.squeeze(), galn
 
-def weighted_smooth_shear_CFHT(Me1, Me2, Mw, Mm, PPA=PPA512, sigmaG=1):
+def weighted_smooth(kmap, Mw, PPA=PPA512, sigmaG=1):
 	sigma = sigmaG * PPA # argmin x pixels/arcmin
-	smooth_m = snd.filters.gaussian_filter(Mm*Mw,sigma,mode='constant')
-	smooth_e1 = snd.filters.gaussian_filter(Me1*Mw,sigma,mode='constant')
-	smooth_e2 = snd.filters.gaussian_filter(Me2*Mw,sigma,mode='constant')
-	smooth_e1 /= smooth_m
-	smooth_e2 /= smooth_m
-	smooth_e1[isnan(smooth_e1)] = 0
-	smooth_e2[isnan(smooth_e2)] = 0
-	return smooth_e1, smooth_e2
-
-def weighted_smooth_conv_CFHT(Conv, Mw, Mm, PPA=PPA512, sigmaG=1):
-	sigma = sigmaG * PPA # argmin x pixels/arcmin
-	smooth_m = snd.filters.gaussian_filter(Mm*Mw,sigma,mode='constant')
-	smooth_conv = snd.filters.gaussian_filter(Conv*Mw,sigma,mode='constant')
 	
-	smooth_conv /= smooth_m
-	smooth_conv[isnan(smooth_conv)] = 0
-	return smooth_conv
+	smooth_w = snd.filters.gaussian_filter(Mw.astype(float),sigma,mode='constant')
+	
+	smooth_kmap = snd.filters.gaussian_filter(kmap.astype(float),sigma,mode='constant')
+	
+	smooth_kmap /= smooth_w
+	smooth_kmap[isnan(smooth_kmap)] = 0
+	return smooth_kmap
 
+smooth = lambda kmap, sigma: snd.filters.gaussian_filter(kmap.astype(float),sigma,mode='constant')
 ########## end: CFHT catalogue to smoothed shear maps #########
 
 ########## begin: mass construcion (shear to convergence) #####
@@ -320,7 +327,7 @@ def KSvw(shear1, shear2):
 	freq0 = fftfreq(n0,d=1.0/n0)+0.5
 	freq1 = fftfreq(n1,d=1.0/n1)+0.5
 	k1,k2 = meshgrid(freq1,freq0)
-	kappa_fft = 0.5*(k1**2-k2**2)/(k1**2+k2**2)*shear1_fft+k1*k2/(k1**2+k2**2)*shear2_fft
+	kappa_fft = (k1**2-k2**2)/(k1**2+k2**2)*shear1_fft+2*k1*k2/(k1**2+k2**2)*shear2_fft
 	kappa = fftpack.ifft2(kappa_fft)
 	return real(kappa)
 
@@ -362,7 +369,7 @@ def apMass(shear1, shear2, Mw = None, Mm = None, size = 2*tmax+7, tmax=tmax):
 ########## end: mass construcion (shear to convergence) #####
 
 ########## begin: power spectrum ############################
-def azimuthalAverage(image, center=None, edges=None):
+def azimuthalAverage(image, center = None, edges = None, logbins = True, bins = 50):
 	"""
 	Calculate the azimuthally averaged radial profile.
 	Input:
@@ -380,39 +387,32 @@ def azimuthalAverage(image, center=None, edges=None):
 
 	# Get sorted radii
 	ind = np.argsort(r.flat)
-	r_sorted = r.flat[ind]
-	i_sorted = image.flat[ind]
+	r_sorted = r.flat[ind] # the index to sort by r
+	i_sorted = image.flat[ind] # the index of the images sorted by r
 
 	# find index that's corresponding to the lower edge of each bin
 	kmin=1.0
 	kmax=image.shape[0]/2.0
 	if edges == None:
-		edges = linspace(kmin,kmax+0.001,1001)	
-	hist_ind, ell_arr = np.histogram(r_sorted,bins=edges) # hist_ind: the number in each ell bins, sum them up is the index of lower edge of each bin
-	
-	ind2=hist_ind+4	# the first 4 is lower than kmin, so include in ell=1
-	hist_ind[0]+=4 # per last line
-	ind3=np.cumsum(hist_ind) # sum up to get index for lower edge of each bin
+		if logbins:
+			edges = logspace(log10(kmin),log10(kmax),bins+1)
+		else:
+			#edges = linspace(kmin,kmax+0.001,bins+1)	
+			edges = linspace(kmin,kmax,bins+1)
+	if edges[0] > 0:
+		edges = append([0],edges)
 		
-	# Cumulative sum to figure out sums for each radius bin
-	csim = np.cumsum(i_sorted, dtype=float)	
-	tbin=zeros(shape=len(edges)-1)
-	tbin[0]=csim[ind3[0]] # the first bin is the same as csim first bin
-	tbin[1:]=csim[ind3[1:]]-csim[ind3[:-1]] # the other bins is csim[n] - csim[n-1], because they're cumulative
-	tbin/=hist_ind # weighted by # of bins in that ell bin
+	hist_ind = np.histogram(r_sorted,bins = edges)[0] # hist_ind: the number in each ell bins, sum them up is the index of lower edge of each bin, first bin spans from 0 to left of first bin edge.	
+	hist_sum = np.cumsum(hist_ind)
+	csim = np.cumsum(i_sorted, dtype=float)
+	tbin = csim[hist_sum[1:]] - csim[hist_sum[:-1]]
+	radial_prof = tbin/hist_ind[1:]
 	
-	#### tbin2: powers normalized l(l+1) before binning, not used in the final code
-	#ii_sorted = (image*r*(r+1)).flat[ind]#weighted by ell(ell+1), for tbin2 only
-	#csim2 = np.cumsum(ii_sorted, dtype=float)	
-	#tbin2=zeros(shape=1000)
-	#tbin2[0]=csim2[ind3[0]]
-	#tbin2[1:]=csim2[ind3[1:]]-csim2[ind3[:-1]]
-	#tbin2/=hist_ind
-	#tbin2/=(ell_arr[:-1]*(ell_arr[:-1]+1))
+	return edges[1:], radial_prof
 
-	return edges[:-1], tbin#, tbin2
+edge2center = lambda x: x[:-1]+0.5*(x[1:]-x[:-1])
 
-def PowerSpectrum(img, sizedeg=12.0, edges=None):#edges should be pixels
+def PowerSpectrum(img, sizedeg = 12.0, edges = None, logbins = True):#edges should be pixels
 	'''Calculate the power spectrum for a square image, with normalization.
 	Input:
 	img = input square image in numpy array.
@@ -426,16 +426,26 @@ def PowerSpectrum(img, sizedeg=12.0, edges=None):#edges should be pixels
 	#F = fftpack.fftshift(fftpack.fft2(img))
 	F = fftshift(fftpack.fft2(img))
 	psd2D = np.abs(F)**2
-	ell_arr, psd1D = azimuthalAverage(psd2D, center=None, edges=edges)
+	ell_arr, psd1D = azimuthalAverage(psd2D, center=None, edges = edges,logbins = logbins)
+	ell_arr = edge2center(ell_arr)
 	ell_arr *= 360./sqrt(sizedeg)# normalized to our current map size
-	x = ell_arr
 	norm = ((2*pi*sqrt(sizedeg)/360.0)**2)/(size**2)**2
-	powspec = x*(x+1)/(2*pi) * norm * psd1D
+	powspec = ell_arr*(ell_arr+1)/(2*pi) * norm * psd1D
 	return ell_arr, powspec
 ########## end: power spectrum ############################
 
 ########## begin: peak counts ############################
 peaks_mat = lambda kmap: KSI.findpeak_mat(kmap.astype(float))
 peaks_list = lambda kmap: array(KSI.findpeak_list(kmap.astype(float)))
-
+def peaks_mask_hist (kmap, mask, bins, kmin = -0.04, kmax = 0.12):
+	'''If kamp has a mask, return only peaks have no mask on them, histogramed to binedges.
+	mask = 1 for good non-mask regions, 0 for mask.
+	'''
+	kmap_masked = kmap*mask
+	kmap_masked[where(mask==0)] = kmax*10#give a high value to mask region, so even it's considered a peak, it will fall out of the histogram
+	peaks = peaks_list(kmap_masked)
+	peaks_hist = histogram(peaks,range=(kmin,kmax),bins=bins)[0]
+	return peaks_hist
+	
+	
 ########## end: peak counts ############################
