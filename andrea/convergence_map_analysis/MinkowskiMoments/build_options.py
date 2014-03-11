@@ -21,7 +21,7 @@ maps=[
 ("maps","num_realizations",int,3),
 ("maps","num_pixels_size",int,2048),
 ("maps","subtract_average",int,1),
-("maps","output_path",str,"some/output/path"),
+("maps","output_path",str,"/Users/andreapetri/Documents/Columbia/CFHTLens_analysis/andrea/convergence_map_analysis/MinkowskiMoments/output"),
 ("maps","output_threshold_root",str,"thresholds"),
 ("maps","output_mf_root",str,"minkowski"),
 ("maps","output_moments_root",str,"moments")

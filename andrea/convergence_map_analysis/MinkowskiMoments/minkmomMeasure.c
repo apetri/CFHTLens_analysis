@@ -20,7 +20,7 @@ void realization_id(int num_realization,char *id);
 int main(int argc,char **argv){
 
 	//Initialize MPI environment
-	int numtasks,taskid,first_in_task,last_in_task,i,j,k;
+	int numtasks,taskid,first_in_task,last_in_task,i,j;
 	MPI_Init(&argc,&argv);
 	MPI_Comm_size(MPI_COMM_WORLD,&numtasks);
 	MPI_Comm_rank(MPI_COMM_WORLD,&taskid);
@@ -61,6 +61,19 @@ int main(int argc,char **argv){
 		exit(1);
 	}
 
+	//Save all the thresholds in a fits file (same for all realizations)
+	if(taskid==MASTER){
+		
+		char outname_thresholds[512];
+		int outdim_thresholds[1];
+		outdim_thresholds[0] = num_mf_bins+1;
+		
+		sprintf(outname_thresholds,"%s/%s.fit",options.output_path,options.output_threshold_root);
+		fprintf(stderr,"Saving MF thresholds to %s\n",outname_thresholds);
+		save_array_fits(outname_thresholds,MF_thresholds,1,outdim_thresholds);
+
+	}
+
 	//Print information about current analysis
 	if(taskid==MASTER){
 		fprintf(stderr,"\nAnalyzing %d maps, divided between %d tasks\n\n",options.num_realizations,numtasks);
@@ -79,12 +92,19 @@ int main(int argc,char **argv){
 	hyy = (float *)malloc(sizeof(float)*size*size);
 
 	//Set containers for MFs and moments
-	float MFs[3][num_mf_bins];
+	float MFs[num_mf_bins*3];
 	float mean,fifth;
 	float moments_values[9]; 
 
-	//Now decide which maps this task will take care of
+	//Output filenames and fits array dimensions
 	char map_name[512],realid[5],outname_minkowski[512],outname_moments[512];
+	int outdim_minkowski[2],outdim_moments[1];
+
+	outdim_minkowski[0] = num_mf_bins;
+	outdim_minkowski[1] = 3;
+	outdim_moments[0] = 9;
+
+	//Now decide which maps this task will take care of
 	real_in_task(options.num_realizations,numtasks,taskid,&first_in_task,&last_in_task);
 
 	//Cycle over maps in this taks
@@ -108,29 +128,30 @@ int main(int argc,char **argv){
 		hessian(map,hxx,hyy,hxy,size);
 
 		/*Zero out Minkowski functionals and moments containers before measuring*/
-		for(j=0;j<num_mf_bins;j++){
-			for(k=0;k<3;k++){
-				MFs[k][j] = 0.0;
-			}
+		for(j=0;j<num_mf_bins*3;j++){
+			MFs[j] = 0.0;
 		}
 
-		for(k=0;k<9;k++){
-			moments_values[k] = 0.0;
+		for(j=0;j<9;j++){
+			moments_values[j] = 0.0;
 		}
 
 		mean = 0.0;
 		fifth = 0.0;
 
 		/*Perform the Minkowski functionals measurements*/
-		minkovski_functionals(map,size,1.0,gx,gy,hxx,hyy,hxy,num_mf_bins+1,MF_thresholds,MFs[0],MFs[1],MFs[2]);
+		minkovski_functionals(map,size,1.0,gx,gy,hxx,hyy,hxy,num_mf_bins+1,MF_thresholds,MFs,MFs+num_mf_bins,MFs+2*num_mf_bins);
 
 		/*Perform the moments measurements*/
 		moments(map,size,gx,gy,hxx,hyy,hxy,&mean,moments_values,moments_values+2,moments_values+5,&fifth);
 
 		/*Measurements done, output results to fits file*/
+		save_array_fits(outname_minkowski,MFs,2,outdim_minkowski);
+		save_array_fits(outname_moments,moments_values,1,outdim_moments);
+
+		/*Log progress*/
 		if(taskid==MASTER){
-			printf("Saving minkowski to %s\n",outname_minkowski);
-			printf("Saving moments to %s\n",outname_moments);
+			fprintf(stderr,"Approximate progress: %d%%\n",i*100/(options.num_realizations/numtasks));
 		}
 
 	}
