@@ -14,12 +14,13 @@
 
 //Function prototypes
 void real_in_task(int N_realizations,int Num_tasks, int taskid, int *first, int *last);
+void realization_id(int num_realization,char *id);
 
 //main
 int main(int argc,char **argv){
 
 	//Initialize MPI environment
-	int numtasks,taskid,first_in_task,last_in_task,i;
+	int numtasks,taskid,first_in_task,last_in_task,i,j,k;
 	MPI_Init(&argc,&argv);
 	MPI_Comm_size(MPI_COMM_WORLD,&numtasks);
 	MPI_Comm_rank(MPI_COMM_WORLD,&taskid);
@@ -35,6 +36,11 @@ int main(int argc,char **argv){
 	if(ini_parse(argv[1],handler,&options)<0){
 		fprintf(stderr,"%s not found!\n",argv[1]);
 		exit(1);
+	}
+
+	//Throw warning about map name format
+	if(taskid==MASTER){
+		fprintf(stderr,"\nWarning: the realization label in the map name must be of type xxxxr, e.g. 0001r for realization 1!!\n\n");
 	}
 
 	//Choose thresholds for Minkowski functionals binning
@@ -55,15 +61,94 @@ int main(int argc,char **argv){
 		exit(1);
 	}
 
-	//Set support variables for gradients
-	float *gx,*gy,*hxx,*hxy,*hyy;
+	//Print information about current analysis
+	if(taskid==MASTER){
+		fprintf(stderr,"\nAnalyzing %d maps, divided between %d tasks\n\n",options.num_realizations,numtasks);
+		fprintf(stderr, "Lowest threshold=%e, Highest threshold=%e, Number of bins=%d, Bin spacing= %s\n",lowest_threshold,highest_threshold,num_mf_bins,bin_spacing);
+	}
+
+	//Set support variables for map and its gradients
+	float *map,*gx,*gy,*hxx,*hxy,*hyy;
+	int size = options.num_pixels_size;
+
+	map = (float *)malloc(sizeof(float)*size*size);
+	gx = (float *)malloc(sizeof(float)*size*size);
+	gy = (float *)malloc(sizeof(float)*size*size);
+	hxx = (float *)malloc(sizeof(float)*size*size);
+	hxy = (float *)malloc(sizeof(float)*size*size);
+	hyy = (float *)malloc(sizeof(float)*size*size);
 
 	//Set containers for MFs and moments
 	float MFs[3][num_mf_bins];
-	float moments[9]; 
+	float mean,fifth;
+	float moments_values[9]; 
 
 	//Now decide which maps this task will take care of
+	char map_name[512],realid[5],outname_minkowski[512],outname_moments[512];
 	real_in_task(options.num_realizations,numtasks,taskid,&first_in_task,&last_in_task);
+
+	//Cycle over maps in this taks
+	for(i=first_in_task;i<=last_in_task;i++){
+		
+		realization_id(i,realid);
+		sprintf(map_name,"%s/%s_%sr_%s",options.map_path,options.name_prefix,realid,options.name_suffix);
+		sprintf(outname_minkowski,"%s/%s_%sr.fit",options.output_path,options.output_mf_root,realid);
+		sprintf(outname_moments,"%s/%s_%sr.fit",options.output_path,options.output_moments_root,realid);
+
+		/*This part of the code reads in the map from the fits file*/
+		get_map(map_name,map,size);
+
+		/*Decide if subtracting the average from the maps*/
+		if(options.subtract_average){
+			average_subtract(map,size);
+		}
+		
+		/*This part of the code performs the gradient and second derivatives measurements*/
+		gradient_xy(map,gx,gy,size);
+		hessian(map,hxx,hyy,hxy,size);
+
+		/*Zero out Minkowski functionals and moments containers before measuring*/
+		for(j=0;j<num_mf_bins;j++){
+			for(k=0;k<3;k++){
+				MFs[k][j] = 0.0;
+			}
+		}
+
+		for(k=0;k<9;k++){
+			moments_values[k] = 0.0;
+		}
+
+		mean = 0.0;
+		fifth = 0.0;
+
+		/*Perform the Minkowski functionals measurements*/
+		minkovski_functionals(map,size,1.0,gx,gy,hxx,hyy,hxy,num_mf_bins+1,MF_thresholds,MFs[0],MFs[1],MFs[2]);
+
+		/*Perform the moments measurements*/
+		moments(map,size,gx,gy,hxx,hyy,hxy,&mean,moments_values,moments_values+2,moments_values+5,&fifth);
+
+		/*Measurements done, output results to fits file*/
+		if(taskid==MASTER){
+			printf("Saving minkowski to %s\n",outname_minkowski);
+			printf("Saving moments to %s\n",outname_moments);
+		}
+
+	}
+
+	//Free memory
+	free(map);
+	free(gx);
+	free(gy);
+	free(hxx);
+	free(hxy);
+	free(hyy);
+
+	//End of line
+	MPI_Barrier(MPI_COMM_WORLD);
+
+	if(taskid==MASTER){
+		fprintf(stderr,"\nDONE!!\n\n");
+	}
 
 	//Finalize MPI
 	MPI_Finalize();
@@ -93,4 +178,22 @@ void real_in_task(int N_realizations,int Num_tasks, int taskid, int *first, int 
 	}
 	
 	
+}
+
+void realization_id(int num_realization,char *id){
+
+	int idint[4];
+
+	idint[0] = num_realization/1000;
+	idint[1] = (num_realization - 1000*idint[0])/100;
+	idint[2] = (num_realization - 1000*idint[0] - 100*idint[1])/10;
+	idint[3] = (num_realization - 1000*idint[0] - 100*idint[1] - 10*idint[2]);
+
+	if(idint[3]>9){
+		fprintf(stderr,"Realization is assumed to be 4 digits!!\n");
+		exit(1);
+	}
+
+	sprintf(id,"%d%d%d%d",idint[0],idint[1],idint[2],idint[3]);
+
 }

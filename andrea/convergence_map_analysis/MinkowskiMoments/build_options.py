@@ -15,8 +15,16 @@ C_OPTIONS_HEADER = "options.h"
 #Format is: (Category,Parameter_name,Parameter_type,Default_value)
 
 maps=[
-("maps","root_name",str,"cosmo"),
-("maps","num_realizations",int,3)
+("maps","map_path",str,"/Users/andreapetri/Documents/Columbia/spurious_shear/convergence_maps/m-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.798/Maps"),
+("maps","name_prefix",str,"WL-conv_m-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.798_4096xy"),
+("maps","name_suffix",str,"0029p_0100z_og.gre.fit"),
+("maps","num_realizations",int,3),
+("maps","num_pixels_size",int,2048),
+("maps","subtract_average",int,1),
+("maps","output_path",str,"some/output/path"),
+("maps","output_threshold_root",str,"thresholds"),
+("maps","output_mf_root",str,"minkowski"),
+("maps","output_moments_root",str,"moments")
 ]
 
 bins=[
