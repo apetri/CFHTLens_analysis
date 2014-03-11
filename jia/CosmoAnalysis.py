@@ -161,11 +161,11 @@ fidu_params = array([0.26, -1.0, 0.8])
 cov_mat = cov(cosmo_mat[0], rowvar = 0)#rowvar is the row contaning observations, aka 128R
 cov_inv = np.mat(cov_mat).I
 # cosmo_arr=(fidu,hi_m,hi_w,hi_s)
-fidu_avg = mean(cosmo[0], axis = 0)
-him_avg, hiw_avg, his_avg = mean(cosmo[1:], axis = 1)
-dNdm = (him_avg-fidu_avg)/dp[0]
-dNdw =(hiw_avg-fidu_avg)/dp[1] 
-dNds = (his_avg-fidu_avg)/dp[2]
+fidu_avg = mean(cosmo_mat[0], axis = 0)
+him_avg, hiw_avg, his_avg = mean(cosmo_mat[1:], axis = 1)
+dNdm = (him_avg - fidu_avg)/dp[0]
+dNdw =(hiw_avg - fidu_avg)/dp[1] 
+dNds = (his_avg - fidu_avg)/dp[2]
 X=np.mat([dNdm, dNdw, dNds])
 
 # unbiased estimator for covariance matrix (R-N_bins-2)/(R-1)
