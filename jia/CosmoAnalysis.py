@@ -24,7 +24,7 @@ from multiprocessing import Pool # has bug on my laptop, but fine with astro
 ########## define constants ############
 kmin = -0.04 # lower bound of kappa bin = -2 SNR
 kmax = 0.12 # higher bound of kappa bin = 6 SNR
-bins_arr = arange(20, 150, 10)
+bins_arr = arange(10, 110, 15)
 ngal_arcmin = 5.0
 zmax=1.3
 zmin=0.2
@@ -110,7 +110,7 @@ def Pmat (iRcosmo, Rtol=Rtol, R0 = 1):
 ## logger.debug("Running with MPI...")
 iRcosmo_pk = [[i, sigmaG, zg, bins, cosmo] for i in i_arr for sigmaG in sigmaG_arr for zg in zg_arr for bins in bins_arr for cosmo in cosmo_arr]
 
-iRcosmo_ps = [[i, 0.5, zg, 0, cosmo] for i in i_arr for zg in zg_arr for bins in bins_arr for cosmo in cosmo_arr]
+iRcosmo_ps = [[i, 0.5, zg, 0, cosmo] for i in i_arr for zg in zg_arr for cosmo in cosmo_arr]
 
 pool = MPIPool()
 pool.map(Pmat, iRcosmo_ps+iRcosmo_pk)
