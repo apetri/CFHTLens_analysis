@@ -4,9 +4,9 @@ CXX = g++
 CFLAGS = -Wall $(INCLUDES)
 CPPFLAGS = -Wall $(INCLUDES)
 
-FFTW_INCLUDE = -I/opt/astro/SL53/include
-FITS_INCLUDE = 
+FFTW_INCLUDE = -I/opt/astro/SL64/include
+FITS_INCLUDE = -I/opt/astro/SL64/include
 GSL_INCLUDE = 
-OPENCV_INCLUDE = -I/direct/astro+u/apetri/misc
+OPENCV_INCLUDE = -I/opt/astro/SL64/anaconda/include
 
 INCLUDES = -I../include $(FFTW_INCLUDE) $(FITS_INCLUDE) $(GSL_INCLUDE) $(OPENCV_INCLUDE)
