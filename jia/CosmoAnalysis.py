@@ -98,8 +98,8 @@ def Pmat (iRcosmo, Rtol=Rtol, R0 = 1):
 		print 'i, bins, sigmaG', i, bins, sigmaG
 		map_fcn = Psingle (i, sigmaG, zg, bins, cosmo, ps=bins)
 		#p = Pool(Rtol/4)#use multiprocessing on 1 single core
-		ipeaks_mat = array(map(map_fcn,R_arr))
-		WLanalysis.writeFits(ipeaks_mat, fn)
+		mat = array(map(map_fcn,R_arr))
+		WLanalysis.writeFits(mat, fn)
 	return mat
 
 
