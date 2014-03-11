@@ -178,7 +178,8 @@ pool = MPIPool()
 	#sys.exit(0)
 ## logger.debug("Running with MPI...")
 iRcosmo=[[i, bins, sigmaG] for i in i_arr for bins in bins_arr for sigmaG in sigmaG_arr]
-pool.map(peaksmat, iRcosmo)
+xx = pool.map(peaksmat, iRcosmo[:2])
+print 'xx',xx
 pool.close()
 
 savetxt(KSsim_dir+'done.ls','done')
