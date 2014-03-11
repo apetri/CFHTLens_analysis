@@ -112,12 +112,12 @@ iRcosmo_pk = [[i, sigmaG, zg, bins, cosmo] for i in i_arr for sigmaG in sigmaG_a
 
 iRcosmo_ps = [[i, 0.5, zg, 0, cosmo] for i in i_arr for zg in zg_arr for bins in bins_arr for cosmo in cosmo_arr]
 
-pool = MPIPool()
-pool.map(Pmat, iRcosmo_pk)
-savetxt(KSsim_dir+'done_pk.ls','done')
+#pool = MPIPool()
+#pool.map(Pmat, iRcosmo_pk)
+#savetxt(KSsim_dir+'done_pk.ls','done')
 
 pool = MPIPool()
-pool.map(Pmat, iRcosmo_ps)
+pool.map(Pmat, iRcosmo_ps+iRcosmo_pk)
 savetxt(KSsim_dir+'done_ps.ls','done')
 
 print 'done-done-done!'
