@@ -67,7 +67,6 @@ def Psingle (i, sigmaG, zg, bins, cosmo, kmin=kmin, kmax=kmax, ps=False):
 	takes in i, sigmaG, zg, bins, cosmo. 
 	return ipeaks_list (R)'''
 	def ips_pk_single (R):#, sigmaG, zg, bins):
-		print 'R', R
 		kmap = WLanalysis.readFits(KSsim_fn(i, cosmo, R, sigmaG, zg))
 		if ps:#powspec
 			ell_arr, powspec = WLanalysis.PowerSpectrum(kmap, sizedeg=12.0)
@@ -89,7 +88,6 @@ def Pmat (iRcosmo, Rtol=Rtol, R0 = 1):
 	A maxtrix of shape=(Rtol x bins)
 	'''
 	i, sigmaG, zg, bins, cosmo = iRcosmo
-	print 'i, bins, sigmaG', i, bins, sigmaG
 	if bins == 0:#powspec
 		fn = powspec_fn(i, cosmo, Rtol, sigmaG, zg)
 	else:#peaks
@@ -97,6 +95,7 @@ def Pmat (iRcosmo, Rtol=Rtol, R0 = 1):
 	if os.path.isfile(fn):
 		mat = WLanalysis.readFits(fn)
 	else:
+		print 'i, bins, sigmaG', i, bins, sigmaG
 		map_fcn = Psingle (i, sigmaG, zg, bins, cosmo, ps=bins)
 		#p = Pool(Rtol/4)#use multiprocessing on 1 single core
 		ipeaks_mat = array(map(map_fcn,R_arr))
