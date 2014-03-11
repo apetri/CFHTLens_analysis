@@ -177,7 +177,7 @@ pool = MPIPool()
 	#pool.wait()
 	#sys.exit(0)
 ## logger.debug("Running with MPI...")
-iRcosmo=WLanalysis.cartesian([i_arr, bins_arr, sigmaG_arr])
+iRcosmo=[[i, bins, sigmaG] for i in i_arr for bins in bins_arr for sigmaG in sigmaG_arr]
 pool.map(peaksmat, iRcosmo)
 pool.close()
 
