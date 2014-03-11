@@ -31,11 +31,11 @@ zmin=0.2
 ngal_cut = ngal_arcmin*(60**2*12)/512**2# = 0.82, cut = 5 / arcmin^2
 PPR512=8468.416479647716#pixels per radians
 PPA512=2.4633625
-zg_arr = ('pz','rz1','rz2')
 
 full_dir = '/direct/astro+astronfs01/workarea/jia/CFHT/full_subfields/'
 KSCFHT_dir = '/direct/astro+astronfs03/workarea/jia/CFHT/KSCFHT/'
 KSsim_dir = '/direct/astro+astronfs03/workarea/jia/CFHT/KSsim/'
+fit_dir = '/direct/astro+astronfs03/workarea/jia/CFHT/KSsim/fit/'
 fidu='mQ3-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800'
 hi_w='mQ3-512b240_Om0.260_Ol0.740_w-0.800_ns0.960_si0.800'
 hi_s='mQ3-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.850'
@@ -44,13 +44,14 @@ hi_m='mQ3-512b240_Om0.290_Ol0.710_w-1.000_ns0.960_si0.800'
 ####### maps to process #########
 processmaps = 0
 
+zg_arr = ('pz','rz1','rz2')
 bins_arr = arange(10, 110, 15)
 sigmaG_arr = (0.5, 1, 1.8, 3.5, 5.3, 8.9)
 i_arr=[1,2]
 R_arr=arange(1,129)
 cosmo_arr=(fidu,hi_m,hi_w,hi_s)
 Rtol=len(R_arr)
-
+dp = array([0.03, 0.2, 0.05])
 ####### cosmology model configuration ######
 
 config_2_21 = array([[1.8, 25, 3, 17],
@@ -133,8 +134,12 @@ if processmaps:
 ## build array of sigmaG, bins, start, end, to prepare for cov, fisher mat
 #config_2_21 = array([[1.8, 25, 3, 17],
 		     #[3.5, 25, 5, 12]])
+
 bintol = int(sum(config[:,-1]-config[:,-2])) # total bins used in cosmo model
 cosmo_mat = zeros((4, Rtol, bintol))
+obs_rz2_mat = zeros((Rtol, bintol))
+obs_pz_mat = zeros((Rtol, bintol))
+
 j = 0
 for cosmo in cosmo_arr:
 	for i in i_arr:
@@ -144,13 +149,45 @@ for cosmo in cosmo_arr:
 			l = x1-x0
 			imat = Pmat((i, sigmaG, 'rz1', bins, cosmo))[:,x0:x1]
 			cosmo_mat[j, :, k:k+l] += imat
+			if j == 0: #fidu cosmo, then append to obs_mats
+				imat_pz = Pmat((i, sigmaG, 'pz', bins, cosmo))[:,x0:x1]
+				imat_rz2 = Pmat((i, sigmaG, 'rz2', bins, cosmo))[:,x0:x1]
+				obs_pz_mat[:,k:k+l] += imat_pz
+				obs_rz2_mat[:,k:k+l] += imat_rz2
 			k += x1-x0
 	j+=1
 
-cov_mat = cov(cosmo_mat[0],rowvar=0)#rowvar is the row contaning observations, aka 128R
+fidu_params = array([0.26, -1.0, 0.8])
+cov_mat = cov(cosmo_mat[0], rowvar = 0)#rowvar is the row contaning observations, aka 128R
+cov_inv = np.mat(cov_mat).I
+# cosmo_arr=(fidu,hi_m,hi_w,hi_s)
+fidu_avg = mean(cosmo[0], axis = 0)
+him_avg, hiw_avg, his_avg = mean(cosmo[1:], axis = 1)
+dNdm = (him_avg-fidu_avg)/dp[0]
+dNdw =(hiw_avg-fidu_avg)/dp[1] 
+dNds = (his_avg-fidu_avg)/dp[2]
+X=np.mat([dNdm, dNdw, dNds])
 
+# unbiased estimator for covariance matrix (R-N_bins-2)/(R-1)
+def cosmo_fit (obs):
+	Y = np.mat(obs-fidu_avg)
+	del_p = ((X*cov_inv*X.T).I)*(X*cov_inv*Y.T)
+	m, w, s = np.squeeze(np.array(del_p.T))+fidu_params
+	del_N = Y-del_p.T*X
+	chisq = (Rtol-bintol-2.0)/(Rtol-1.0)*del_N*cov_inv*del_N.T
+	return chisq, m, w, s
+
+fit_rz2_fn = fit_dir+'fit_rz2_config_%isubfields_%04dR_%03dbins'%(len(i_arr), Rtol, bintol)
+fit_pz_fn = fit_dir+'fit_pz_config_%isubfields_%04dR_%03dbins'%(len(i_arr), Rtol, bintol)
+
+p = Pool(Rtol)
+fits_rz2 = array(p.map(cosmo_fit, obs_rz2_mat))
+fits_pz = array(p.map(cosmo_fit, obs_pz_mat))
+
+savetxt(fit_rz2_fn, fits_rz2)
+savetxt(fit_pz_fn, fits_pz)
 
 ############# end: calculate ###############
-savetxt(KSsim_dir+'done_ps.ls','done')
+savetxt(KSsim_dir+'done.ls','done')
 print 'done-done-done!'
 sys.exit(0)
