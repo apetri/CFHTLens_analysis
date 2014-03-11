@@ -206,3 +206,4 @@ pool.map(KSmap, iRcosmo)
 	
 savetxt(KS_dir+'done.ls','done')
 pool.close()
+sys.exit(0)

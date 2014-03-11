@@ -24,7 +24,6 @@ from multiprocessing import Pool # has bug on my laptop, but fine with astro
 ########## define constants ############
 kmin = -0.04 # lower bound of kappa bin = -2 SNR
 kmax = 0.12 # higher bound of kappa bin = 6 SNR
-bins_arr = arange(10, 110, 15)
 ngal_arcmin = 5.0
 zmax=1.3
 zmin=0.2
@@ -32,7 +31,6 @@ zmin=0.2
 ngal_cut = ngal_arcmin*(60**2*12)/512**2# = 0.82, cut = 5 / arcmin^2
 PPR512=8468.416479647716#pixels per radians
 PPA512=2.4633625
-sigmaG_arr = (0.5, 1, 1.8, 3.5, 5.3, 8.9)
 zg_arr = ('pz','rz1','rz2')
 
 full_dir = '/direct/astro+astronfs01/workarea/jia/CFHT/full_subfields/'
@@ -44,6 +42,8 @@ hi_s='mQ3-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.850'
 hi_m='mQ3-512b240_Om0.290_Ol0.710_w-1.000_ns0.960_si0.800'
 
 ####### maps to process #########
+bins_arr = arange(10, 110, 15)
+sigmaG_arr = (0.5, 1, 1.8, 3.5, 5.3, 8.9)
 i_arr=[1,2]
 R_arr=arange(1,129)
 cosmo_arr=(fidu,hi_m,hi_w,hi_s)
@@ -115,5 +115,6 @@ iRcosmo_ps = [[i, 0.5, zg, 0, cosmo] for i in i_arr for zg in zg_arr for cosmo i
 pool = MPIPool()
 pool.map(Pmat, iRcosmo_ps+iRcosmo_pk)
 savetxt(KSsim_dir+'done_ps.ls','done')
-
 print 'done-done-done!'
+pool.close()
+sys.exit(0)
