@@ -181,7 +181,7 @@ for cosmo in cosmo_arr:
 				imat_rz2 = Pmat((i, sigmaG, 'rz2', bins, cosmo))[:,x0:x1]
 				obs_pz_mat[:,k:k+l] += imat_pz
 				obs_rz2_mat[:,k:k+l] += imat_rz2	
-				CFHTobs [k:k+l] += Psingle_CFHT (i, sigmaG, bins, ps=0)
+				CFHTobs [k:k+l] += Psingle_CFHT (i, sigmaG, bins, ps=0)[x0:x1]
 			k += x1-x0
 	j+=1
 
