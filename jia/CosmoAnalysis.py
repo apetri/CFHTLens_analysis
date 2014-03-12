@@ -62,6 +62,10 @@ config = config_2_21
 ########## beging: functions ###########
 KSCFHT_fn = lambda i, sigmaG: KSCFHT_dir+'CFHT_KS_sigma%02d_subfield%02d.fits'%(sigmaG*10, i)
 
+peaks_CFHT_fn = lambda i, sigmaG, bins: KSCFHT_dir+'CFHT_peaks_sigma%02d_subfield%02d_%03dbins.fits'%(sigmaG*10, i, bins)
+
+powspec_CFHT_fn = lambda i, sigmaG: KSCFHT_dir+'CFHT_powspec_sigma%02d_subfield%02d.fits'%(sigmaG*10, i)
+
 Mask_fn = lambda i, sigmaG: KSCFHT_dir+'CFHT_mask_ngal5_sigma%02d_subfield%02d.fits'%(sigmaG*10, i)
 
 KSsim_fn = lambda i, cosmo, R, sigmaG, zg: KSsim_dir+'%s/SIM_KS_sigma%02d_subfield%i_%s_%s_%04dr.fit'%(cosmo, sigmaG*10, i, zg, cosmo,R)#i=subfield, cosmo, R=realization, sigmaG=smoothing, zg=zgroup=(pz, rz, rz2)
@@ -110,6 +114,27 @@ def Pmat (iRcosmo, Rtol=Rtol, R0 = 1):
 		mat = array(map(map_fcn,R_arr))
 		WLanalysis.writeFits(mat, fn)
 	return mat
+
+# create CFHT peaks, and powspec
+def Psingle_CFHT (i, sigmaG, bins, ps=0):
+	if ps:
+		fn = powspec_CFHT_fn(i, sigmaG)
+	else:
+		fn = peaks_CFHT_fn(i, sigmaG, bins)
+	
+	if os.path.isfile(fn):
+		out = WLanalysis.readFits(fn)
+	elif ps:
+		kmap = WLanalysis.readFits(KSCFHT_fn(i, sigmaG))
+		out = WLanalysis.PowerSpectrum(kmap, sizedeg=12.0)
+		WLanalysis.writeFits(out,fn)
+	else:
+		kmap = WLanalysis.readFits(KSCFHT_fn(i, sigmaG))
+		mask = WLanalysis.readFits(Mask_fn(i, sigmaG))
+		out = WLanalysis.peaks_mask_hist(kmap, mask, bins, kmin=kmin, kmax=kmax)
+		WLanalysis.writeFits(out,fn)
+	return out
+
 ############ end: functions ##############
 
 ############ begein: calculate ############
@@ -155,8 +180,8 @@ for cosmo in cosmo_arr:
 				imat_pz = Pmat((i, sigmaG, 'pz', bins, cosmo))[:,x0:x1]
 				imat_rz2 = Pmat((i, sigmaG, 'rz2', bins, cosmo))[:,x0:x1]
 				obs_pz_mat[:,k:k+l] += imat_pz
-				obs_rz2_mat[:,k:k+l] += imat_rz2				
-				CFHTobs [k:k+l] += WLanalysis.readFits(KSCFHT_fn (i, sigmaG))
+				obs_rz2_mat[:,k:k+l] += imat_rz2	
+				CFHTobs [k:k+l] += Psingle_CFHT (i, sigmaG, bins, ps=0)
 			k += x1-x0
 	j+=1
 
@@ -189,6 +214,8 @@ fits_rz2 = array(p.map(cosmo_fit, obs_rz2_mat))
 fits_pz = array(p.map(cosmo_fit, obs_pz_mat))
 fit_CFHT = cosmo_fit(CFHTobs)
 
+savetxt(fit_dir+'cov_mat',cov_mat)
+savetxt(fit_dir+'cosmo_mat',cosmo_mat.flatten())
 savetxt(fit_rz2_fn, fits_rz2)
 savetxt(fit_pz_fn, fits_pz)
 
