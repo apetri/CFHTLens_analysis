@@ -140,6 +140,8 @@ cosmo_mat = zeros((4, Rtol, bintol))
 obs_rz2_mat = zeros((Rtol, bintol))
 obs_pz_mat = zeros((Rtol, bintol))
 
+CFHTobs = zeros(bintol)
+
 j = 0
 for cosmo in cosmo_arr:
 	for i in i_arr:
@@ -153,9 +155,11 @@ for cosmo in cosmo_arr:
 				imat_pz = Pmat((i, sigmaG, 'pz', bins, cosmo))[:,x0:x1]
 				imat_rz2 = Pmat((i, sigmaG, 'rz2', bins, cosmo))[:,x0:x1]
 				obs_pz_mat[:,k:k+l] += imat_pz
-				obs_rz2_mat[:,k:k+l] += imat_rz2
+				obs_rz2_mat[:,k:k+l] += imat_rz2				
+				CFHTobs [k:k+l] += WLanalysis.readFits(KSCFHT_fn (i, sigmaG))
 			k += x1-x0
 	j+=1
+
 
 fidu_params = array([0.26, -1.0, 0.8])
 cov_mat = cov(cosmo_mat[0], rowvar = 0)#rowvar is the row contaning observations, aka 128R
@@ -174,7 +178,7 @@ def cosmo_fit (obs):
 	del_p = ((X*cov_inv*X.T).I)*(X*cov_inv*Y.T)
 	m, w, s = np.squeeze(np.array(del_p.T))+fidu_params
 	del_N = Y-del_p.T*X
-	chisq = (Rtol-bintol-2.0)/(Rtol-1.0)*del_N*cov_inv*del_N.T
+	chisq = float((Rtol-bintol-2.0)/(Rtol-1.0)*del_N*cov_inv*del_N.T)
 	return chisq, m, w, s
 
 fit_rz2_fn = fit_dir+'fit_rz2_config_%isubfields_%04dR_%03dbins'%(len(i_arr), Rtol, bintol)
@@ -183,6 +187,7 @@ fit_pz_fn = fit_dir+'fit_pz_config_%isubfields_%04dR_%03dbins'%(len(i_arr), Rtol
 p = Pool(Rtol)
 fits_rz2 = array(p.map(cosmo_fit, obs_rz2_mat))
 fits_pz = array(p.map(cosmo_fit, obs_pz_mat))
+fit_CFHT = cosmo_fit(CFHTobs)
 
 savetxt(fit_rz2_fn, fits_rz2)
 savetxt(fit_pz_fn, fits_pz)
