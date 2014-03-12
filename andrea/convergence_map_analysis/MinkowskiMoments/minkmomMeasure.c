@@ -52,13 +52,19 @@ int main(int argc,char **argv){
 
 	//Decide the thresholds to use
 	if(strcmp(bin_spacing,"lin")==0){
+
 		bin_interval_linear(MF_thresholds,lowest_threshold,highest_threshold,num_mf_bins+1);
+
 	} else if(strcmp(bin_spacing,"log")==0){
+
 		bin_interval_log(MF_thresholds,lowest_threshold,highest_threshold,num_mf_bins+1);
+
 	} else{
+
 		fprintf(stderr,"Only lin or log bin spacing allowed!\n");
 		MPI_Finalize();
 		exit(1);
+
 	}
 
 	//Save all the thresholds in a fits file (same for all realizations)
@@ -70,6 +76,7 @@ int main(int argc,char **argv){
 		
 		sprintf(outname_thresholds,"%s/%s.fit",options.output_path,options.output_threshold_root);
 		fprintf(stderr,"Saving MF thresholds to %s\n",outname_thresholds);
+		fprintf(stderr,"The saved values are the bin extremes, and hence they amount to Nbins+1\n");
 		save_array_fits(outname_thresholds,MF_thresholds,1,outdim_thresholds);
 
 	}
@@ -78,6 +85,7 @@ int main(int argc,char **argv){
 	if(taskid==MASTER){
 		fprintf(stderr,"\nAnalyzing %d maps, divided between %d tasks\n\n",options.num_realizations,numtasks);
 		fprintf(stderr, "Lowest threshold=%e, Highest threshold=%e, Number of bins=%d, Bin spacing= %s\n",lowest_threshold,highest_threshold,num_mf_bins,bin_spacing);
+		fprintf(stderr, "Moments are saved in the order: sigma0^2,sigma1^2,S0,S1,S2,K0,K1,K2,K3\n\n");
 	}
 
 	//Set support variables for map and its gradients
@@ -177,7 +185,9 @@ int main(int argc,char **argv){
 	return 0;
 }
 
-//Function implementation
+//Function implementations
+
+//Split workload between processors
 void real_in_task(int N_realizations,int Num_tasks, int taskid, int *first, int *last){
 	
 	int maps_per_slot,leftover_maps,task_break;
@@ -201,6 +211,7 @@ void real_in_task(int N_realizations,int Num_tasks, int taskid, int *first, int 
 	
 }
 
+//It would be nice to have a itoa() function, but we haven't
 void realization_id(int num_realization,char *id){
 
 	int idint[4];
