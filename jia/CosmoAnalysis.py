@@ -42,12 +42,12 @@ hi_s='mQ3-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.850'
 hi_m='mQ3-512b240_Om0.290_Ol0.710_w-1.000_ns0.960_si0.800'
 
 ####### maps to process #########
-processmaps = 0
+processmaps = 1
 
 zg_arr = ('pz','rz1','rz2')
 bins_arr = arange(10, 110, 15)
 sigmaG_arr = (0.5, 1, 1.8, 3.5, 5.3, 8.9)
-i_arr=[1,2]
+i_arr=[1, 2, 3, 4, 5, 6]
 R_arr=arange(1,129)
 cosmo_arr=(fidu,hi_m,hi_w,hi_s)
 Rtol=len(R_arr)
@@ -214,8 +214,8 @@ fits_rz2 = array(p.map(cosmo_fit, obs_rz2_mat))
 fits_pz = array(p.map(cosmo_fit, obs_pz_mat))
 fit_CFHT = cosmo_fit(CFHTobs)
 
-savetxt(fit_dir+'cov_mat',cov_mat)
-savetxt(fit_dir+'cosmo_mat',cosmo_mat.flatten())
+savetxt(fit_dir+'cov_mat_%isubfields_%04dR_%03dbins'%(len(i_arr), Rtol, bintol),cov_mat)
+savetxt(fit_dir+'cosmo_mat_%isubfields_%04dR_%03dbins'%(len(i_arr), Rtol, bintol),cosmo_mat.flatten())
 savetxt(fit_rz2_fn, fits_rz2)
 savetxt(fit_pz_fn, fits_pz)
 
