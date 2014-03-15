@@ -35,7 +35,7 @@ hi_s='mQ3-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.850'
 hi_m='mQ3-512b240_Om0.290_Ol0.710_w-1.000_ns0.960_si0.800'
 
 ####### maps to process #########
-i_arr=[3, 4, 5, 6]
+i_arr=[1, 2, 3, 4, 5, 6]
 R_arr=arange(1,129)
 cosmo_arr=(fidu,hi_m,hi_w,hi_s)
 
