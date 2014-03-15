@@ -42,7 +42,7 @@ hi_s='mQ3-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.850'
 hi_m='mQ3-512b240_Om0.290_Ol0.710_w-1.000_ns0.960_si0.800'
 
 ####### maps to process #########
-processmaps = 1
+processmaps = 0
 
 zg_arr = ('pz','rz1','rz2')
 bins_arr = arange(10, 110, 15)
@@ -208,6 +208,7 @@ def cosmo_fit (obs):
 
 fit_rz2_fn = fit_dir+'fit_rz2_config_%isubfields_%04dR_%03dbins'%(len(i_arr), Rtol, bintol)
 fit_pz_fn = fit_dir+'fit_pz_config_%isubfields_%04dR_%03dbins'%(len(i_arr), Rtol, bintol)
+fit_CFHT_fn = fit_dir+'fit_CFHT_%isubfields_%04dR_%03dbins'%(len(i_arr), Rtol, bintol)
 
 p = Pool(Rtol)
 fits_rz2 = array(p.map(cosmo_fit, obs_rz2_mat))
@@ -218,6 +219,7 @@ savetxt(fit_dir+'cov_mat_%isubfields_%04dR_%03dbins'%(len(i_arr), Rtol, bintol),
 savetxt(fit_dir+'cosmo_mat_%isubfields_%04dR_%03dbins'%(len(i_arr), Rtol, bintol),cosmo_mat.flatten())
 savetxt(fit_rz2_fn, fits_rz2)
 savetxt(fit_pz_fn, fits_pz)
+savetxt(fit_CFHT_fn, fit_CFHT)
 
 ############# end: calculate ###############
 savetxt(KSsim_dir+'done.ls',zeros(5))
