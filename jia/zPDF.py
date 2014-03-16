@@ -22,13 +22,13 @@ full_dir='/direct/astro+astronfs01/workarea/jia/CFHT/full_subfields/'
 def pdfs(i):#subfield count
 	fn='/direct/astro+astronfs01/workarea/jia/CFHT/full_subfields/zcut_full_subfield%i.fit'%(i)
 	if os.path.isfile(fn):
-		m=WLanalysis.readFits(fn)
+		m=readFits(fn)
 	else:
 		print i
 		idx=readFits(full_dir+'zcut_idx_subfield%i.fit'%(i)) 
 		m=genfromtxt('/direct/astro+astronfs01/workarea/jia/CFHT/full_subfields/full_subfield%s'%(i))[idx]
 		print 'done genfromtxt', i
-		WLanalysis.writeFits(m, fn) 
+		writeFits(m, fn) 
 		print 'done writeFits', i
 	pk=m[:,2]
 	rndz=m[:,3:5].flatten()
