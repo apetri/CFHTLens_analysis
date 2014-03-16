@@ -20,7 +20,7 @@ SIMbins = edges[:-1]+binwidth/2
 w = sum(binwidth)/binwidth/70
 full_dir='/direct/astro+astronfs01/workarea/jia/CFHT/full_subfields/'
 def pdfs(i):#subfield count
-	fn='/direct/astro+astronfs01/workarea/jia/CFHT/full_subfields/zcut_full_subfield%i.fit'%(u)
+	fn='/direct/astro+astronfs01/workarea/jia/CFHT/full_subfields/zcut_full_subfield%i.fit'%(i)
 	if os.path.isfile(fn):
 		m=WLanalysis.readFits(fn)
 	else:
