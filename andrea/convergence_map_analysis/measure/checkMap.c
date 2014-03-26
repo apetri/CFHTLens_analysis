@@ -23,7 +23,7 @@ int main(int argc,char **argv){
 	long mapsize = map_size(argv[1]);
 	float *map = (float*)malloc(sizeof(float)*mapsize*mapsize);
 	get_map(argv[1],map,mapsize);
-	float map_angle = sqrt(12.0);
+	float map_angle = 3.4;
 	//get_key_float(argv[1],"ANGLE",&map_angle);
 	float sigma = sqrt(variance_map(map,mapsize));
 
