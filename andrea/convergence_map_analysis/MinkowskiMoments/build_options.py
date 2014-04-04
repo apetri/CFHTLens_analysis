@@ -22,21 +22,37 @@ maps=[
 ("maps","num_pixels_size",int,2048),
 ("maps","subtract_average",int,1),
 ("maps","output_path",str,"/Users/andreapetri/Documents/Columbia/CFHTLens_analysis/andrea/convergence_map_analysis/MinkowskiMoments/output"),
-("maps","output_threshold_root",str,"thresholds"),
+("maps","output_mf_threshold_root",str,"thresholds_mf"),
 ("maps","output_mf_root",str,"minkowski"),
 ("maps","output_moments_root",str,"moments")
 ]
 
-bins=[
+power_bins=[
+("pow_bins","num_pow_bins",int,100),
+("pow_bins","lowest_l",float,200.0),
+("pow_bins","highest_l",float,10000.0),
+("pow_bins","pow_bin_spacing",str,"lin")
+]
+
+mf_bins=[
 ("mf_bins","num_mf_bins",int,100),
-("mf_bins","lowest_threshold",float,-0.01),
-("mf_bins","highest_threshold",float,0.01),
-("mf_bins","bin_spacing",str,"lin")
+("mf_bins","mf_lowest_threshold",float,-0.01),
+("mf_bins","mf_highest_threshold",float,0.01),
+("mf_bins","mf_bin_spacing",str,"lin")
+]
+
+peak_bins=[
+("pk_bins","num_pk_bins",int,100),
+("pk_bins","pk_lowest_threshold",float,-0.01),
+("pk_bins","pk_highest_threshold",float,0.01),
+("pk_bins","pk_bin_spacing",str,"lin")
 ]
 
 scalar_options=[
 ("Maps to analyze",maps),
-("Minkowski functionals binning",bins)
+("Power spectrum binning",power_bins),
+("Minkowski functionals binning",mf_bins),
+("Peak counts binning",peak_bins)
 ]
 
 #Vector options (num_par = Size_of_the_vector; arr_name = Name_of_the_vector)

@@ -45,19 +45,19 @@ int main(int argc,char **argv){
 
 	//Choose thresholds for Minkowski functionals binning
 	int num_mf_bins = options.num_mf_bins;
-	float lowest_threshold = options.lowest_threshold;
-	float highest_threshold = options.highest_threshold;
-	char *bin_spacing = options.bin_spacing;
+	float mf_lowest_threshold = options.mf_lowest_threshold;
+	float mf_highest_threshold = options.mf_highest_threshold;
+	char *mf_bin_spacing = options.mf_bin_spacing;
 	float MF_thresholds[num_mf_bins+1];
 
 	//Decide the thresholds to use
-	if(strcmp(bin_spacing,"lin")==0){
+	if(strcmp(mf_bin_spacing,"lin")==0){
 
-		bin_interval_linear(MF_thresholds,lowest_threshold,highest_threshold,num_mf_bins+1);
+		bin_interval_linear(MF_thresholds,mf_lowest_threshold,mf_highest_threshold,num_mf_bins+1);
 
-	} else if(strcmp(bin_spacing,"log")==0){
+	} else if(strcmp(mf_bin_spacing,"log")==0){
 
-		bin_interval_log(MF_thresholds,lowest_threshold,highest_threshold,num_mf_bins+1);
+		bin_interval_log(MF_thresholds,mf_lowest_threshold,mf_highest_threshold,num_mf_bins+1);
 
 	} else{
 
@@ -70,21 +70,21 @@ int main(int argc,char **argv){
 	//Save all the thresholds in a fits file (same for all realizations)
 	if(taskid==MASTER){
 		
-		char outname_thresholds[512];
-		int outdim_thresholds[1];
-		outdim_thresholds[0] = num_mf_bins+1;
+		char outname_mf_thresholds[512];
+		int outdim_mf_thresholds[1];
+		outdim_mf_thresholds[0] = num_mf_bins+1;
 		
-		sprintf(outname_thresholds,"%s/%s.fit",options.output_path,options.output_threshold_root);
-		fprintf(stderr,"Saving MF thresholds to %s\n",outname_thresholds);
+		sprintf(outname_mf_thresholds,"%s/%s.fit",options.output_path,options.output_mf_threshold_root);
+		fprintf(stderr,"Saving MF thresholds to %s\n",outname_mf_thresholds);
 		fprintf(stderr,"The saved values are the bin extremes, and hence they amount to Nbins+1\n");
-		save_array_fits(outname_thresholds,MF_thresholds,1,outdim_thresholds);
+		save_array_fits(outname_mf_thresholds,MF_thresholds,1,outdim_mf_thresholds);
 
 	}
 
 	//Print information about current analysis
 	if(taskid==MASTER){
 		fprintf(stderr,"\nAnalyzing %d maps, divided between %d tasks\n\n",options.num_realizations,numtasks);
-		fprintf(stderr, "Lowest threshold=%e, Highest threshold=%e, Number of bins=%d, Bin spacing= %s\n",lowest_threshold,highest_threshold,num_mf_bins,bin_spacing);
+		fprintf(stderr, "Lowest MF threshold=%e, Highest MF threshold=%e, Number of MF bins=%d, MF bin spacing= %s\n",mf_lowest_threshold,mf_highest_threshold,num_mf_bins,mf_bin_spacing);
 		fprintf(stderr, "Moments are saved in the order: sigma0^2,sigma1^2,S0,S1,S2,K0,K1,K2,K3\n\n");
 	}
 

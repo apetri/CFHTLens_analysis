@@ -11,4 +11,4 @@ options.c: build_options.py
 
 .PHONY: clean
 clean:
-	rm -rf *.o minkmomMeasure *.dSYM options.c options.h 
+	rm -rf *.o minkmomMeasure *.dSYM options.c options.h default_options.ini 
