@@ -39,16 +39,28 @@ void get_map(char *map_file_name,float *map,long map_size){
 }
 
 //Get the value of a header float keyword
-void get_key_float(char *map_file_name, char *keyword, float *value){
+int get_key_float(char *map_file_name, char *keyword, float *value){
 	
 	fitsfile *map_file;
-	int status;
+	int status,keyStatus;
 	
 	status=0;
+	keyStatus=0;
 	
 	fits_open_file(&map_file,map_file_name,0,&status);
-	fits_read_key(map_file,TFLOAT,keyword,value,NULL,&status);
+	fits_read_key(map_file,TFLOAT,keyword,value,NULL,&keyStatus);
 	fits_close_file(map_file,&status);
+
+	if(status != 0){
+		
+		fprintf(stderr,"There was a problem with IO from FITS map file\n");
+		exit(1);
+
+	} else{
+		
+		return keyStatus;
+	
+	}
 	
 }
 
