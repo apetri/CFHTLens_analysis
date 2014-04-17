@@ -44,9 +44,10 @@ def organizeFit(i):
 
 	y, x, e1, e2, w, c2, m = fullfile[:, [0, 1, 9, 10, 11, 17, 16]]
 	e2 = e2-c2	
-	w* = (1+m)
+	w *= (1+m)
 	k = array([y,x,e1,e2,w]).T
 	WLanalysis.writeFits(k, fn_yxew+'.fit')
 	WLanalysis.writeFits(k[zidx], fn_yxew+'_zcut0213.fit')	
 
 pool.map(organizeFit,range(1,14))
+savetxt(full_dir+'done0417',zeros(5))
