@@ -368,6 +368,23 @@ def apMass(shear1, shear2, Mw = None, Mm = None, size = 2*tmax+7, tmax=tmax):
 
 ########## end: mass construcion (shear to convergence) #####
 
+####### begin: randon orientation ###########################
+def rndrot (e1, e2, iseed=None, deg=None):
+	'''rotate galaxy with ellipticity (e1, e2), by a random angle. 
+	generate random rotation while preserve galaxy size and shape info
+	'''
+	if iseed:
+		random.seed(iseed)
+	ells = e1+1j*e2
+	if deg:
+		if deg > pi:
+			deg = radians(deg)
+		ells_new = -ells*exp(-2j*deg)
+	else:
+		ells_new = -ells*exp(-4j*pi*rand(len(e1)))
+	return real(ells_new), imag(ells_new)
+####### end: randon orientation #############################
+
 ########## begin: power spectrum ############################
 def azimuthalAverage(image, center = None, edges = None, logbins = True, bins = 50):
 	"""
@@ -432,6 +449,7 @@ def PowerSpectrum(img, sizedeg = 12.0, edges = None, logbins = True):#edges shou
 	norm = ((2*pi*sqrt(sizedeg)/360.0)**2)/(size**2)**2
 	powspec = ell_arr*(ell_arr+1)/(2*pi) * norm * psd1D
 	return ell_arr, powspec
+
 ########## end: power spectrum ############################
 
 ########## begin: peak counts ############################
