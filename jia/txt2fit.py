@@ -25,11 +25,13 @@ def organizeFit(i):
 	fn_yxew = full_dir+'yxew_subfield%i'%(i)#w already included m correction
 	
 	fullfile=genfromtxt(fn)
+	print 'done genfromtxt',i
 	if i in (11,13):
 		if i ==11:
 			idx=where(fullfile[:,5]<300)
 		if i ==13:
 			idx=where(fullfile[:,5]>40)
+		print 'idx',i
 		x0, y0 = fullfile[:,[0,1]]
 		fullfile[idx,0]=y0
 		fullfile[idx,1]=x0
@@ -50,5 +52,5 @@ def organizeFit(i):
 	WLanalysis.writeFits(k, fn_yxew+'.fit')
 	WLanalysis.writeFits(k[zidx], fn_yxew+'_zcut0213.fit')	
 
-pool.map(organizeFit,range(1,14))
+pool.map(organizeFit,(1,2,3,4,6,7,8,9,10,11,13))
 savetxt(full_dir+'done0418',zeros(5))
