@@ -1,19 +1,20 @@
-from scipy import *
-import numpy as np
-import WLanalysis
-from emcee.utils import MPIPool
-
+#!/opt/astro/SL64/anaconda/bin/python
 # this is a file Jia wrote on 4/17/2013, with 2 purposes: 
 #1) convert txt file to fit
 #2) re-organize field 11 & 13 which had wrong coordinates for the horizontal patches
 #3) also some other admin stuff: get yxew, where w already took into consideration of m correction; raytrace files
+
+from scipy import *
+import numpy as np
+import WLanalysis
+from emcee.utils import MPIPool
 
 zmin=0.2
 zmax=1.3
 
 pool = MPIPool()
 
-full_dir = '/vega/astro/users/jl3509/CFHT_cat/full_subfields/'
+full_dir = '/direct/astro+astronfs01/workarea/jia/CFHT/CFHTdownload/full_subfields/'
 def organizeFit(i):
 	'''Organize from txt file to fits, create full_subfield, raytrace_subfield, zcut_idx,
 	'''
@@ -50,4 +51,4 @@ def organizeFit(i):
 	WLanalysis.writeFits(k[zidx], fn_yxew+'_zcut0213.fit')	
 
 pool.map(organizeFit,range(1,14))
-savetxt(full_dir+'done0417',zeros(5))
+savetxt(full_dir+'done0418',zeros(5))
