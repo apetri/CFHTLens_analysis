@@ -32,7 +32,7 @@ def organizeFit(i):
 		if i ==13:
 			idx=where(fullfile[:,5]>40)
 		print 'idx',i
-		x0, y0 = fullfile[:,[0,1]]
+		x0, y0 = fullfile[:,[0,1]].T
 		fullfile[idx,0]=y0
 		fullfile[idx,1]=x0
 	
