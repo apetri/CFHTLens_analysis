@@ -43,7 +43,7 @@ def organizeFit(i):
 	WLanalysis.writeFits(fullfile[:, :5],fn_ray+'.fit')
 	WLanalysis.writeFits(fullfile[zidx, :5],fn_ray+'_zcut0213.fit')	
 
-	y, x, e1, e2, w, c2, m = fullfile[:, [0, 1, 9, 10, 11, 17, 16]]
+	y, x, e1, e2, w, c2, m = fullfile[:, [0, 1, 9, 10, 11, 17, 16]].T
 	e2 = e2-c2	
 	w *= (1+m)
 	k = array([y,x,e1,e2,w]).T
