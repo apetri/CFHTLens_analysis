@@ -36,11 +36,11 @@ def organizeFit(i):
 		if i ==13:
 			idx=where(fullfile[:,5]>40)[0]
 		print 'idx',i
-		x0 = (fullfile[idx,0]).copy()
-		y0 = (fullfile[idx,1]).copy()
-		y0 = y0-amin(y0)-0.03
-		fullfile[idx,0]=y0
-		fullfile[idx,1]=x0
+		y0 = (fullfile[idx,0]).copy()
+		#y0 = (fullfile[idx,1]).copy()
+		#y0 = y0-amin(y0)-0.03
+		#fullfile[idx,0]=y0
+		fullfile[idx,0]=y0-amin(y0)-0.03
 	
 	zs = fullfile[:, [2, 3, 4]]
 	zidx = np.where((amax(zs,axis=1) <= zmax) & (amin(zs,axis=1) >= zmin))[0]
