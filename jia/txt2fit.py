@@ -14,6 +14,8 @@ zmax=1.3
 
 pool = MPIPool()
 
+ray_fmt=['%.8e',]*5
+
 full_dir = '/direct/astro+astronfs01/workarea/jia/CFHT/CFHTdownload/full_subfields/'
 def organizeFit(i):
 	'''Organize from txt file to fits, create full_subfield, raytrace_subfield, zcut_idx,
@@ -28,11 +30,12 @@ def organizeFit(i):
 	print 'done genfromtxt',i
 	if i in (11,13):
 		if i ==11:
-			idx=where(fullfile[:,5]<300)
+			idx=where(fullfile[:,5]<300)[0]
 		if i ==13:
-			idx=where(fullfile[:,5]>40)
+			idx=where(fullfile[:,5]>40)[0]
 		print 'idx',i
-		x0, y0 = fullfile[:,[0,1]].T
+		x0 = (fullfile[idx,0]).copy()
+		y0 = (fullfile[idx,1]).copy()
 		fullfile[idx,0]=y0
 		fullfile[idx,1]=x0
 	
@@ -44,8 +47,6 @@ def organizeFit(i):
 	
 	WLanalysis.writeFits(fullfile[:, :5],fn_ray+'.fit')
 	WLanalysis.writeFits(fullfile[zidx, :5],fn_ray+'_zcut0213.fit')	
-	savetxt(fullfile[:, :5],fn_ray)
-	savetxt(fullfile[zidx, :5],fn_ray+'_zcut0213')
 
 	y, x, e1, e2, w, c2, m = fullfile[:, [0, 1, 9, 10, 11, 17, 16]].T
 	e2 = e2-c2	
@@ -53,8 +54,12 @@ def organizeFit(i):
 	k = array([y,x,e1,e2,w]).T
 	WLanalysis.writeFits(k, fn_yxew+'.fit')
 	WLanalysis.writeFits(k[zidx], fn_yxew+'_zcut0213.fit')
+	
+	savetxt(fn_ray,fullfile[:, :5],fmt=ray_fmt)
+	savetxt(fn_ray+'_zcut0213',fullfile[zidx, :5],fmt=ray_fmt)
 	print 'done writefits',i
 	
 
-pool.map(organizeFit,(1,2,3,4,6,7,8,9,10,11,13))
+
+pool.map(organizeFit,range(1,14))
 savetxt(full_dir+'done0418',zeros(5))
