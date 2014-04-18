@@ -21,12 +21,14 @@ def organizeFit(i):
 	'''Organize from txt file to fits, create full_subfield, raytrace_subfield, zcut_idx,
 	'''
 	print i
+	fn_backup=full_dir+'backup/full_subfield%i'%(i)
 	fn = full_dir+'full_subfield%i'%(i)
 	fn_ray = full_dir+'raytrace_subfield%i'%(i)
 	zcutfn = full_dir+'zcut_idx_subfield%i'%(i)
 	fn_yxew = full_dir+'yxew_subfield%i'%(i)#w already included m correction
 	
-	fullfile=genfromtxt(fn)
+	#fullfile=genfromtxt(fn)
+	fullfile=WLanalysis.readFit(fn_backup+'.fit')
 	print 'done genfromtxt',i
 	if i in (11,13):
 		if i ==11:
@@ -35,7 +37,7 @@ def organizeFit(i):
 			idx=where(fullfile[:,5]>40)[0]
 		print 'idx',i
 		x0 = (fullfile[idx,0]).copy()
-		y0 = (fullfile[idx,1]).copy()
+		y0 = (fullfile[idx,1]).copy()-amin(y0)
 		fullfile[idx,0]=y0
 		fullfile[idx,1]=x0
 	
@@ -59,7 +61,5 @@ def organizeFit(i):
 	savetxt(fn_ray+'_zcut0213',fullfile[zidx, :5],fmt=ray_fmt)
 	print 'done writefits',i
 	
-
-
-pool.map(organizeFit,range(1,14))
+pool.map(organizeFit,(11,13))
 savetxt(full_dir+'done0418',zeros(5))
