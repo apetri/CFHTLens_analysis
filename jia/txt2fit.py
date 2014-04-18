@@ -28,7 +28,7 @@ def organizeFit(i):
 	fn_yxew = full_dir+'yxew_subfield%i'%(i)#w already included m correction
 	
 	#fullfile=genfromtxt(fn)
-	fullfile=WLanalysis.readFit(fn_backup+'.fit')
+	fullfile=WLanalysis.readFits(fn_backup+'.fit')
 	print 'done genfromtxt',i
 	if i in (11,13):
 		if i ==11:
