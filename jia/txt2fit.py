@@ -37,7 +37,8 @@ def organizeFit(i):
 			idx=where(fullfile[:,5]>40)[0]
 		print 'idx',i
 		x0 = (fullfile[idx,0]).copy()
-		y0 = (fullfile[idx,1]).copy()-amin(y0)
+		y0 = (fullfile[idx,1]).copy()
+		y0 -= amin(y0)
 		fullfile[idx,0]=y0
 		fullfile[idx,1]=x0
 	
