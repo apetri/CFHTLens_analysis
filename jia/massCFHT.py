@@ -1,6 +1,6 @@
 #!/afs/rhic.bnl.gov/@sys/opt/astro/SL64/anaconda/bin
 # yeti: /vega/astro/users/jl3509/tarball/anacondaa/bin/python
-# Jia Liu 2014/2/18, revision 2014/4/21
+# Jia Liu 2014/2/18, revision 2014/4/21 to delete junk lines
 # Overview: this code creates mass maps from CFHT catalogues
 ################ steps #####################
 #1) smoothing (on the fly?), take into account c2, m, w correction
