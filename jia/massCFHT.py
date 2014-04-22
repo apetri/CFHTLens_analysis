@@ -1,6 +1,6 @@
 #!/afs/rhic.bnl.gov/@sys/opt/astro/SL64/anaconda/bin
 # yeti: /vega/astro/users/jl3509/tarball/anacondaa/bin/python
-# Jia Liu 2014/2/18
+# Jia Liu 2014/2/18, revision 2014/4/21
 # Overview: this code creates mass maps from CFHT catalogues
 ################ steps #####################
 #1) smoothing (on the fly?), take into account c2, m, w correction
@@ -37,25 +37,7 @@ plot_dir = '/direct/astro+astronfs01/workarea/jia/CFHT/plot/'
 #full_dir = '/Users/jia/Documents/weaklensing/CFHTLenS/mass/'
 #KS_dir = '/Users/jia/Documents/weaklensing/CFHTLenS/mass/'
 sigmaG_arr = (0.5, 1, 1.8, 3.5, 5.3, 8.9)
-
-
-############# junk, plotting #############
-
-#from pylab import *
-#def plotimshow(img,ititle,vmin=None,vmax=None):		
-	##if vmin == None and vmax == None:
-	#imgnonzero=img[nonzero(img)]
-	#if vmin == None:
-		#std0 = std(imgnonzero)
-		#x0 = median(imgnonzero)
-		#vmin = x0-3*std0
-		#vmax = x0+3*std0
-	#im=imshow(img,interpolation='nearest',origin='lower',aspect='auto',vmin=vmin,vmax=vmax)
-	#im.set_extent([37.1410+sqrt(12)/2,37.1410-sqrt(12)/2,-9.5622-sqrt(12)/2,-9.5622+sqrt(12)/2])
-	#colorbar()
-	#title(ititle)
-	#savefig(plot_dir+'CFHT_'+ititle+'.jpg')
-	#close()	
+	
 ########### functions #########
 def fileGen(i):
 	'''
@@ -102,6 +84,11 @@ def fileGen(i):
 ####### smooth and KS inversion #########
 	
 def KSmap (i):
+	'''
+	Smooth and KS inversion
+	input: i = 1, 2, 3 ... 13
+	output: nothing, write kmap, Mmask if haven't done so
+	'''
 	Me1, Me2, Mw, galn = fileGen(i)
 	for sigmaG in sigmaG_arr:	
 		print 'KSmap i, sigmaG', i, sigmaG
@@ -124,9 +111,6 @@ def KSmap (i):
 			
 			WLanalysis.writeFits(kmap, KS_fn)
 			WLanalysis.writeFits(Mmask, mask_fn)
-			
-		#plotimshow(kmap, 'sigma%02d_subfield%02d_KS'%(sigmaG*10,i))
-		#plotimshow(Mmask, 'sigma%02d_subfield%02d_mask'%(sigmaG*10,i),vmin=0,vmax=1)
 
 # Initialize the MPI pool
 pool = MPIPool()
