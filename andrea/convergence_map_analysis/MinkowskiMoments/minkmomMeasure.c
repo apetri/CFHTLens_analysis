@@ -43,6 +43,8 @@ int main(int argc,char **argv){
 		fprintf(stderr,"\nWarning: the realization label in the map name must be of type xxxxr, e.g. 0001r for realization 1!!\n\n");
 	}
 
+	//Choose bins for power spectrum
+
 	//Choose thresholds for Minkowski functionals binning
 	int num_mf_bins = options.num_mf_bins;
 	float mf_lowest_threshold = options.mf_lowest_threshold;
@@ -67,6 +69,8 @@ int main(int argc,char **argv){
 
 	}
 
+	//Choose thresholds for peak counts
+
 	//Save all the thresholds in a fits file (same for all realizations)
 	if(taskid==MASTER){
 		
@@ -78,6 +82,8 @@ int main(int argc,char **argv){
 		fprintf(stderr,"Saving MF thresholds to %s\n",outname_mf_thresholds);
 		fprintf(stderr,"The saved values are the bin extremes, and hence they amount to Nbins+1\n");
 		save_array_fits(outname_mf_thresholds,MF_thresholds,1,outdim_mf_thresholds);
+
+		//Insert code for saving thresholds for peak counts
 
 	}
 
@@ -104,6 +110,8 @@ int main(int argc,char **argv){
 	float mean,fifth;
 	float moments_values[9]; 
 
+	//Add the ones for power spectrum and peaks
+
 	//Output filenames and fits array dimensions
 	char map_name[512],realid[5],outname_minkowski[512],outname_moments[512];
 	int outdim_minkowski[2],outdim_moments[1];
@@ -111,6 +119,8 @@ int main(int argc,char **argv){
 	outdim_minkowski[0] = num_mf_bins;
 	outdim_minkowski[1] = 3;
 	outdim_moments[0] = 9;
+
+	//insert names for peaks and power spectrum
 
 	//Now decide which maps this task will take care of
 	real_in_task(options.num_realizations,numtasks,taskid,&first_in_task,&last_in_task);
