@@ -1,11 +1,13 @@
 #!/afs/rhic.bnl.gov/@sys/opt/astro/SL64/anaconda/bin
 # yeti: /vega/astro/users/jl3509/tarball/anacondaa/bin/python
 # Jia Liu 2014/3/7
+# update 2014/4/21, changed folder, and corrected for (1+m), which was missing before
 # Overview: this code creates mass maps from simulation
 ################ steps #####################
 #1) smoothing, use random galaxy direction, and w as wegith
 #2) KSvw
 #3) count peaks, MF, powerspectrum (this will be in a separate code)
+#4) to run this code, need #i x #r x #cosmo = 13 x 1000 x 4 = 52000 processes, if grab 1000 cores, astro only has 272 cores
 
 import WLanalysis
 from emcee.utils import MPIPool
@@ -26,24 +28,29 @@ PPA512=2.4633625
 rad2pix=lambda x: around(512/2.0-0.5 + x*PPR512).astype(int) #from radians to pixel location
 sigmaG_arr = (0.5, 1, 1.8, 3.5, 5.3, 8.9)
 
-full_dir = '/direct/astro+astronfs01/workarea/jia/CFHT/full_subfields/'
+full_dir = '/direct/astro+astronfs03/workarea/jia/CFHT/CFHT/full_subfields/'
+#full_dir = '/direct/astro+astronfs01/workarea/jia/CFHT/full_subfields/'
 KS_dir = '/direct/astro+astronfs03/workarea/jia/CFHT/KSsim/'
-sim_dir = '/direct/astro+astronfs01/workarea/jia/CFHT/galaxy_catalogue_128R/'
+#sim_dir = '/direct/astro+astronfs01/workarea/jia/CFHT/galaxy_catalogue_128R/'
+sim_dir = '/direct/astro+astronfs03/workarea/jia/CFHT/maps/'
 fidu='mQ3-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800'
 hi_w='mQ3-512b240_Om0.260_Ol0.740_w-0.800_ns0.960_si0.800'
 hi_s='mQ3-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.850'
 hi_m='mQ3-512b240_Om0.290_Ol0.710_w-1.000_ns0.960_si0.800'
 
 ####### maps to process #########
-i_arr=[1, 2, 3, 4, 5, 6]
-R_arr=arange(1,129)
+i_arr=arange(1,14)
+R_arr=arange(1,1001)
 cosmo_arr=(fidu,hi_m,hi_w,hi_s)
 
 ####### end: define constant ####
 
 ####### functions ###############
-SIMfn= lambda i, cosmo, R: sim_dir+'%s/raytrace_subfield%i_WL-only_%s_4096xy_%04dr.fit'%(cosmo, i, cosmo, R)
-KSfn = lambda i, cosmo, R, sigmaG, zg: KS_dir+'%s/SIM_KS_sigma%02d_subfield%i_%s_%s_%04dr.fit'%(cosmo, sigmaG*10, i, zg, cosmo,R)#i=subfield, cosmo, R=realization, sigmaG=smoothing, zg=zgroup=(pz, rz, rz2)
+SIMfn= lambda i, cosmo, R: sim_dir+'%s/raytrace_subfield%i_WL-only_%s_4096xy_%04dr.fit'%(cosmo, i, cosmo, R) # simulation file name, read in Jan's catalogues
+
+KSfn = lambda i, cosmo, R, sigmaG, zg: KS_dir+'%s/SIM_KS_sigma%02d_subfield%i_%s_%s_%04dr.fit'%(cosmo, sigmaG*10, i, zg, cosmo,R) 
+# KS file name, the product from this code
+# i=subfield, cosmo, R=realization, sigmaG=smoothing, zg=zgroup=(pz, rz, rz2)
 
 def rndrot (e1, e2, iseed=None):
 	'''rotate galaxy with ellipticity (e1, e2), by a random angle. 
@@ -60,7 +67,7 @@ def rndrot (e1, e2, iseed=None):
 # b=rndrot(a)
 # abs(a)==abs(b) #return True
 
-zcut_idx = lambda i: WLanalysis.readFits(full_dir+'zcut_idx_subfield%i.fit'%(i))
+zcut_idx = lambda i: WLanalysis.readFits(full_dir+'zcut0213_idx_subfield%i.fit'%(i))
 
 def eobs_fun (g1, g2, k, e1, e2):
 	'''van wearbeke 2013 eq 5-6, get unbiased estimator for shear.
@@ -116,10 +123,9 @@ def fileGen(i, R, cosmo):
 		createfiles = 2 #flag to create everything
 
 	if createfiles:
-		idx = zcut_idx (i)
-		y, x, e1, e2, w = (WLanalysis.readFits(full_dir+'yxew_zcut0213_subfield%i.fit'%(i))).T
+		y, x, e1, e2, w = (WLanalysis.readFits(full_dir+'yxew_subfield%i_zcut0213.fit'%(i))).T
 	
-		#idx = zcut_idx (i)#redshift cut
+		idx = zcut_idx (i)#redshift cut
 		#simfile = WLanalysis.readFits(SIMfn(i,cosmo,R))[idx, [0,1,2,4,5,6,8,9,10]]#simulation file at redshift cut
 		#s1_pz, s2_pz, k_pz, s1_rz1, s2_rz1, k_rz1, s1_rz2, s2_rz2, k_rz2 = simfile.T
 		
@@ -136,15 +142,27 @@ def fileGen(i, R, cosmo):
 		print 'coords2grid'
 		Mk, Ms1_pz, Ms2_pz, Ms1_rz1, Ms2_rz1, Ms1_rz2, Ms2_rz2, Mw = WLanalysis.coords2grid(x, y, kk)[0]
 		if createfiles == 2:
-			WLanalysis.writeFits(Mw, Mw_fn)
+			try:
+				WLanalysis.writeFits(Mw, Mw_fn)
+			except Exception:
+				print 'file already exist, but no worries'
+				pass
 		#Marr = (Mw_fn, Ms1_pz_fn, Ms2_pz_fn, Ms1_rz1_fn, Ms2_rz1_fn, Ms1_rz2_fn, Ms2_rz2_fn)
 		j = 1
 		for iM in (Ms1_pz, Ms2_pz, Ms1_rz1, Ms2_rz1, Ms1_rz2, Ms2_rz2):
-			WLanalysis.writeFits(iM, Marr[j])
+			try:
+				WLanalysis.writeFits(iM, Marr[j])
+			except Exception:
+				print 'file already exist, but no worries'
+				pass
 			j+=1
 		### add Mk just for comparison ###
 		Mk_fn = KS_dir+'SIM_Mk/SIM_Mk_rz1_subfield%i_%s_%04dr.fit'%(i, cosmo, R)
-		WLanalysis.writeFits(Mk, Mk_fn)
+		try:
+			WLanalysis.writeFits(Mk, Mk_fn)
+		except Exception:
+			print 'file already exist, but no worries'
+			pass
 		
 	return Ms1_pz, Ms2_pz, Ms1_rz1, Ms2_rz1, Ms1_rz2, Ms2_rz2, Mw
 
@@ -177,7 +195,11 @@ def KSmap(iiRcosmo):
 				Me1_smooth = WLanalysis.weighted_smooth(Me1, Mw, PPA=PPA512, sigmaG=sigmaG)
 				Me2_smooth = WLanalysis.weighted_smooth(Me2, Mw, PPA=PPA512, sigmaG=sigmaG)
 				kmap = WLanalysis.KSvw(Me1_smooth, Me2_smooth)
-				WLanalysis.writeFits(kmap, KS_fn)
+				try:
+					WLanalysis.writeFits(kmap, KS_fn)
+				except Exception:
+					print 'file already exist, but no worries'
+					pass
 
 # test KSmap(1, 1, fidu), pass
 def iRcosmo_fcn(i_arr, R_arr, cosmo_arr):
