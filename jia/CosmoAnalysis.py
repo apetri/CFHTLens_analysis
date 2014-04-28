@@ -47,15 +47,20 @@ processmaps = 0
 zg_arr = ('pz','rz1','rz2')
 bins_arr = arange(10, 110, 15)
 sigmaG_arr = (0.5, 1, 1.8, 3.5, 5.3, 8.9)
-i_arr=[1, 2, 3, 4, 5, 6]
-R_arr=arange(1,129)
+i_arr=arange(1,14)
+R_arr=arange(1,1001)
+#i_arr=[1, 2, 3, 4, 5, 6]
+#R_arr=arange(1,129)
 cosmo_arr=(fidu,hi_m,hi_w,hi_s)
 Rtol=len(R_arr)
 dp = array([0.03, 0.2, 0.05])
 ####### cosmology model configuration ######
 
 config_2_21 = array([[1.8, 25, 3, 17],
-		     [3.5, 25, 5, 12]])#2 smoothing scale, tot 24 bins
+		     [3.5, 25, 5, 12]])
+# 2 smoothing scale, tot 24 bins
+# colums: smoothing scale, #bins, left bin edge, right bin edge
+
 config = config_2_21
 ####### end: define constant ####
 
