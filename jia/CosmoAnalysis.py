@@ -42,7 +42,7 @@ hi_s='mQ3-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.850'
 hi_m='mQ3-512b240_Om0.290_Ol0.710_w-1.000_ns0.960_si0.800'
 
 ####### maps to process #########
-processmaps = 0
+processmaps = 1
 
 zg_arr = ('pz','rz1','rz2')
 bins_arr = arange(10, 110, 15)
@@ -113,7 +113,7 @@ def Pmat (iRcosmo, Rtol=Rtol, R0 = 1):
 	if os.path.isfile(fn):
 		mat = WLanalysis.readFits(fn)
 	else:
-		print 'i, bins, sigmaG', i, bins, sigmaG
+		print 'Pmat - i, bins, sigmaG', i, bins, sigmaG
 		map_fcn = Psingle (i, sigmaG, zg, bins, cosmo, pk=bins)
 		#p = Pool(Rtol/4)#use multiprocessing on 1 single core
 		mat = array(map(map_fcn,R_arr))
@@ -162,7 +162,7 @@ if processmaps:
 # (1.8 arcmin, 25bins)[3:17] # 14 bins
 # (3.5 arcmin, 25bins)[5:12] # 7 bins
 ## build array of sigmaG, bins, start, end, to prepare for cov, fisher mat
-#config_2_21 = array([[1.8, 25, 3, 17],
+# config_2_21 = array([[1.8, 25, 3, 17],
 		     #[3.5, 25, 5, 12]])
 
 bintol = int(sum(config[:,-1]-config[:,-2])) # total bins used in cosmo model
@@ -227,6 +227,6 @@ savetxt(fit_pz_fn, fits_pz)
 savetxt(fit_CFHT_fn, fit_CFHT)
 
 ############# end: calculate ###############
-savetxt(KSsim_dir+'done.ls',zeros(5))
+savetxt(KSsim_dir+'done_cosmoanalysis.ls',zeros(5))
 print 'done-done-done!'
 sys.exit(0)
