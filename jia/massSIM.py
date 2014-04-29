@@ -225,7 +225,8 @@ pool = MPIPool()
 	#sys.exit(0)
 ## logger.debug("Running with MPI...")
 pool.map(KSmap, iRcosmo)
-	
+
+print 'DONE-DONE-DONE-DONE-DONE-DONE'
 savetxt(KS_dir+'done.ls',zeros(5))
 pool.close()
 sys.exit(0)
