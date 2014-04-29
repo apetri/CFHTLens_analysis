@@ -170,7 +170,7 @@ def fileGen(i, R, cosmo):
 # Ms1_pz, Ms2_pz, Ms1_rz1, Ms2_rz1, Ms1_rz2, Ms2_rz2, Mw = fileGen(1, 1, fidu)
 
 ####### smooth and KS inversion #########
-	
+zgs=('pz', 'rz1', 'rz2')	
 def KSmap(iiRcosmo):
 	'''Input:
 	i: subfield range from (1, 2..13)
@@ -179,19 +179,21 @@ def KSmap(iiRcosmo):
 	Return:
 	KS inverted map
 	'''
-	i, R, cosmo = iiRcosmo
-	Ms1_pz, Ms2_pz, Ms1_rz1, Ms2_rz1, Ms1_rz2, Ms2_rz2, Mw = fileGen(i, R, cosmo)
-	Ms_arr = ((Ms1_pz, Ms2_pz), (Ms1_rz1, Ms2_rz1), (Ms1_rz2, Ms2_rz2))
-	zgs=('pz', 'rz1', 'rz2')
+	i, R, cosmo = iiRcosmo	
 	for sigmaG in sigmaG_arr:
 		for j in range(3):
-			print 'KSmap i, R, sigmaG, cosmo', i, R, sigmaG, cosmo
+			
 			KS_fn = KSfn(i, cosmo, R, sigmaG, zgs[j])
 			Me1, Me2 = Ms_arr[j]
 			
 			if os.path.isfile(KS_fn):
-				kmap = WLanalysis.readFits(KS_fn)
-			else:
+				continue
+				#kmap = WLanalysis.readFits(KS_fn)
+			else:	
+				print 'KSmap i, R, sigmaG, cosmo', i, R, sigmaG, cosmo
+				Ms1_pz, Ms2_pz, Ms1_rz1, Ms2_rz1, Ms1_rz2, Ms2_rz2, Mw = fileGen(i, R, cosmo)
+				Ms_arr = ((Ms1_pz, Ms2_pz), (Ms1_rz1, Ms2_rz1), (Ms1_rz2, Ms2_rz2))
+				
 				Me1_smooth = WLanalysis.weighted_smooth(Me1, Mw, PPA=PPA512, sigmaG=sigmaG)
 				Me2_smooth = WLanalysis.weighted_smooth(Me2, Mw, PPA=PPA512, sigmaG=sigmaG)
 				kmap = WLanalysis.KSvw(Me1_smooth, Me2_smooth)
