@@ -8,6 +8,7 @@ from scipy import *
 import numpy as np
 import WLanalysis
 from emcee.utils import MPIPool
+import sys
 
 zmin=0.2
 zmax=1.3
@@ -16,9 +17,11 @@ pool = MPIPool()
 
 ray_fmt=['%.8e',]*5
 
-full_dir = '/direct/astro+astronfs01/workarea/jia/CFHT/CFHTdownload/full_subfields/'
+full_dir = '/direct/astro+astronfs03/workarea/jia/CFHT/CFHT/full_subfields/'
+
 def organizeFit(i):
 	'''Organize from txt file to fits, create full_subfield, raytrace_subfield, zcut_idx,
+	for 04/18/2014
 	'''
 	print i
 	fn_backup=full_dir+'backup/full_subfield%i'%(i)
@@ -62,5 +65,21 @@ def organizeFit(i):
 	savetxt(fn_ray+'_zcut0213',fullfile[zidx, :5],fmt=ray_fmt)
 	print 'done writefits',i
 	
-pool.map(organizeFit,(11,13))
-savetxt(full_dir+'done0418',zeros(5))
+#pool.map(organizeFit,(11,13))
+#savetxt(full_dir+'done0418',zeros(5))
+
+def create_yxewm (i):
+	fn = full_dir+'full_subfield%i.fit'%(i)
+	fn_yxewm = full_dir+'yxewm_subfield%i'%(i)
+	print i
+	zidx = WLanalysis.readFits(full_dir+'zcut0213_idx_subfield%i.fit'%(i))
+	y, x, e1, e2, w, c2, m = fullfile[:, [0, 1, 9, 10, 11, 17, 16]].T
+	e2 = e2-c2
+	k = array([y,x,e1,e2,w,m]).T
+	WLanalysis.writeFits(k, fn_yxewm+'.fit')
+	WLanalysis.writeFits(k[zidx], fn_yxewm+'_zcut0213.fit')
+	
+pool.map(create_yxewm,range(1,14))
+print 'Done-Done-Done-Done'
+savetxt(full_dir+'done0501',zeros(5))
+sys.exit(0)
