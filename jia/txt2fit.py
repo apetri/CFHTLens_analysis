@@ -70,6 +70,7 @@ def organizeFit(i):
 
 def create_yxewm (i):
 	fn = full_dir+'full_subfield%i.fit'%(i)
+	fullfile = WLanalysis.readFits(fn)
 	fn_yxewm = full_dir+'yxewm_subfield%i'%(i)
 	print i
 	zidx = WLanalysis.readFits(full_dir+'zcut0213_idx_subfield%i.fit'%(i))
