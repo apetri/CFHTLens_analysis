@@ -123,7 +123,7 @@ def fileGen(i, R, cosmo):
 		createfiles = 2 #flag to create everything
 
 	if createfiles:
-		y, x, e1, e2, w = (WLanalysis.readFits(full_dir+'yxew_subfield%i_zcut0213.fit'%(i))).T
+		y, x, e1, e2, w, m = (WLanalysis.readFits(full_dir+'yxewm_subfield%i_zcut0213.fit'%(i))).T
 	
 		idx = zcut_idx (i)#redshift cut
 		#simfile = WLanalysis.readFits(SIMfn(i,cosmo,R))[idx, [0,1,2,4,5,6,8,9,10]]#simulation file at redshift cut
@@ -131,6 +131,14 @@ def fileGen(i, R, cosmo):
 		
 		k_pz, s1_pz, s2_pz, k_rz1, s1_rz1, s2_rz1, k_rz2, s1_rz2, s2_rz2 = (WLanalysis.readFits(SIMfn(i,cosmo,R))[idx].T)[[0,1,2,4,5,6,8,9,10]]
 		
+		s1_pz *= (1+m)
+		s2_pz *= (1+m)
+		s1_rz1 *= (1+m)
+		s2_rz1 *= (1+m)
+		s1_rz2 *= (1+m)
+		s2_rz2 *= (1+m)
+		
+		#2014/5/2 changed m correction to (e-c)/(1+m), before apply rotation, or I should apply 1+m to shear instead? * the latter is used to avoid unrealistic ellipticity, e.g. e1=0.5, m=-0.6, e1/(1+m)=1.25>1
 		eint1, eint2 = rndrot(e1, e2, iseed=R)#random rotation
 			
 		## get reduced shear
@@ -138,7 +146,7 @@ def fileGen(i, R, cosmo):
 		e1_rz1, e2_rz1 = eobs_fun(s1_rz1, s2_rz1, k_rz1, eint1, eint2)
 		e1_rz2, e2_rz2 = eobs_fun(s1_rz2, s2_rz2, k_rz2, eint1, eint2)
 			
-		kk = array([k_rz1, e1_pz*w, e2_pz*w, e1_rz1*w, e2_rz1*w, e1_rz2*w, e2_rz2*w, w])
+		kk = array([k_rz1, e1_pz*w, e2_pz*w, e1_rz1*w, e2_rz1*w, e1_rz2*w, e2_rz2*w, w*(1+m)])
 		print 'coords2grid'
 		Mk, Ms1_pz, Ms2_pz, Ms1_rz1, Ms2_rz1, Ms1_rz2, Ms2_rz2, Mw = WLanalysis.coords2grid(x, y, kk)[0]
 		if createfiles == 2:
@@ -165,8 +173,11 @@ def fileGen(i, R, cosmo):
 			pass
 		
 	return Ms1_pz, Ms2_pz, Ms1_rz1, Ms2_rz1, Ms1_rz2, Ms2_rz2, Mw
+	# 2014/05/2 note:
+	# Ms still have a factor of (1+m) in it, CFHT e1 e2 are not corrected for (1+m)
+	# and gamma has been multiplied by (1+m), to mimick observation.
 
-### test, pass, still need to check actual map 
+### test, pass, still need to check actual map (pass 2014/05/2)
 # Ms1_pz, Ms2_pz, Ms1_rz1, Ms2_rz1, Ms1_rz2, Ms2_rz2, Mw = fileGen(1, 1, fidu)
 
 ####### smooth and KS inversion #########
@@ -192,6 +203,8 @@ def KSmap(iiRcosmo):
 			else:	
 				Me1, Me2 = Ms_arr[j]
 				print 'KSmap i, R, sigmaG, cosmo', i, R, sigmaG, cosmo
+				# weighted_smooth assumed the nominator already has the weight in, won't multiply Me1*Mw, for example, for next line.
+				# so <e_smooth> = sum(e^obs*w*W)/sum(w*W(1+m)), where w is weight, W is gaussian window fcn, (1+m) is correction. Here Mw = w*(1+m)
 				Me1_smooth = WLanalysis.weighted_smooth(Me1, Mw, PPA=PPA512, sigmaG=sigmaG)
 				Me2_smooth = WLanalysis.weighted_smooth(Me2, Mw, PPA=PPA512, sigmaG=sigmaG)
 				kmap = WLanalysis.KSvw(Me1_smooth, Me2_smooth)

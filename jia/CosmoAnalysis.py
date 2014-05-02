@@ -42,7 +42,7 @@ hi_s='mQ3-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.850'
 hi_m='mQ3-512b240_Om0.290_Ol0.710_w-1.000_ns0.960_si0.800'
 
 ####### maps to process #########
-processmaps = 0
+processmaps = 1
 
 zg_arr = ('pz','rz1','rz2')
 bins_arr = arange(10, 110, 15)
