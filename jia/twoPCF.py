@@ -65,7 +65,7 @@ def twoPCF(isf):
 				
 				xiplus_arr [ibin] = sum(w[i]*w[j] * real(ei * conj(ej)))
 				ximinus_arr[ibin] = sum(w[i]*w[j] * real(ei * ej))
-				norm_arr [ibin] = sum(rw[i]*w[j]*(1+m[i])*(1+m[j]))
+				norm_arr [ibin] = sum(w[i]*w[j]*(1+m[i])*(1+m[j]))
 			else:
 				continue
 		K = array([xiplus_arr, ximinus_arr, norm_arr])
