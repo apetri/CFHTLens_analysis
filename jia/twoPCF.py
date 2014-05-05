@@ -38,6 +38,7 @@ bins *= pi/10800.0 # convert from arcmin to radians, 1 arcmin = pi/10800 radians
 #demoni_arr = zeros(shape=(13,len(bins)))
 
 #for isf in range(14):
+step = 100000 # step to 
 def twoPCF(isf):
 	#print 'subfield',isf
 	fn = twoPCF_dir+'twoPCF_subfield%i'%(isf)
@@ -53,21 +54,22 @@ def twoPCF(isf):
 		x -= amin(x)
 		kdt = cKDTree(array([x,y]).T)
 		for ibin in arange(len(bins)):
-			print 'subfield, bin', isf, ibin
-			pairs = kdt.query_pairs(bins[ibin])
-			if len(pairs)>0:
-				print 'total gal pairs', len(pairs)
-				i, j = array(list(pairs)).T
+			print 
+			pairs = array(list(kdt.query_pairs(bins[ibin]))).T	
+			ipair = 0
+			while ipair < len(pairs):
+				print 'subfield, bin, total gal pairs, ipair: ',isf, ibin, len(pairs), ipair
+				i, j = pairs[:,ipair:ipair+step]
 				phi0 = phi(x[i], y[i], x[j], y[j])
 				# these are complex ellipticities where e=et+iex
 				ei = et(e1[i], e2[i], phi0)
 				ej = et(e1[j], e2[j], phi0)
 				
-				xiplus_arr [ibin] = sum(w[i]*w[j] * real(ei * conj(ej)))
-				ximinus_arr[ibin] = sum(w[i]*w[j] * real(ei * ej))
-				norm_arr [ibin] = sum(w[i]*w[j]*(1+m[i])*(1+m[j]))
-			else:
-				continue
+				xiplus_arr [ibin] += sum(w[i]*w[j] * real(ei * conj(ej)))
+				ximinus_arr[ibin] += sum(w[i]*w[j] * real(ei * ej))
+				norm_arr [ibin] += sum(w[i]*w[j]*(1+m[i])*(1+m[j]))
+				ipair += step
+			
 		K = array([xiplus_arr, ximinus_arr, norm_arr])
 		savetxt(fn,K)
 		return K
@@ -81,12 +83,13 @@ pool = MPIPool()
 pool.map(twoPCF, range(1,14))
 
 print 'done-done-done: calculating 2pcf, now sum up all subfields'
-# grab everything
+# -------------------- grab everything ---------------------
 bigmatrix = zeros(shape=(13, 3, len(bins)))
 
 for isf in range(1,14):
-	fn = twoPCF_dir+'twoPCF_subfield%i'%(isf)
-	bigmatrix [isf-1] = genfromtxt(fn)
+	#fn = twoPCF_dir+'twoPCF_subfield%i'%(isf)
+	#bigmatrix [isf-1] = genfromtxt(fn)
+	bigmatrix [isf-1] = twoPCF(isf)
 	
 # cumulative sum to sum in each bin
 bigmatrix[:, :, 1:] -= bigmatrix[:, :, :-1]
