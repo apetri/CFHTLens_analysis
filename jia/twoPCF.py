@@ -54,7 +54,6 @@ def twoPCF(isf):
 		x -= amin(x)
 		kdt = cKDTree(array([x,y]).T)
 		for ibin in arange(len(bins)):
-			print 
 			pairs = array(list(kdt.query_pairs(bins[ibin]))).T	
 			ipair = 0
 			while ipair < len(pairs):
