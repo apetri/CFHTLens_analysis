@@ -54,7 +54,10 @@ def twoPCF(isf):
 		x -= amin(x)
 		kdt = cKDTree(array([x,y]).T)
 		for ibin in arange(len(bins)):
-			pairs = array(list(kdt.query_pairs(bins[ibin]))).T	
+			pairs0 = kdt.query_pairs(bins[ibin])
+			if ibin > 0:
+				pairs0 = pairs0 - kdt.query_pairs(bins[ibin-1])
+			pairs = array(list(pairs0)).T
 			ipair = 0
 			while ipair < len(pairs[0]):
 				print 'subfield, bin, total gal pairs, ipair: ',isf, ibin, len(pairs[0]), ipair
@@ -90,8 +93,8 @@ for isf in range(1,14):
 	#bigmatrix [isf-1] = genfromtxt(fn)
 	bigmatrix [isf-1] = twoPCF(isf)
 	
-# cumulative sum to sum in each bin
-bigmatrix[:, :, 1:] -= bigmatrix[:, :, :-1]
+# cumulative sum to sum in each bin - no need anymore, since got rid of this step in query_pairs
+#bigmatrix[:, :, 1:] -= bigmatrix[:, :, :-1]
 sum13fields = sum(bigmatrix, axis=0)
 xip = sum13fields[0]/sum13fields[-1]
 xim = sum13fields[1]/sum13fields[-1]
