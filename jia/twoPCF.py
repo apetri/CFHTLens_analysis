@@ -56,7 +56,7 @@ def twoPCF(isf):
 		for ibin in arange(len(bins)):
 			pairs = array(list(kdt.query_pairs(bins[ibin]))).T	
 			ipair = 0
-			while ipair < len(pairs):
+			while ipair < len(pairs[0]):
 				print 'subfield, bin, total gal pairs, ipair: ',isf, ibin, len(pairs[0]), ipair
 				i, j = pairs[:,ipair:ipair+step]
 				phi0 = phi(x[i], y[i], x[j], y[j])
