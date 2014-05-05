@@ -58,7 +58,7 @@ def twoPCF(isf):
 			pairs = array(list(kdt.query_pairs(bins[ibin]))).T	
 			ipair = 0
 			while ipair < len(pairs):
-				print 'subfield, bin, total gal pairs, ipair: ',isf, ibin, len(pairs), ipair
+				print 'subfield, bin, total gal pairs, ipair: ',isf, ibin, len(pairs[0]), ipair
 				i, j = pairs[:,ipair:ipair+step]
 				phi0 = phi(x[i], y[i], x[j], y[j])
 				# these are complex ellipticities where e=et+iex
