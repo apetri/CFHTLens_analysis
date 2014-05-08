@@ -25,7 +25,7 @@ DEC4=[-1.2, 5.0]
 RAs=array([RA1,RA2,RA3,RA4])
 DECs=array([DEC1,DEC2,DEC3,DEC4])
 dpp=0.0016914558667664816
-xnum = lambda RA: round((amax(RA)-amin(RA))/dpp+400)
+xnum = lambda RA: round((amax(RA)-amin(RA))/dpp+500)
 #genWx = lambda i: zeros(shape=(xnum(RAs[i]),ynum(DECs[i])))
 genWx = lambda i: zeros(shape=(xnum(DECs[i]), xnum(RAs[i])))
 
