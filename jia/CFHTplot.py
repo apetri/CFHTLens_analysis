@@ -18,7 +18,8 @@ peaks_varians_13fields = 0 # pass - varians among 13 fields
 CFHT_cosmo_fit = 0 # pass - fit to CFHT and countour (using simulation for contour)
 shear_asymmetry = 0 # test Jan's ray tracing if e1, e2 are asymmetric
 test_gaussianity = 0
-model_vs_CFHT = 1
+model_vs_CFHT = 0
+emcee_MCMC = 1
 ########## knobs end ############
 
 i_arr=arange(1,14)
@@ -174,10 +175,13 @@ if CFHT_cosmo_fit:
 	centerrz2=average(fitrz2,axis=0)
 
 	#xylabels=((0,2),(1,2),(0,1))
-	xylabels=((0,1),(1,2),(2,0))
+	xylabels=((0,1),(0,2),(1,2))
 	f=figure(figsize=(8,6))
 	for k in (1,2,3):
-		subplot(2,2,k+1)
+		if k == 1:
+			subplot(2,2,1)
+		else:
+			subplot(2,2,k+1)
 		i,j=xylabels[k-1]
 		Ppz = cov(fitpz.T[[i,j]])
 		Prz2 = cov(fitrz2.T[[i,j]])
@@ -186,40 +190,43 @@ if CFHT_cosmo_fit:
 		plotEllipse(centerrz2[[i,j]],Prz2,'r','random z')
 		plot(centerpz[i],centerpz[j],'bo')
 		plot(centerrz2[i],centerrz2[j],'ro')
+		scatter(fitrz2.T[i],fitrz2.T[j]) # added 5/7/2014
 		
-		xlim(centerpz[i]-centerpz[i]*2.0,centerpz[i]*3.0)
-		ylim(centerpz[j]-centerpz[j]*2.0,centerpz[j]*3.0)
+		xlim(amin(fitrz2.T[i]),amax(fitrz2.T[i]))
+		ylim(amin(fitrz2.T[j]),amax(fitrz2.T[j]))
 		
 		legend()
 		xlabel(labels[i],fontsize=16,labelpad=15)
 		ylabel(labels[j],fontsize=16)
 		plt.subplots_adjust(left=0.1, bottom=0.15, right=0.95, top=0.97, wspace=0.3,hspace=0.3)
-	ax=f.add_subplot(223)
-	ax.text(0.8,2.0,'peak z',color='b',fontsize=14)
-	ax.text(0.8,1.5,'random z',color='r',fontsize=14)
+	
+	#ax=f.add_subplot(223)
+	#ax.text(0.8,2.0,'peak z',color='b',fontsize=14)
+	#ax.text(0.8,1.5,'random z',color='r',fontsize=14)
+	
 	#plt.subplots_adjust(left=0.18,bottom=0.05,right=0.95,top=0.97,wspace=0.15,hspace=0.25)
 	#plt.subplots_adjust(left=0.07,bottom=0.15,right=0.97,top=0.91,wspace=0.27,hspace=0.2)
 	#show()
-	savefig(plot_dir+'SIM_rand_peak_redshift.jpg')
+	savefig(plot_dir+'SIM_rand_peak_redshift_points.jpg')
 	close()
 	########## CFHT contour
-	f=figure(figsize=(8,6))
-	for k in (1,2,3):
-		subplot(2,2,k+1)
-		i,j=xylabels[k-1]
-		Prz2 = cov(fitrz2.T[[i,j]])
+	#f=figure(figsize=(8,6))
+	#for k in (1,2,3):
+		#subplot(2,2,k+1)
+		#i,j=xylabels[k-1]
+		#Prz2 = cov(fitrz2.T[[i,j]])
 		
-		plotEllipse(fitCFHT[[i,j]],Prz2,'r','random z')
-		plot(fitCFHT[i],fitCFHT[j],'ro')
+		#plotEllipse(fitCFHT[[i,j]],Prz2,'r','random z')
+		#plot(fitCFHT[i],fitCFHT[j],'ro')
 		
-		xlim(fitCFHT[i]-centerpz[i]*2.0,fitCFHT[i]+centerpz[i]*2.0)
-		ylim(fitCFHT[j]-centerpz[j]*2.0,fitCFHT[j]+centerpz[j]*2.0)
+		#xlim(fitCFHT[i]-centerpz[i]*2.0,fitCFHT[i]+centerpz[i]*2.0)
+		#ylim(fitCFHT[j]-centerpz[j]*2.0,fitCFHT[j]+centerpz[j]*2.0)
 		
-		xlabel(labels[i],fontsize=16,labelpad=15)
-		ylabel(labels[j],fontsize=16)
-		plt.subplots_adjust(left=0.1, bottom=0.15, right=0.95, top=0.97, wspace=0.3,hspace=0.3)
-	savefig(plot_dir+'SIM_CFHTfit.jpg')
-	close()
+		#xlabel(labels[i],fontsize=16,labelpad=15)
+		#ylabel(labels[j],fontsize=16)
+		#plt.subplots_adjust(left=0.1, bottom=0.15, right=0.95, top=0.97, wspace=0.3,hspace=0.3)
+	#savefig(plot_dir+'SIM_CFHTfit.jpg')
+	#close()
 	
 if shear_asymmetry:
 	#SIMfn= lambda i, cosmo, R
@@ -371,3 +378,135 @@ if model_vs_CFHT:
 	#savefig(plot_dir+'Peaks_sigma35_13fields_1000r_log.jpg')
 	savefig(plot_dir+'Peaks_sigma18and35_13fields_1000r.jpg')
 	close()   
+
+if emcee_MCMC:
+	Rtol, bintol = 1000, 21
+	fitCFHT=genfromtxt(KSsim_dir+'fit/fit_CFHT_13subfields_1000R_021bins')[1:]
+	#fitSIM = genfromtxt('/Users/jia/weaklensing/CFHTLenS/KSsim/fit/fit_rz2_config_13subfields_1000R_021bins')
+
+	cosmo_mat=(genfromtxt(KSsim_dir+'fit/cosmo_mat_13subfields_1000R_021bins')).reshape(4,1000,-1)
+	dp = array([0.03, 0.2, 0.05])
+	fidu_params = array([0.26, -1.0, 0.8])
+	cov_mat = np.cov(cosmo_mat[0], rowvar = 0)#rowvar is the row contaning observations, aka 128R
+	cov_inv = np.mat(cov_mat).I
+	fidu_avg = mean(cosmo_mat[0], axis = 0)
+	him_avg, hiw_avg, his_avg = mean(cosmo_mat[1:], axis = 1)
+	dNdm = (him_avg - fidu_avg)/dp[0]
+	dNdw =(hiw_avg - fidu_avg)/dp[1] 
+	dNds = (his_avg - fidu_avg)/dp[2]
+	X = np.mat([dNdm, dNdw, dNds])
+	
+	def cosmo_fit (obs):
+		Y = np.mat(obs-fidu_avg)
+		del_p = ((X*cov_inv*X.T).I)*(X*cov_inv*Y.T)
+		m, w, s = np.squeeze(np.array(del_p.T))+fidu_params
+		del_N = Y-del_p.T*X
+		chisq = float((Rtol-bintol-2.0)/(Rtol-1.0)*del_N*cov_inv*del_N.T)
+		return chisq, m, w, s
+	fitSIM = array(map(cosmo_fit,cosmo_mat[0]))
+	
+	
+	obs = fidu_avg
+
+	def lnprior(params):
+		# flat prior
+		m, w, s = params
+		if -0.23 < m < 0.78 and -5.36 < w < 3.15 and -0.1 < s < 1.49:
+			return 0.0
+		else:
+			return -np.inf
+
+	def lnlike (params, obs):
+		model = fidu_avg + mat(array(params)-fidu_params)*X
+		Y = np.mat(model - obs)
+		#Y = np.mat(obs-fidu_avg)
+		del_p = ((X*cov_inv*X.T).I)*(X*cov_inv*Y.T)
+		del_N = Y-del_p.T*X
+		ichisq = del_N*cov_inv*del_N.T
+		Ln = -log(ichisq) #likelihood, is the log of chisq
+		return float(Ln)
+	
+	def lnprob(params, obs):
+		lp = lnprior(params)
+		if not np.isfinite(lp):
+			return -np.inf
+		else:
+			return lp + lnlike(params, obs)
+	
+	
+	import scipy.optimize as op
+	import emcee
+	nll = lambda *args: -lnlike(*args)
+	result = op.minimize(nll, fidu_params*1.1, args=(obs,))
+	m_ml, b_ml, lnf_ml = result["x"]
+	
+	ndim, nwalkers = 3, 100
+	steps = 1000
+	pos = [result["x"] + 1e-4*np.random.randn(ndim) for i in range(nwalkers)]
+	
+	print 'run sampler'
+	sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=(obs,))
+	
+	print 'run mcmc'
+	sampler.run_mcmc(pos, steps)
+	samples = sampler.chain[:, 50:, :].reshape((-1, ndim))
+	
+	import triangle
+	
+	#fig = triangle.corner(fitSIM[:,1:], labels=["$\Omega_m$", "$w$", "$\sigma_8$"],
+			#truths=fidu_params, truths_color='#FF0000')
+
+	#fig.savefig(plot_dir+"triangle_analytical_rz1.jpg")
+	#close()
+
+	#fig = triangle.corner(samples, labels=["$\Omega_m$", "$w$", "$\sigma_8$"],
+			#truths=fidu_params)
+	#fig.savefig(plot_dir+"triangle_MCMC_%isteps.jpg"%(steps))
+	#close()
+	
+	#for i in range(3):
+		#subplot(3,1,i+1)
+		#plot(arange(samples.shape[0]),samples[:,i])
+		#ylabel(labels[i])
+		
+	#savefig(plot_dir+'MC_steps_%isteps.jpg'%(steps))
+	#close()
+	
+	
+	###### plot error ellipse like mine
+	
+	fitrz2=genfromtxt(KSsim_dir+'fit/fit_pz_config_13subfields_1000R_021bins')[:,1:]
+	
+
+	#### ellipse
+	centerpz=average(samples,axis=0)
+	fitpz = samples## sneakily change fitpz to samples
+	centerrz2=average(fitrz2,axis=0)
+
+	#xylabels=((0,2),(1,2),(0,1))
+	xylabels=((0,1),(0,2),(1,2))
+	f=figure(figsize=(8,6))
+	for k in (1,2,3):
+		if k == 1:
+			subplot(2,2,1)
+		else:
+			subplot(2,2,k+1)
+		i,j=xylabels[k-1]
+		Ppz = cov(fitpz.T[[i,j]])
+		Prz2 = cov(fitrz2.T[[i,j]])
+		
+		plotEllipse(centerpz[[i,j]],Ppz,'b','MCMC')
+		plotEllipse(centerrz2[[i,j]],Prz2,'r','analytical')
+		plot(centerpz[i],centerpz[j],'bo')
+		plot(centerrz2[i],centerrz2[j],'ro')
+		#scatter(fitrz2.T[i],fitrz2.T[j]) # added 5/7/2014
+		#scatter(fitpz.T[i],fitpz.T[j])
+		
+		xlim(amin(fitrz2.T[i]),amax(fitrz2.T[i]))
+		ylim(amin(fitrz2.T[j]),amax(fitrz2.T[j]))
+		
+		legend()
+		xlabel(labels[i],fontsize=16,labelpad=15)
+		ylabel(labels[j],fontsize=16)
+		plt.subplots_adjust(left=0.1, bottom=0.15, right=0.95, top=0.97, wspace=0.3,hspace=0.3)
+	savefig(plot_dir+'MCMC_vs_analytial_%isteps.jpg'%(steps))
