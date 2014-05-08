@@ -75,6 +75,8 @@ for ifile in masks:
 	
 	fn_mask = mask_bin_dir+'binned_mask_%s'%(ifile)
 	imask = readFits(fn_mask)
+	if ii = 2: #somehow W3 field looks different than other 3
+		imask = np.rot90(imask,k=-1)
 	# Jia 05/08/2014 edit, need to flip small image to match the masks
 	# rot90(a)[:,::-1]: rotate left, flip horizontal
 	# imask = rot90(imask)[:,::-1]
@@ -86,8 +88,8 @@ for ifile in masks:
 	j+=1
 	
 for i in range(4):
-	imask_Wx=(mask_Wx[i]>0).astype(int)
-	savetxt(mask_bin_dir+'Mask_W%i_fix05082014.txt'%(i+1),ShrinkMatrix(imask_Wx,6),fmt='%i')
+	imask_Wx=(ShrinkMatrix(mask_Wx[i],6)>0).astype(int)
+	savetxt(mask_bin_dir+'Mask_W%i_fix05082014.txt'%(i+1),imask_Wx,fmt='%i')
 	savetxt(mask_bin_dir+'Mask_W%i_repeat_fix05082014.txt'%(i+1),ShrinkMatrix(mask_Wx_repeat[i],6),fmt='%i')
 	#writeFits(ShrinkMatrix(imask_Wx,4),mask_bin_dir+'Mask_W%i_fix05082014.fits'%(i+1))
 	#writeFits(ShrinkMatrix(mask_Wx_repeat[i],4),mask_bin_dir+'Mask_W%i_repeat_fix05082014.fits'%(i+1))
