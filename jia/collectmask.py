@@ -81,13 +81,13 @@ for ifile in masks:
 	
 	x1 = x0+imask.shape[0]
 	y1 = y0+imask.shape[1]
-	mask_Wx[ii][x0:x1,y0:y1]+=imask
+	mask_Wx[ii][x0:x1,y0:y1]+=imask[::-1,::-1]
 	mask_Wx_repeat[ii][x0:x1,y0:y1]+=1
 	j+=1
 	
 for i in range(4):
 	imask_Wx=(mask_Wx[i]>0).astype(int)
-	savetxt(mask_bin_dir+'Mask_W%i_fix05082014.txt'%(i+1),ShrinkMatrix(imask_Wx,4),fmt='%i')
-	savetxt(mask_bin_dir+'Mask_W%i_repeat_fix05082014.txt'%(i+1),ShrinkMatrix(mask_Wx_repeat[i],4),fmt='%i')
+	savetxt(mask_bin_dir+'Mask_W%i_fix05082014.txt'%(i+1),ShrinkMatrix(imask_Wx,6),fmt='%i')
+	savetxt(mask_bin_dir+'Mask_W%i_repeat_fix05082014.txt'%(i+1),ShrinkMatrix(mask_Wx_repeat[i],6),fmt='%i')
 	#writeFits(ShrinkMatrix(imask_Wx,4),mask_bin_dir+'Mask_W%i_fix05082014.fits'%(i+1))
 	#writeFits(ShrinkMatrix(mask_Wx_repeat[i],4),mask_bin_dir+'Mask_W%i_repeat_fix05082014.fits'%(i+1))
