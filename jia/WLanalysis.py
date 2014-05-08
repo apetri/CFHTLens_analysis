@@ -147,7 +147,7 @@ def ShrinkMatrix (matrix, ratio, avg=False):
 		matrix_new = matrix.reshape(ynew,ratio,xnew,ratio).mean(-1).mean(1)
 	else:
 		matrix_new = matrix.reshape(ynew,ratio,xnew,ratio).sum(-1).sum(1)
-	return matrix2
+	return matrix_new
 
 def RebinMatrix (matrix, shape, avg=False):
 	'''bin a 2D matrix to a new shape, shape dimensions must be devisible by matrix dimensions.

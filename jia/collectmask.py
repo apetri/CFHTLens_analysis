@@ -88,6 +88,6 @@ for ifile in masks:
 for i in range(4):
 	imask_Wx=(mask_Wx[i]>0).astype(int)
 	savetxt(mask_bin_dir+'Mask_W%i_fix05082014.txt'%(i+1),ShrinkMatrix(imask_Wx,4),fmt='%i')
-	savetxt(ask_bin_dir+'Mask_W%i_repeat_fix05082014.fits'%(i+1),ShrinkMatrix(mask_Wx_repeat[i],4),fmt='%i')
+	savetxt(mask_bin_dir+'Mask_W%i_repeat_fix05082014.txt'%(i+1),ShrinkMatrix(mask_Wx_repeat[i],4),fmt='%i')
 	#writeFits(ShrinkMatrix(imask_Wx,4),mask_bin_dir+'Mask_W%i_fix05082014.fits'%(i+1))
 	#writeFits(ShrinkMatrix(mask_Wx_repeat[i],4),mask_bin_dir+'Mask_W%i_repeat_fix05082014.fits'%(i+1))
