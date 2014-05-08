@@ -25,7 +25,7 @@ DEC4=[-1.2, 5.0]
 RAs=array([RA1,RA2,RA3,RA4])
 DECs=array([DEC1,DEC2,DEC3,DEC4])
 dpp=0.0016914558667664816
-xnum = lambda RA: round((amax(RA)-amin(RA))/dpp+500)
+xnum = lambda RA: round((amax(RA)-amin(RA))/dpp+50)
 #genWx = lambda i: zeros(shape=(xnum(RAs[i]),ynum(DECs[i])))
 genWx = lambda i: zeros(shape=(xnum(DECs[i]), xnum(RAs[i])))
 
@@ -74,7 +74,7 @@ for ifile in masks:
 	y0 = around((RAl-RAs[ii,0])/dpp)
 	
 	fn_mask = mask_bin_dir+'binned_mask_%s'%(ifile)
-	imask = readFits(fn_mask)[:,::-1]
+	imask = readFits(fn_mask)
 	# Jia 05/08/2014 edit, need to flip small image to match the masks
 	# rot90(a)[:,::-1]: rotate left, flip horizontal
 	# imask = rot90(imask)[:,::-1]
@@ -87,5 +87,7 @@ for ifile in masks:
 	
 for i in range(4):
 	imask_Wx=(mask_Wx[i]>0).astype(int)
-	writeFits(imask_Wx,mask_bin_dir+'Mask_W%i_fix05082014.fits'%(i+1))
-	writeFits(mask_Wx_repeat[i],mask_bin_dir+'Mask_W%i_repeat_fix05082014.fits'%(i+1))
+	savetxt(mask_bin_dir+'Mask_W%i_fix05082014.txt'%(i+1),ShrinkMatrix(imask_Wx,4),fmt='%i')
+	savetxt(ask_bin_dir+'Mask_W%i_repeat_fix05082014.fits'%(i+1),ShrinkMatrix(mask_Wx_repeat[i],4),fmt='%i')
+	#writeFits(ShrinkMatrix(imask_Wx,4),mask_bin_dir+'Mask_W%i_fix05082014.fits'%(i+1))
+	#writeFits(ShrinkMatrix(mask_Wx_repeat[i],4),mask_bin_dir+'Mask_W%i_repeat_fix05082014.fits'%(i+1))
