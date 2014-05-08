@@ -75,11 +75,8 @@ for ifile in masks:
 	
 	fn_mask = mask_bin_dir+'binned_mask_%s'%(ifile)
 	imask = readFits(fn_mask)
-	if ii = 2: #somehow W3 field looks different than other 3
+	if ii == 2: #somehow W3 field looks different than other 3
 		imask = np.rot90(imask,k=-1)
-	# Jia 05/08/2014 edit, need to flip small image to match the masks
-	# rot90(a)[:,::-1]: rotate left, flip horizontal
-	# imask = rot90(imask)[:,::-1]
 	
 	x1 = x0+imask.shape[0]
 	y1 = y0+imask.shape[1]
