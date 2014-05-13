@@ -20,6 +20,8 @@ shear_asymmetry = 0 # test Jan's ray tracing if e1, e2 are asymmetric
 test_gaussianity = 0
 model_vs_CFHT = 0
 emcee_MCMC = 1
+mask_collect = 0
+mask_ngal = 0 #demonstrate how smoothed ngal can be used as mask
 ########## knobs end ############
 
 i_arr=arange(1,14)
@@ -404,8 +406,8 @@ if emcee_MCMC:
 		chisq = float((Rtol-bintol-2.0)/(Rtol-1.0)*del_N*cov_inv*del_N.T)
 		return chisq, m, w, s
 	fitSIM = array(map(cosmo_fit,cosmo_mat[0]))
-	
-	
+
+	#obs = cosmo_mat[0,1]#fidu_avg
 	obs = fidu_avg
 
 	def lnprior(params):
@@ -417,13 +419,12 @@ if emcee_MCMC:
 			return -np.inf
 
 	def lnlike (params, obs):
+		### Jia 5/12 change
 		model = fidu_avg + mat(array(params)-fidu_params)*X
-		Y = np.mat(model - obs)
-		#Y = np.mat(obs-fidu_avg)
-		del_p = ((X*cov_inv*X.T).I)*(X*cov_inv*Y.T)
-		del_N = Y-del_p.T*X
-		ichisq = del_N*cov_inv*del_N.T
-		Ln = -log(ichisq) #likelihood, is the log of chisq
+		del_N = np.mat(model - obs)
+		ichisq = del_N*cov_inv*del_N.T #*float((Rtol-bintol-2.0)/(Rtol-1.0))
+		Ln = -0.5*ichisq
+		print params, Ln
 		return float(Ln)
 	
 	def lnprob(params, obs):
@@ -437,19 +438,19 @@ if emcee_MCMC:
 	import scipy.optimize as op
 	import emcee
 	nll = lambda *args: -lnlike(*args)
-	result = op.minimize(nll, fidu_params*1.1, args=(obs,))
-	m_ml, b_ml, lnf_ml = result["x"]
+	result = op.minimize(nll, fidu_params*1.1, args=(obs,), method='L-BFGS-B')
 	
 	ndim, nwalkers = 3, 100
-	steps = 1000
-	pos = [result["x"] + 1e-4*np.random.randn(ndim) for i in range(nwalkers)]
+	steps = 2000
+	#pos = [result["x"] + 1e-4*np.random.randn(ndim) for i in range(nwalkers)]
+	pos = [fidu_params + 1e-4*np.random.randn(ndim) for i in range(nwalkers)]
 	
 	print 'run sampler'
 	sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=(obs,))
 	
 	print 'run mcmc'
 	sampler.run_mcmc(pos, steps)
-	samples = sampler.chain[:, 50:, :].reshape((-1, ndim))
+	samples = sampler.chain[:, 100:, :].reshape((-1, ndim))
 	
 	import triangle
 	
@@ -459,11 +460,12 @@ if emcee_MCMC:
 	#fig.savefig(plot_dir+"triangle_analytical_rz1.jpg")
 	#close()
 
-	#fig = triangle.corner(samples, labels=["$\Omega_m$", "$w$", "$\sigma_8$"],
-			#truths=fidu_params)
-	#fig.savefig(plot_dir+"triangle_MCMC_%isteps.jpg"%(steps))
-	#close()
-	
+	fig = triangle.corner(samples, labels=["$\Omega_m$", "$w$", "$\sigma_8$"],
+			truths=fidu_params)
+	fig.savefig(plot_dir+"triangle_MCMC_%isteps_corrected.jpg"%(steps))
+	close()
+
+	####### chains plot out	
 	#for i in range(3):
 		#subplot(3,1,i+1)
 		#plot(arange(samples.shape[0]),samples[:,i])
@@ -472,18 +474,23 @@ if emcee_MCMC:
 	#savefig(plot_dir+'MC_steps_%isteps.jpg'%(steps))
 	#close()
 	
+	### Fisher error 5/10/2014 ###
+	F = zeros(shape=(3,3))
+	for i in arange(3):
+		for j in arange(3):
+			F[i,j] += trace(cov_inv * X[i].T * X[j])
 	
 	###### plot error ellipse like mine
 	
 	fitrz2=genfromtxt(KSsim_dir+'fit/fit_pz_config_13subfields_1000R_021bins')[:,1:]
+	#fitrz2=fitSIM[:,1:]
+	centerrz2=array(cosmo_fit(obs)[1:])#average(fitrz2,axis=0)
+
+	fitpz = samples## sneakily change fitpz to samples
+	#centerpz=average(samples,axis=0)
+	centerpz=np.percentile(samples,50,axis=0)
 	
 
-	#### ellipse
-	centerpz=average(samples,axis=0)
-	fitpz = samples## sneakily change fitpz to samples
-	centerrz2=average(fitrz2,axis=0)
-
-	#xylabels=((0,2),(1,2),(0,1))
 	xylabels=((0,1),(0,2),(1,2))
 	f=figure(figsize=(8,6))
 	for k in (1,2,3):
@@ -495,18 +502,65 @@ if emcee_MCMC:
 		Ppz = cov(fitpz.T[[i,j]])
 		Prz2 = cov(fitrz2.T[[i,j]])
 		
-		plotEllipse(centerpz[[i,j]],Ppz,'b','MCMC')
+		plotEllipse(centerpz[[i,j]],Ppz,'b','MCMC %i steps'%(steps*nwalkers))
 		plotEllipse(centerrz2[[i,j]],Prz2,'r','analytical')
+		# Fisher ellipse
+		plotEllipse(centerrz2[[i,j]],(mat(F).I)[:,[i,j]][[i,j]],'m','Fisher')
+		
+		legend()
+		
 		plot(centerpz[i],centerpz[j],'bo')
 		plot(centerrz2[i],centerrz2[j],'ro')
-		#scatter(fitrz2.T[i],fitrz2.T[j]) # added 5/7/2014
-		#scatter(fitpz.T[i],fitpz.T[j])
 		
 		xlim(amin(fitrz2.T[i]),amax(fitrz2.T[i]))
 		ylim(amin(fitrz2.T[j]),amax(fitrz2.T[j]))
 		
-		legend()
+		
 		xlabel(labels[i],fontsize=16,labelpad=15)
 		ylabel(labels[j],fontsize=16)
 		plt.subplots_adjust(left=0.1, bottom=0.15, right=0.95, top=0.97, wspace=0.3,hspace=0.3)
-	savefig(plot_dir+'MCMC_vs_analytial_%isteps.jpg'%(steps))
+		
+
+	ax=f.add_subplot(223)
+	#ax.text(-0.18,0.3,'MCMC %.0e steps'%(100*nwalkers),color='g',fontsize=10)
+	ax.text(-0.18,0.3,'Fisher',color='m',fontsize=10)
+	ax.text(-0.18,0.15,'MCMC %.0e steps'%(steps*nwalkers),color='b',fontsize=10)
+	ax.text(-0.18,0.0,'Analytical',color='r',fontsize=10)
+	savefig(plot_dir+'MCMC_vs_analytial_%isteps_%i_corrected.jpg'%(steps,nwalkers))
+
+if mask_collect:
+	mask_bin_dir = '/Users/jia/weaklensing/mask/'
+	for i in range(4):
+		print i
+		#imask_Wx = WLanalysis.readFits(mask_bin_dir+'Mask_W%i_fix05082014.fits'%(i+1))
+		imask_Wx = genfromtxt(mask_bin_dir+'Mask_W%i_fix05082014.txt'%(i+1))
+		imshow(imask_Wx[:,::-1],origin='lower')
+		title('W'+str(i+1))
+		savefig(plot_dir+'Mask_W%i_fix05082014_b.jpg'%(i+1))
+		close()
+		
+if mask_ngal:
+	size = 100
+	a = 10*ones(shape=(size,size))
+
+	y, x = np.indices((size,size),dtype=float)
+	center = np.array([(x.max()-x.min())/2.0, (x.max()-x.min())/2.0])
+	x -= center[0]
+	y -= center[1]
+
+	r = np.hypot(x, y)
+	a[r<20] = 0
+	
+	asmooth = snd.filters.gaussian_filter(a,8)
+	
+	imshow(a,interpolation='nearest',vmin=0,vmax=10,cmap='binary')
+	colorbar()
+	savefig(plot_dir+'fakemask_original.jpg')
+	close()
+	
+	imshow(asmooth,interpolation='nearest',vmin=0,vmax=10,cmap='binary')
+	colorbar()
+	CS=contour(asmooth, linewidth=4)
+	plt.clabel(CS)
+	savefig(plot_dir+'fakemask_cuts.jpg')
+	close()
