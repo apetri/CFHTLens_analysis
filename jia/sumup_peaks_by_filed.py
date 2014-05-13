@@ -9,6 +9,7 @@ zg_arr = ('pz','rz1','rz2')
 bins_arr = arange(10, 110, 15)
 sigmaG_arr = (0.5, 1, 1.8, 3.5, 5.3, 8.9)
 i_arr=arange(1,14)
+R_arr=arange(1,1001)
 
 KSCFHT_dir = '/direct/astro+astronfs03/workarea/jia/CFHT/KSCFHT/'
 KSsim_dir = '/direct/astro+astronfs03/workarea/jia/CFHT/KSsim/'
@@ -29,6 +30,8 @@ peaks_sum_fn = lambda cosmo, Rtol, sigmaG, zg, bins: KSsim_dir+'peaks_sum13field
 
 for bins in bins_arr:
 	for sigmaG in sigmaG_arr:
+		print bins, sigmaG
+		
 		fn_CFHT = KSsim_dir+'peaks_sum13fields/CFHT_peaks_sigma%02d_%03dbins.fits'%(sigmaG*10, bins)
 		CFHT_peaks = zeros(shape=(Rtol,bins))
 		for i in i_arr:
