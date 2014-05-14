@@ -16,7 +16,7 @@ cosmo_arr=(fidu,hi_m,hi_w,hi_s)
 def galn_gen(i):
 	print i
 	y, x, z = WLanalysis.readFits(emucat_dir+'emulator_subfield%i_zcut0213.fit'%(i)).T
-	Mz, galn = WLanalysis.coords2grid(x, y, array([z,]))
+	Mz, galn = WLanalysis.coords2grid(x, y, np.array([z,]))
 	WLanalysis.writeFits(galn, galn_fn)
 	
 # map(galn_gen,range(1,14))
@@ -32,7 +32,7 @@ def ps (R):
 for i in range(1, 14):
 	for cosmo in cosmo_arr:
 		print i, cosmo
-		pmat = np.arary(map(ps, arange(1,1001)))
+		pmat = np.array(map(ps, arange(1,1001)))
 		pmat_fn = KS_dir + 'powspec_Mk/SIM_powspec_sigma05_subfield%i_rz1_%s_1000R.fit'%(i,cosmo)
 		WLanalysis.writeFits(pmat,pmat_fn)
 print 'done'
