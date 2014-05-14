@@ -10,7 +10,7 @@ from pylab import *
 import matplotlib.gridspec as gridspec 
 from matplotlib.patches import Ellipse
 import matplotlib.patches as patches
-
+import triangle
 ########## knobs ################
 plot_sample_KS_maps = 0 # pass - make sure the maps look reasonable
 peaks_4cosmo_CFHT = 0 # pass - plot out the peak counts for simulation and CFHT
@@ -19,12 +19,22 @@ CFHT_cosmo_fit = 0 # pass - fit to CFHT and countour (using simulation for conto
 shear_asymmetry = 0 # test Jan's ray tracing if e1, e2 are asymmetric
 test_gaussianity = 0
 model_vs_CFHT = 0
-emcee_MCMC = 1
+emcee_MCMC = 0
 mask_collect = 0
 mask_ngal = 0 #demonstrate how smoothed ngal can be used as mask
+test_bins = 0 # official plot
+test_sigmaG = 0 # official plot
+powspec_vs_nicaea = 1
 ########## knobs end ############
 
+dp = array([0.03, 0.2, 0.05])
+fidu_params = array([0.26, -1.0, 0.8])
+zg_arr = ('pz','rz1','rz2') # rz1 for model building 
+bins_arr = arange(10, 110, 15)
+sigmaG_arr = (0.5, 1, 1.8, 3.5, 5.3, 8.9)
 i_arr=arange(1,14)
+R_arr=arange(1,1001)
+Rtol = len(R_arr)
 
 plot_dir = '/Users/jia/weaklensing/CFHTLenS/plot/'
 KSsim_dir = '/Users/jia/weaklensing/CFHTLenS/KSsim/'
@@ -42,12 +52,19 @@ peaks_fn = lambda i, cosmo, Rtol, sigmaG, zg, bins: KSsim_dir+'peaks/SIM_peaks_s
 
 powspec_fn = lambda i, cosmo, Rtol, sigmaG, zg: KSsim_dir+'powspec/SIM_powspec_sigma%02d_subfield%i_%s_%s_%04dR.fit'%(sigmaG*10, i, zg, cosmo, Rtol)
 
+
+CFHT_sum_fn = lambda sigmaG, bins: KSsim_dir+'peaks_sum13fields/CFHT_peaks_sigma%02d_%03dbins.fits'%(sigmaG*10, bins)
+
+peaks_sum_fn = lambda cosmo, Rtol, sigmaG, zg, bins: KSsim_dir+'peaks_sum13fields/SIM_peaks_sigma%02d_%s_%s_%04dR_%03dbins.fit'%(sigmaG*10, zg, cosmo, Rtol, bins)
+
 cosmo_arr=(fidu,hi_m,hi_w,hi_s)
+
 cosmolabels=('$Fiducial$','$High-\Omega_m$', '$High-w$', '$High-\sigma_8$')
+
 labels=('$\Omega_m$','$w$','$\sigma_8$')
 
-def plotimshow(img,ititle,vmin=None,vmax=None):         
-     #if vmin == None and vmax == None:
+def plotimshow(img,ititle,vmin=None,vmax=None):		 
+	 #if vmin == None and vmax == None:
 	imgnonzero=img[nonzero(img)]
 	if vmin == None:
 		std0 = std(imgnonzero)
@@ -58,7 +75,7 @@ def plotimshow(img,ititle,vmin=None,vmax=None):
 	colorbar()
 	title(ititle,fontsize=16)
 	savefig(plot_dir+'%s.jpg'%(ititle))
-	close()    
+	close()	
 
 
 def plotEllipse(pos, P, edge, ilabel):
@@ -318,7 +335,7 @@ if model_vs_CFHT:
 
 	
 	config_2_21 = array([[1.8, 25, 3, 17],
-		      [3.5, 25, 5, 12]])
+			  [3.5, 25, 5, 12]])
 	
 	CFHT_peak = zeros(21)
 	for i in range(1,14):
@@ -527,6 +544,7 @@ if emcee_MCMC:
 	ax.text(-0.18,0.15,'MCMC %.0e steps'%(steps*nwalkers),color='b',fontsize=10)
 	ax.text(-0.18,0.0,'Analytical',color='r',fontsize=10)
 	savefig(plot_dir+'MCMC_vs_analytial_%isteps_%i_corrected.jpg'%(steps,nwalkers))
+	close()
 
 if mask_collect:
 	mask_bin_dir = '/Users/jia/weaklensing/mask/'
@@ -564,3 +582,234 @@ if mask_ngal:
 	plt.clabel(CS)
 	savefig(plot_dir+'fakemask_cuts.jpg')
 	close()
+
+def cosmo_fit (obs, cosmo_mat):
+	'''input obs and cosmo_mat (shape=(4,1000,-1))
+	return 3 fitted params, and cov=F^-1
+	'''
+# get rid of the 0 bins
+	idx = where (average(cosmo_mat[0],axis=0)>0.5)
+	if len(idx[0]) < cosmo_mat.shape[-1]:
+		print '----->',cosmo_mat.shape[-1]-len(idx[0]), '0-bins'
+	cosmo_mat = cosmo_mat[:,:,idx].squeeze()
+	obs=obs[idx].squeeze()
+
+	cov_mat = np.cov(cosmo_mat[0], rowvar = 0)#rowvar is the row contaning observations, aka 128R
+	
+	cov_inv = np.mat(cov_mat).I
+	fidu_avg, him_avg, hiw_avg, his_avg = mean(cosmo_mat, axis = 1)
+	
+	dNdm = (him_avg - fidu_avg)/dp[0]
+	dNdw =(hiw_avg - fidu_avg)/dp[1] 
+	dNds = (his_avg - fidu_avg)/dp[2]
+	X = np.mat([dNdm, dNdw, dNds])
+	
+	Y = np.mat(obs-fidu_avg)
+	del_p = ((X*cov_inv*X.T).I)*(X*cov_inv*Y.T)
+	m, w, s = np.squeeze(np.array(del_p.T))+fidu_params
+	del_N = Y-del_p.T*X
+	#chisq = float((Rtol-bintol-2.0)/(Rtol-1.0)*del_N*cov_inv*del_N.T)
+	
+	F = zeros(shape=(3,3))
+	for i in arange(3):
+		for j in arange(3):
+			F[i,j] += trace(cov_inv * X[i].T * X[j])
+	return array([m, w, s]), mat(F).I
+	
+def cosmo_errors(sigmaG, bins, obs=None, zg='rz1'):
+	cosmo_mat = zeros(shape=(4,1000,bins))
+	k = 0
+	for cosmo in cosmo_arr:
+		fn = peaks_sum_fn(cosmo, Rtol, sigmaG, zg, bins)
+		cosmo_mat[k] = WLanalysis.readFits(fn)
+		k += 1
+	# take only the bins with count >=5
+	if obs == None:
+		obs = average(cosmo_mat[0],axis = 0)
+	centers, F_inv = cosmo_fit (obs, cosmo_mat)
+	return centers, F_inv
+
+def adjust_spines(ax,spines):
+	for loc, spine in ax.spines.items():
+		if loc in spines:
+			spine.set_position(('outward',10)) # outward by 10 points
+			spine.set_smart_bounds(True)
+		else:
+			spine.set_color('none') # don't draw spine
+
+	# turn off ticks where there is no spine
+	if 'left' in spines:
+		ax.yaxis.set_ticks_position('left')
+	else:
+		# no yaxis ticks
+		ax.yaxis.set_ticks([])
+
+	if 'bottom' in spines:
+		ax.xaxis.set_ticks_position('bottom')
+	else:
+		# no xaxis ticks
+		ax.xaxis.set_ticks([])
+if test_bins:
+	seed(222)
+	colors=rand(10,3)
+	zg = 'rz1'
+	xylabels=((0,1),(0,2),(1,2))
+	def plot_bins (sigmaG):
+		f = figure(figsize=(8,6))
+		ic=0
+		for bins in bins_arr:
+			print
+			fn_rz2 = peaks_sum_fn(fidu, Rtol, sigmaG, 'rz2', bins)
+			#obs = average(WLanalysis.readFits(fn_rz2),axis=0)
+			print bins, obs
+			centers, F_inv = cosmo_errors(sigmaG,bins)
+			
+			for k in range(1,4):
+				if k == 1:
+					ax=subplot(2,2,1)
+				else:
+					ax=subplot(2,2,k+1)
+				i, j = xylabels[k-1]
+				plot(centers[i],centers[j],'o')
+				triangle.error_ellipse(centers[[i,j]],F_inv[:,[i,j]][[i,j]], color=colors[ic], label=str(bins))
+				
+				xlabel(labels[i],fontsize=16,labelpad=15)
+				if k <3:
+					ylabel(labels[j],fontsize=16)
+				plt.subplots_adjust(left=0.1, bottom=0.15, right=0.95, top=0.97, wspace=0.3,hspace=0.3)
+				#if k == 1:
+					#leg=legend(ncol=2, labelspacing=.1, prop={'size':12},loc=2)
+					#leg.get_frame().set_visible(False)
+				ax.xaxis.set_major_locator(MaxNLocator(6))
+				ax.yaxis.set_major_locator(MaxNLocator(6))
+
+			ic+=1
+		for i in (1,3,4):
+			ax=subplot(2,2,i)
+			ax.set_xticks(ax.get_xticks()[1:-1])
+			ax.set_yticks(ax.get_yticks()[1:-1])
+		
+		ihandles, ilabels = ax.get_legend_handles_labels()
+		ax=subplot(222)
+		
+		leg=ax.legend(ihandles, ilabels, ncol=1, labelspacing=.3, title='Number of bins', prop={'size':14},loc=10)
+		#leg.get_frame().set_visible(False)
+		plt.setp(subplot(222).get_xticklabels(), visible=False)
+		plt.setp(subplot(222).get_yticklabels(), visible=False)
+		#ax.set_frame_on(False)
+		adjust_spines(ax,[])
+		leg.get_title().set_fontsize('14')
+		#plt.setp(ax.legend.get_title(),fontsize=16)
+		
+		plt.subplots_adjust(wspace=0, hspace=0)
+		plt.setp(subplot(221).get_xticklabels(), visible=False)
+		plt.setp(subplot(224).get_yticklabels(), visible=False)
+		
+			
+		savefig(plot_dir+"official/bins_sigmaG%s.pdf"%(sigmaG))
+		savefig(plot_dir+"bins_sigmaG%s.jpg"%(sigmaG))
+		close()
+	map(plot_bins,sigmaG_arr)
+
+if test_sigmaG:
+	seed(222)
+	colors=rand(10,3)
+	zg = 'rz1'
+	xylabels=((0,1),(0,2),(1,2))
+	def plot_sigmaG (bins):
+		f = figure(figsize=(8,6))
+		ic=0
+		for sigmaG in sigmaG_arr[::-1]:
+			print bins, sigmaG
+			centers, F_inv = cosmo_errors(sigmaG, bins)
+			for k in range(1,4):
+				if k == 1:
+					ax=subplot(2,2,1)
+				else:
+					ax=subplot(2,2,k+1)
+				i, j = xylabels[k-1]
+				plot(centers[i],centers[j],'ko')
+				triangle.error_ellipse(centers[[i,j]],F_inv[:,[i,j]][[i,j]], color=colors[ic], linewidth=2,label=str(sigmaG))
+				
+				xlabel(labels[i],fontsize=16,labelpad=15)
+				if k <3:
+					ylabel(labels[j],fontsize=16)
+				plt.subplots_adjust(left=0.1, bottom=0.15, right=0.95, top=0.97, wspace=0.3,hspace=0.3)
+				#if k == 1:
+					#leg=legend(ncol=2, labelspacing=.1, prop={'size':12},loc=2)
+					#leg.get_frame().set_visible(False)
+				ax.xaxis.set_major_locator(MaxNLocator(6))
+				ax.yaxis.set_major_locator(MaxNLocator(6))
+
+			ic+=1
+		for i in (1,3,4):
+			ax=subplot(2,2,i)
+			ax.set_xticks(ax.get_xticks()[1:-1])
+			ax.set_yticks(ax.get_yticks()[1:-1])
+		
+		ihandles, ilabels = ax.get_legend_handles_labels()
+		ax=subplot(222)
+		
+		leg=ax.legend(ihandles, ilabels, ncol=1, labelspacing=.3, title=r'$\theta_G$ (arcmin)', prop={'size':14},loc=10)
+		#leg.get_frame().set_visible(False)
+		plt.setp(subplot(222).get_xticklabels(), visible=False)
+		plt.setp(subplot(222).get_yticklabels(), visible=False)
+		#ax.set_frame_on(False)
+		adjust_spines(ax,[])
+		leg.get_title().set_fontsize('14')
+		#plt.setp(ax.legend.get_title(),fontsize=16)
+		
+		plt.subplots_adjust(wspace=0, hspace=0)
+		plt.setp(subplot(221).get_xticklabels(), visible=False)
+		plt.setp(subplot(224).get_yticklabels(), visible=False)
+		
+			
+		savefig(plot_dir+"official/sigmaG_bins%s.pdf"%(bins))
+		savefig(plot_dir+"sigamG_bins%s.jpg"%(bins))
+		close()
+	map(plot_sigmaG,bins_arr)
+
+if powspec_vs_nicaea:
+	cosmo = fidu
+	Nicaea_omegab001_ps = genfromtxt('/Users/jia/Documents/code/nicaea_2.4/Demo/P_kappa').T[:-1]
+		
+	Nicaea_omegab045_ps = genfromtxt('/Users/jia/Documents/code/nicaea_2.4/Demo/P_kappa_omegab045').T[:-1]
+	#my ps
+	powspec_CFHT_fn = lambda i, sigmaG: CFHT_dir+'CFHT_powspec_sigma%02d_subfield%02d.fits'%(sigmaG*10, i)
+	ell_arr = logspace(log10(110.01746692),log10(25207.90813028),50)
+	ix = Nicaea_omegab045_ps[0]
+	loglog(ix, Nicaea_omegab001_ps[1],label='nicae sf1')
+	loglog(ix, Nicaea_omegab045_ps[1],label='nicae omegab045')
+	sigmaG = 0.5
+	for i in (1,):#arange(1,14):
+		print i
+		ps = WLanalysis.readFits(powspec_CFHT_fn(i, sigmaG))
+		loglog(ell_arr, ps[1], label='CFHT')
+		
+
+		SIMpw = WLanalysis.readFits(powspec_fn(i, fidu, 1000, sigmaG, 'rz1'))
+		SIMpw_avg = average(SIMpw,axis=0)
+		loglog(ell_arr, SIMpw_avg, label='SIM fidu')
+		
+		SIMpwm = WLanalysis.readFits(powspec_fn(i, hi_m, 1000, sigmaG, 'rz1'))
+		SIMpwm_avg = average(SIMpw,axis=0)
+		loglog(ell_arr, SIMpwm_avg, label='SIM hi_m')
+	
+	## get no noise maps
+	zcut_idx = WLanalysis.readFits(KSsim_dir+'test_ells_asymm/zcut0213_idx_subfield1.fit')
+	raytrace_cat=WLanalysis.readFits(SIMfn(1,cosmo,1000))[zcut_idx].T		
+	k1, s1, s2= raytrace_cat[[0, 1, 2]]
+	x, y, e1, e2, w, m = WLanalysis.readFits(KSsim_dir+'yxewm_subfield1_zcut0213.fit').T
+	A, galn = WLanalysis.coords2grid(x,y, array([k1,s1,s2]))
+	Mk, Ms1, Ms2 = A
+	
+	idx = where(galn>0)
+	#Mk_norm = Mk.copy()
+	#Mk_norm[idx] /= galn[idx]
+	for sigmaG in sigmaG_arr[:3]:
+		Mk_norm_smooth = WLanalysis.weighted_smooth(Mk, galn, sigmaG)
+		ps_nonoise = WLanalysis.PowerSpectrum(Mk_norm_smooth)	
+		loglog(ell_arr,ps_nonoise[1], label='SIM fidu %s'%(sigmaG))
+	legend(fontsize=10,loc=0)
+	show()
+	

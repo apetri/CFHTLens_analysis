@@ -2,6 +2,8 @@
 # yeti: /vega/astro/users/jl3509/tarball/anacondaa/bin/python
 # Jia Liu 2014/3/7
 # update 2014/4/21, changed folder, and corrected for (1+m), which was missing before
+# update 2014/5/14, fixbug dir Ms, Mk -> SIM_Ms, SIM_Mk, also need to create different noise, but not for now
+
 # Overview: this code creates mass maps from simulation
 ################ steps #####################
 #1) smoothing, use random galaxy direction, and w as wegith
@@ -102,6 +104,7 @@ def fileGen(i, R, cosmo):
 	Ms1_rz2_fn = KS_dir+'SIM_Ms/SIM_Ms1_rz2_subfield%i_%s_%04dr.fit'%(i, cosmo, R)
 	Ms2_rz2_fn = KS_dir+'SIM_Ms/SIM_Ms2_rz2_subfield%i_%s_%04dr.fit'%(i, cosmo, R)
 	Mw_fn = KS_dir+'SIM_Mw_subfield%i.fit'%(i) # same for all R
+	galn_fn = KS_dir+'SIM_galn_subfield%i.fit'%(i) # same for all R
 
 	Marr = (Mw_fn, Ms1_pz_fn, Ms2_pz_fn, Ms1_rz1_fn, Ms2_rz1_fn, Ms1_rz2_fn, Ms2_rz2_fn)
 	print 'fileGen', i, str(R)+'r', cosmo
@@ -115,7 +118,7 @@ def fileGen(i, R, cosmo):
 		Ms2_rz2 = WLanalysis.readFits(Ms2_rz2_fn)
 		createfiles = 0
 	
-	elif WLanalysis.TestComplete((Mw_fn,),rm = False):
+	elif WLanalysis.TestComplete((Mw_fn, galn_fn),rm = False):
 		#Mw = WLanalysis.readFits(Mw_fn)
 		WLanalysis.TestComplete(Marr[1:], rm = True)
 		createfiles = 1 #flag to create Ms's
@@ -148,9 +151,11 @@ def fileGen(i, R, cosmo):
 			
 		kk = array([k_rz1, e1_pz*w, e2_pz*w, e1_rz1*w, e2_rz1*w, e1_rz2*w, e2_rz2*w, w*(1+m)])
 		print 'coords2grid'
-		Mk, Ms1_pz, Ms2_pz, Ms1_rz1, Ms2_rz1, Ms1_rz2, Ms2_rz2, Mw = WLanalysis.coords2grid(x, y, kk)[0]
+		A, galn = WLanalysis.coords2grid(x, y, kk)
+		Mk, Ms1_pz, Ms2_pz, Ms1_rz1, Ms2_rz1, Ms1_rz2, Ms2_rz2, Mw = A
 		if createfiles == 2:
 			try:
+				WLanalysis.writeFits(galn, galn_fn)
 				WLanalysis.writeFits(Mw, Mw_fn)
 			except Exception:
 				print 'file already exist, but no worries'
