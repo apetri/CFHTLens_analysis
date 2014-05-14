@@ -232,4 +232,4 @@ if fitcosmo:
 ############# end: calculate ###############
 savetxt(KSsim_dir+'done_cosmoanalysis.ls',zeros(5))
 print 'done-done-done!'
-sys.exit(0)
+#sys.exit(0)
