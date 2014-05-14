@@ -32,7 +32,7 @@ def ps (R):
 for i in range(1, 14):
 	for cosmo in cosmo_arr:
 		print i, cosmo
-		pmat = arary(map(ps, arange(1,1001)))
+		pmat = np.arary(map(ps, arange(1,1001)))
 		pmat_fn = KS_dir + 'powspec_Mk/SIM_powspec_sigma05_subfield%i_rz1_%s_1000R.fit'%(i,cosmo)
 		WLanalysis.writeFits(pmat,pmat_fn)
 print 'done'
