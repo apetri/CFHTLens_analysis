@@ -374,7 +374,7 @@ def rndrot (e1, e2, iseed=None, deg=None):
 	generate random rotation while preserve galaxy size and shape info
 	'''
 	if iseed:
-		random.seed(iseed)
+		np.random.seed(iseed)
 	ells = e1+1j*e2
 	if deg:
 		if deg > pi:
@@ -384,6 +384,20 @@ def rndrot (e1, e2, iseed=None, deg=None):
 		ells_new = -ells*exp(-4j*pi*rand(len(e1)))
 	return real(ells_new), imag(ells_new)
 ####### end: randon orientation #############################
+
+def eobs_fun (g1, g2, k, e1, e2):
+	'''van wearbeke 2013 eq 5-6, get unbiased estimator for shear.
+	Input:
+	g1, g2: shear
+	k: convergence
+	e1, e2: galaxy intrinsic ellipticity
+	Output:
+	e_obs1, e_obs2
+	'''
+	g = (g1+1j*g2)/(1-k)
+	eint = e1+1j*e2
+	eobs = (g+eint)/(1-g*eint)
+	return real(eobs), imag(eobs)
 
 ########## begin: power spectrum ############################
 def azimuthalAverage(image, center = None, edges = None, logbins = True, bins = 50):
