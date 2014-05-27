@@ -11,6 +11,7 @@ from scipy import *
 import scipy.ndimage as snd
 import sys
 from multiprocessing import Pool
+from scoop import futures
 
 ########## define constants ############
 print 'start'
@@ -29,18 +30,10 @@ R=1
 cosmo=cosmo_arr[1]
 iRcosmo = [[i, R, cosmo] for i in i_arr]
 #pool = MPIPool()
-pool = Pool(len(iRcosmo))
-
-# Make sure the thread we're running on is the master
-if not pool.is_master():
-	print 'pool is not master'
-	pool.wait()
-	sys.exit(0)
-#logger.debug("Running with MPI...")
-
-pool.map(testMPIPool, iRcosmo)
-pool.close()
-
+#pool = Pool(len(iRcosmo))
+#pool.map(testMPIPool, iRcosmo)
+#pool.close()
+future.map(testMPIPool, iRcosmo)
 
 print 'KSKSKS-DONE-DONE-DONE'
 #savetxt('/home1/02977/jialiu/done_KS.ls',zeros(5))
