@@ -33,7 +33,7 @@ iRcosmo = [[i, R, cosmo] for i in i_arr]
 #pool = Pool(len(iRcosmo))
 #pool.map(testMPIPool, iRcosmo)
 #pool.close()
-future.map(testMPIPool, iRcosmo)
+futures.map(testMPIPool, iRcosmo)
 
 print 'KSKSKS-DONE-DONE-DONE'
 #savetxt('/home1/02977/jialiu/done_KS.ls',zeros(5))
