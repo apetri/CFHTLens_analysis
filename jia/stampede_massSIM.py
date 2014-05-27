@@ -12,6 +12,7 @@ import scipy.ndimage as snd
 import sys
 
 ########## define constants ############
+print 'start'
 sim_dir = '/home1/02977/jialiu/cat/'
 KS_dir = '/scratch/02977/jialiu/KSsim/'
 cosmo_arr = os.listdir(sim_dir)
