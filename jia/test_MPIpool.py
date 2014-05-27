@@ -10,7 +10,6 @@ import numpy as np
 from scipy import *
 import scipy.ndimage as snd
 import sys
-from multiprocessing import Pool
 
 ########## define constants ############
 print 'start'
@@ -101,11 +100,17 @@ def KSmap(iiRcosmo):
 				print 'file already exist, but no worries'
 				pass
 
+def testMPIPool(iiRcosmo):
+	i, R, cosmo = iiRcosmo
+	savetxt(KS_dir+'test%i'%(i),zeros(5))
 # development test
-iRcosmo = [[i, R, cosmo] for i in i_arr for R in R_arr[:20] for cosmo in cosmo_arr[:5]]
+R=1
+cosmo=cosmo_arr[1]
+iRcosmo = [[i, R, cosmo] for i in i_arr]
+#iRcosmo = [[i, R, cosmo] for i in i_arr for R in R_arr[:5] for cosmo in cosmo_arr[:5]]
 pool = MPIPool()
 #pool = Pool(len(iRcosmo))
-pool.map(KSmap, iRcosmo)
+pool.map(testMPIPool, iRcosmo)
 pool.close()
 
 # full set
