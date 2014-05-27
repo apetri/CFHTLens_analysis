@@ -28,8 +28,8 @@ def testMPIPool(iiRcosmo):
 R=1
 cosmo=cosmo_arr[1]
 iRcosmo = [[i, R, cosmo] for i in i_arr]
-pool = MPIPool()
-#pool = Pool(len(iRcosmo))
+#pool = MPIPool()
+pool = Pool(len(iRcosmo))
 
 # Make sure the thread we're running on is the master
 if not pool.is_master():
