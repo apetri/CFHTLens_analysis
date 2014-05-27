@@ -33,12 +33,20 @@ iRcosmo = [[i, R, cosmo] for i in i_arr]
 #iRcosmo = [[i, R, cosmo] for i in i_arr for R in R_arr[:5] for cosmo in cosmo_arr[:5]]
 pool = MPIPool()
 #pool = Pool(len(iRcosmo))
+
+# Make sure the thread we're running on is the master
+if not pool.is_master():
+	print 'pool is not master'
+	pool.wait()
+	sys.exit(0)
+#logger.debug("Running with MPI...")
+
 pool.map(testMPIPool, iRcosmo)
 pool.close()
 
 
 print 'KSKSKS-DONE-DONE-DONE'
-savetxt('/home1/02977/jialiu/done_KS.ls',zeros(5))
+#savetxt('/home1/02977/jialiu/done_KS.ls',zeros(5))
 
 ##### power spectrum, peaks ############
 
