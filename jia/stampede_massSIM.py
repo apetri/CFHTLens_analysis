@@ -99,15 +99,18 @@ def KSmap(iiRcosmo):
 				print 'file already exist, but no worries'
 				pass
 
-# full set
-iRcosmo = [[i, R, cosmo] for i in i_arr for R in R_arr for cosmo in cosmo_arr]
-
 # development test
-# iRcosmo = [[i, R, cosmo] for i in i_arr for R in R_arr[:20] for cosmo in cosmo_arr[:5]]
+iRcosmo = [[i, R, cosmo] for i in i_arr for R in R_arr[:20] for cosmo in cosmo_arr[:5]]
+	
+# full set
+#for R in R_arr:
+	#print R
+	#iRcosmo = [[i, R, cosmo] for i in i_arr for cosmo in cosmo_arr]
 
-pool = MPIPool()
-pool.map(KSmap, iRcosmo)
-pool.close()
+	#pool = MPIPool()
+	#pool.map(KSmap, iRcosmo)
+	#pool.close()
+
 print 'KSKSKS-DONE-DONE-DONE'
 savetxt('/home1/02977/jialiu/done_KS.ls',zeros(5))
 
