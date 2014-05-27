@@ -21,16 +21,13 @@ cosmo_arr = os.listdir(sim_dir)
 i_arr=arange(1,14)
 R_arr=arange(1,1001)
 
-
-
 def testMPIPool(iiRcosmo):
 	i, R, cosmo = iiRcosmo
-	savetxt(KS_dir+'test%i'%(i),zeros(5))
+	savetxt('/home1/02977/jialiu/test%i'%(i),zeros(5))
 
 R=1
 cosmo=cosmo_arr[1]
 iRcosmo = [[i, R, cosmo] for i in i_arr]
-#iRcosmo = [[i, R, cosmo] for i in i_arr for R in R_arr[:5] for cosmo in cosmo_arr[:5]]
 pool = MPIPool()
 #pool = Pool(len(iRcosmo))
 
