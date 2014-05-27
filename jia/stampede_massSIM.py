@@ -102,7 +102,10 @@ def KSmap(iiRcosmo):
 
 # development test
 iRcosmo = [[i, R, cosmo] for i in i_arr for R in R_arr[:20] for cosmo in cosmo_arr[:5]]
-	
+pool = MPIPool()
+pool.map(KSmap, iRcosmo)
+pool.close()
+
 # full set
 #for R in R_arr:
 	#print R
