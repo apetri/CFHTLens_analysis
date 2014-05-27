@@ -100,10 +100,10 @@ def KSmap(iiRcosmo):
 				pass
 
 # full set
-# iRcosmo = [[i, R, cosmo] for i in i_arr for R in R_arr for cosmo in cosmo_arr]
+iRcosmo = [[i, R, cosmo] for i in i_arr for R in R_arr for cosmo in cosmo_arr]
 
 # development test
-iRcosmo = [[i, R, cosmo] for i in i_arr for R in R_arr[:20] for cosmo in cosmo_arr[:5]]
+# iRcosmo = [[i, R, cosmo] for i in i_arr for R in R_arr[:20] for cosmo in cosmo_arr[:5]]
 
 pool = MPIPool()
 pool.map(KSmap, iRcosmo)
