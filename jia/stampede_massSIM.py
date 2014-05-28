@@ -19,22 +19,33 @@ KS_dir = '/scratch/02977/jialiu/KSsim/'
 cosmo_arr = os.listdir(sim_dir)
 params = genfromtxt(KS_dir+'cosmo_params.txt')
 
+kmin = -0.04 # lower bound of kappa bin = -2 SNR
+kmax = 0.12 # higher bound of kappa bin = 6 SNR
+bins = 600
 ngal_arcmin = 5.0
-zmax=1.3
-zmin=0.2
+zmax = 1.3
+zmin = 0.2
 ngal_cut = ngal_arcmin*(60**2*12)/512**2# = 0.82, cut = 5 / arcmin^2
-PPR512=8468.416479647716#pixels per radians
-PPA512=2.4633625
-rad2pix=lambda x: around(512/2.0-0.5 + x*PPR512).astype(int) #from radians to pixel location
+PPR512 = 8468.416479647716#pixels per radians
+PPA512 = 2.4633625
+rad2pix = lambda x: around(512/2.0-0.5 + x*PPR512).astype(int) #from radians to pixel location
 sigmaG_arr = (0.5, 1, 1.8, 3.5, 5.3, 8.9)
 
-i_arr=arange(1,14)
-R_arr=arange(1,1001)
+i_arr = arange(1,14)
+R_arr = arange(1,1001)
 
 SIMfn = lambda i, cosmo, R: sim_dir+'%s/emulator_subfield%i_WL-only_%s_4096xy_%04dr.fit'%(cosmo, i, cosmo, R)
 
 KSfn = lambda i, cosmo, R, sigmaG: KS_dir+'%s/subfield%i/sigma%02d/SIM_KS_sigma%02d_subfield%i_%s_%04dr.fit'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo,R)
 
+Mask_fn = lambda i, sigmaG: KS_dir+'mask/CFHT_mask_ngal5_sigma%02d_subfield%02d.fits'%(sigmaG*10, i)
+
+peaks_fn = lambda i, cosmo, sigmaG, bins: KS_dir+'peaks/%s/subfield%i/sigma%02d/SIM_peaks_sigma%02d_subfield%i_%s_%03dbins.fit'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo, bins)
+
+powspec_fn = lambda i, cosmo, sigmaG: KS_dir+'powspec/%s/subfield%i/sigma%02d/SIM_powspec_sigma%02d_subfield%i_%s.fit'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo)
+
+
+######### functions ######################
 
 def fileGen(i, R, cosmo):
 	'''
@@ -82,40 +93,47 @@ def KSmap(iiRcosmo):
 	Power spectrum
 	Peak counts
 	'''
+	print 'KSmap i, R, cosmo', i, R, cosmo
 	i, R, cosmo = iiRcosmo
 	Me1, Me2, Mw = fileGen(i, R, cosmo)
 	for sigmaG in sigmaG_arr:
 		KS_fn = KSfn(i, cosmo, R, sigmaG)
 		if os.path.isfile(KS_fn):
-			print 'Done', i, R, sigmaG, cosmo
-			#kmap = WLanalysis.readFits(KS_fn)
+			kmap = WLanalysis.readFits(KS_fn)
 		else:	
-			print 'KSmap i, R, sigmaG, cosmo', i, R, sigmaG, cosmo
+			
 			Me1_smooth = WLanalysis.weighted_smooth(Me1, Mw, PPA=PPA512, sigmaG=sigmaG)
 			Me2_smooth = WLanalysis.weighted_smooth(Me2, Mw, PPA=PPA512, sigmaG=sigmaG)
 			kmap = WLanalysis.KSvw(Me1_smooth, Me2_smooth)
 			try:
 				WLanalysis.writeFits(kmap, KS_fn)
 			except Exception:
-				print 'file already exist, but no worries'
 				pass
+		## power spectrum and peaks ####
+		ps_fn = powspec_fn(i, cosmo, sigmaG)
+		pk_fn = peaks_fn(i, cosmo, sigmaG, bins)
+		
+		if not os.path.isfile(ps_fn):
+			print 'ps', i, R, cosmo, sigmaG
+			ell_arr, powspec = WLanalysis.PowerSpectrum(kmap, sizedeg=12.0)
+			WLanalysis.writeFits(powspec, ps_fn)
+		if not os.path.isfile(pk_fn):
+			print 'ps', i, R, cosmo, sigmaG
+			mask = WLanalysis.readFits(Mask_fn(i, sigmaG))
+			peaks_hist = WLanalysis.peaks_mask_hist(kmap, mask, bins, kmin=kmin, kmax=kmax)
+			WLanalysis.writeFits(peaks_hist,pk_fn)
+			
+		## peaks only 600 bins, rebin later
+		
 
 # development test
-iRcosmo = [[i, R, cosmo] for i in i_arr for R in R_arr[:20] for cosmo in cosmo_arr[:5]]
-pool = MPIPool()
-pool.map(KSmap, iRcosmo)
-pool.close()
+for i in i_arr:
+	print i
+	iRcosmo = [[i, R, cosmo] for R in R_arr[:2] for cosmo in cosmo_arr[:8]]
+	pool = MPIPool()
+	pool.map(KSmap, iRcosmo)
+	pool.close()
 
-# full set using multiprocessing
-#for R in R_arr:
-	#print R
-	#for cosmo in cosmo_arr:
-		#iRcosmo = [[i, R, cosmo] for i in i_arr]
-
-		##pool = MPIPool()
-		#pool = Pool(len(iRcosmo))
-		#pool.map(KSmap, iRcosmo)
-		#pool.close()
 
 # full set
 #iRcosmo = [[i, R, cosmo] for i in i_arr for R in R_arr for cosmo in cosmo_arr]
@@ -123,8 +141,9 @@ pool.close()
 #pool.map(KSmap, iRcosmo)
 #pool.close()
 
-print 'KSKSKS-DONE-DONE-DONE', len(iRcosmo)
+print 'DONE-DONE-DONE', len(iRcosmo)
 savetxt('/home1/02977/jialiu/done_KS.ls',zeros(5))
 
-##### power spectrum, peaks ############
+##### power spectrum, peaks 2014/05/28############
+
 
