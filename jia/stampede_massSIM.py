@@ -33,7 +33,7 @@ R_arr=arange(1,1001)
 
 SIMfn = lambda i, cosmo, R: sim_dir+'%s/emulator_subfield%i_WL-only_%s_4096xy_%04dr.fit'%(cosmo, i, cosmo, R)
 
-KSfn = lambda i, cosmo, R, sigmaG: KS_dir+'%s/SIM_KS_sigma%02d_subfield%i_%s_%04dr.fit'%(cosmo, sigmaG*10, i, cosmo,R)
+KSfn = lambda i, cosmo, R, sigmaG: KS_dir+'%s/subfield%i/sigma%02d/SIM_KS_sigma%02d_subfield%i_%s_%04dr.fit'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo,R)
 
 
 def fileGen(i, R, cosmo):
@@ -102,20 +102,22 @@ def KSmap(iiRcosmo):
 				pass
 
 # development test
-iRcosmo = [[i, R, cosmo] for i in i_arr for R in R_arr[:20] for cosmo in cosmo_arr[:5]]
-pool = MPIPool()
-#pool = Pool(len(iRcosmo))
-pool.map(KSmap, iRcosmo)
-pool.close()
+#iRcosmo = [[i, R, cosmo] for i in i_arr for R in R_arr[:20] for cosmo in cosmo_arr[:5]]
+#pool = MPIPool()
+##pool = Pool(len(iRcosmo))
+#pool.map(KSmap, iRcosmo)
+#pool.close()
 
 # full set
-#for R in R_arr:
-	#print R
-	#iRcosmo = [[i, R, cosmo] for i in i_arr for cosmo in cosmo_arr]
+for R in R_arr:
+	print R
+	for cosmo in cosmo_arr:
+		iRcosmo = [[i, R, cosmo] for i in i_arr]
 
-	#pool = MPIPool()
-	#pool.map(KSmap, iRcosmo)
-	#pool.close()
+		#pool = MPIPool()
+		pool = Pool(len(iRcosmo))
+		pool.map(KSmap, iRcosmo)
+		pool.close()
 
 print 'KSKSKS-DONE-DONE-DONE'
 savetxt('/home1/02977/jialiu/done_KS.ls',zeros(5))
