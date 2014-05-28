@@ -454,6 +454,7 @@ def PowerSpectrum(img, sizedeg = 12.0, edges = None, logbins = True):#edges shou
 	powspec = the power at the bins
 	ell_arr = lower bound of the binedges
 	'''
+	img = img.astype(float)
 	size = img.shape[0]
 	#F = fftpack.fftshift(fftpack.fft2(img))
 	F = fftshift(fftpack.fft2(img))
