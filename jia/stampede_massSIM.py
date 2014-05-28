@@ -93,8 +93,8 @@ def KSmap(iiRcosmo):
 	Power spectrum
 	Peak counts
 	'''
-	print 'KSmap i, R, cosmo', i, R, cosmo
 	i, R, cosmo = iiRcosmo
+	print 'KSmap i, R, cosmo', i, R, cosmo
 	Me1, Me2, Mw = fileGen(i, R, cosmo)
 	for sigmaG in sigmaG_arr:
 		KS_fn = KSfn(i, cosmo, R, sigmaG)
