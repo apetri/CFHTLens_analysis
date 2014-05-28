@@ -165,7 +165,6 @@ pool.close()
 #pool.map(KSmap, iRcosmo)
 #pool.close()
 
-
 print 'DONE-DONE-DONE', len(iRcosmo)
 savetxt('/home1/02977/jialiu/done_KS.ls',zeros(5))
 
