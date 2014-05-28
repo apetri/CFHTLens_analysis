@@ -110,18 +110,24 @@ def KSmap(iiRcosmo):
 			except Exception:
 				pass
 		## power spectrum and peaks ####
-		ps_fn = powspec_fn(i, cosmo, sigmaG)
-		pk_fn = peaks_fn(i, cosmo, sigmaG, bins)
+		#ps_fn = powspec_fn(i, cosmo, sigmaG)
+		#pk_fn = peaks_fn(i, cosmo, sigmaG, bins)
 		
-		if not os.path.isfile(ps_fn):
-			print 'ps', i, R, cosmo, sigmaG
-			ell_arr, powspec = WLanalysis.PowerSpectrum(kmap, sizedeg=12.0)
-			WLanalysis.writeFits(powspec, ps_fn)
-		if not os.path.isfile(pk_fn):
-			print 'ps', i, R, cosmo, sigmaG
-			mask = WLanalysis.readFits(Mask_fn(i, sigmaG))
-			peaks_hist = WLanalysis.peaks_mask_hist(kmap, mask, bins, kmin=kmin, kmax=kmax)
-			WLanalysis.writeFits(peaks_hist,pk_fn)
+		#if not os.path.isfile(ps_fn):
+			##print 'ps', i, R, cosmo, sigmaG
+			#powspec = WLanalysis.PowerSpectrum(kmap, sizedeg=12.0)[-1]
+			#try:
+				#WLanalysis.writeFits(powspec, ps_fn)
+			#except Exception:
+				#pass
+		#if not os.path.isfile(pk_fn):
+			##print 'pk', i, R, cosmo, sigmaG
+			#mask = WLanalysis.readFits(Mask_fn(i, sigmaG))
+			#peaks_hist = WLanalysis.peaks_mask_hist(kmap, mask, bins, kmin = kmin, kmax = kmax)
+			#try:
+				#WLanalysis.writeFits(peaks_hist,pk_fn)
+			#except Exception:
+				#pass
 			
 		## peaks only 600 bins, rebin later
 		
@@ -143,7 +149,5 @@ for i in i_arr:
 
 print 'DONE-DONE-DONE', len(iRcosmo)
 savetxt('/home1/02977/jialiu/done_KS.ls',zeros(5))
-
-##### power spectrum, peaks 2014/05/28############
 
 
