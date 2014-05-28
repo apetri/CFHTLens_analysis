@@ -78,7 +78,6 @@ def fileGen(i, R, cosmo):
 	try:
 		WLanalysis.writeFits(Mk, Mk_fn)
 	except Exception:
-		print 'file already exist, but no worries'
 		pass
 	# galn_fn = KS_dir+'galn_subfield%i.fit'%(i) # same for all R
 	return Ms1, Ms2, Mw
@@ -114,14 +113,14 @@ def KSmap(iiRcosmo):
 		pk_fn = peaks_fn(i, cosmo, sigmaG, bins)
 		
 		if not os.path.isfile(ps_fn):
-			#print 'ps', i, R, cosmo, sigmaG
+			print 'ps', i, R, cosmo, sigmaG
 			powspec = WLanalysis.PowerSpectrum(kmap, sizedeg=12.0)[-1]
 			try:
 				WLanalysis.writeFits(powspec, ps_fn)
 			except Exception:
 				pass
 		if not os.path.isfile(pk_fn):
-			#print 'pk', i, R, cosmo, sigmaG
+			print 'pk', i, R, cosmo, sigmaG
 			mask = WLanalysis.readFits(Mask_fn(i, sigmaG))
 			peaks_hist = WLanalysis.peaks_mask_hist(kmap, mask, bins, kmin = kmin, kmax = kmax)
 			try:
@@ -133,26 +132,34 @@ def KSmap(iiRcosmo):
 		
 
 # development test
+### 1.pass
 #for i in i_arr:
 	#print i
 	#iRcosmo = [[i, R, cosmo] for R in R_arr[:2] for cosmo in cosmo_arr[:8]]
 	#pool = MPIPool()
 	#pool.map(KSmap, iRcosmo)
 	#pool.close()
-	###pass
-
+	
+### 2.pass
 #iRcosmo = [[i, R, cosmo] for i in i_arr for R in R_arr[2:4] for cosmo in cosmo_arr[:8]]
 #pool = MPIPool()
 #pool.map(KSmap, iRcosmo)
 #pool.close()
 
+### 3.pass
+#pool = MPIPool()
+#for i in i_arr:
+	#print i
+	#iRcosmo = [[i, R, cosmo] for R in R_arr[4:6] for cosmo in cosmo_arr[:8]]
+	#pool.map(KSmap, iRcosmo)
+#pool.close()
+
+### 4. include ps & pk
+iRcosmo = [[i, R, cosmo] for i in i_arr for R in R_arr[10:20] for cosmo in cosmo_arr[:8]]
 pool = MPIPool()
-for i in i_arr:
-	print i
-	iRcosmo = [[i, R, cosmo] for R in R_arr[4:6] for cosmo in cosmo_arr[:8]]
-	pool.map(KSmap, iRcosmo)
+pool.map(KSmap, iRcosmo)
 pool.close()
-	
+
 # full set
 #iRcosmo = [[i, R, cosmo] for i in i_arr for R in R_arr for cosmo in cosmo_arr]
 #pool = MPIPool()
