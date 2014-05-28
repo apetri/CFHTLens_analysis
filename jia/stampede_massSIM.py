@@ -1,4 +1,4 @@
-#!~/anaconda/bin/python
+#!python
 # Jia Liu 2014/5/21
 # What the code does: create mass maps for 100 cosmologies, for the CFHT emulator project
 # Cluster: XSEDE Stampede
@@ -78,7 +78,7 @@ def KSmap(iiRcosmo):
 	R: realization range from (1..1000)
 	cosmo: one of the 1000 cosmos
 	Return:
-	(no longer return) KS inverted map
+	KS inverted map
 	Power spectrum
 	Peak counts
 	'''
