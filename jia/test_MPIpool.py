@@ -17,8 +17,8 @@ def testMPIPool(i):
 	savetxt('/home1/02977/jialiu/test%i'%(i),zeros(5))
 
 pool = MPIPool()
-#pool = Pool(len(iRcosmo))
-pool.map(testMPIPool, iRcosmo)
+#pool = Pool(len(i_arr))
+pool.map(testMPIPool, i_arr)
 #pool.close()
 #futures.map(testMPIPool, i_arr)
 
