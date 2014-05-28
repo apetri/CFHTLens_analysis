@@ -69,7 +69,7 @@ def fileGen(i, R, cosmo):
 	## get reduced shear
 	e1, e2 = WLanalysis.eobs_fun(s1, s2, k, eint1, eint2)
 
-	print 'coords2grid', i, R, cosmo
+	#print 'coords2grid', i, R, cosmo
 	A, galn = WLanalysis.coords2grid(x, y, array([k, e1*w, e2*w]))
 	Mk, Ms1, Ms2 = A
 
@@ -111,16 +111,16 @@ def KSmap(iiRcosmo):
 		# power spectrum and peaks ####
 		ps_fn = powspec_fn(i, cosmo, sigmaG)
 		pk_fn = peaks_fn(i, cosmo, sigmaG, bins)
-		
+		print 'ps_fn', ps_fn
 		if not os.path.isfile(ps_fn):
-			print 'ps', i, R, cosmo, sigmaG
+			print 'ps', ps_fn
 			powspec = WLanalysis.PowerSpectrum(kmap, sizedeg=12.0)[-1]
 			try:
 				WLanalysis.writeFits(powspec, ps_fn)
 			except Exception:
 				pass
 		if not os.path.isfile(pk_fn):
-			print 'pk', i, R, cosmo, sigmaG
+			print 'pk', pk_fn
 			mask = WLanalysis.readFits(Mask_fn(i, sigmaG))
 			peaks_hist = WLanalysis.peaks_mask_hist(kmap, mask, bins, kmin = kmin, kmax = kmax)
 			try:
@@ -155,7 +155,7 @@ def KSmap(iiRcosmo):
 #pool.close()
 
 ### 4. include ps & pk
-iRcosmo = [[i, R, cosmo] for i in i_arr for R in R_arr[10:20] for cosmo in cosmo_arr[:8]]
+iRcosmo = [[i, R, cosmo] for i in i_arr[-3:] for R in R_arr[30:32] for cosmo in cosmo_arr[:2]]
 pool = MPIPool()
 pool.map(KSmap, iRcosmo)
 pool.close()
