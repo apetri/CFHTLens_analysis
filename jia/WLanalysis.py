@@ -4,10 +4,10 @@
 import numpy as np
 from scipy import *
 from scipy import interpolate, stats, fftpack
-from pylab import *
+#from pylab import *
 import os
 import scipy.ndimage as snd
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 ######### uncomment one of the following 2 lines######
 import astropy.io.fits as pyfits
 #import pyfits
