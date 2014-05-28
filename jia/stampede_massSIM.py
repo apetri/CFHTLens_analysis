@@ -111,16 +111,14 @@ def KSmap(iiRcosmo):
 		# power spectrum and peaks ####
 		ps_fn = powspec_fn(i, cosmo, sigmaG)
 		pk_fn = peaks_fn(i, cosmo, sigmaG, bins)
-		print 'ps_fn', ps_fn
 		if not os.path.isfile(ps_fn):
-			print 'ps', ps_fn
 			powspec = WLanalysis.PowerSpectrum(kmap, sizedeg=12.0)[-1]
 			try:
 				WLanalysis.writeFits(powspec, ps_fn)
 			except Exception:
 				pass
 		if not os.path.isfile(pk_fn):
-			print 'pk', pk_fn
+			## peaks only 600 bins, rebin later
 			mask = WLanalysis.readFits(Mask_fn(i, sigmaG))
 			peaks_hist = WLanalysis.peaks_mask_hist(kmap, mask, bins, kmin = kmin, kmax = kmax)
 			try:
@@ -128,10 +126,17 @@ def KSmap(iiRcosmo):
 			except Exception:
 				pass
 			
-		## peaks only 600 bins, rebin later
-		
 
-# development test
+# full set
+pool = MPIPool()
+#iRcosmo = [[i, R, cosmo] for i in i_arr for R in R_arr for cosmo in cosmo_arr]
+for R in R_arr:
+	iRcosmo = [[i, R, cosmo] for i in i_arr for cosmo in cosmo_arr]
+	pool.map(KSmap, iRcosmo)
+pool.close()
+
+
+#### development test
 ### 1.pass
 #for i in i_arr:
 	#print i
@@ -154,17 +159,12 @@ def KSmap(iiRcosmo):
 	#pool.map(KSmap, iRcosmo)
 #pool.close()
 
-### 4. include ps & pk
-iRcosmo = [[i, R, cosmo] for i in i_arr[-3:] for R in R_arr[30:32] for cosmo in cosmo_arr[:2]]
-pool = MPIPool()
-pool.map(KSmap, iRcosmo)
-pool.close()
-
-# full set
-#iRcosmo = [[i, R, cosmo] for i in i_arr for R in R_arr for cosmo in cosmo_arr]
+### 4. include ps & pk #pass
+#iRcosmo = [[i, R, cosmo] for i in i_arr[-3:] for R in R_arr[30:32] for cosmo in cosmo_arr[:2]]
 #pool = MPIPool()
 #pool.map(KSmap, iRcosmo)
 #pool.close()
+
 
 print 'DONE-DONE-DONE', len(iRcosmo)
 savetxt('/home1/02977/jialiu/done_KS.ls',zeros(5))
