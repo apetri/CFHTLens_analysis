@@ -133,13 +133,18 @@ def KSmap(iiRcosmo):
 		
 
 # development test
-for i in i_arr:
-	print i
-	iRcosmo = [[i, R, cosmo] for R in R_arr[:2] for cosmo in cosmo_arr[:8]]
-	pool = MPIPool()
-	pool.map(KSmap, iRcosmo)
-	pool.close()
+#for i in i_arr:
+	#print i
+	#iRcosmo = [[i, R, cosmo] for R in R_arr[:2] for cosmo in cosmo_arr[:8]]
+	#pool = MPIPool()
+	#pool.map(KSmap, iRcosmo)
+	#pool.close()
+	#pass
 
+iRcosmo = [[i, R, cosmo] for i in i_arr for R in R_arr[2:4] for cosmo in cosmo_arr[:8]]
+pool = MPIPool()
+pool.map(KSmap, iRcosmo)
+pool.close()
 
 # full set
 #iRcosmo = [[i, R, cosmo] for i in i_arr for R in R_arr for cosmo in cosmo_arr]
