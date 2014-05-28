@@ -108,16 +108,22 @@ def KSmap(iiRcosmo):
 #pool.map(KSmap, iRcosmo)
 #pool.close()
 
-# full set
-for R in R_arr:
-	print R
-	for cosmo in cosmo_arr:
-		iRcosmo = [[i, R, cosmo] for i in i_arr]
+# full set using multiprocessing
+#for R in R_arr:
+	#print R
+	#for cosmo in cosmo_arr:
+		#iRcosmo = [[i, R, cosmo] for i in i_arr]
 
-		#pool = MPIPool()
-		pool = Pool(len(iRcosmo))
-		pool.map(KSmap, iRcosmo)
-		pool.close()
+		##pool = MPIPool()
+		#pool = Pool(len(iRcosmo))
+		#pool.map(KSmap, iRcosmo)
+		#pool.close()
+
+# full set
+iRcosmo = [[i, R, cosmo] for i in i_arr for R in R_arr for cosmo in cosmo_arr]
+pool = MPIPool()
+pool.map(KSmap, iRcosmo)
+pool.close()
 
 print 'KSKSKS-DONE-DONE-DONE'
 savetxt('/home1/02977/jialiu/done_KS.ls',zeros(5))
