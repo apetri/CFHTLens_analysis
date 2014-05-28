@@ -10,7 +10,7 @@ import numpy as np
 from scipy import *
 import scipy.ndimage as snd
 import sys
-from multiprocessing import Pool
+#from multiprocessing import Pool
 
 ########## define constants ############
 print 'start'
@@ -84,12 +84,11 @@ def KSmap(iiRcosmo):
 	'''
 	i, R, cosmo = iiRcosmo
 	Me1, Me2, Mw = fileGen(i, R, cosmo)
-	#Ms_arr = ((Ms1_pz, Ms2_pz), (Ms1_rz1, Ms2_rz1), (Ms1_rz2, Ms2_rz2))
 	for sigmaG in sigmaG_arr:
 		KS_fn = KSfn(i, cosmo, R, sigmaG)
 		if os.path.isfile(KS_fn):
 			print 'Done', i, R, sigmaG, cosmo
-			kmap = WLanalysis.readFits(KS_fn)
+			#kmap = WLanalysis.readFits(KS_fn)
 		else:	
 			print 'KSmap i, R, sigmaG, cosmo', i, R, sigmaG, cosmo
 			Me1_smooth = WLanalysis.weighted_smooth(Me1, Mw, PPA=PPA512, sigmaG=sigmaG)
@@ -102,11 +101,10 @@ def KSmap(iiRcosmo):
 				pass
 
 # development test
-#iRcosmo = [[i, R, cosmo] for i in i_arr for R in R_arr[:20] for cosmo in cosmo_arr[:5]]
-#pool = MPIPool()
-##pool = Pool(len(iRcosmo))
-#pool.map(KSmap, iRcosmo)
-#pool.close()
+iRcosmo = [[i, R, cosmo] for i in i_arr for R in R_arr[:20] for cosmo in cosmo_arr[:5]]
+pool = MPIPool()
+pool.map(KSmap, iRcosmo)
+pool.close()
 
 # full set using multiprocessing
 #for R in R_arr:
@@ -120,12 +118,12 @@ def KSmap(iiRcosmo):
 		#pool.close()
 
 # full set
-iRcosmo = [[i, R, cosmo] for i in i_arr for R in R_arr for cosmo in cosmo_arr]
-pool = MPIPool()
-pool.map(KSmap, iRcosmo)
-pool.close()
+#iRcosmo = [[i, R, cosmo] for i in i_arr for R in R_arr for cosmo in cosmo_arr]
+#pool = MPIPool()
+#pool.map(KSmap, iRcosmo)
+#pool.close()
 
-print 'KSKSKS-DONE-DONE-DONE'
+print 'KSKSKS-DONE-DONE-DONE', len(iRcosmo)
 savetxt('/home1/02977/jialiu/done_KS.ls',zeros(5))
 
 ##### power spectrum, peaks ############
