@@ -109,25 +109,25 @@ def KSmap(iiRcosmo):
 				WLanalysis.writeFits(kmap, KS_fn)
 			except Exception:
 				pass
-		## power spectrum and peaks ####
-		#ps_fn = powspec_fn(i, cosmo, sigmaG)
-		#pk_fn = peaks_fn(i, cosmo, sigmaG, bins)
+		# power spectrum and peaks ####
+		ps_fn = powspec_fn(i, cosmo, sigmaG)
+		pk_fn = peaks_fn(i, cosmo, sigmaG, bins)
 		
-		#if not os.path.isfile(ps_fn):
-			##print 'ps', i, R, cosmo, sigmaG
-			#powspec = WLanalysis.PowerSpectrum(kmap, sizedeg=12.0)[-1]
-			#try:
-				#WLanalysis.writeFits(powspec, ps_fn)
-			#except Exception:
-				#pass
-		#if not os.path.isfile(pk_fn):
-			##print 'pk', i, R, cosmo, sigmaG
-			#mask = WLanalysis.readFits(Mask_fn(i, sigmaG))
-			#peaks_hist = WLanalysis.peaks_mask_hist(kmap, mask, bins, kmin = kmin, kmax = kmax)
-			#try:
-				#WLanalysis.writeFits(peaks_hist,pk_fn)
-			#except Exception:
-				#pass
+		if not os.path.isfile(ps_fn):
+			#print 'ps', i, R, cosmo, sigmaG
+			powspec = WLanalysis.PowerSpectrum(kmap, sizedeg=12.0)[-1]
+			try:
+				WLanalysis.writeFits(powspec, ps_fn)
+			except Exception:
+				pass
+		if not os.path.isfile(pk_fn):
+			#print 'pk', i, R, cosmo, sigmaG
+			mask = WLanalysis.readFits(Mask_fn(i, sigmaG))
+			peaks_hist = WLanalysis.peaks_mask_hist(kmap, mask, bins, kmin = kmin, kmax = kmax)
+			try:
+				WLanalysis.writeFits(peaks_hist,pk_fn)
+			except Exception:
+				pass
 			
 		## peaks only 600 bins, rebin later
 		
@@ -139,13 +139,20 @@ def KSmap(iiRcosmo):
 	#pool = MPIPool()
 	#pool.map(KSmap, iRcosmo)
 	#pool.close()
-	#pass
+	###pass
 
-iRcosmo = [[i, R, cosmo] for i in i_arr for R in R_arr[2:4] for cosmo in cosmo_arr[:8]]
+#iRcosmo = [[i, R, cosmo] for i in i_arr for R in R_arr[2:4] for cosmo in cosmo_arr[:8]]
+#pool = MPIPool()
+#pool.map(KSmap, iRcosmo)
+#pool.close()
+
 pool = MPIPool()
-pool.map(KSmap, iRcosmo)
+for i in i_arr:
+	print i
+	iRcosmo = [[i, R, cosmo] for R in R_arr[4:6] for cosmo in cosmo_arr[:8]]
+	pool.map(KSmap, iRcosmo)
 pool.close()
-
+	
 # full set
 #iRcosmo = [[i, R, cosmo] for i in i_arr for R in R_arr for cosmo in cosmo_arr]
 #pool = MPIPool()
