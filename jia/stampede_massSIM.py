@@ -97,18 +97,25 @@ def KSmap(iiRcosmo):
 	Me1, Me2, Mw = fileGen(i, R, cosmo)
 	for sigmaG in sigmaG_arr:
 		KS_fn = KSfn(i, cosmo, R, sigmaG)
+		create_kmap = 1
 		if os.path.isfile(KS_fn):
-			kmap = WLanalysis.readFits(KS_fn)
-		else:	
-			
+			try:
+				kmap = WLanalysis.readFits(KS_fn)
+				create_kmap = 0
+			except Exception:
+				pass
+				create_kmap = 1	
+		if create_kmap:	
 			Me1_smooth = WLanalysis.weighted_smooth(Me1, Mw, PPA=PPA512, sigmaG=sigmaG)
 			Me2_smooth = WLanalysis.weighted_smooth(Me2, Mw, PPA=PPA512, sigmaG=sigmaG)
 			kmap = WLanalysis.KSvw(Me1_smooth, Me2_smooth)
 			try:
 				WLanalysis.writeFits(kmap, KS_fn)
 			except Exception:
+				os.remove(KS_fn)
+				WLanalysis.writeFits(kmap, KS_fn)
 				pass
-		# power spectrum and peaks ####
+		power spectrum and peaks ####
 		ps_fn = powspec_fn(i, cosmo, sigmaG)
 		pk_fn = peaks_fn(i, cosmo, sigmaG, bins)
 		if not os.path.isfile(ps_fn):
