@@ -25,6 +25,7 @@ bins = 600 # for peak counts
 sigmaG_arr = (0.5, 1, 1.8, 3.5, 5.3, 8.9)
 i_arr = arange(1,14)
 R_arr = arange(1,1001)
+PPA512 = 2.4633625
 
 # constants not used
 # zmax = 1.3
@@ -32,7 +33,6 @@ R_arr = arange(1,1001)
 # ngal_arcmin = 5.0
 # ngal_cut = ngal_arcmin*(60**2*12)/512**2# = 0.82, cut = 5 / arcmin^2
 #PPR512 = 8468.416479647716#pixels per radians
-#PPA512 = 2.4633625
 #rad2pix = lambda x: around(512/2.0-0.5 + x*PPR512).astype(int) #from radians to pixel location
 
 SIMfn = lambda i, cosmo, R: sim_dir+'%s/emulator_subfield%i_WL-only_%s_4096xy_%04dr.fit'%(cosmo, i, cosmo, R)
