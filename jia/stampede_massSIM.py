@@ -59,6 +59,7 @@ yxewm_arr = map(yxewm_fcn, i_arr)
 
 def fileGen(i, R, cosmo):
 	'''
+	Put catalogue to grid, with (1+m)w correction. Mw is already done.
 	Input:
 	i: subfield range from (1, 2..13)
 	R: realization range from (1..1000)
