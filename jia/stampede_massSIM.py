@@ -107,7 +107,7 @@ def KSmap(iiRcosmo):
 		ps_fn = powspec_fn(i, cosmo, sigmaG)
 		pk_fn = peaks_fn(i, cosmo, sigmaG, bins)
 		if not os.path.isfile(ps_fn) or not os.path.isfile(ps_fn):
-			creat_ps_pk = 1
+			create_ps_pk = 1
 			break
 	if create_ps_pk:
 		print 'creating KSmap i, R, cosmo', i, R, cosmo
