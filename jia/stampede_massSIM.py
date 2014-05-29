@@ -69,7 +69,7 @@ def fileGen(i, R, cosmo):
 	Me2 = e2*w
 	
 	'''
-	y, x, e1, e2, w, m = yxewm_arr[i].T
+	y, x, e1, e2, w, m = yxewm_arr[i-1].T
 	k, s1, s2 = (WLanalysis.readFits(SIMfn(i,cosmo,R)).T)[[0,1,2]]
 	s1 *= (1+m)
 	s2 *= (1+m)
@@ -112,7 +112,7 @@ def KSmap(iiRcosmo):
 	if create_ps_pk:
 		print 'creating KSmap i, R, cosmo', i, R, cosmo
 		Me1, Me2 = fileGen(i, R, cosmo)
-		Mw = Mw_arr[i]
+		Mw = Mw_arr[i-1]
 		for sigmaG in sigmaG_arr:
 			ps_fn = powspec_fn(i, cosmo, sigmaG)
 			pk_fn = peaks_fn(i, cosmo, sigmaG, bins)
