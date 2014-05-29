@@ -115,7 +115,7 @@ def KSmap(iiRcosmo):
 				os.remove(KS_fn)
 				WLanalysis.writeFits(kmap, KS_fn)
 				pass
-		power spectrum and peaks ####
+		############# power spectrum and peaks ####
 		ps_fn = powspec_fn(i, cosmo, sigmaG)
 		pk_fn = peaks_fn(i, cosmo, sigmaG, bins)
 		if not os.path.isfile(ps_fn):
@@ -173,6 +173,6 @@ pool.close()
 #pool.close()
 
 print 'DONE-DONE-DONE', len(iRcosmo)
-savetxt('/home1/02977/jialiu/done_KS.ls',zeros(5))
+#savetxt('/home1/02977/jialiu/done_KS.ls',zeros(5))
 
 
