@@ -41,9 +41,9 @@ KSfn = lambda i, cosmo, R, sigmaG: KS_dir+'%s/subfield%i/sigma%02d/SIM_KS_sigma%
 
 Mask_fn = lambda i, sigmaG: KS_dir+'mask/CFHT_mask_ngal5_sigma%02d_subfield%02d.fits'%(sigmaG*10, i)
 
-peaks_fn = lambda i, cosmo, sigmaG, bins: KS_dir+'peaks/%s/subfield%i/sigma%02d/SIM_peaks_sigma%02d_subfield%i_%s_%03dbins.fit'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo, bins)
+peaks_fn = lambda i, cosmo, sigmaG, bins, R: KS_dir+'peaks/%s/subfield%i/sigma%02d/SIM_peaks_sigma%02d_subfield%i_%s_%03dbins_%04dr.fit'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo, bins, R)
 
-powspec_fn = lambda i, cosmo, sigmaG: KS_dir+'powspec/%s/subfield%i/sigma%02d/SIM_powspec_sigma%02d_subfield%i_%s.fit'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo)
+powspec_fn = lambda i, cosmo, sigmaG, R: KS_dir+'powspec/%s/subfield%i/sigma%02d/SIM_powspec_sigma%02d_subfield%i_%s_%04dr.fit'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo, R)
 
 
 ######### functions ######################
@@ -104,8 +104,8 @@ def KSmap(iiRcosmo):
 	## check if power spectrum and peaks are created already ##
 	create_ps_pk = 0
 	for sigmaG in sigmaG_arr:
-		ps_fn = powspec_fn(i, cosmo, sigmaG)
-		pk_fn = peaks_fn(i, cosmo, sigmaG, bins)
+		ps_fn = powspec_fn(i, cosmo, sigmaG, R)
+		pk_fn = peaks_fn(i, cosmo, sigmaG, bins, R)
 		if not os.path.isfile(ps_fn) or not os.path.isfile(ps_fn):
 			create_ps_pk = 1
 			break
@@ -114,8 +114,8 @@ def KSmap(iiRcosmo):
 		Me1, Me2 = fileGen(i, R, cosmo)
 		Mw = Mw_arr[i-1]
 		for sigmaG in sigmaG_arr:
-			ps_fn = powspec_fn(i, cosmo, sigmaG)
-			pk_fn = peaks_fn(i, cosmo, sigmaG, bins)
+			ps_fn = powspec_fn(i, cosmo, sigmaG, R)
+			pk_fn = peaks_fn(i, cosmo, sigmaG, bins, R)
 			
 			KS_fn = KSfn(i, cosmo, R, sigmaG)
 			create_kmap = 1
