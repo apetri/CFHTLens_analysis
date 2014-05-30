@@ -156,6 +156,8 @@ def KSmap(iiRcosmo):
 				#WLanalysis.writeFits(peaks_hist,pk_fn)
 				print 'cant write', pk_fn
 				pass
+	else:
+		print 'already done KSmap i, R, cosmo', i, R, cosmo
 
 # full set
 iRcosmo = [[i, R, cosmo] for i in i_arr[::-1] for R in R_arr for cosmo in cosmo_arr]
