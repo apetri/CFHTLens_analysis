@@ -13,6 +13,8 @@ import sys
 #from multiprocessing import Pool
 
 ########## define constants ############
+i = int(sys.argv[1])
+
 print 'start'
 sim_dir = '/home1/02977/jialiu/cat/'
 KS_dir = '/scratch/02977/jialiu/KSsim/'
@@ -23,10 +25,10 @@ kmin = -0.04 # lower bound of kappa bin = -2 SNR
 kmax = 0.12 # higher bound of kappa bin = 6 SNR
 bins = 600 # for peak counts
 sigmaG_arr = (0.5, 1, 1.8, 3.5, 5.3, 8.9)
-i_arr = arange(1,14)
+#i_arr = arange(1,14)
 R_arr = arange(1,1001)
 PPA512 = 2.4633625
-
+i_arr = (i,)
 # constants not used
 # zmax = 1.3
 # zmin = 0.2
@@ -51,11 +53,16 @@ powspec_fn = lambda i, cosmo, sigmaG, R: KS_dir+'powspec/%s/subfield%i/sigma%02d
 ### read in MW and yxewm first
 #Mw_fn = KS_dir+'SIM_Mw_subfield%i.fit'%(i) # same for all R
 #Mw = WLanalysis.readFits(Mw_fn)
+
 Mw_fcn = lambda i: WLanalysis.readFits(KS_dir+'SIM_Mw_subfield%i.fit'%(i))
-Mw_arr = map(Mw_fcn, i_arr) # Mw = w (1+m) in a grid
+#Mw_arr = map(Mw_fcn, i_arr) # Mw = w (1+m) in a grid
 
 yxewm_fcn = lambda i: WLanalysis.readFits(KS_dir+'yxewm_subfield%i_zcut0213.fit'%(i))
-yxewm_arr = map(yxewm_fcn, i_arr)
+#yxewm_arr = map(yxewm_fcn, i_arr)
+
+## this is customized to one subfield at a time
+Mw = Mw_fcn[i]
+y, x, e1, e2, w, m = yxewm_fcn[i].T
 
 print 'got yxewm_arr'
 def fileGen(i, R, cosmo):
@@ -70,7 +77,7 @@ def fileGen(i, R, cosmo):
 	Me2 = e2*w
 	
 	'''
-	y, x, e1, e2, w, m = yxewm_arr[i-1].T
+	#y, x, e1, e2, w, m = yxewm_arr[i-1].T
 	k, s1, s2 = (WLanalysis.readFits(SIMfn(i,cosmo,R)).T)[[0,1,2]]
 	s1 *= (1+m)
 	s2 *= (1+m)
@@ -113,7 +120,7 @@ def KSmap(iiRcosmo):
 	if create_ps_pk:
 		print 'creating KSmap i, R, cosmo', i, R, cosmo
 		Me1, Me2 = fileGen(i, R, cosmo)
-		Mw = Mw_arr[i-1]
+		#Mw = Mw_arr[i-1]
 		for sigmaG in sigmaG_arr:
 			ps_fn = powspec_fn(i, cosmo, sigmaG, R)
 			pk_fn = peaks_fn(i, cosmo, sigmaG, bins, R)
@@ -161,9 +168,7 @@ def KSmap(iiRcosmo):
 		print 'already done KSmap i, R, cosmo', i, R, cosmo
 
 # full set
-iRcosmo = [[i, R, cosmo] for i in range(4,12) for R in R_arr for cosmo in cosmo_arr]
-#for R in R_arr:
-	#iRcosmo = [[i, R, cosmo] for i in i_arr for cosmo in cosmo_arr]
+iRcosmo = [[i, R, cosmo] for R in R_arr for cosmo in cosmo_arr]
 pool = MPIPool()
 pool.map(KSmap, iRcosmo)
 pool.close()
