@@ -161,7 +161,7 @@ def KSmap(iiRcosmo):
 		print 'already done KSmap i, R, cosmo', i, R, cosmo
 
 # full set
-iRcosmo = [[i, R, cosmo] for i in i_arr[::-1] for R in R_arr for cosmo in cosmo_arr]
+iRcosmo = [[i, R, cosmo] for i in i_arr[2:] for R in R_arr for cosmo in cosmo_arr]
 #for R in R_arr:
 	#iRcosmo = [[i, R, cosmo] for i in i_arr for cosmo in cosmo_arr]
 pool = MPIPool()
