@@ -57,6 +57,7 @@ Mw_arr = map(Mw_fcn, i_arr) # Mw = w (1+m) in a grid
 yxewm_fcn = lambda i: WLanalysis.readFits(KS_dir+'yxewm_subfield%i_zcut0213.fit'%(i))
 yxewm_arr = map(yxewm_fcn, i_arr)
 
+print 'got yxewm_arr'
 def fileGen(i, R, cosmo):
 	'''
 	Put catalogue to grid, with (1+m)w correction. Mw is already done.
