@@ -156,10 +156,8 @@ def KSmap(iiRcosmo):
 				#WLanalysis.writeFits(peaks_hist,pk_fn)
 				print 'cant write', pk_fn
 				pass
-			
 
 # full set
-
 iRcosmo = [[i, R, cosmo] for i in i_arr for R in R_arr for cosmo in cosmo_arr]
 #for R in R_arr:
 	#iRcosmo = [[i, R, cosmo] for i in i_arr for cosmo in cosmo_arr]
@@ -167,37 +165,35 @@ pool = MPIPool()
 pool.map(KSmap, iRcosmo)
 pool.close()
 
-
-#### development test
-### 1.pass
-#for i in i_arr:
-	#print i
-	#iRcosmo = [[i, R, cosmo] for R in R_arr[:2] for cosmo in cosmo_arr[:8]]
-	#pool = MPIPool()
-	#pool.map(KSmap, iRcosmo)
-	#pool.close()
-	
-### 2.pass
-#iRcosmo = [[i, R, cosmo] for i in i_arr for R in R_arr[2:4] for cosmo in cosmo_arr[:8]]
-#pool = MPIPool()
-#pool.map(KSmap, iRcosmo)
-#pool.close()
-
-### 3.pass
-#pool = MPIPool()
-#for i in i_arr:
-	#print i
-	#iRcosmo = [[i, R, cosmo] for R in R_arr[4:6] for cosmo in cosmo_arr[:8]]
-	#pool.map(KSmap, iRcosmo)
-#pool.close()
-
-### 4. include ps & pk #pass
-#iRcosmo = [[i, R, cosmo] for i in i_arr[-3:] for R in R_arr[30:32] for cosmo in cosmo_arr[:2]]
-#pool = MPIPool()
-#pool.map(KSmap, iRcosmo)
-#pool.close()
-
-print 'DONE-DONE-DONE', len(iRcosmo)
+print 'DONE-DONE-DONE-ps-pk', len(iRcosmo)
 #savetxt('/home1/02977/jialiu/done_KS.ls',zeros(5))
 
+### collect all the ps and pk single file to matrix
+### ps is weighted over # galaxies, pk is sum of all subfield
+### will only work if the previous step is done
 
+peaks_sum_fn = lambda cosmo, sigmaG, bins: KS_dir+'peaks_sum/SIM_peaks_sigma%02d_%s_%03dbins.fit'%(sigmaG*10, cosmo, bins)
+
+powspec_sum_fn = lambda cosmo, sigmaG: KS_dir+'powspec_sum/SIM_powspec_sigma%02d_%s.fit'%(sigmaG*10, cosmo)
+
+galcount = array([342966,365597,322606,380838,
+		  263748,317088,344887,309647,
+		  333731,310101,273951,291234,
+		  308864]).astype(float) # galaxy counts for subfields, prepare for weighte sum powspec
+galcount /= sum(galcount)
+
+for cosmo in cosmo_arr:
+	for sigmaG in sigmaG_arr:
+		print sigmaG, cosmo
+		peaks_mat = zeros(shape=(len(R_arr), bins))
+		powspec_mat = zeros(shape=(len(R_arr), 50))
+		for i in i_arr:
+			gen_peaks = lambda R: WLanalysis.readFits(peaks_fn (i, cosmo, sigmaG, bins, R))
+			gen_powspec = lambda R: WLanalysis.readFits(powspec_fn (i, cosmo, sigmaG, R))
+			peaks_mat += np.array(map(gen_peaks, R_arr))
+			powspec += galcount[i-1]*np.array(map(gen_peaks, R_arr))
+			
+		WLanalysis.writeFits(powspec_mat, powspec_sum_fn(cosmo, sigmaG))
+		WLanalysis.writeFits(peaks_mat, peaks_sum_fn(cosmo, sigmaG, bins))	
+			
+print 'SUM-SUM-SUM'
