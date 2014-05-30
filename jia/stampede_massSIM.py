@@ -83,10 +83,10 @@ def fileGen(i, R, cosmo):
 	s2 *= (1+m)
 	eint1, eint2 = WLanalysis.rndrot(e1, e2, iseed=R)#random rotation	
 	## get reduced shear
-	e1, e2 = WLanalysis.eobs_fun(s1, s2, k, eint1, eint2)
+	e1red, e2red = WLanalysis.eobs_fun(s1, s2, k, eint1, eint2)
 
 	print 'coords2grid', i, R, cosmo
-	A, galn = WLanalysis.coords2grid(x, y, array([k, e1*w, e2*w]))
+	A, galn = WLanalysis.coords2grid(x, y, array([k, e1red*w, e2red*w]))
 	Mk, Ms1, Ms2 = A
 
 	### add Mk just for comparison ###
