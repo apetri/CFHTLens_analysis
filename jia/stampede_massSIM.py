@@ -114,7 +114,7 @@ def KSmap(iiRcosmo):
 	for sigmaG in sigmaG_arr:
 		ps_fn = powspec_fn(i, cosmo, sigmaG, R)
 		pk_fn = peaks_fn(i, cosmo, sigmaG, bins, R)
-		if not os.path.isfile(ps_fn) or not os.path.isfile(pk_fn):
+		if (WLanalysis.TestFitsComplete (ps_fn) & WLanalysis.TestFitsComplete (ps_fn)) == False:
 			create_ps_pk = 1
 			break
 	if create_ps_pk:
@@ -147,23 +147,22 @@ def KSmap(iiRcosmo):
 			############# power spectrum and peaks ####
 			powspec = WLanalysis.PowerSpectrum(kmap, sizedeg=12.0)[-1]
 			try:
-				os.remove(ps_fn)#
 				WLanalysis.writeFits(powspec, ps_fn)
 			except Exception:
-				WLanalysis.writeFits(powspec, ps_fn)
+				print 'file exist', ps_fn
 				pass
 			
 			mask = WLanalysis.readFits(Mask_fn(i, sigmaG))
 			peaks_hist = WLanalysis.peaks_mask_hist(kmap, mask, bins, kmin = kmin, kmax = kmax)
 			
 			try:
-				os.remove(pk_fn)#WLanalysis.writeFits(peaks_hist,pk_fn)
 				WLanalysis.writeFits(peaks_hist,pk_fn)
 			except Exception:
-				WLanalysis.writeFits(peaks_hist,pk_fn)
+				print 'file exist', pk_fn
 				pass
 	else:
 		print 'already done KSmap i, R, cosmo', i, R, cosmo
+
 
 # full set
 pool = MPIPool()
@@ -186,18 +185,49 @@ galcount = array([342966,365597,322606,380838,
 		  308864]).astype(float) # galaxy counts for subfields, prepare for weighte sum powspec
 galcount /= sum(galcount)
 
+
+def gen_mat (i, cosmo, simgaG, ispk = True):
+	'''Generate a matrix of peaks or powspec, where rows are realizations, columns are bins.'''
+	def get_pkps (R):
+		if ispk:
+			fn = peaks_fn (i, cosmo, sigmaG, bins, R)
+		else: #ps
+			fn = powspec_fn (i, cosmo, sigmaG, R)
+		if WLanalysis.TestFitsComplete(fn):
+			pkps = WLanalysis.readFits(fn)
+		else: #fits file broken or not exist, create file
+			KS_fn = KSfn(i, cosmo, R, sigmaG)
+			kmap = WLanalysis.readFits(KS_fn)
+			if ispk:
+				mask = WLanalysis.readFits(Mask_fn(i, sigmaG))
+				pkps = WLanalysis.peaks_mask_hist(kmap, mask, bins, kmin = kmin, kmax = kmax)
+				
+			else:
+				pkps = WLanalysis.PowerSpectrum(kmap, sizedeg=12.0)[-1]
+
+			WLanalysis.writeFits(powspec, ps_fn)
+		return pkps
+	return get_pkps
+	
 def sum_matrix (cosmosigmaG):
 	cosmo, sigmaG = cosmosigmaG
 	print sigmaG, cosmo
-	peaks_mat = zeros(shape=(len(R_arr), bins))
-	powspec_mat = zeros(shape=(len(R_arr), 50))
-	for i in i_arr:
-		gen_peaks = lambda R: WLanalysis.readFits(peaks_fn (i, cosmo, sigmaG, bins, R))
-		gen_powspec = lambda R: WLanalysis.readFits(powspec_fn (i, cosmo, sigmaG, R))
-		peaks_mat += np.array(map(gen_peaks, R_arr))
-		powspec_mat += galcount[i-1]*np.array(map(gen_powspec, R_arr))	
-	WLanalysis.writeFits(powspec_mat, powspec_sum_fn(cosmo, sigmaG))
-	WLanalysis.writeFits(peaks_mat, peaks_sum_fn(cosmo, sigmaG, bins))	
+	psfn = powspec_sum_fn(cosmo, sigmaG)
+	pkfn = peaks_sum_fn(cosmo, sigmaG, bins)
+	
+	if WLanalysis.TestFitsComplete(psfn) == False:
+		print 'gen', psfn
+		powspec_mat = zeros(shape=(len(R_arr), 50))
+		for i in i_arr:
+			powspec_mat += galcount[i-1]*np.array(map(gen_mat(i, cosmo, simgaG, ispk = False), R_arr))
+		WLanalysis.writeFits(powspec_mat, psfn)
+		
+	if WLanalysis.TestFitsComplete(pkfn) == False:
+		print 'gen', pkfn
+		peaks_mat = zeros(shape=(len(R_arr), bins))
+		for i in i_arr:
+			peaks_mat += np.array(map(gen_mat(i, cosmo, simgaG, ispk = True), R_arr))	
+		WLanalysis.writeFits(peaks_mat, )	
 
 cosmosigmaG_arr = [[cosmo, sigmaG] for cosmo in cosmo_arr for sigmaG in sigmaG_arr]
 pool.map(sum_matrix, cosmosigmaG_arr)

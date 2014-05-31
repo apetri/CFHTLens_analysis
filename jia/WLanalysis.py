@@ -55,6 +55,17 @@ def writeFits (data, filename):
 	hdu = pyfits.PrimaryHDU(data)
 	hdu.writeto(filename)
 
+def TestFitsComplete (fn):
+	if not os.path.isfile(fn):
+		return False
+	else:
+		try:
+			readFits(fn)
+			return True
+		except Exception:
+			os.remove(fn)
+			return False
+	
 def TestComplete(file_ls,rm = False):
 	'''Test if a list of file all exist.
 	Input:
