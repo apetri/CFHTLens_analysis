@@ -186,7 +186,7 @@ galcount = array([342966,365597,322606,380838,
 galcount /= sum(galcount)
 
 
-def gen_mat (i, cosmo, simgaG, ispk = True):
+def gen_mat (i, cosmo, sigmaG, ispk = True):
 	'''Generate a matrix of peaks or powspec, where rows are realizations, columns are bins.'''
 	def get_pkps (R):
 		if ispk:
@@ -219,14 +219,14 @@ def sum_matrix (cosmosigmaG):
 		print 'gen', psfn
 		powspec_mat = zeros(shape=(len(R_arr), 50))
 		for i in i_arr:
-			powspec_mat += galcount[i-1]*np.array(map(gen_mat(i, cosmo, simgaG, ispk = False), R_arr))
+			powspec_mat += galcount[i-1]*np.array(map(gen_mat(i, cosmo, sigmaG, ispk = False), R_arr))
 		WLanalysis.writeFits(powspec_mat, psfn)
 		
 	if WLanalysis.TestFitsComplete(pkfn) == False:
 		print 'gen', pkfn
 		peaks_mat = zeros(shape=(len(R_arr), bins))
 		for i in i_arr:
-			peaks_mat += np.array(map(gen_mat(i, cosmo, simgaG, ispk = True), R_arr))	
+			peaks_mat += np.array(map(gen_mat(i, cosmo, sigmaG, ispk = True), R_arr))	
 		WLanalysis.writeFits(peaks_mat, )	
 
 cosmosigmaG_arr = [[cosmo, sigmaG] for cosmo in cosmo_arr for sigmaG in sigmaG_arr]
