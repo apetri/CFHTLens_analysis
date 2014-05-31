@@ -147,22 +147,18 @@ def KSmap(iiRcosmo):
 			############# power spectrum and peaks ####
 			powspec = WLanalysis.PowerSpectrum(kmap, sizedeg=12.0)[-1]
 			try:
-				WLanalysis.writeFits(powspec, ps_fn)
+				os.remove(ps_fn)#WLanalysis.writeFits(powspec, ps_fn)
 			except Exception:
-				#os.remove(ps_fn)
-				#WLanalysis.writeFits(powspec, ps_fn)
-				print 'cant write', ps_fn
+				WLanalysis.writeFits(powspec, ps_fn)
 				pass
 			
 			mask = WLanalysis.readFits(Mask_fn(i, sigmaG))
 			peaks_hist = WLanalysis.peaks_mask_hist(kmap, mask, bins, kmin = kmin, kmax = kmax)
 			
 			try:
-				WLanalysis.writeFits(peaks_hist,pk_fn)
+				os.remove(pk_fn)#WLanalysis.writeFits(peaks_hist,pk_fn)
 			except Exception:
-				#os.remove(pk_fn)
-				#WLanalysis.writeFits(peaks_hist,pk_fn)
-				print 'cant write', pk_fn
+				WLanalysis.writeFits(peaks_hist,pk_fn)
 				pass
 	else:
 		print 'already done KSmap i, R, cosmo', i, R, cosmo
