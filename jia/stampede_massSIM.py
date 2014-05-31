@@ -203,4 +203,5 @@ def sum_matrix (cosmosigmaG):
 
 cosmosigmaG_arr = [[cosmo, sigmaG] for cosmo in cosmo_arr for sigmaG in sigmaG_arr]
 pool.map(sum_matrix, cosmosigmaG_arr)
+
 print 'SUM-SUM-SUM'
