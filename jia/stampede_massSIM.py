@@ -227,7 +227,7 @@ def sum_matrix (cosmosigmaG):
 		peaks_mat = zeros(shape=(len(R_arr), bins))
 		for i in i_arr:
 			peaks_mat += np.array(map(gen_mat(i, cosmo, sigmaG, ispk = True), R_arr))	
-		WLanalysis.writeFits(peaks_mat, )	
+		WLanalysis.writeFits(peaks_mat, pkfn)	
 
 cosmosigmaG_arr = [[cosmo, sigmaG] for cosmo in cosmo_arr for sigmaG in sigmaG_arr]
 pool = MPIPool()
