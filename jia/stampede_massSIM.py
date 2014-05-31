@@ -171,7 +171,6 @@ pool = MPIPool()
 #pool.map(KSmap, iRcosmo)
 #pool.close()
 
-print 'DONE-DONE-DONE-ps-pk', len(iRcosmo)
 
 ### collect all the ps and pk single file to matrix
 ### ps is weighted over # galaxies, pk is sum of all subfield
