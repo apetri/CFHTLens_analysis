@@ -165,7 +165,7 @@ def KSmap(iiRcosmo):
 
 
 # full set
-pool = MPIPool()
+#pool = MPIPool()
 #iRcosmo = [[i, R, cosmo] for R in R_arr for cosmo in cosmo_arr]
 #pool.map(KSmap, iRcosmo)
 #pool.close()
@@ -230,6 +230,7 @@ def sum_matrix (cosmosigmaG):
 		WLanalysis.writeFits(peaks_mat, )	
 
 cosmosigmaG_arr = [[cosmo, sigmaG] for cosmo in cosmo_arr for sigmaG in sigmaG_arr]
+pool = MPIPool()
 pool.map(sum_matrix, cosmosigmaG_arr)
 
 print 'SUM-SUM-SUM'
