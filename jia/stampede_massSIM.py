@@ -61,8 +61,8 @@ yxewm_fcn = lambda i: WLanalysis.readFits(KS_dir+'yxewm_subfield%i_zcut0213.fit'
 #yxewm_arr = map(yxewm_fcn, i_arr)
 
 ## this is customized to one subfield at a time
-Mw = Mw_fcn(i)
-y, x, e1, e2, w, m = yxewm_fcn(i).T
+#Mw = Mw_fcn(i)
+#y, x, e1, e2, w, m = yxewm_fcn(i).T
 
 print 'got yxewm_arr'
 def fileGen(i, R, cosmo):
