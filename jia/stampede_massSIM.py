@@ -114,7 +114,7 @@ def KSmap(iiRcosmo):
 	for sigmaG in sigmaG_arr:
 		ps_fn = powspec_fn(i, cosmo, sigmaG, R)
 		pk_fn = peaks_fn(i, cosmo, sigmaG, bins, R)
-		if not os.path.isfile(ps_fn) or not os.path.isfile(ps_fn):
+		if not os.path.isfile(ps_fn) or not os.path.isfile(pk_fn):
 			create_ps_pk = 1
 			break
 	if create_ps_pk:
@@ -166,45 +166,41 @@ def KSmap(iiRcosmo):
 		print 'already done KSmap i, R, cosmo', i, R, cosmo
 
 # full set
-# to fix sf11
-cosmos=('emu1-512b240_Om0.652_Ol0.348_w-1.029_ns0.960_si1.458',
-	'emu1-512b240_Om0.295_Ol0.705_w-1.878_ns0.960_si0.100',
-	'emu1-512b240_Om0.549_Ol0.451_w-1.818_ns0.960_si1.287',)
-iRcosmo = [[i, R, cosmo] for R in R_arr[::-1] for cosmo in cosmos]
-#iRcosmo = [[i, R, cosmo] for R in R_arr for cosmo in cosmo_arr]
 pool = MPIPool()
-pool.map(KSmap, iRcosmo)
-pool.close()
+
+#iRcosmo = [[i, R, cosmo] for R in R_arr for cosmo in cosmo_arr]
+#pool.map(KSmap, iRcosmo)
+#pool.close()
 
 print 'DONE-DONE-DONE-ps-pk', len(iRcosmo)
-#savetxt('/home1/02977/jialiu/done_KS.ls',zeros(5))
 
 ### collect all the ps and pk single file to matrix
 ### ps is weighted over # galaxies, pk is sum of all subfield
 ### will only work if the previous step is done
 
-#peaks_sum_fn = lambda cosmo, sigmaG, bins: KS_dir+'peaks_sum/SIM_peaks_sigma%02d_%s_%03dbins.fit'%(sigmaG*10, cosmo, bins)
+peaks_sum_fn = lambda cosmo, sigmaG, bins: KS_dir+'peaks_sum/SIM_peaks_sigma%02d_%s_%03dbins.fit'%(sigmaG*10, cosmo, bins)
 
-#powspec_sum_fn = lambda cosmo, sigmaG: KS_dir+'powspec_sum/SIM_powspec_sigma%02d_%s.fit'%(sigmaG*10, cosmo)
+powspec_sum_fn = lambda cosmo, sigmaG: KS_dir+'powspec_sum/SIM_powspec_sigma%02d_%s.fit'%(sigmaG*10, cosmo)
 
-#galcount = array([342966,365597,322606,380838,
-		  #263748,317088,344887,309647,
-		  #333731,310101,273951,291234,
-		  #308864]).astype(float) # galaxy counts for subfields, prepare for weighte sum powspec
-#galcount /= sum(galcount)
+galcount = array([342966,365597,322606,380838,
+		  263748,317088,344887,309647,
+		  333731,310101,273951,291234,
+		  308864]).astype(float) # galaxy counts for subfields, prepare for weighte sum powspec
+galcount /= sum(galcount)
 
-#for cosmo in cosmo_arr:
-	#for sigmaG in sigmaG_arr:
-		#print sigmaG, cosmo
-		#peaks_mat = zeros(shape=(len(R_arr), bins))
-		#powspec_mat = zeros(shape=(len(R_arr), 50))
-		#for i in i_arr:
-			#gen_peaks = lambda R: WLanalysis.readFits(peaks_fn (i, cosmo, sigmaG, bins, R))
-			#gen_powspec = lambda R: WLanalysis.readFits(powspec_fn (i, cosmo, sigmaG, R))
-			#peaks_mat += np.array(map(gen_peaks, R_arr))
-			#powspec += galcount[i-1]*np.array(map(gen_peaks, R_arr))
-			
-		#WLanalysis.writeFits(powspec_mat, powspec_sum_fn(cosmo, sigmaG))
-		#WLanalysis.writeFits(peaks_mat, peaks_sum_fn(cosmo, sigmaG, bins))	
-			
+def sum_matrix (cosmosigmaG):
+	cosmo, sigmaG = cosmosigmaG
+	print sigmaG, cosmo
+	peaks_mat = zeros(shape=(len(R_arr), bins))
+	powspec_mat = zeros(shape=(len(R_arr), 50))
+	for i in i_arr:
+		gen_peaks = lambda R: WLanalysis.readFits(peaks_fn (i, cosmo, sigmaG, bins, R))
+		gen_powspec = lambda R: WLanalysis.readFits(powspec_fn (i, cosmo, sigmaG, R))
+		peaks_mat += np.array(map(gen_peaks, R_arr))
+		powspec += galcount[i-1]*np.array(map(gen_peaks, R_arr))	
+	WLanalysis.writeFits(powspec_mat, powspec_sum_fn(cosmo, sigmaG))
+	WLanalysis.writeFits(peaks_mat, peaks_sum_fn(cosmo, sigmaG, bins))	
+
+cosmosigmaG_arr = [[cosmo, sigmaG] for cosmo in cosmo_arr for sigmaG in sigmaG_arr]
+pool.map(sum_matrix, cosmosigmaG_arr)
 print 'SUM-SUM-SUM'
