@@ -10,7 +10,7 @@ import numpy as np
 from scipy import *
 import scipy.ndimage as snd
 import sys
-#from multiprocessing import Pool
+from multiprocessing import Pool
 
 ########## define constants ############
 i = int(sys.argv[1])
@@ -167,7 +167,7 @@ def KSmap(iiRcosmo):
 
 # full set
 pool = MPIPool()
-
+p = Pool(1000)
 #iRcosmo = [[i, R, cosmo] for R in R_arr for cosmo in cosmo_arr]
 #pool.map(KSmap, iRcosmo)
 #pool.close()
@@ -196,8 +196,8 @@ def sum_matrix (cosmosigmaG):
 	for i in i_arr:
 		gen_peaks = lambda R: WLanalysis.readFits(peaks_fn (i, cosmo, sigmaG, bins, R))
 		gen_powspec = lambda R: WLanalysis.readFits(powspec_fn (i, cosmo, sigmaG, R))
-		peaks_mat += np.array(map(gen_peaks, R_arr))
-		powspec += galcount[i-1]*np.array(map(gen_peaks, R_arr))	
+		peaks_mat += np.array(p.map(gen_peaks, R_arr))
+		powspec += galcount[i-1]*np.array(p.map(gen_peaks, R_arr))	
 	WLanalysis.writeFits(powspec_mat, powspec_sum_fn(cosmo, sigmaG))
 	WLanalysis.writeFits(peaks_mat, peaks_sum_fn(cosmo, sigmaG, bins))	
 
