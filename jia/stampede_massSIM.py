@@ -164,7 +164,22 @@ def KSmap(iiRcosmo):
 		print 'already done KSmap i, R, cosmo', i, R, cosmo
 
 # full set
-iRcosmo = [[i, R, cosmo] for R in R_arr for cosmo in cosmo_arr]
+# to fix sf11
+cosmos=('emu1-512b240_Om0.295_Ol0.705_w-1.878_ns0.960_si0.100',
+ 'emu1-512b240_Om0.361_Ol0.639_w-0.606_ns0.960_si0.171',
+ 'emu1-512b240_Om0.455_Ol0.545_w-2.637_ns0.960_si1.373',
+ 'emu1-512b240_Om0.502_Ol0.498_w-1.152_ns0.960_si1.189',
+ 'emu1-512b240_Om0.521_Ol0.479_w-2.334_ns0.960_si0.538',
+ 'emu1-512b240_Om0.540_Ol0.460_w-0.030_ns0.960_si1.161',
+ 'emu1-512b240_Om0.549_Ol0.451_w-1.818_ns0.960_si1.287',
+ 'emu1-512b240_Om0.577_Ol0.423_w-3.000_ns0.960_si0.948',
+ 'emu1-512b240_Om0.652_Ol0.348_w-1.029_ns0.960_si1.458',
+ 'emu1-512b240_Om0.681_Ol0.319_w-2.970_ns0.960_si0.610',
+ 'emu1-512b240_Om0.709_Ol0.291_w-2.061_ns0.960_si0.425',
+ 'emu1-512b240_Om0.963_Ol0.037_w-2.151_ns0.960_si0.510',
+ 'emu1-512b240_Om0.991_Ol0.009_w-1.908_ns0.960_si1.020')
+iRcosmo = [[i, R, cosmo] for R in R_arr[::-1] for cosmo in cosmos]
+#iRcosmo = [[i, R, cosmo] for R in R_arr for cosmo in cosmo_arr]
 pool = MPIPool()
 pool.map(KSmap, iRcosmo)
 pool.close()
