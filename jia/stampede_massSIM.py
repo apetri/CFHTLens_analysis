@@ -195,7 +195,7 @@ def sum_matrix (cosmosigmaG):
 		gen_peaks = lambda R: WLanalysis.readFits(peaks_fn (i, cosmo, sigmaG, bins, R))
 		gen_powspec = lambda R: WLanalysis.readFits(powspec_fn (i, cosmo, sigmaG, R))
 		peaks_mat += np.array(map(gen_peaks, R_arr))
-		powspec_mat += galcount[i-1]*np.array(map(gen_peaks, R_arr))	
+		powspec_mat += galcount[i-1]*np.array(map(gen_powspec, R_arr))	
 	WLanalysis.writeFits(powspec_mat, powspec_sum_fn(cosmo, sigmaG))
 	WLanalysis.writeFits(peaks_mat, peaks_sum_fn(cosmo, sigmaG, bins))	
 
