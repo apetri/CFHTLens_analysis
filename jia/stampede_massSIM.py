@@ -185,7 +185,7 @@ galcount = array([342966,365597,322606,380838,
 		  308864]).astype(float) # galaxy counts for subfields, prepare for weighte sum powspec
 galcount /= sum(galcount)
 
-
+p = Pool(1000)
 def gen_mat (i, cosmo, sigmaG, ispk = True):
 	'''Generate a matrix of peaks or powspec, where rows are realizations, columns are bins.'''
 	def get_pkps (R):
@@ -220,7 +220,7 @@ def sum_matrix (cosmosigmaG):
 		powspec_mat = zeros(shape=(len(R_arr), 50))
 		for i in range(1,14):
 			print 'ps', i
-			powspec_mat += galcount[i-1] * np.array(map(gen_mat(i, cosmo, sigmaG, ispk = False), R_arr))
+			powspec_mat += galcount[i-1] * np.array(p.map(gen_mat(i, cosmo, sigmaG, ispk = False), R_arr))
 		WLanalysis.writeFits(powspec_mat, psfn)
 		
 	if WLanalysis.TestFitsComplete(pkfn) == False:
@@ -228,7 +228,7 @@ def sum_matrix (cosmosigmaG):
 		peaks_mat = zeros(shape=(len(R_arr), bins))
 		for i in range(1,14):
 			print 'ps', i
-			peaks_mat += np.array(map(gen_mat(i, cosmo, sigmaG, ispk = True), R_arr))	
+			peaks_mat += np.array(p.map(gen_mat(i, cosmo, sigmaG, ispk = True), R_arr))	
 		WLanalysis.writeFits(peaks_mat, pkfn)	
 
 cosmosigmaG_arr = [[cosmo, sigmaG] for cosmo in cosmo_arr for sigmaG in sigmaG_arr]
