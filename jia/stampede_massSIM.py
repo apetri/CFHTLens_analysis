@@ -219,6 +219,7 @@ def sum_matrix (cosmosigmaG):
 		print 'gen', psfn
 		powspec_mat = zeros(shape=(len(R_arr), 50))
 		for i in range(1,14):
+			print 'ps', i
 			powspec_mat += galcount[i-1] * np.array(map(gen_mat(i, cosmo, sigmaG, ispk = False), R_arr))
 		WLanalysis.writeFits(powspec_mat, psfn)
 		
@@ -226,6 +227,7 @@ def sum_matrix (cosmosigmaG):
 		print 'gen', pkfn
 		peaks_mat = zeros(shape=(len(R_arr), bins))
 		for i in range(1,14):
+			print 'ps', i
 			peaks_mat += np.array(map(gen_mat(i, cosmo, sigmaG, ispk = True), R_arr))	
 		WLanalysis.writeFits(peaks_mat, pkfn)	
 
