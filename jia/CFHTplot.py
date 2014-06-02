@@ -28,8 +28,14 @@ powspec_vs_nicaea = 0
 noise_powspec_sigmaG = 0
 powspec_one_map = 0 # see very noisy power spectrum, then wonder what went wrong with the maps
 noise_redshift_relation = 0
-cosmo_ps = 1
-########## knobs end ############
+cosmo_ps = 0
+emu_checkps = 0
+emu_checkpeaks = 0
+emu_checkcheckps = 1
+#emu_interpolate = 1
+x = linspace(-0.04, 0.12, 26)
+x = x[:-1]+0.5*(x[1]-x[0])#the kappa_arr
+######## knobs end ############
 #colors = ('b', 'g', 'r', 'c', 'm', 'y', 'k')
 lss = ('r-','g--','b-.','m:','c*','y,','ks','1','2','3','4','D')
 markers = ('-','--','-.',':','*')
@@ -46,6 +52,7 @@ Rtol = len(R_arr)
 plot_dir = '/Users/jia/weaklensing/CFHTLenS/plot/'
 KSsim_dir = '/Users/jia/weaklensing/CFHTLenS/KSsim/'
 CFHT_dir = '/Users/jia/weaklensing/CFHTLenS/CFHTKS/'
+emu_dir = '/Users/jia/CFHTLenS/emulator/'
 fidu='mQ3-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800'
 hi_w='mQ3-512b240_Om0.260_Ol0.740_w-0.800_ns0.960_si0.800'
 hi_s='mQ3-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.850'
@@ -1125,3 +1132,64 @@ if cosmo_ps:
 	#savefig(plot_dir+"official/sigmaG_bins%s.pdf"%(bins))
 	savefig(plot_dir+"powspec_sigamG.jpg")
 	close()	
+
+if emu_checkps:
+	ps_fn_arr = os.listdir(emu_dir+'powspec_sum/sigma05/')
+	getps = lambda ps_fn: WLanalysis.readFits(emu_ps_dir+ps_fn)
+	ps_mat = array(map(getps, ps_fn_arr))
+	ps_avg = mean(ps_mat,axis=1)
+	ps_std = std(ps_mat, axis=1)
+	ps_CFHT = WLanalysis.readFits('/Users/jia/CFHTLenS/KSsim/powspec_sum13fields/CFHT_powspec_sigma05.fit')
+	for i in range(len(ps_avg)):
+		loglog(ell_arr, ps_avg[i])
+	loglog(ell_arr, ps_CFHT, '--', linewidth = 2)
+	show()
+
+if emu_checkpeaks:
+	#pk_CFHT = WLanalysis.readFits('/Users/jia/CFHTLenS/KSsim/peaks_sum13fields/CFHT_peaks_sigma05_025bins.fits')
+	CFHT_peak = zeros(25)
+	for j in arange(1,14):
+		print 'adding up subfield,',j
+		CFHT_peak+=WLanalysis.readFits (CFHT_dir+'CFHT_peaks_sigma18_subfield%02d_025bins.fits'%(j))
+		
+	pk_fn_arr = os.listdir(emu_dir+'peaks_sum/sigma05/')
+	
+	def getpk (pk_fn, bins = 25):
+		pk600bins = WLanalysis.readFits(emu_dir+'peaks_sum/sigma05/'+pk_fn)
+		pk = pk600bins.reshape(1000, -1, 600/bins)
+		pk = sum(pk, axis = -1)
+		return pk
+	
+	pk_mat = array(map(getpk, pk_fn_arr))
+	pk_avg = mean(pk_mat,axis=0)
+	pk_std = std(pk_mat, axis=0)
+	
+	for i in range(len(pk_avg)):
+		plot(x, pk_avg[i])
+	plot(x, CFHT_peak, '--', linewidth = 2)
+	show()
+
+ps_CFHT = WLanalysis.readFits('/Users/jia/CFHTLenS/KSsim/powspec_sum13fields/CFHT_powspec_sigma05.fit')	
+
+if emu_checkcheckps:
+	os.chdir(emu_dir+'test_cat/')
+	getps = lambda i: WLanalysis.readFits('SIM_powspec_sigma05_subfield%i_emu1-512b240_Om0.136_Ol0.864_w-2.484_ns0.960_si1.034_1000r.fit'%(i))
+	
+	galcount = array([342966,365597,322606,380838,
+		  263748,317088,344887,309647,
+		  333731,310101,273951,291234,
+		  308864]).astype(float) # galaxy counts for subfields, prepare for weighte sum powspec
+	galcount /= sum(galcount)
+	ps_arr = array(map(getps,i_arr))
+	xtot = zeros(50)
+	j=0
+	for x in ps_arr:
+		loglog(ell_arr, x)
+		xtot += galcount[j]*x
+		j+=1
+		
+	loglog(ell_arr,ps_CFHT, '--', linewidth=2)
+	loglog(ell_arr,xtot, '.', linewidth=2)
+	show() #look OK
+#if emu_interpolate:
+	

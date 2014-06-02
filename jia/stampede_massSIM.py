@@ -218,19 +218,19 @@ def sum_matrix (cosmosigmaG):
 	if WLanalysis.TestFitsComplete(psfn) == False:
 		print 'gen', psfn
 		powspec_mat = zeros(shape=(len(R_arr), 50))
-		for i in i_arr:
-			powspec_mat += galcount[i-1]*np.array(map(gen_mat(i, cosmo, sigmaG, ispk = False), R_arr))
+		for i in range(1,14):
+			powspec_mat += galcount[i-1] * np.array(map(gen_mat(i, cosmo, sigmaG, ispk = False), R_arr))
 		WLanalysis.writeFits(powspec_mat, psfn)
 		
 	if WLanalysis.TestFitsComplete(pkfn) == False:
 		print 'gen', pkfn
 		peaks_mat = zeros(shape=(len(R_arr), bins))
-		for i in i_arr:
+		for i in range(1,14):
 			peaks_mat += np.array(map(gen_mat(i, cosmo, sigmaG, ispk = True), R_arr))	
 		WLanalysis.writeFits(peaks_mat, pkfn)	
 
 cosmosigmaG_arr = [[cosmo, sigmaG] for cosmo in cosmo_arr for sigmaG in sigmaG_arr]
 pool = MPIPool()
 pool.map(sum_matrix, cosmosigmaG_arr)
-
+pool.close()
 print 'SUM-SUM-SUM'
