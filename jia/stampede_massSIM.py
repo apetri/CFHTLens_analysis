@@ -205,7 +205,7 @@ def gen_mat (i, cosmo, sigmaG, ispk = True):
 			else:
 				pkps = WLanalysis.PowerSpectrum(kmap, sizedeg=12.0)[-1]
 
-			WLanalysis.writeFits(powspec, ps_fn)
+			WLanalysis.writeFits(pkps, fn)
 		return pkps
 	return get_pkps
 	
