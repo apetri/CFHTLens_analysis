@@ -1,0 +1,18 @@
+#Dependencies
+
+sampler: sampler.o cost.o ini.o options.o
+
+sampler.o: sampler.c options.c sampler.h ini.h 
+
+cost.o: cost.c sampler.h
+
+ini.o: ini.c ini.h
+
+options.o: options.c
+
+options.c: build_options.py
+	$(PYTHON) build_options.py
+
+.PHONY: clean
+clean:
+	rm -rf *.o sampler *.dSYM default_options.ini options.h options.c

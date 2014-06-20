@@ -1,0 +1,14 @@
+#System specific compilers, remember to set the THIS environment variable to select the correct Makefile.$(THIS)
+
+CC = clang
+PYTHON = python
+
+CFLAGS = -g -Wall $(INCLUDES)
+LDFLAGS = -g $(LINK)
+
+INCLUDES = $(GSL_INCLUDE)
+
+LINK = $(GSL_LINK)
+
+GSL_INCUDE = 
+GSL_LINK = -lgsl -lgslcblas

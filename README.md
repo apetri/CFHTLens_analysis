@@ -28,3 +28,12 @@ The output format is a numpy array with two columns: one with the angle in arcmi
 
 Jia
 ---
+
+Weak Lensing Emulator
+===========
+
+Weak lensing emulator for non linear statistics
+
+MCMC:
+Uses python code emcee. Input needed: prior, likelihood function (bridges to the Interpolator), observations(peaks, MF, etc.) to be fitted to.
+
