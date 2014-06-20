@@ -29,12 +29,18 @@ noise_powspec_sigmaG = 0
 powspec_one_map = 0 # see very noisy power spectrum, then wonder what went wrong with the maps
 noise_redshift_relation = 0
 cosmo_ps = 0
+CFHT_fit_ps = 0
+test_ps_subfield_CFHT = 0
+test_ps_subfield_SIM = 0
+test_11_13_CFHT_KS = 0
 emu_checkps = 0
-emu_checkpeaks = 0
-emu_checkcheckps = 1
-#emu_interpolate = 1
+emu_checkpk = 0
+emu_check_single_ps = 0
+emu_interpolate_ps = 0
+
 x = linspace(-0.04, 0.12, 26)
 x = x[:-1]+0.5*(x[1]-x[0])#the kappa_arr
+
 ######## knobs end ############
 #colors = ('b', 'g', 'r', 'c', 'm', 'y', 'k')
 lss = ('r-','g--','b-.','m:','c*','y,','ks','1','2','3','4','D')
@@ -48,7 +54,20 @@ sigmaG_arr = (0.5, 1, 1.8, 3.5, 5.3, 8.9)
 i_arr=arange(1,14)
 R_arr=arange(1,1001)
 Rtol = len(R_arr)
+kmin = -0.04 # lower bound of kappa bin = -2 SNR
+kmax = 0.12 # higher bound of kappa bin = 6 SNR
+bins = 600 # for peak counts
+#i_arr = arange(1,14)
+R_arr = arange(1,1001)
+PPA512 = 2.4633625
+ngal_arcmin = 5.0
 
+galcount = array([342966,365597,322606,380838,
+		  263748,317088,344887,309647,
+		  333731,310101,273951,291234,
+		  308864]).astype(float) # galaxy counts for subfields, prepare for weighte sum powspec
+galcount /= sum(galcount)
+	
 plot_dir = '/Users/jia/weaklensing/CFHTLenS/plot/'
 KSsim_dir = '/Users/jia/weaklensing/CFHTLenS/KSsim/'
 CFHT_dir = '/Users/jia/weaklensing/CFHTLenS/CFHTKS/'
@@ -626,12 +645,14 @@ def cosmo_fit (obs, cosmo_mat):
 	m, w, s = np.squeeze(np.array(del_p.T))+fidu_params
 	del_N = Y-del_p.T*X
 	#chisq = float((Rtol-bintol-2.0)/(Rtol-1.0)*del_N*cov_inv*del_N.T)
+	chisq = (1000-len(obs))/999.0*float(del_N*cov_inv*del_N.T)
+	model_CFHT = array(del_p.T*X + fidu_avg).squeeze()
 	
 	F = zeros(shape=(3,3))
 	for i in arange(3):
 		for j in arange(3):
 			F[i,j] += trace(cov_inv * X[i].T * X[j])
-	return array([m, w, s]), mat(F).I
+	return array([m, w, s]), chisq, model_CFHT#mat(F).I
 	
 def cosmo_errors(sigmaG, bins, obs=None, zg='rz1', powspec = False):
 	if powspec:
@@ -1133,53 +1154,238 @@ if cosmo_ps:
 	savefig(plot_dir+"powspec_sigamG.jpg")
 	close()	
 
+if CFHT_fit_ps:
+	seed(22)
+	lw=1.5
+	colors=rand(20,3)
+	ell_arr=ell_arr[11:]
+	sigmaG = 0.5
+	cosmo_mat = zeros(shape=(4,1000,50))
+	k = 0
+	for cosmo in cosmo_arr:
+		fn = powspec_sum_fn(cosmo, 1000, sigmaG, 'rz1')	
+		cosmo_mat[k] = WLanalysis.readFits(fn)
+		k += 1
+	cosmo_mat = cosmo_mat[:,:,11:]
+	ps_CFHT = WLanalysis.readFits('/Users/jia/CFHTLenS/KSsim/powspec_sum13fields/CFHT_powspec_sigma05.fit')[11:]
+	
+	fit = cosmo_fit (ps_CFHT, cosmo_mat)
+	CFHT_model = fit[-1]
+	
+	cosmo_avg = mean(cosmo_mat, axis=1)
+	cosmo_std = std(cosmo_mat, axis=1)
+	gs = gridspec.GridSpec(2,1,height_ratios=[3,1]) 
+	f=figure(figsize=(8,6))
+	ax=f.add_subplot(gs[0])
+	ax2=f.add_subplot(gs[1],sharex=ax)
+	for i in range(4):
+		ax.plot(ell_arr, cosmo_avg[i], color = colors[i], label=cosmolabels[i], linewidth=lw)
+		ax2.plot(ell_arr, cosmo_avg[i]/cosmo_avg[0]-1, color =colors[i], linewidth=lw)
+		if i == 0:
+			ax.errorbar(ell_arr, cosmo_avg[i], yerr = cosmo_std[i], fmt=None)
+
+	ax.plot(ell_arr, ps_CFHT, color =colors[i+1], label='$CFHT$', linewidth=lw)
+	ax2.plot(ell_arr, ps_CFHT/cosmo_avg[0]-1, color =colors[i+1], linewidth=lw)
+	
+	ax.plot(ell_arr, CFHT_model, color = colors[i+2], label='$fit$', linewidth=lw)
+	ax2.plot(ell_arr, CFHT_model/cosmo_avg[0]-1, color = colors[i+2], linewidth=lw)
+	
+	ax.set_xlim(ell_arr[11], ell_arr[-1])
+	ax.set_ylim(3e-4, 6e-3)
+	ax2.set_ylim(-0.15, 0.05)
+	leg=ax.legend(loc=0, ncol=1, labelspacing=.2, prop={'size':12})
+	leg.get_frame().set_visible(False)
+	ax.set_xscale('log') 
+	ax.set_yscale('log') 
+	
+	#ax2.set_xscale('log') 
+	#ax2.set_yscale('log') 
+	plt.subplots_adjust(hspace=0.0)
+	savefig(plot_dir+'CFHT_ps_cosmos_corrected.jpg')
+	close()
+	print fit
+
+if test_ps_subfield_CFHT:
+	seed(29)
+	lw = 2.0
+	colors=rand(20, 3)
+
+	#ps_CFHT = WLanalysis.readFits('/Users/jia/CFHTLenS/KSsim/powspec_sum13fields/CFHT_powspec_sigma05.fit')
+	ps_CFHT = zeros(50)
+	for i in range(1,14):
+		ps_CFHT += galcount[i-1]*WLanalysis.readFits(CFHT_dir+'CFHT_powspec_sigma05_subfield%02d.fits'%(i))[1]
+	WLanalysis.writeFits(ps_CFHT, '/Users/jia/CFHTLenS/KSsim/powspec_sum13fields/CFHT_powspec_sigma05.fit')
+	
+	
+	ax=subplot(111)
+	for i in range(1,14):
+		ps = WLanalysis.readFits(CFHT_dir+'CFHT_powspec_sigma05_subfield%02d.fits'%(i))[1]
+		ax.loglog(ell_arr, ps, label='%i'%(i), color = colors[i], linewidth=lw)
+	ax.loglog(ell_arr, ps_CFHT, 'k--', linewidth=2, label='sum')
+	leg=ax.legend(loc=0, ncol=2, labelspacing=.2, prop={'size':12})
+	leg.get_frame().set_visible(False)
+	ax.set_xlim(ell_arr[5],ell_arr[-1])
+	ax.set_ylim(1e-5, 1e-2)
+	ax.set_title('CFHT Power spectra (subfield vs. sum)')
+	savefig(plot_dir+'CFHT_ps_by_sf_corrected.jpg')
+	close()
+	#show()
+
+if test_ps_subfield_SIM:
+	gs = gridspec.GridSpec(2,1,height_ratios=[3,1]) 
+	
+	f=figure(figsize=(8,6))
+	ax=f.add_subplot(gs[0])
+	ax2=f.add_subplot(gs[1],sharex=ax)
+	
+	seed(29)
+	lw = 1.5
+	colors=rand(20, 3)
+	ps_sum_mat = WLanalysis.readFits(KSsim_dir+'powspec_sum13fields/SIM_powspec_sigma05_rz1_mQ3-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800_1000R.fit')
+	ps_sum = mean(ps_sum_mat,axis=0)
+	
+	ps_CFHT_sum = WLanalysis.readFits('/Users/jia/CFHTLenS/KSsim/powspec_sum13fields/CFHT_powspec_sigma05.fit')
+	#ax=subplot(111)
+	for i in range(1,14):
+		ps_CFHT = WLanalysis.readFits(CFHT_dir+'CFHT_powspec_sigma05_subfield%02d.fits'%(i))[1]
+		
+		ps_mat = WLanalysis.readFits(KSsim_dir+'powspec/SIM_powspec_sigma05_subfield%i_rz1_mQ3-512b240_Om0.260_Ol0.740_w-0.800_ns0.960_si0.800_1000R.fit'%(i))
+		ps = mean(ps_mat, axis=0)
+		
+		ax.loglog(ell_arr, ps, label='%i'%(i), color = colors[i], linewidth=lw)
+		ax2.plot(ell_arr, ps_CFHT/ps-1, color = colors[i], linewidth=lw)
+		
+	ax.loglog(ell_arr, ps_sum, 'k--', linewidth=2, label='SIM sum')
+	ax.loglog(ell_arr, ps_CFHT_sum, 'r.', linewidth=2, label='CFHT sum')
+	ax2.plot(ell_arr, ps_CFHT_sum/ps_sum-1, 'r.', linewidth=2)
+	
+	leg=ax.legend(loc=0, ncol=2, labelspacing=.2, prop={'size':12})
+	leg.get_frame().set_visible(False)
+	ax.set_xlim(ell_arr[5],ell_arr[-1])
+	ax2.set_xscale('log')
+	ax2.set_xlim(ell_arr[5],ell_arr[-1])
+	ax.set_ylim(1e-5, 1e-2)
+	ax.set_title('Power spectra (subfield vs. sum)')
+	plt.setp(ax.get_xticklabels(), visible=False) 
+	plt.subplots_adjust(hspace=0.0)
+	savefig(plot_dir+'CFHT_SIM_ps_by_sf_corrected.jpg')
+	close()
+
+if test_11_13_CFHT_KS:
+	# create CFHT_KS for 11 & 13 done 6/4/2014
+	cat_dir = '/Users/jia/CFHTLenS/catalogue/'
+	for i in (11,13):
+		y, x, e1, e2, w, m = WLanalysis.readFits('/Users/jia/CFHTLenS/catalogue/yxewm_subfield%i_zcut0213.fit'%(i)).T
+		k = array([e1*w, e2*w, (1+m)*w])
+		Ms, galn = WLanalysis.coords2grid(x, y, k)
+		Me1, Me2, Mw = Ms
+		for sigmaG in sigmaG_arr:
+			print 'KSmap i, sigmaG', i, sigmaG
+			KS_fn = cat_dir+'CFHT_KS_sigma%02d_subfield%02d.fits'%(sigmaG*10,i)
+			
+			mask_fn = cat_dir+'CFHT_mask_ngal%i_sigma%02d_subfield%02d.fits'%(ngal_arcmin,sigmaG*10,i)
+			mask = WLanalysis.readFits(mask_fn)
+			Me1_smooth = WLanalysis.weighted_smooth(Me1, Mw, PPA=PPA512, sigmaG=sigmaG)
+			Me2_smooth = WLanalysis.weighted_smooth(Me2, Mw, PPA=PPA512, sigmaG=sigmaG)
+			
+			kmap = WLanalysis.KSvw(Me1_smooth, Me2_smooth)
+			try:
+				WLanalysis.writeFits(kmap, KS_fn)
+			except Exception:
+				print 'exist',KS_fn
+				pass
+			
+			if sigmaG == 0.5:
+				imshow(kmap)
+				savefig(plot_dir+'CFHT_KS_sigma05_subfield%02d_corrected.jpg'%(i))
+				close()
+			ps = WLanalysis.PowerSpectrum(kmap, sizedeg=12.0)
+			
+			ps_fn = CFHT_dir + 'CFHT_powspec_sigma%02d_subfield%02d.fits'%(sigmaG*10,i)
+			
+			try:
+				WLanalysis.writeFits(ps, ps_fn)
+			except Exception:
+				print ps_fn
+				pass
+			for bins in (25, 40):
+				pk = WLanalysis.peaks_mask_hist(kmap, mask, bins, kmin=kmin, kmax=kmax)
+				pk_fn = CFHT_dir + 'CFHT_peaks_sigma%02d_subfield%02d_%03dbins.fits'%(sigmaG*10,i, bins)
+				try:
+					WLanalysis.writeFits(pk, pk_fn)
+				except Exception:
+					print pk_fn
+					pass
+		
+	
+	#for sf in (11,13):
+		#kmap =WLanalysis.readFits( CFHT_dir+'CFHT_KS_sigma05_subfield%02d.fits'%(sf))
+		#imshow(kmap)
+		#title('subfield %i'%(sf))
+		#savefig(plot_dir+'CFHT_KS_sigma05_subfield%02d.jpg'%(sf))
+		#close()
+	
 if emu_checkps:
+	seed(0)
 	ps_fn_arr = os.listdir(emu_dir+'powspec_sum/sigma05/')
-	getps = lambda ps_fn: WLanalysis.readFits(emu_ps_dir+ps_fn)
+	getps = lambda ps_fn: WLanalysis.readFits(emu_dir+'powspec_sum/sigma05/'+ps_fn)
 	ps_mat = array(map(getps, ps_fn_arr))
 	ps_avg = mean(ps_mat,axis=1)
 	ps_std = std(ps_mat, axis=1)
 	ps_CFHT = WLanalysis.readFits('/Users/jia/CFHTLenS/KSsim/powspec_sum13fields/CFHT_powspec_sigma05.fit')
 	for i in range(len(ps_avg)):
-		loglog(ell_arr, ps_avg[i])
-	loglog(ell_arr, ps_CFHT, '--', linewidth = 2)
-	show()
+		loglog(ell_arr, ps_avg[i], color=rand(3))
+	loglog(ell_arr, ps_CFHT, 'k--')#, linewidth = 2)
+	xlim(ell_arr[11], ell_arr[-1])
+	ylim(1e-5, 1e-2)
+	xlabel('ell')
+	ylabel('P')
+	title('91 cosmos and CFHT power spectrum', fontsize=12)
+	#show()
+	savefig(plot_dir+'emu_powspec_test_correctedCFHT.jpg')
+	close()
 
-if emu_checkpeaks:
-	#pk_CFHT = WLanalysis.readFits('/Users/jia/CFHTLenS/KSsim/peaks_sum13fields/CFHT_peaks_sigma05_025bins.fits')
-	CFHT_peak = zeros(25)
-	for j in arange(1,14):
-		print 'adding up subfield,',j
-		CFHT_peak+=WLanalysis.readFits (CFHT_dir+'CFHT_peaks_sigma18_subfield%02d_025bins.fits'%(j))
+if emu_checkpk:
+	seed(0)
+	def plotemupk (sigmabins):
+
+		sigmaG, bins = sigmabins
+		x = linspace(-0.04, 0.12, bins+1)
+		x = x[:-1]+0.5*(x[1]-x[0])
+		print "sigmaG, bins", sigmaG, bins
+		def getpk (pk_fn, bins = bins):
+			pk600bins = WLanalysis.readFits(emu_dir+'peaks_sum/sigma%02d/'%(sigmaG*10)+pk_fn)
+			pk = pk600bins.reshape(1000, -1, 600/bins)
+			pk = sum(pk, axis = -1)
+			return pk
+		CFHT_peak = zeros(bins)
+		for j in arange(1,14):
+			#print 'adding up subfield,',j
+			CFHT_peak+=WLanalysis.readFits (CFHT_dir+'CFHT_peaks_sigma%02d_subfield%02d_%03dbins.fits'%(sigmaG*10, j, bins))
+			
+		pk_fn_arr = os.listdir(emu_dir+'peaks_sum/sigma%02d/'%(sigmaG*10))
+		pk_mat = array(map(getpk, pk_fn_arr))
+		pk_avg = mean(pk_mat,axis=1)
+		pk_std = std(pk_mat, axis=1)
 		
-	pk_fn_arr = os.listdir(emu_dir+'peaks_sum/sigma05/')
-	
-	def getpk (pk_fn, bins = 25):
-		pk600bins = WLanalysis.readFits(emu_dir+'peaks_sum/sigma05/'+pk_fn)
-		pk = pk600bins.reshape(1000, -1, 600/bins)
-		pk = sum(pk, axis = -1)
-		return pk
-	
-	pk_mat = array(map(getpk, pk_fn_arr))
-	pk_avg = mean(pk_mat,axis=0)
-	pk_std = std(pk_mat, axis=0)
-	
-	for i in range(len(pk_avg)):
-		plot(x, pk_avg[i])
-	plot(x, CFHT_peak, '--', linewidth = 2)
-	show()
+		for i in range(len(pk_avg)):
+			plot(x, pk_avg[i], color=rand(3))
+		plot(x, CFHT_peak, 'k--', linewidth = 2)
+		xlabel('kappa')
+		title('nbin %i, sigmaG %s'%(bins, sigmaG))
+		#show()
+		savefig(plot_dir+'emu_peaks_test_bins%i_sigmaG%02d.jpg'%(bins, sigmaG*10))
+		close()
+	sigmaGbins_arr = [[sigmaG, bins] for sigmaG in sigmaG_arr for bins in (25, 40)]
+	map(plotemupk, sigmaGbins_arr)
 
 ps_CFHT = WLanalysis.readFits('/Users/jia/CFHTLenS/KSsim/powspec_sum13fields/CFHT_powspec_sigma05.fit')	
 
-if emu_checkcheckps:
+if emu_check_single_ps:
+	# junk routine... one time use, forgot to do 13 subfields.. intead only 1 subfield were done
 	os.chdir(emu_dir+'test_cat/')
 	getps = lambda i: WLanalysis.readFits('SIM_powspec_sigma05_subfield%i_emu1-512b240_Om0.136_Ol0.864_w-2.484_ns0.960_si1.034_1000r.fit'%(i))
 	
-	galcount = array([342966,365597,322606,380838,
-		  263748,317088,344887,309647,
-		  333731,310101,273951,291234,
-		  308864]).astype(float) # galaxy counts for subfields, prepare for weighte sum powspec
-	galcount /= sum(galcount)
 	ps_arr = array(map(getps,i_arr))
 	xtot = zeros(50)
 	j=0
@@ -1190,6 +1396,32 @@ if emu_checkcheckps:
 		
 	loglog(ell_arr,ps_CFHT, '--', linewidth=2)
 	loglog(ell_arr,xtot, '.', linewidth=2)
-	show() #look OK
-#if emu_interpolate:
+	#show() #look OK
+
+if emu_interpolate_ps:
+	from scipy import interpolate
+	cosmo_params =  genfromtxt('/Users/jia/CFHTLenS/emulator/cosmo_params.txt')
+	ps_fn_arr = os.listdir(emu_dir+'powspec_sum/sigma05/')
+	getps = lambda ps_fn: WLanalysis.readFits(emu_dir+'powspec_sum/sigma05/'+ps_fn)
+	ps_mat0 = 13*average(array(map(getps, ps_fn_arr)), axis=1) [:, 11:]#to get rid of nan's
+	ps_mat = ps_mat0.copy() # temporary correction
+	
+	for i in (0,): # range(len(ps_mat)):
+
+		params_model = delete(cosmo_params, i, 0)
+		ps_model = delete(ps_mat, i, 0)
+
+
+		params_missing = cosmo_params[i]
+		ps_missing = ps_mat[i]
+
+		rbf=interpolate.Rbf(ps_model[:,0],ps_model[:,1],ps_model[:,2],params_model[:,0])
+		# interpolate from ps to params
+		# interp_param = interpolate.griddata(ps_model, params_model, ps_missing, method='cubic')
+		
+		
+	
+	
+	
+	
 	

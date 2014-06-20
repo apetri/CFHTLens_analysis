@@ -227,7 +227,7 @@ def sum_matrix (cosmosigmaG):
 		print 'gen', pkfn
 		peaks_mat = zeros(shape=(len(R_arr), bins))
 		for i in range(1,14):
-			print 'ps', i
+			print 'pk', i
 			peaks_mat += np.array(map(gen_mat(i, cosmo, sigmaG, ispk = True), R_arr))	
 		WLanalysis.writeFits(peaks_mat, pkfn)	
 
