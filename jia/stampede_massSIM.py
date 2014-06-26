@@ -60,9 +60,9 @@ Mw_fcn = lambda i: WLanalysis.readFits(KS_dir+'SIM_Mw_subfield%i.fit'%(i))
 yxewm_fcn = lambda i: WLanalysis.readFits(KS_dir+'yxewm_subfield%i_zcut0213.fit'%(i))
 #yxewm_arr = map(yxewm_fcn, i_arr)
 
-## this is customized to one subfield at a time
-#Mw = Mw_fcn(i)
-#y, x, e1, e2, w, m = yxewm_fcn(i).T
+## this is customized to one subfield at a time, uncomment to use for 1 subfield
+Mw = Mw_fcn(i)
+y, x, e1, e2, w, m = yxewm_fcn(i).T
 
 print 'got yxewm_arr'
 def fileGen(i, R, cosmo):
@@ -85,7 +85,8 @@ def fileGen(i, R, cosmo):
 	## get reduced shear 
 	## 06/26/2014 change to WL approximation, since reduced shear can 
 	## blow up gamma when kappa ~= 1
-	#e1red, e2red = WLanalysis.eobs_fun(s1, s2, k, eint1, eint2)
+	
+	## e1red, e2red = WLanalysis.eobs_fun(s1, s2, k, eint1, eint2)
 	e1red, e2red = s1+eint1, s2+eint2
 
 	print 'coords2grid', i, R, cosmo
@@ -148,14 +149,19 @@ def KSmap(iiRcosmo):
 					WLanalysis.writeFits(kmap, KS_fn)
 					pass
 			############# power spectrum and peaks ####
-			powspec = WLanalysis.PowerSpectrum(kmap, sizedeg=12.0)[-1]
+			
+			mask = WLanalysis.readFits(Mask_fn(i, sigmaG))
+			
+			## change in 06/26/2014, put mask on power spectrum
+			## powspec = WLanalysis.PowerSpectrum(kmap, sizedeg=12.0)[-1]
+			powspec = WLanalysis.PowerSpectrum(kmap*mask, sizedeg=12.0)[-1]
+			
 			try:
 				WLanalysis.writeFits(powspec, ps_fn)
 			except Exception:
 				print 'file exist', ps_fn
 				pass
-			
-			mask = WLanalysis.readFits(Mask_fn(i, sigmaG))
+
 			peaks_hist = WLanalysis.peaks_mask_hist(kmap, mask, bins, kmin = kmin, kmax = kmax)
 			
 			try:
@@ -167,16 +173,16 @@ def KSmap(iiRcosmo):
 		print 'already done KSmap i, R, cosmo', i, R, cosmo
 
 
-# full set
-#pool = MPIPool()
-#iRcosmo = [[i, R, cosmo] for R in R_arr for cosmo in cosmo_arr]
-#pool.map(KSmap, iRcosmo)
-#pool.close()
-
+### create KS map, uncomment next 4 lines
+pool = MPIPool()
+iRcosmo = [[i, R, cosmo] for R in R_arr for cosmo in cosmo_arr]
+pool.map(KSmap, iRcosmo)
+pool.close()
+print 'DONE DONE DONE'
 
 ### collect all the ps and pk single file to matrix
 ### ps is weighted over # galaxies, pk is sum of all subfield
-### will only work if the previous step is done
+### !!!will only work if the previous step is done!!!
 
 peaks_sum_fn = lambda cosmo, sigmaG, bins: KS_dir+'peaks_sum/SIM_peaks_sigma%02d_%s_%03dbins.fit'%(sigmaG*10, cosmo, bins)
 
@@ -234,8 +240,11 @@ def sum_matrix (cosmosigmaG):
 			peaks_mat += np.array(map(gen_mat(i, cosmo, sigmaG, ispk = True), R_arr))	
 		WLanalysis.writeFits(peaks_mat, pkfn)	
 
-cosmosigmaG_arr = [[cosmo, sigmaG] for cosmo in cosmo_arr for sigmaG in sigmaG_arr]
-pool = MPIPool()
-pool.map(sum_matrix, cosmosigmaG_arr)
-pool.close()
-print 'SUM-SUM-SUM'
+### sum over 13 sf for peaks and powspectrum, need to alter a little later, 
+### to save subfield info matrix as well
+### uncomment the rest of the next 5 lines to run this part
+#cosmosigmaG_arr = [[cosmo, sigmaG] for cosmo in cosmo_arr for sigmaG in sigmaG_arr]
+#pool = MPIPool()
+#pool.map(sum_matrix, cosmosigmaG_arr)
+#pool.close()
+#print 'SUM-SUM-SUM'
