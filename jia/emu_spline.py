@@ -15,15 +15,17 @@ from pylab import *
 import matplotlib.gridspec as gridspec 
 from sklearn.gaussian_process import GaussianProcess
 from scipy.spatial import cKDTree
+import scipy.ndimage as snd
 
 emu_dir = '/Users/jia/CFHTLenS/emulator/'
-
+sigmaG=1.8#1.0
 # First, read in the 91 cosmology power spectrum
 cosmo_params =  genfromtxt('/Users/jia/CFHTLenS/emulator/cosmo_params.txt')
 def getps (cosmo_param):
 	om, w, si8 = cosmo_param
-	ps_fn = 'SIM_powspec_sigma05_emu1-512b240_Om%.3f_Ol%.3f_w%.3f_ns0.960_si%.3f.fit'%(om,1-om,w,si8)
-	ps = WLanalysis.readFits(emu_dir+'powspec_sum/sigma05/'+ps_fn)
+	print cosmo_param
+	ps_fn = 'SIM_powspec_sigma%02d_emu1-512b240_Om%.3f_Ol%.3f_w%.3f_ns0.960_si%.3f.fit'%(sigmaG*10, om,1-om,w,si8)
+	ps = WLanalysis.readFits(emu_dir+'powspec_sum/sigma%02d/'%(sigmaG*10)+ps_fn)
 	return ps
 ############# mistake!!! stampede and mine is not the same order!!!!######
 ####ps_fn_arr = os.listdir(emu_dir+'powspec_sum/sigma05/')
@@ -35,10 +37,12 @@ def getps (cosmo_param):
 #WLanalysis.writeFits(ps_mat.reshape(91,-1),emu_dir+'powspec_sum/ps_mat_sigma05.fit')
 
 ps_mat = WLanalysis.readFits(emu_dir+'powspec_sum/ps_mat_sigma05.fit').reshape(91,1000,-1)
+
 ps_std = std(ps_mat, axis=1)# array [91, 50]
 ps_stdlog = log10(ps_std)
 ps_fidu = WLanalysis.readFits('/Users/jia/CFHTLenS/KSsim/powspec_sum13fields/SIM_powspec_sigma05_rz1_mQ3-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800_1000R.fit')[:,11:]
 fidu_avg = mean(ps_fidu,axis=0)
+fidu_std = std(ps_fidu,axis=0)
 cov_mat = mat(cov(ps_fidu,rowvar=0))
 cov_inv = cov_mat.I
 ####### try interpolate in log space ######
@@ -51,11 +55,10 @@ ell_arr = logspace(log10(110.01746692),log10(25207.90813028),50)[11:]
 ############### peaks ###################
 x = linspace(-0.04, 0.12, 26)
 x = x[:-1]+0.5*(x[1]-x[0])
-sigmaG=1.0
 
-def getpk (cosmo_param, bins = 25):
+def getpk (cosmo_param, sigmaG=1.0, bins = 25):
 	om, w, si8 = cosmo_param
-	pk_fn = 'SIM_peaks_sigma10_emu1-512b240_Om%.3f_Ol%.3f_w%.3f_ns0.960_si%.3f_600bins.fit'%(om,1-om,w,si8)
+	pk_fn = 'SIM_peaks_sigma%02d_emu1-512b240_Om%.3f_Ol%.3f_w%.3f_ns0.960_si%.3f_600bins.fit'%(sigmaG*10, om,1-om,w,si8)
 	pk600bins = WLanalysis.readFits(emu_dir+'peaks_sum/sigma%02d/'%(sigmaG*10)+pk_fn)
 	pk = pk600bins.reshape(1000, -1, 600/bins)
 	pk = sum(pk, axis = -1)
@@ -80,7 +83,10 @@ project_sims_3D = 0
 check_bad_ps = 0
 bad_KSmap = 0
 check_ps_sum = 0
-test_MCMC = 1
+test_MCMC = 0
+peaks_13subfield_sum = 0
+try_mask_powspec = 0
+check_shear_bad_ps_kmap = 0
 
 if ps_replaced_by_good:
 	bad_arr = array([6,14,24,27,31,32,33,38,42,43,44,45,53,54,55,61,63,64,65,66,67,72,74,75, 76,81,82,83,84,88,89])
@@ -100,8 +106,10 @@ if ps_replaced_with_pk:
 	ell_arr = x
 	ps_fidu = WLanalysis.readFits('/Users/jia/CFHTLenS/KSsim/peaks_sum13fields/SIM_peaks_sigma10_rz1_mQ3-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800_1000R_025bins.fit')
 	fidu_avg = mean(ps_fidu,axis=0)
+	fidu_std = std(ps_fidu,axis=0)
 	cov_mat = mat(cov(ps_fidu,rowvar=0))
 	cov_inv = cov_mat.I
+	ps_CFHT = WLanalysis.readFits('/Users/jia/CFHTLenS/KSsim/peaks_sum13fields/CFHT_peaks_sigma%i_25bins.fits'%(sigmaG*10))
 # Second interpolate for individual bins
 # interpolate.griddata(points, values, xi, method='linear/cubic/nearest')
 # points = params, values = individual bin
@@ -492,16 +500,18 @@ if check_bad_ps:
 		ps_avg = pk_avg
 		ps_std = pk_std
 		ell_arr = x
-	bad_arr = array([6,14,24,27,31,32,33,38,42,43,44,45,53,54,55,61,63,64,65,66,67,72,74,75, 76,81,82,83,84,88,89])	
+	#bad_arr = array([6,14,24,27,31,32,33,38,42,43,44,45,53,54,55,61,63,64,65,66,67,72,74,75, 76,81,82,83,84,88,89])	
 	for i in range(91):
 		print i
 		seed(222)
 		f=figure(figsize=(8,6))
 		ax=f.add_subplot(111)
+		isbad = 0
 		for j in range(1000):
 			ps = ps_mat[i,j]
 			if mean(abs(ps-ps_avg[i])/5/ps_std[i])>1:
 				ax.plot(ell_arr,ps,color=rand(3),label=str(j))	
+				isbad = 1
 			else:
 				ax.plot(ell_arr,ps,color=rand(3))
 		ax.errorbar(ell_arr,ps_avg[i],ps_std[i],color='k',linewidth=2)
@@ -518,11 +528,11 @@ if check_bad_ps:
 			ax.set_yscale('log')
 			ax.set_xlabel('ell')
 			ax.set_xlim(ell_arr[0],ell_arr[-1])
-			ax.set_ylim(5e-5, 5e-2)
-			if i in bad_arr:
-				savefig(plot_dir+'bad_powspec/ps_mat_%i.jpg'%(i))
+			#ax.set_ylim(5e-5, 5e-2)
+			if isbad:
+				savefig(plot_dir+'bad_powspec/sigmaG%02d_ps_mat_%i.jpg'%(sigmaG*10,i))
 			else:
-				savefig(plot_dir+'good_powspec/ps_mat_%i.jpg'%(i))
+				savefig(plot_dir+'good_powspec/sigmaG%02d_ps_mat_%i.jpg'%(sigmaG*10,i))
 		else:
 			savefig(plot_dir+'pk_mat_%i.jpg'%(i))
 		close()
@@ -533,29 +543,21 @@ galcount = array([342966,365597,322606,380838,
 		308864]).astype(float)
 galcount /= sum(galcount)
 if bad_KSmap:
-	
-	
-	#fn_arr = ('Om0.540_Ol0.460_w-0.030_ns0.960_si1.161_0401r',
-	   #'Om0.540_Ol0.460_w-0.030_ns0.960_si1.161_0883r',
-	   #'Om0.361_Ol0.639_w-0.606_ns0.960_si0.171_0352r',
-	   #'Om0.361_Ol0.639_w-0.606_ns0.960_si0.171_0780r')
-	
-	fn_arr = ('Om0.540_Ol0.460_w-0.030_ns0.960_si1.161_0402r',
-	   'Om0.540_Ol0.460_w-0.030_ns0.960_si1.161_0884r',
-	   'Om0.361_Ol0.639_w-0.606_ns0.960_si0.171_0353r',
-	   'Om0.361_Ol0.639_w-0.606_ns0.960_si0.171_0781r')
-	#n=38
-	realisation_arr = [[38,401],[38,883],[45,352],[45,780]]#this is starting from 0, but file name starts from 1
-	r=0
+	#fn_arr = ('Om0.446_Ol0.554_w-1.212_ns0.960_si1.486_0114r',)#cosmo9
+	#n=9
+	#r = 114#but 113 in my arr
+	fn_arr =('Om0.755_Ol0.245_w-0.456_ns0.960_si1.359_0553r',)
+	n=22
+	r=553
 	for fn in fn_arr:
-		summed_ps = ps_mat[realisation_arr[r][0], realisation_arr[r][1]]#from previously calculated model
+		summed_ps = ps_mat[9,r-1]#from previously calculated model
 		print fn
 		sf_ps_arr = zeros(shape=(13,50))
 		for i in range(1,14):
 			print 'subfield',i
 			ifn = emu_dir+'debug_ps/kmap/SIM_KS_sigma05_subfield%i_emu1-512b240_%s.fit'%(i,fn)
 			kmap = WLanalysis.readFits(ifn)
-			#plotimshow(kmap, fn+'sf%i'%(i))
+			plotimshow(kmap, fn+'sf%i'%(i))
 			ips = WLanalysis.PowerSpectrum(kmap)[1]
 			sf_ps_arr[i-1] = ips
 		ax = subplot(111)
@@ -574,7 +576,6 @@ if bad_KSmap:
 		ax.set_title(fn)
 		savefig(plot_dir+'debug_ps/bad_KSmap'+fn+'.jpg')
 		close()
-		r+=1
 if check_ps_sum:
 	#r_arr = [401,883]
 	summed_ps = ps_mat[45, 780]
@@ -632,99 +633,245 @@ def interp_cosmo (params, method = 'multiquadric'):
 	return ps_interp
 
 if test_MCMC:
-	#plot out interpolated fiducial cosmo and true ps
-	
-	
+
 	# prior
 	mmin,wmin,smin=amin(cosmo_params,axis=0)
 	mmax,wmax,smax=amax(cosmo_params,axis=0)
 	fidu_params = (0.26, -1, 0.8)
-	obs = fidu_avg#ps_CFHT#fidu_avg
+	
 	steps = 1000
 	burn = 100 # make sure burn < steps
-	method = 'GP'#'multiquadric'
-	def lnprior(params):
-		'''This gives the flat prior.
-		Returns:
-		0:	if the params are in the regions of interest.
-		-inf:	otherwise.'''
-		m, w, s = params
-		if mmin < m < mmax and wmin < w < wmax and smin < s < smax:
-			return 0.0
-		else:
-			return -np.inf
+	
+	#obs = fidu_avg#ps_CFHT#
+	#method = 'multiquadric'#'GP'#
+	for obs in (fidu_avg,):#(fidu_avg, ps_CFHT):
+		for method in ('GP',):#('multiquadric','GP'):
+			print bool(obs[3]== fidu_avg[3]), method
+			def lnprior(params):
+				'''This gives the flat prior.
+				Returns:
+				0:	if the params are in the regions of interest.
+				-inf:	otherwise.'''
+				m, w, s = params
+				if 0.0 < m < 1.2 and -4.0 < w < 1.0 and 0.1 < s < 1.6:
+					return 0.0
+				else:
+					return -np.inf
 
-	def lnlike (params, obs):
-		'''This gives the likelihood function, assuming Gaussian distribution.
-		Returns: -log(chi-sq)
-		'''
-		model = interp_cosmo (params, method = method)
-		del_N = np.mat(model - obs)
-		chisq = del_N*cov_inv*del_N.T
-		Ln = -log(chisq) #likelihood, is the log of chisq
-		return float(Ln)
-	
-	def lnprob(params, obs):
-		lp = lnprior(params)
-		if not np.isfinite(lp):
-			return -np.inf
-		else:
-			return lp + lnlike(params, obs)
-	
-	nll = lambda *args: -lnlike(*args)
-	result = op.minimize(nll, fidu_params, args=(obs,))
-	print result
-	
-	ndim, nwalkers = 3, 100
-	pos = [result["x"] + 1e-4*np.random.randn(ndim) for i in range(nwalkers)]
-	
-	print 'run sampler'
-	sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=(obs,))
+			def lnlike (params, obs):
+				'''This gives the likelihood function, assuming Gaussian distribution.
+				Returns: -log(chi-sq)
+				'''
+				model = interp_cosmo (params, method = method)
+				del_N = np.mat(model - obs)
+				chisq = del_N*cov_inv*del_N.T
+				Ln = -log(chisq) #likelihood, is the log of chisq
+				return float(Ln)
+			
+			def lnprob(params, obs):
+				lp = lnprior(params)
+				if not np.isfinite(lp):
+					return -np.inf
+				else:
+					return lp + lnlike(params, obs)
+			
+			nll = lambda *args: -lnlike(*args)
+			result = op.minimize(nll, fidu_params, args=(obs,))
+			print result
+			
+			ndim, nwalkers = 3, 100
+			pos = [result["x"] + 1e-4*np.random.randn(ndim) for i in range(nwalkers)]
+			
+			print 'run sampler'
+			sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=(obs,))
 
-	print 'run mcmc'
-	sampler.run_mcmc(pos, steps)
-	samples = sampler.chain[:, burn:, :].reshape((-1, ndim))
+			print 'run mcmc'
+			sampler.run_mcmc(pos, steps)
+			samples = sampler.chain[:, burn:, :].reshape((-1, ndim))
 
-	errors = array(map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]), zip(*np.percentile(samples, [16, 50, 84],axis=0))))
-	print 'Result (best fits, lower error, upper error)'
-	print 'Omega_m:\t', errors[0]
-	print 'w:\t\t', errors[1]
-	print 'sigma_8:\t', errors[2]
+			errors = array(map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]), zip(*np.percentile(samples, [16, 50, 84],axis=0))))
+			print 'Result\t[best fits, lower error, upper error]'
+			print 'Omega_m:\t', errors[0]
+			print 'w:\t\t', errors[1]
+			print 'sigma_8:\t', errors[2]
+			
+			import triangle	
+			fig = triangle.corner(samples, labels=["$\Omega_m$", "$w$", "$\sigma_8$"],  plot_datapoints=False)#,truths=fidu_params)
+			#fig.savefig(plot_dir+"emu_triangle_MCMC_fidu_%s.jpg"%(method))
+			if ps_replaced_with_pk:
+				print 'ps_replaced_with_pk'
+				if obs[3] == fidu_avg[3]:
+					fn = "emu_fidu_%s_peaks"%(method)
+				elif obs[3] == ps_CFHT[3]:
+					fn = "emu_CFHT_%s_peaks"%(method)
+			else:
+				if obs[3] == fidu_avg[3]:
+					fn ='emu_fidu_%s'%(method)
+				elif obs[3] == ps_CFHT[3]:
+					fn ='emu_CFHT_%s'%(method)
+			fig.savefig(plot_dir+'triangle_'+fn+'.jpg')
+			close()
 	
-	import triangle	
-	fig = triangle.corner(samples, labels=["$\Omega_m$", "$w$", "$\sigma_8$"],  plot_datapoints=False)#,truths=fidu_params)
-	#fig.savefig(plot_dir+"emu_triangle_MCMC_fidu_%s.jpg"%(method))
-	if ps_replaced_with_pk:
-		fig.savefig(plot_dir+"emu_triangle_MCMC_FIDU_%s_peaks.jpg"%(method))
-	else:
-		fig.savefig(plot_dir+"emu_triangle_MCMC_CFHT_%s.jpg"%(method))
-	close()
+
+			best_fit = errors[:,0]
+			ps_interp=interp_cosmo(best_fit,method=method)
+		f=figure(figsize=(8,8))
+		ax=f.add_subplot(gs[0])
+		ax2=f.add_subplot(gs[1],sharex=ax)
+		ax.errorbar(ell_arr,obs,fidu_std,color='r',label=fn)
+		ax.plot(ell_arr,ps_interp,'b-',label=method)
+		ax2.plot(ell_arr,zeros(len(ell_arr)),'r-')
+		ax2.plot(ell_arr,ps_interp/obs-1,'b-')
+
+		if not ps_replaced_with_pk:
+			ax.set_xscale('log')
+			ax2.set_xscale('log')
+			ax.set_yscale('log')
+			ax.set_xlabel('ell')
+			ax.set_ylim(5e-5, 1e-2)
+			ax.set_xlim(ell_arr[0],ell_arr[-1])
+
+		ax2.set_ylim(-0.1, 0.1)
+		leg=ax.legend(ncol=1, labelspacing=0.3, prop={'size':12},loc=0)
+		leg.get_frame().set_visible(False)
+		plt.setp(ax.get_xticklabels(), visible=False) 
+		plt.subplots_adjust(hspace=0.0)
+		savefig(plot_dir+'frac_diff'+fn+'.jpg')
+		close()
+
+
+#best_spline_params=(0.46875562, -1.52936207, 0.5170796 )
+#best_GP_params=(0.46119148, -1.44506788, 0.51769554)
+#fidu_avg=ps_CFHT
+#ps_spline=interp_cosmo(best_spline_params)
+#ps_GP=interp_cosmo(best_GP_params,method='GP')
+#f=figure(figsize=(8,8))
+#ax=f.add_subplot(gs[0])
+#ax2=f.add_subplot(gs[1],sharex=ax)
+#ax.plot(ell_arr,fidu_avg,'r-',label='CFHT')
+#ax.plot(ell_arr,ps_spline,'b-',label='Spline')
+#ax.plot(ell_arr,ps_GP,'m-',label='GP')
+#ax2.plot(ell_arr,zeros(len(ell_arr)),'r-')
+#ax2.plot(ell_arr,ps_spline/fidu_avg-1,'b-')
+#ax2.plot(ell_arr,ps_GP/fidu_avg-1,'m-')
+
+#ax.set_xscale('log')
+#ax2.set_xscale('log')
+#ax.set_yscale('log')
+#ax.set_xlabel('ell')
+
+#ax.set_xlim(ell_arr[0],ell_arr[-1])
+#ax.set_ylim(5e-5, 1e-2)
+#ax2.set_ylim(-0.1, 0.1)
+#leg=ax.legend(ncol=1, labelspacing=0.3, prop={'size':12},loc=0)
+#leg.get_frame().set_visible(False)
+#plt.setp(ax.get_xticklabels(), visible=False) 
+#plt.subplots_adjust(hspace=0.0)
+#savefig(plot_dir+'test_MC_CFHT.jpg')
+#close()
+
+if peaks_13subfield_sum:
+	pk_gen = lambda i: WLanalysis.readFits('/Users/jia/CFHTLenS/CFHTKS/CFHT_peaks_sigma%i_subfield%02d_025bins.fits'%(sigmaG*10, i))
+	pk_mat = array(map(pk_gen,range(1,14)))
+	pk_sum = sum(pk_mat, axis=0)
+	WLanalysis.writeFits(pk_sum,'/Users/jia/CFHTLenS/KSsim/peaks_sum13fields/CFHT_peaks_sigma%i_25bins.fits'%(sigmaG*10))
+
+if try_mask_powspec:
+	kmap = WLanalysis.readFits(emu_dir+'debug_ps/kmap/SIM_KS_sigma05_subfield2_emu1-512b240_Om0.446_Ol0.554_w-1.212_ns0.960_si1.486_0114r.fit')
+	mask = WLanalysis.readFits('/Users/jia/CFHTLenS/KSsim/mask/CFHT_mask_ngal5_sigma05_subfield02.fits')
+	ps_nomask = WLanalysis.PowerSpectrum(kmap)[1][11:]
+	ps_mask = WLanalysis.PowerSpectrum(kmap*mask)[1][11:]
+	loglog(ell_arr,ps_nomask,label='no mask')
+	loglog(ell_arr,ps_mask,label='mask')
+	xlim(ell_arr[0],ell_arr[-1])
+	legend()
+	show()
+
+#for i in (13,):
+	#print i
+	#mask = WLanalysis.readFits('/Users/jia/CFHTLenS/KSsim/mask/CFHT_mask_ngal5_sigma05_subfield%02d.fits'%(i))
+	#plotimshow(mask,'mask_sf%02d'%(i),vmin=0,vmax=1)
+
+if check_shear_bad_ps_kmap:
+	sigmaG = 0.5
+	R = 553#999
+	y, x, e1, e2, w, m = WLanalysis.readFits('/Users/jia/CFHTLenS/catalogue/yxewm_subfield5_zcut0213.fit').T
 	
-best_spline_params=(0.50224307,-1.61717581,0.49063639)
-best_GP_params=(0.46434467,-1.48899025,0.5068349)
-ps_spline=interp_cosmo(best_spline_params)
-ps_GP=interp_cosmo(best_GP_params,method='GP')
-f=figure(figsize=(8,8))
-ax=f.add_subplot(gs[0])
-ax2=f.add_subplot(gs[1],sharex=ax)
-ax.plot(ell_arr,fidu_avg,'r-',label='Fidu True')
-ax.plot(ell_arr,ps_spline,'b-',label='Spline')
-ax.plot(ell_arr,ps_GP,'m-',label='GP')
-ax2.plot(ell_arr,zeros(len(ell_arr)),'r-')
-ax2.plot(ell_arr,ps_spline/fidu_avg-1,'b-')
-ax2.plot(ell_arr,ps_GP/fidu_avg-1,'m-')
+	k, s1, s2 = (WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/debug_ps/emulator_subfield5_WL-only_emu1-512b240_Om0.755_Ol0.245_w-0.456_ns0.960_si1.359_4096xy_%04dr.fit'%(R)).T)[[0,1,2]]
+	
+	s1m = (1+m)*s1
+	s2m = (1+m)*s2
+	eint1, eint2 = WLanalysis.rndrot(e1, e2, iseed=553)#random rotation	
+	## get reduced shear
+	e1red, e2red = WLanalysis.eobs_fun(s1m, s2m, k, eint1, eint2)
+	
+	print 'coords2grid'
+	A, galn = WLanalysis.coords2grid(x, y, array([k, e1red*w, e2red*w, w]))
+	Mk, Ms1, Ms2, Mw = A
+	
+	Me1_smooth = WLanalysis.weighted_smooth(Ms1, Mw, sigmaG=sigmaG)
+	Me2_smooth = WLanalysis.weighted_smooth(Ms2, Mw, sigmaG=sigmaG)
+	Mk_smooth = WLanalysis.weighted_smooth(Mk, Mw, sigmaG=sigmaG )
+	Mk_vw = WLanalysis.KSvw(Me1_smooth, Me2_smooth)
+	
+	#plotimshow(Mk_vw,'test_bad_kmap_Mkvw_%04dr'%(R), vmin = -0.25, vmax = 0.25)
+	#plotimshow(Mk_smooth, 'test_bad_kmap_Mkconv_%04dr'%(R))#, vmin = -0.04, vmax = 0.08)
+	
+	#plotimshow(Me1_smooth,'test_bad_kmap_Me1smooth_%04dr'%(R))
+	#plotimshow(Me2_smooth,'test_bad_kmap_Me2smooth_%04dr'%(R))
+	
+	PPA512=2.4633625
+	sigma = sigmaG * PPA512
+	#smooth_w = snd.filters.gaussian_filter(Mw.astype(float),sigma,mode='constant')
+	#plotimshow(smooth_w, 'test_bad_kmap_smoothw_%04dr_sigmaG%i'%(R,sigmaG*10))
+	
+	#Me1smooth_noweight = snd.filters.gaussian_filter(Ms1.astype(float),sigma,mode='constant')
+	#plotimshow(Me1smooth_noweight, 'test_bad_kmap_Me1smooth_noweight_%04dr_sigmaG%i'%(R,sigmaG*10))
+	
+	B, galn = WLanalysis.coords2grid(x, y, array([eint1, s1m, s1, e1red]))
+	Meint1, Ms1m, Ms1b, Me1red = B
+	Me1red_smoothed=WLanalysis.smooth(Me1red,sigma)
+	
+	#plotimshow(Meint1, 'bad_kmap_%04dr_sigmaG%i_Meint1'%(R,sigmaG*10))
+	#plotimshow(Ms1m, 'bad_kmap_%04dr_sigmaG%i_Ms1m'%(R,sigmaG*10))
+	#plotimshow(Ms1b, 'bad_kmap_%04dr_sigmaG%i_Ms1b'%(R,sigmaG*10))
+	#plotimshow(Me1red, 'bad_kmap_%04dr_sigmaG%i_Me1red'%(R,sigmaG*10))
+	#plotimshow(Me1red_smoothed,'bad_kmap_%04dr_sigmaG%i_Me1red_smoothed'%(R,sigmaG*10))
+	
+	Mg1 = Ms1/(1-Mk)##g1=s1m
+	Mg1_smoothed = WLanalysis.smooth(Mg1, sigma)
+	plotimshow(Mg1, 'bad_kmap_%04dr_sigmaG%i_Mg1'%(R,sigmaG*10))
+	plotimshow(Mg1_smoothed, 'bad_kmap_%04dr_sigmaG%i_Mg1_smoothed'%(R,sigmaG*10))
+	Mksmoothed = WLanalysis.smooth(1-Mk, sigma)
+	plotimshow(Mksmoothed, 'bad_kmap_%04dr_sigmaG%i_1-Mk_smoothed'%(R,sigmaG*10),vmin=-0.1,vmax=0.1)
+		#eobs = (g+eint)/(1-g*eint)
 
-ax.set_xscale('log')
-ax2.set_xscale('log')
-ax.set_yscale('log')
-ax.set_xlabel('ell')
+	bad_location = where(Me1red_smoothed>10)
+	Mk_bad_location = Mksmoothed[bad_location]
 
-ax.set_xlim(ell_arr[0],ell_arr[-1])
-ax.set_ylim(5e-5, 1e-2)
-ax2.set_ylim(-0.05, 0.05)
-leg=ax.legend(ncol=1, labelspacing=0.3, prop={'size':12},loc=0)
-leg.get_frame().set_visible(False)
-plt.setp(ax.get_xticklabels(), visible=False) 
-plt.subplots_adjust(hspace=0.0)
-savefig(plot_dir+'test_MC_fidu.jpg')
-close()
+plot_Mw = 0
+if plot_Mw:
+	sigmaG=1.0
+	PPA512=2.4633625
+	sigma = sigmaG * PPA512
+	for i in range(1,14):
+		Mw = WLanalysis.readFits(emu_dir+'debug_ps/Mw/SIM_Mw_subfield%i.fit'%(i))
+		Mw_smoothed = WLanalysis.smooth(Mw, sigma)
+		plotimshow(Mw,'Mw_smoothed_sigmaG%02d_sf%02d'%(sigmaG*10,i))
+		
+recreate_mask = 0
+if recreate_mask:
+	PPA512=2.4633625
+	sigmaG_arr = (0.5, 1, 1.8, 3.5, 5.3, 8.9)
+	for i in range(1,14):
+		y, x, e1, e2, w, m = WLanalysis.readFits('/Users/jia/CFHTLenS/catalogue/yxewm_subfield%i_zcut0213.fit'%(i)).T
+		A, galn = WLanalysis.coords2grid(x, y, array([w,]))
+		for sigmaG in sigmaG_arr:
+			fn = '/Users/jia/CFHTLenS/KSsim/mask/CFHT_mask_ngal5_sigma%02d_subfield%02d.fits'%(sigmaG*10, i)
+			#galn_smooth = WLanalysis.smooth(galn, PPA512*sigmaG)
+			#mask=(galn_smooth>5/PPA512**2).astype(int)
+			#WLanalysis.writeFits(mask,fn)
+			mask = WLanalysis.readFits(fn)
+			plotimshow(mask, 'CFHT_mask_ngal5_sigma%02d_subfield%02d'%(sigmaG*10, i), vmin=0, vmax=1)
+			
+		
