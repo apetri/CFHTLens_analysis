@@ -255,7 +255,7 @@ def sum_matrix (cosmosigmaG):
 		peaks_mat = zeros(shape=(len(R_arr), bins))
 		for i in range(1,14):
 			ipeak_fn = peask_sum_sf_fn(cosmo, sigmaG, bins, i)
-			isfile, ipeak = WLanalysis.TestFitsComplete(ipeak_fn, return_file = True):
+			isfile, ipeak = WLanalysis.TestFitsComplete(ipeak_fn, return_file = True)
 			if ipeak == False:
 				ipeak = np.array(map(gen_mat(i, cosmo, sigmaG, ispk = True), R_arr))
 				WLanalysis.writeFits(ipeak, ipeak_fn)
