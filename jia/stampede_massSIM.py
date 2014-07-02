@@ -215,7 +215,7 @@ def gen_mat (i, cosmo, sigmaG, ispk = True):
 		else: #ps
 			fn = powspec_fn (i, cosmo, sigmaG, R)
 		isfile, pkps = WLanalysis.TestFitsComplete(fn, return_file = True)
-		if isfile = False:
+		if isfile == False:
 			KS_fn = KSfn(i, cosmo, R, sigmaG)
 			kmap = WLanalysis.readFits(KS_fn)
 			mask = WLanalysis.readFits(Mask_fn(i, sigmaG))
