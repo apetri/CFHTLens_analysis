@@ -175,7 +175,7 @@ def KSmap(iiRcosmo):
 
 ### create KS map, uncomment next 4 lines
 pool = MPIPool()
-iRcosmo = [[i, R, cosmo] for R in R_arr for cosmo in cosmo_arr]
+iRcosmo = [[i, R, cosmo] for R in R_arr[::-1] for cosmo in cosmo_arr]
 pool.map(KSmap, iRcosmo)
 pool.close()
 print 'DONE DONE DONE'
