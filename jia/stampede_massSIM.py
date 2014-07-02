@@ -214,13 +214,13 @@ def gen_mat (i, cosmo, sigmaG, ispk = True):
 			fn = peaks_fn (i, cosmo, sigmaG, bins, R)
 		else: #ps
 			fn = powspec_fn (i, cosmo, sigmaG, R)
-		if WLanalysis.TestFitsComplete(fn):
-			pkps = WLanalysis.readFits(fn)
-		else: #fits file broken or not exist, create file
+		isfile, pkps = WLanalysis.TestFitsComplete(fn, return_file = True)
+		if isfile = False:
 			KS_fn = KSfn(i, cosmo, R, sigmaG)
 			kmap = WLanalysis.readFits(KS_fn)
+			mask = WLanalysis.readFits(Mask_fn(i, sigmaG))
+			kmap *= mask
 			if ispk:
-				mask = WLanalysis.readFits(Mask_fn(i, sigmaG))
 				pkps = WLanalysis.peaks_mask_hist(kmap, mask, bins, kmin = kmin, kmax = kmax)
 				
 			else:
