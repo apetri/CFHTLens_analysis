@@ -62,14 +62,20 @@ def TestFitsComplete (fn, return_file = False):
 	then return True/False, file/False
 	'''
 	if not os.path.isfile(fn):
-		return False
+		isfile = False
+		ifile = False
 	else:
 		try:
-			readFits(fn)
-			return True
+			ifile = readFits(fn)
+			isfile = True
 		except Exception:
 			os.remove(fn)
-			return False
+			isfile = False
+			ifile = False
+	if return_file:
+		return isfile, ifile
+	else:
+		return isfile
 	
 def TestComplete(file_ls,rm = False):
 	'''Test if a list of file all exist.
