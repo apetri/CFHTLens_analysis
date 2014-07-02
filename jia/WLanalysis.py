@@ -55,7 +55,12 @@ def writeFits (data, filename):
 	hdu = pyfits.PrimaryHDU(data)
 	hdu.writeto(filename)
 
-def TestFitsComplete (fn):
+def TestFitsComplete (fn, return_file = False):
+	'''Input: fn
+	Return: True if fn exists and unbroken, false otherwise
+	Option (impletement in the future): if return_file = True, 
+	then return True/False, file/False
+	'''
 	if not os.path.isfile(fn):
 		return False
 	else:

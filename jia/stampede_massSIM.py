@@ -29,6 +29,7 @@ sigmaG_arr = (0.5, 1, 1.8, 3.5, 5.3, 8.9)
 R_arr = arange(1,1001)
 PPA512 = 2.4633625
 i_arr = (i,)
+###############################################################
 # constants not used
 # zmax = 1.3
 # zmin = 0.2
@@ -36,6 +37,7 @@ i_arr = (i,)
 # ngal_cut = ngal_arcmin*(60**2*12)/512**2# = 0.82, cut = 5 / arcmin^2
 #PPR512 = 8468.416479647716#pixels per radians
 #rad2pix = lambda x: around(512/2.0-0.5 + x*PPR512).astype(int) #from radians to pixel location
+###############################################################
 
 SIMfn = lambda i, cosmo, R: sim_dir+'%s/emulator_subfield%i_WL-only_%s_4096xy_%04dr.fit'%(cosmo, i, cosmo, R)
 
@@ -49,7 +51,6 @@ powspec_fn = lambda i, cosmo, sigmaG, R: KS_dir+'powspec/%s/subfield%i/sigma%02d
 
 
 ######### functions ######################
-
 ### read in MW and yxewm first
 #Mw_fn = KS_dir+'SIM_Mw_subfield%i.fit'%(i) # same for all R
 #Mw = WLanalysis.readFits(Mw_fn)
@@ -60,9 +61,12 @@ Mw_fcn = lambda i: WLanalysis.readFits(KS_dir+'SIM_Mw_subfield%i.fit'%(i))
 yxewm_fcn = lambda i: WLanalysis.readFits(KS_dir+'yxewm_subfield%i_zcut0213.fit'%(i))
 #yxewm_arr = map(yxewm_fcn, i_arr)
 
+###############################################################
 ## this is customized to one subfield at a time, uncomment to use for 1 subfield
-Mw = Mw_fcn(i)
-y, x, e1, e2, w, m = yxewm_fcn(i).T
+###############################################################
+
+#Mw = Mw_fcn(i)
+#y, x, e1, e2, w, m = yxewm_fcn(i).T
 
 print 'got yxewm_arr'
 def fileGen(i, R, cosmo):
@@ -172,21 +176,29 @@ def KSmap(iiRcosmo):
 	else:
 		print 'already done KSmap i, R, cosmo', i, R, cosmo
 
-
+###############################################################
 ### create KS map, uncomment next 4 lines
-pool = MPIPool()
-iRcosmo = [[i, R, cosmo] for R in R_arr[::-1] for cosmo in cosmo_arr]
-pool.map(KSmap, iRcosmo)
-pool.close()
-print 'DONE DONE DONE'
+###############################################################
 
+#pool = MPIPool()
+#iRcosmo = [[i, R, cosmo] for R in R_arr[::-1] for cosmo in cosmo_arr]
+#pool.map(KSmap, iRcosmo)
+#pool.close()
+#print 'DONE DONE DONE'
+
+###############################################################
 ### collect all the ps and pk single file to matrix
 ### ps is weighted over # galaxies, pk is sum of all subfield
 ### !!!will only work if the previous step is done!!!
+###############################################################
 
 peaks_sum_fn = lambda cosmo, sigmaG, bins: KS_dir+'peaks_sum/SIM_peaks_sigma%02d_%s_%03dbins.fit'%(sigmaG*10, cosmo, bins)
 
 powspec_sum_fn = lambda cosmo, sigmaG: KS_dir+'powspec_sum/SIM_powspec_sigma%02d_%s.fit'%(sigmaG*10, cosmo)
+
+peask_sum_sf_fn = lambda cosmo, sigmaG, bins, i: KS_dir+'peaks_sum/sf/SIM_peaks_sigma%02d_%s_%03dbins_subfield%02d.fit'%(sigmaG*10, cosmo, bins, i)
+
+powspec_sum_sf_fn = lambda cosmo, sigmaG, i: KS_dir+'powspec_sum/sf/SIM_powspec_sigma%02d_%s_subfield%02d.fit'%(sigmaG*10, cosmo, i)
 
 galcount = array([342966,365597,322606,380838,
 		  263748,317088,344887,309647,
@@ -229,22 +241,37 @@ def sum_matrix (cosmosigmaG):
 		powspec_mat = zeros(shape=(len(R_arr), 50))
 		for i in range(1,14):
 			print 'ps', i
-			powspec_mat += galcount[i-1] * np.array(map(gen_mat(i, cosmo, sigmaG, ispk = False), R_arr))
+			
+			ipowspec_fn = powspec_sum_sf_fn(cosmo, sigmaG, i)
+			if WLanalysis.TestFitsComplete(ipowspec_fn):
+				ipowspec = WLanalysis.readFits(ipowspec_fn)
+			else:
+				ipowspec = np.array(map(gen_mat(i, cosmo, sigmaG, ispk = False), R_arr))
+				WLanalysis.writeFits(ipowspec, ipowspec_fn)
+			powspec_mat += galcount[i-1] * ipowspec
 		WLanalysis.writeFits(powspec_mat, psfn)
 		
 	if WLanalysis.TestFitsComplete(pkfn) == False:
 		print 'gen', pkfn
 		peaks_mat = zeros(shape=(len(R_arr), bins))
 		for i in range(1,14):
+			ipeak_fn = peask_sum_sf_fn(cosmo, sigmaG, bins, i)
+			if WLanalysis.TestFitsComplete(ipeak_fn):
+				ipeak = WLanalysis.readFits(ipeak_fn)
+			else:
+				ipeak = np.array(map(gen_mat(i, cosmo, sigmaG, ispk = True), R_arr))
+				WLanalysis.writeFits(ipeak, ipeak_fn)
 			print 'pk', i
-			peaks_mat += np.array(map(gen_mat(i, cosmo, sigmaG, ispk = True), R_arr))	
+			peaks_mat += ipeak
 		WLanalysis.writeFits(peaks_mat, pkfn)	
-
+###############################################################
 ### sum over 13 sf for peaks and powspectrum, need to alter a little later, 
 ### to save subfield info matrix as well
 ### uncomment the rest of the next 5 lines to run this part
-#cosmosigmaG_arr = [[cosmo, sigmaG] for cosmo in cosmo_arr for sigmaG in sigmaG_arr]
-#pool = MPIPool()
-#pool.map(sum_matrix, cosmosigmaG_arr)
-#pool.close()
-#print 'SUM-SUM-SUM'
+###############################################################
+
+cosmosigmaG_arr = [[cosmo, sigmaG] for cosmo in cosmo_arr for sigmaG in sigmaG_arr]
+pool = MPIPool()
+pool.map(sum_matrix, cosmosigmaG_arr)
+pool.close()
+print 'SUM-SUM-SUM'
