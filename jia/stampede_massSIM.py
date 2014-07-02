@@ -244,7 +244,7 @@ def sum_matrix (cosmosigmaG):
 			
 			ipowspec_fn = powspec_sum_sf_fn(cosmo, sigmaG, i)
 			isfile, ipowspec = WLanalysis.TestFitsComplete(ipowspec_fn, return_file = True)
-			if ipowspec == False:
+			if isfile == False:
 				ipowspec = np.array(map(gen_mat(i, cosmo, sigmaG, ispk = False), R_arr))
 				WLanalysis.writeFits(ipowspec, ipowspec_fn)
 			powspec_mat += galcount[i-1] * ipowspec
@@ -256,7 +256,7 @@ def sum_matrix (cosmosigmaG):
 		for i in range(1,14):
 			ipeak_fn = peask_sum_sf_fn(cosmo, sigmaG, bins, i)
 			isfile, ipeak = WLanalysis.TestFitsComplete(ipeak_fn, return_file = True)
-			if ipeak == False:
+			if isfile == False:
 				ipeak = np.array(map(gen_mat(i, cosmo, sigmaG, ispk = True), R_arr))
 				WLanalysis.writeFits(ipeak, ipeak_fn)
 			print 'pk', i
