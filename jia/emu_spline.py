@@ -17,8 +17,17 @@ from sklearn.gaussian_process import GaussianProcess
 from scipy.spatial import cKDTree
 import scipy.ndimage as snd
 
+kmin = -0.04 # lower bound of kappa bin = -2 SNR
+kmax = 0.12 # higher bound of kappa bin = 6 SNR
+plot_dir = '/Users/jia/weaklensing/CFHTLenS/plot/WLapprox/'
 emu_dir = '/Users/jia/CFHTLenS/emulator/'
-sigmaG=1.8#1.0
+sigmaG=1.0#1.0
+sigmaG_arr = (0.5, 1, 1.8, 3.5, 5.3, 8.9)
+galcount = array([342966,365597,322606,380838,
+		263748,317088,344887,309647,
+		333731,310101,273951,291234,
+		308864]).astype(float)
+galcount /= sum(galcount)
 # First, read in the 91 cosmology power spectrum
 cosmo_params =  genfromtxt('/Users/jia/CFHTLenS/emulator/cosmo_params.txt')
 def getps (cosmo_param):
@@ -33,42 +42,48 @@ def getps (cosmo_param):
 ####ps_mat = array(map(getps, ps_fn_arr))[:,:,11:] # array [91, 1000, 50], changed to [91, 1000, 39]
 ##########################################################################
 
-#ps_mat = array(map(getps, cosmo_params))[:,:,11:]
-#WLanalysis.writeFits(ps_mat.reshape(91,-1),emu_dir+'powspec_sum/ps_mat_sigma05.fit')
-
-ps_mat = WLanalysis.readFits(emu_dir+'powspec_sum/ps_mat_sigma05.fit').reshape(91,1000,-1)
+ps_mat_fn = emu_dir+'powspec_sum/ps_mat_sigma05.fit'
+if os.path.isfile(ps_mat_fn):
+	ps_mat = WLanalysis.readFits(ps_mat_fn).reshape(91,1000,-1)
+else:
+	ps_mat = array(map(getps, cosmo_params))[:,:,11:]
+	WLanalysis.writeFits(ps_mat.reshape(91,-1), ps_mat_fn)
 
 ps_std = std(ps_mat, axis=1)# array [91, 50]
 ps_stdlog = log10(ps_std)
-ps_fidu = WLanalysis.readFits('/Users/jia/CFHTLenS/KSsim/powspec_sum13fields/SIM_powspec_sigma05_rz1_mQ3-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800_1000R.fit')[:,11:]
-fidu_avg = mean(ps_fidu,axis=0)
-fidu_std = std(ps_fidu,axis=0)
-cov_mat = mat(cov(ps_fidu,rowvar=0))
-cov_inv = cov_mat.I
+
+######### fiducial cosmo, use #46 from ps_mat instead, because 
+######### actual difu has no mask ######
+#ps_fidu = WLanalysis.readFits('/Users/jia/CFHTLenS/KSsim/powspec_sum13fields/SIM_powspec_sigma05_rz1_mQ3-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800_1000R.fit')[:,11:]
+
+
 ####### try interpolate in log space ######
 #ps_mat = log10(ps_mat)
 ###########################################
+
 ps_avg = mean(ps_mat,axis=1) # array [91, 50]
-ps_CFHT = WLanalysis.readFits('/Users/jia/CFHTLenS/KSsim/powspec_sum13fields/CFHT_powspec_sigma05.fit')[11:]
+
+ps_CFHT_mat = WLanalysis.readFits('/Users/jia/CFHTLenS/CFHTKS/CFHT_powspec_sigma05.fit')
+ps_CFHT = (sum(galcount.reshape(-1,1)*ps_CFHT_mat, axis=0))[11:]
+
+#ps_CFHT = (galcount.reshape(-1,1))*ps_CFHT_mat
+
+
 gs = gridspec.GridSpec(2,1,height_ratios=[3,1]) 
 ell_arr = logspace(log10(110.01746692),log10(25207.90813028),50)[11:]
+
 ############### peaks ###################
 x = linspace(-0.04, 0.12, 26)
 x = x[:-1]+0.5*(x[1]-x[0])
 
-def getpk (cosmo_param, sigmaG=1.0, bins = 25):
+def getpk (cosmo_param, sigmaG=sigmaG, bins = 25):
+	print cosmo_param
 	om, w, si8 = cosmo_param
 	pk_fn = 'SIM_peaks_sigma%02d_emu1-512b240_Om%.3f_Ol%.3f_w%.3f_ns0.960_si%.3f_600bins.fit'%(sigmaG*10, om,1-om,w,si8)
 	pk600bins = WLanalysis.readFits(emu_dir+'peaks_sum/sigma%02d/'%(sigmaG*10)+pk_fn)
 	pk = pk600bins.reshape(1000, -1, 600/bins)
 	pk = sum(pk, axis = -1)
 	return pk
-
-########## wrong wrong wrong!!! ########
-###pk_fn_arr = os.listdir(emu_dir+'peaks_sum/sigma%02d/'%(sigmaG*10))
-###pk_mat = array(map(getpk, cosmo_params))	
-###WLanalysis.writeFits(pk_mat.reshape(91,-1),emu_dir+'peaks_sum/pk_mat_sigma%02d_25bins.fit'%(sigmaG*10))
-#############################################
 
 
 ######## knobs ##############
@@ -87,7 +102,20 @@ test_MCMC = 0
 peaks_13subfield_sum = 0
 try_mask_powspec = 0
 check_shear_bad_ps_kmap = 0
+build_CFHT_KS_PS_PK = 0
+sample_interpolation = 0
 
+PPA512=2.4633625
+
+		
+	
+def create_dir_if_nonexist(dirname):
+	try:
+		os.mkdir(dirname)
+	except Exception:
+		print 'error'
+		pass
+	
 if ps_replaced_by_good:
 	bad_arr = array([6,14,24,27,31,32,33,38,42,43,44,45,53,54,55,61,63,64,65,66,67,72,74,75, 76,81,82,83,84,88,89])
 	good_arr = delete(arange(91), bad_arr)
@@ -97,19 +125,44 @@ if ps_replaced_by_nicaea:
 	ps_avg = P_ell_noise_arr[:,11:]
 if ps_replaced_with_pk:
 	print 'ps_replaced_with_pk'
-	pk_mat = (WLanalysis.readFits(emu_dir+'peaks_sum/pk_mat_sigma%02d_25bins.fit'%(sigmaG*10))).reshape(91,1000,-1)
+	
+	pk_mat_fn = emu_dir+'peaks_sum/pk_mat_sigma%02d_25bins.fit'%(sigmaG*10)
+	if os.path.isfile(pk_mat_fn):
+		pk_mat = WLanalysis.readFits(pk_mat_fn).reshape(91,1000,-1)
+	else:
+		pk_mat = array(map(getpk, cosmo_params))
+		WLanalysis.writeFits(pk_mat.reshape(91,-1), pk_mat_fn)
+	
 	pk_avg = mean(pk_mat,axis=1)
 	pk_std = std(pk_mat, axis=1)
 	ps_mat = pk_mat
 	ps_avg = pk_avg
 	ps_std = pk_std
 	ell_arr = x
-	ps_fidu = WLanalysis.readFits('/Users/jia/CFHTLenS/KSsim/peaks_sum13fields/SIM_peaks_sigma10_rz1_mQ3-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800_1000R_025bins.fit')
-	fidu_avg = mean(ps_fidu,axis=0)
-	fidu_std = std(ps_fidu,axis=0)
-	cov_mat = mat(cov(ps_fidu,rowvar=0))
-	cov_inv = cov_mat.I
-	ps_CFHT = WLanalysis.readFits('/Users/jia/CFHTLenS/KSsim/peaks_sum13fields/CFHT_peaks_sigma%i_25bins.fits'%(sigmaG*10))
+	#ps_fidu = WLanalysis.readFits('/Users/jia/CFHTLenS/KSsim/peaks_sum13fields/SIM_peaks_sigma10_rz1_mQ3-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800_1000R_025bins.fit')
+	#fidu_avg = mean(ps_fidu,axis=0)
+	#fidu_std = std(ps_fidu,axis=0)
+	#cov_mat = mat(cov(ps_fidu,rowvar=0))
+	#cov_inv = cov_mat.I
+	ps_CFHT_mat = WLanalysis.readFits('/Users/jia/CFHTLenS/CFHTKS/CFHT_peaks_sigma%02d_025bins.fit'%(sigmaG*10))
+	ps_CFHT = sum(ps_CFHT_mat, axis=0)
+
+#######################################################
+#### this is the fiducial cosmology for testing purpose
+#### previously used the fiducial from the 4 runs, but 
+#### after I changed to WL approximation in 7/1/2014, use
+#### cosmo #48 as fiducial cosmo, and delete it from the 91
+#### simulations when building interpolator for MCMC
+#### uncomment the next 6 lines to get fiducial model
+#######################################################
+
+ps_fidu = ps_mat[48]
+fidu_avg = mean(ps_fidu,axis=0)
+fidu_std = std(ps_fidu,axis=0)
+fidu_params = cosmo_params[48]
+cov_mat = mat(cov(ps_fidu,rowvar=0))
+cov_inv = cov_mat.I
+
 # Second interpolate for individual bins
 # interpolate.griddata(points, values, xi, method='linear/cubic/nearest')
 # points = params, values = individual bin
@@ -149,7 +202,6 @@ def plotimshow(img,ititle,vmin=None,vmax=None):
 	savefig(plot_dir+'%s.jpg'%(ititle))
 	close()	
 	
-plot_dir = '/Users/jia/weaklensing/CFHTLenS/plot/'
 ps_avg_all = mean(ps_avg, axis=0)
 
 if test_interp_method:
@@ -190,7 +242,7 @@ if test_interp_method:
 			ax.set_xlim(ell_arr[0],ell_arr[-1])
 			ax.set_ylim(5e-5, 5e-2)
 		
-		ax2.set_ylim(-0.5,0.5)
+		ax2.set_ylim(-0.1,0.1)
 		leg=ax.legend(ncol=1, labelspacing=0.3, prop={'size':12},loc=0)
 		leg.get_frame().set_visible(False)
 		plt.setp(ax.get_xticklabels(), visible=False) 
@@ -198,13 +250,18 @@ if test_interp_method:
 		
 		
 		if ps_replaced_with_pk:
+			try:
+				os.mkdir(plot_dir+'Rbs_peaks')
+			except Exception:
+				pass
 			savefig(plot_dir+'Rbs_peaks/Rbs_smooth%i_emu_peaks_cosmo%02d.jpg'%(ismooth,i))
 		elif ps_replaced_by_nicaea:
 			savefig(plot_dir+'Rbs_nicaea/Rbs_smooth%i_emu_nicaea_cosmo%02d.jpg'%(ismooth,i))
 		elif ps_replaced_by_good:
 			savefig(plot_dir+'Rbs_60good/Rbs_smooth%i_emu_good_cosmo%02d.jpg'%(ismooth,i))
 		else:
-			savefig(plot_dir+'RBs_reorder/Rbs_smooth0_emu_powspec_cosmo%02d.jpg'%(i))
+			create_dir_if_nonexist(plot_dir+'RBs')
+			savefig(plot_dir+'RBs/Rbs_smooth0_emu_powspec_cosmo%02d.jpg'%(i))
 		close()
 
 # now plot out the interpolated plane vs actual points
@@ -240,7 +297,7 @@ if draw2Dplane:
 
 #from multiprocessing import Pool
 #p = Pool(91)
-labels=('$\Omega_m$','$w$','$\sigma_8$')
+labels=('$\Omega_m$',r'${\rm w}$','$\sigma_8$')
 if test_gp:
 	if ps_replaced_with_pk:
 		print 'ps_replaced_with_pk'
@@ -345,9 +402,11 @@ if test_gp:
 			ax.set_xscale('log')
 			ax.set_yscale('log')
 			ax.set_ylim(1e-5, 1e-2)
-			savefig(plot_dir+'GP_test_powspec_reorder/GP_test_powspec_cosmo%02d.jpg'%(i))
+			create_dir_if_nonexist(plot_dir+'GP_test_powspec')
+			savefig(plot_dir+'GP_test_powspec/GP_test_powspec_cosmo%02d.jpg'%(i))
 		else:
-			savefig(plot_dir+'GP_test_peaks_reorder/GP_test_cosmo%02d.jpg'%(i))
+			create_dir_if_nonexist(plot_dir+'GP_test_peaks')
+			savefig(plot_dir+'GP_test_peaks/GP_test_cosmo%02d.jpg'%(i))
 		
 		close()
 
@@ -530,18 +589,17 @@ if check_bad_ps:
 			ax.set_xlim(ell_arr[0],ell_arr[-1])
 			#ax.set_ylim(5e-5, 5e-2)
 			if isbad:
+				create_dir_if_nonexist(plot_dir+'bad_powspec')
 				savefig(plot_dir+'bad_powspec/sigmaG%02d_ps_mat_%i.jpg'%(sigmaG*10,i))
 			else:
+				create_dir_if_nonexist(plot_dir+'good_powspec')
 				savefig(plot_dir+'good_powspec/sigmaG%02d_ps_mat_%i.jpg'%(sigmaG*10,i))
 		else:
 			savefig(plot_dir+'pk_mat_%i.jpg'%(i))
 		close()
 
-galcount = array([342966,365597,322606,380838,
-		263748,317088,344887,309647,
-		333731,310101,273951,291234,
-		308864]).astype(float)
-galcount /= sum(galcount)
+
+
 if bad_KSmap:
 	#fn_arr = ('Om0.446_Ol0.554_w-1.212_ns0.960_si1.486_0114r',)#cosmo9
 	#n=9
@@ -600,8 +658,16 @@ if check_ps_sum:
 	ax.set_title(fn)
 	savefig(plot_dir+'debug_ps/bad_KSmap'+fn+'_from_stampede.jpg')
 	close()
+######################################################################
+### build interpolator, a serious one (6/19/2014)
+### use only 90 cosmo to build model, cosmo #48 is used as fiducial
+### uncomment next 3 lines 
+######################################################################
+cosmo_params = delete(cosmo_params, 48, 0)
+ps_avg = delete(ps_avg, 48, 0)
+ps_std = delete(ps_std, 48, 0)
 
-######### build interpolator, a serious one (6/19/2014) ########
+
 m, w, s = cosmo_params.T
 spline_interps = list()
 for ibin in range(ps_avg.shape[-1]):
@@ -632,20 +698,72 @@ def interp_cosmo (params, method = 'multiquadric'):
 	ps_interp = ps_interp.reshape(-1,1).squeeze()
 	return ps_interp
 
+if sample_interpolation:
+	lw=2
+	ps_interp_GP = interp_cosmo(fidu_params, method = 'GP')
+	ps_interp_spline = interp_cosmo(fidu_params)
+	
+	f=figure(figsize=(10,8))
+	ax=f.add_subplot(gs[0])
+	ax2=f.add_subplot(gs[1],sharex=ax)
+		
+	ax.errorbar(ell_arr, fidu_avg, fidu_std, color='k', linewidth=lw)
+	ax.plot(ell_arr, fidu_avg, 'k-', label='True',linewidth=lw)
+	ax.plot(ell_arr, ps_interp_spline, 'm--', label='RBF',linewidth=lw)
+	ax.plot(ell_arr, ps_interp_GP, 'b:', label='GP',linewidth=lw)
+
+	ax2.errorbar(ell_arr, zeros(len(ell_arr)),fidu_std/fidu_avg, color='k',label='True',linewidth=1.5)
+	ax2.plot(ell_arr, ps_interp_spline/fidu_avg-1, 'm--', label='RBF',linewidth=lw)
+	ax2.plot(ell_arr, ps_interp_GP/fidu_avg-1, 'b:', label='GP',linewidth=lw)
+
+	ax2.set_ylim(-0.1, 0.1)
+	ax2.set_yticks(linspace(-0.05,0.05,3))
+
+	leg=ax.legend(ncol=1, labelspacing=0.3, prop={'size':16},loc=2)
+	leg.get_frame().set_visible(False)
+
+	ax.set_title(r'$[\Omega_m,\,{\rm w},\,\sigma_8]$ = [%.3f, %.3f, %.3f]' % (fidu_params[0],fidu_params[1],fidu_params[2]), fontsize=18)
+	plt.setp(ax.get_xticklabels(), visible=False) 
+	plt.subplots_adjust(hspace=0.0)
+	ax.set_xlim(ell_arr[0],ell_arr[-1])
+
+	if not ps_replaced_with_pk:
+		ax2.set_xlabel(r'$\ell$',fontsize=18)
+		ax.set_ylabel(r'$\ell(\ell+1)P(\ell)/2\pi$',fontsize=18)
+		ax2.set_ylabel(r'${\Delta}P/P$',fontsize=18)
+		ax2.set_xscale('log')
+		ax.set_xscale('log')
+		ax.set_yscale('log')
+		ax.set_ylim(1e-5, 1e-2)
+		#show()
+		savefig(plot_dir+'sample_interpolation_ps_sigmaG%02d.jpg'%(sigmaG*10))
+		savefig(plot_dir+'sample_interpolation_ps_sigmaG%02d.pdf'%(sigmaG*10))
+		
+	else:
+		ax.set_ylabel('peak counts $N$($\kappa$)',fontsize=18)
+		ax2.set_ylabel(r'${\Delta}N/N$',fontsize=18)
+		ax2.set_xlabel('$\kappa$',fontsize=18)
+		savefig(plot_dir+'sample_interpolation_pk_sigmaG%02d.jpg'%(sigmaG*10))
+		savefig(plot_dir+'sample_interpolation_pk_sigmaG%02d.pdf'%(sigmaG*10))
+	close()
+		
+
+
 if test_MCMC:
 
 	# prior
 	mmin,wmin,smin=amin(cosmo_params,axis=0)
 	mmax,wmax,smax=amax(cosmo_params,axis=0)
-	fidu_params = (0.26, -1, 0.8)
+	#fidu_params = (0.26, -1, 0.8)
 	
-	steps = 1000
+	
+	steps = 4000
 	burn = 100 # make sure burn < steps
 	
 	#obs = fidu_avg#ps_CFHT#
 	#method = 'multiquadric'#'GP'#
-	for obs in (fidu_avg,):#(fidu_avg, ps_CFHT):
-		for method in ('GP',):#('multiquadric','GP'):
+	for obs in (ps_CFHT,):#(fidu_avg, ps_CFHT):#(fidu_avg,):#
+		for method in ('multiquadric','GP'):#('multiquadric',):# ('GP',):#
 			print bool(obs[3]== fidu_avg[3]), method
 			def lnprior(params):
 				'''This gives the flat prior.
@@ -680,7 +798,8 @@ if test_MCMC:
 			print result
 			
 			ndim, nwalkers = 3, 100
-			pos = [result["x"] + 1e-4*np.random.randn(ndim) for i in range(nwalkers)]
+			#pos = [result["x"] + 1e-4*np.random.randn(ndim) for i in range(nwalkers)]
+			pos = [array([0.26, -1, 0.798]) + 1e-2*np.random.randn(ndim) for i in range(nwalkers)]
 			
 			print 'run sampler'
 			sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=(obs,))
@@ -709,35 +828,37 @@ if test_MCMC:
 					fn ='emu_fidu_%s'%(method)
 				elif obs[3] == ps_CFHT[3]:
 					fn ='emu_CFHT_%s'%(method)
+			title('[%.3f, %.3f, %.3f]'%(errors[0,0], errors[1,0], errors[2,0]))
 			fig.savefig(plot_dir+'triangle_'+fn+'.jpg')
 			close()
 	
 
 			best_fit = errors[:,0]
 			ps_interp=interp_cosmo(best_fit,method=method)
-		f=figure(figsize=(8,8))
-		ax=f.add_subplot(gs[0])
-		ax2=f.add_subplot(gs[1],sharex=ax)
-		ax.errorbar(ell_arr,obs,fidu_std,color='r',label=fn)
-		ax.plot(ell_arr,ps_interp,'b-',label=method)
-		ax2.plot(ell_arr,zeros(len(ell_arr)),'r-')
-		ax2.plot(ell_arr,ps_interp/obs-1,'b-')
+			
+			f=figure(figsize=(8,8))
+			ax=f.add_subplot(gs[0])
+			ax2=f.add_subplot(gs[1],sharex=ax)
+			ax.errorbar(ell_arr,obs,fidu_std,color='r',label=fn)
+			ax.plot(ell_arr,ps_interp,'b-',label=method)
+			ax2.plot(ell_arr,zeros(len(ell_arr)),'r-')
+			ax2.plot(ell_arr,ps_interp/obs-1,'b-')
 
-		if not ps_replaced_with_pk:
-			ax.set_xscale('log')
-			ax2.set_xscale('log')
-			ax.set_yscale('log')
-			ax.set_xlabel('ell')
-			ax.set_ylim(5e-5, 1e-2)
-			ax.set_xlim(ell_arr[0],ell_arr[-1])
+			if not ps_replaced_with_pk:
+				ax.set_xscale('log')
+				ax2.set_xscale('log')
+				ax.set_yscale('log')
+				ax.set_xlabel('ell')
+				ax.set_ylim(5e-5, 1e-2)
+				ax.set_xlim(ell_arr[0],ell_arr[-1])
 
-		ax2.set_ylim(-0.1, 0.1)
-		leg=ax.legend(ncol=1, labelspacing=0.3, prop={'size':12},loc=0)
-		leg.get_frame().set_visible(False)
-		plt.setp(ax.get_xticklabels(), visible=False) 
-		plt.subplots_adjust(hspace=0.0)
-		savefig(plot_dir+'frac_diff'+fn+'.jpg')
-		close()
+			ax2.set_ylim(-0.1, 0.1)
+			leg=ax.legend(ncol=1, labelspacing=0.3, prop={'size':12},loc=0)
+			leg.get_frame().set_visible(False)
+			plt.setp(ax.get_xticklabels(), visible=False) 
+			plt.subplots_adjust(hspace=0.0)
+			savefig(plot_dir+'frac_diff'+fn+'.jpg')
+			close()
 
 
 #best_spline_params=(0.46875562, -1.52936207, 0.5170796 )
@@ -862,7 +983,7 @@ if plot_Mw:
 recreate_mask = 0
 if recreate_mask:
 	PPA512=2.4633625
-	sigmaG_arr = (0.5, 1, 1.8, 3.5, 5.3, 8.9)
+	
 	for i in range(1,14):
 		y, x, e1, e2, w, m = WLanalysis.readFits('/Users/jia/CFHTLenS/catalogue/yxewm_subfield%i_zcut0213.fit'%(i)).T
 		A, galn = WLanalysis.coords2grid(x, y, array([w,]))
@@ -874,4 +995,95 @@ if recreate_mask:
 			mask = WLanalysis.readFits(fn)
 			plotimshow(mask, 'CFHT_mask_ngal5_sigma%02d_subfield%02d'%(sigmaG*10, i), vmin=0, vmax=1)
 			
-		
+
+if build_CFHT_KS_PS_PK:
+	ngal_arcmin = 5
+	bins = 25
+	for sigmaG in sigmaG_arr:
+		ps_mat_fn = '/Users/jia/CFHTLenS/CFHTKS/CFHT_powspec_sigma%02d.fit'%(sigmaG*10)
+		pk_mat_fn = '/Users/jia/CFHTLenS/CFHTKS/CFHT_peaks_sigma%02d_%03dbins.fit'%(sigmaG*10,bins)
+		ps_mat = zeros(shape=(13, 50))
+		pk_mat = zeros(shape=(13, bins))
+		for i in range(1,14):
+			print 'sigmaG, i', sigmaG, i
+			KS_fn = '/Users/jia/CFHTLenS/CFHTKS/CFHT_KS_sigma%02d_subfield%02d.fits'%(sigmaG*10,i)
+			
+			mask_fn = '/Users/jia/CFHTLenS/catalogue/mask/CFHT_mask_ngal%i_sigma%02d_subfield%02d.fits'%(ngal_arcmin,sigmaG*10,i)
+			mask = WLanalysis.readFits(mask_fn)
+			
+			y, x, e1, e2, w, m = WLanalysis.readFits('/Users/jia/CFHTLenS/catalogue/yxewm_subfield%i_zcut0213.fit'%(i)).T
+			
+			k = array([e1*w, e2*w, (1+m)*w])
+			A, galn = WLanalysis.coords2grid(x, y, k)
+			Me1, Me2, Mw = A
+			
+			Me1_smooth = WLanalysis.weighted_smooth(Me1, Mw, PPA=PPA512, sigmaG=sigmaG)
+			Me2_smooth = WLanalysis.weighted_smooth(Me2, Mw, PPA=PPA512, sigmaG=sigmaG)
+			
+			kmap = WLanalysis.KSvw(Me1_smooth, Me2_smooth)
+			try:
+				plotimshow(kmap, 'CFHT_KS_sigma%02d_sf%02d'%(sigmaG*10,i))
+				plotimshow(kmap*mask, 'CFHT_KS_mask_sigma%02d_sf%02d'%(sigmaG*10,i))
+				WLanalysis.writeFits(kmap, KS_fn)
+				
+			except Exception:
+				print 'kmap error'
+				pass
+			#kmap *= mask
+			ps = WLanalysis.PowerSpectrum(kmap*mask)[1]
+			pk = WLanalysis.peaks_mask_hist(kmap, mask, bins, kmin=kmin, kmax=kmax)
+			ps_mat[i-1] = ps
+			pk_mat[i-1] = pk
+		try:
+			WLanalysis.writeFits(pk_mat, pk_mat_fn)
+			WLanalysis.writeFits(ps_mat, ps_mat_fn)
+		except Exception:
+			print 'error'
+			pass
+
+
+cosmo_params_2D = 1
+if cosmo_params_2D:
+	om_arr = linspace(0,1,5)
+	w_arr = linspace(-3,0,5)
+	si8_arr = linspace(0.1,1.5,5)
+	label_tix_arr = [om_arr, w_arr, si8_arr]
+	cosmo_params =  genfromtxt('/Users/jia/CFHTLenS/emulator/cosmo_params.txt')
+	f=figure(figsize=(9,8))
+	k=0
+	k_arr = [1,3,4]
+	for ij in [[0,1],[0,2], [1,2]]:
+		i,j=ij
+		ax = f.add_subplot(2,2,k_arr[k])#, projection='3d')
+		param1, param2 = cosmo_params.T[ij]
+		ax.scatter(param1, param2, color='k', s=20)#, cmap='gray')
+		if k_arr[k] in [3,4]:
+			ax.set_xlabel(labels[i],fontsize=18)
+			ax.set_xticks(label_tix_arr[i])
+		if k_arr[k] in [1,3]:
+			ax.set_ylabel(labels[j],fontsize=18)
+			ax.set_yticks(label_tix_arr[j])
+		if k_arr[k] == 1:
+			plt.setp(ax.get_xticklabels(), visible=False)
+		if k_arr[k] == 4:
+			plt.setp(ax.get_yticklabels(), visible=False)
+		k+=1
+	ax4 = f.add_subplot(2,2,2, projection='3d')
+	x, y, z = cosmo_params.T
+	ax4.scatter(x, y, z, s=20, color='k')
+	ax4.set_xlabel('\n'+labels[0],fontsize=18)#,labelpad=0)
+	ax4.set_ylabel('\n$\hspace{1}$'+labels[1],fontsize=18)
+	ax4.set_zlabel('\n'+labels[2],fontsize=18)
+	#plt.xticks(rotation=50)
+	#plt.yticks(rotation=30)
+	ax4.set_xticks(label_tix_arr[0][::2])
+	ax4.set_yticks(label_tix_arr[1][::2])
+	ax4.set_zticks(label_tix_arr[2][::2])
+	ax4.tick_params(direction='in', pad=0)
+	#plt.subplots_adjust(wspace=0.25,hspace=0.25)
+	plt.subplots_adjust(wspace=0.05,hspace=0.05,left=0.09, right=0.9)
+	#show()
+	
+	savefig(plot_dir+'cosmo_params_2D.jpg')
+	savefig(plot_dir+'cosmo_params_2D.pdf')
+	close()
