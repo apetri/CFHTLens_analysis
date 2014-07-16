@@ -93,3 +93,5 @@ def OrganizeSplitFile(ifile):
 #OrganizeSplitFile(ifile)
 pool = MPIPool()
 pool.map(OrganizeSplitFile,splitfiles)
+
+print 'DONE-DONE-DONE'
