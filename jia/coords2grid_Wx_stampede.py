@@ -97,7 +97,6 @@ def OrganizeSplitFile(ifile):
 			WLanalysis.writeFits(xy_data, W_dir(Wx)+ifile+'.fit')#,fmt=['%i','%i','%s','%s','%s','%.3f'])
 		i+=1
 
-pool = MPIPool()
 #############################################
 ########## split file organizing ############
 ########## uncomment next 1 line ############
@@ -176,4 +175,5 @@ def SumSplitFile2Grid(Wx):
 				WLanalysis.writeFits(galn_hi[i],galn_fn)
 
 print 'DONE-DONE-DONE'
+pool = MPIPool()
 
