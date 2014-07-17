@@ -257,12 +257,13 @@ def coords2grid(x, y, k, size=512):
 	x, y: x, y in radians, (0, 0) at map center
 	k: the quantity in catalogue, to be put onto a grid.
 	note: k can be 1-D arry of length N (=len(x)), but also can be multiple dimension (M, N), if so, also return a multiple dimension grid.
+	Pixel resolution is ~2.5 pixels per arcmin
 	
 	Output:
 	Mk, galn (galaxy counts per pixel)
 	(written 2/14/2014)
 	'''
-	rad2pix=lambda x: around(size/2.0-0.5 + x*PPR512*(size/512.0)).astype(int)
+	rad2pix=lambda x: around(size/2.0-0.5 + x*PPR512).astype(int)
 	x = rad2pix(x)
 	y = rad2pix(y)
 	# first put galaxies to grid, note some pixels may have multiple galaxies

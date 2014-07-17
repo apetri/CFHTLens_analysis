@@ -116,30 +116,29 @@ def SumSplitFile2Grid(Wx):
 	Mw_hi = zeros(shape=ishape_hi)
 	#Mk_hi = zeros(shape=ishape_hi)
 	galn_hi = zeros(shape=ishape_hi)
-	
+
 	Me1_lo = zeros(shape=ishape)
 	Me2_lo = zeros(shape=ishape)
 	Mw_lo = zeros(shape=ishape)
 	#Mk_lo = zeros(shape=ishape)
 	galn_lo = zeros(shape=ishape)
 	
-	W_dir = lambda Wx: cat_dir+'W%s/'%(Wx)#directory where for all x??.fit
-	Wfiles = os.listdir(W_dir)#get the list of split file for Wx
-	for iW in iWfiles:
-		datas = WLanalysis.readFits(iW)
+	Wfiles = os.listdir(W_dir(Wx))#get the list of split file for Wx
+	for iW in Wfiles:
+		datas = WLanalysis.readFits(W_dir(Wx)+iW)
 		#cols: x, y, ra, dec, e1, e2, w, r, snr, m, c2, mag, z_peak, z_rand1, z_rand2
-		z_peak = datas[-3]
+		z = datas.T[-3]#z_peak, -2 is z_rand1, -1 is z_rand2
 		i = 0 #zbin count
 		for zcut in zbins:
 			idx0 = where(z<zcut)[0]
 			idx1 = where(z>=zcut)[0]
 			for idx in [idx0,idx1]:
-				y, x, e1, e2, w, m = (datas[idx].T)[0,1,4,5,6,9]#note x, y is reversed in python
+				y, x, e1, e2, w, m = (datas[idx].T)[[0,1,4,5,6,9]]#note x, y is reversed in python
 				k = array([e1*w, e2*w, (1+m)*w])
 				x = radians(x)
 				y = radians(y)
 				print 'W'+str(Wx), iw, 'coords2grid, zbin =',zbins[i]
-				A, galn = WLanalysis.coords2grid(x, y, k, size=size)
+				A, galn = WLanalysis.coords2grid(x, y, k)
 				if idx[0] == idx0[0]:
 					Me1_lo[i] += A[0]
 					Me2_lo[i] += A[1]
