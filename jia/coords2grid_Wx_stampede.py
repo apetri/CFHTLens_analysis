@@ -156,7 +156,7 @@ def SumSplitFile2Grid(Wx):
 	print 'Done collecting small fields for W'+str(Wx)
 	
 	for i in range(len(zbins)):
-		for hl in ('lo','hi')
+		for hl in ('lo','hi'):
 			Me1_fn = cat_dir+'W%i_Me1w_%s_%s.fit'%(Wx, zbins[i],hl)
 			Me2_fn = cat_dir+'W%i_Me2w_%s_%s.fit'%(Wx, zbins[i],hl)
 			Mw_fn = cat_dir+'W%i_Mwm_%s_%s.fit'%(Wx, zbins[i],hl)
