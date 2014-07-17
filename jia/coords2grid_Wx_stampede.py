@@ -160,20 +160,21 @@ def SumSplitFile2Grid(Wx):
 			Me1_fn = cat_dir+'W%i_Me1w_%s_%s.fit'%(Wx, zbins[i],hl)
 			Me2_fn = cat_dir+'W%i_Me2w_%s_%s.fit'%(Wx, zbins[i],hl)
 			Mw_fn = cat_dir+'W%i_Mwm_%s_%s.fit'%(Wx, zbins[i],hl)
-			galn_fn = cat_dir+'W%i_Me2w_%s_%s.fit'%(Wx, zbins[i],hl)
+			galn_fn = cat_dir+'W%i_galn_%s_%s.fit'%(Wx, zbins[i],hl)
 			if hl=='hi' and i==len(zbins)-1:
 				continue
 			elif hl=='lo':
-				WLanalysis.writeFits(Me1_lo[i],Me1_fn)
-				WLanalysis.writeFits(Me2_lo[i],Me2_fn)
-				WLanalysis.writeFits(Mw_lo[i],Mw_fn)
-				WLanalysis.writeFits(galn_lo[i],galn_fn)
+				WLanalysis.writeFits(Me1_lo[i],Me1_fn, rewrite = True)
+				WLanalysis.writeFits(Me2_lo[i],Me2_fn, rewrite = True)
+				WLanalysis.writeFits(Mw_lo[i],Mw_fn, rewrite = True)
+				WLanalysis.writeFits(galn_lo[i],galn_fn, rewrite = True)
 			else:
-				WLanalysis.writeFits(Me1_hi[i],Me1_fn)
-				WLanalysis.writeFits(Me2_hi[i],Me2_fn)
-				WLanalysis.writeFits(Mw_hi[i],Mw_fn)
-				WLanalysis.writeFits(galn_hi[i],galn_fn)
+				WLanalysis.writeFits(Me1_hi[i],Me1_fn, rewrite = True)
+				WLanalysis.writeFits(Me2_hi[i],Me2_fn, rewrite = True)
+				WLanalysis.writeFits(Mw_hi[i],Mw_fn, rewrite = True)
+				WLanalysis.writeFits(galn_hi[i],galn_fn, rewrite = True)
 
 print 'DONE-DONE-DONE'
-pool = MPIPool()
-
+#pool = MPIPool()
+for Wx in range(1,5):
+	SumSplitFile2Grid(Wx)
