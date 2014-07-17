@@ -517,3 +517,10 @@ def peaks_mask_hist (kmap, mask, bins, kmin = -0.04, kmax = 0.12):
 	
 	
 ########## end: peak counts ############################
+
+def create_dir_if_nonexist(dirname):
+	try:
+		os.mkdir(dirname)
+	except Exception:
+		print 'error'
+		pass

@@ -14,6 +14,7 @@ from pylab import *
 import os
 import WLanalysis
 from emcee.utils import MPIPool
+from multiprocessing import Pool
 
 cat_dir='/home1/02977/jialiu/CFHT_cat/'
 #cat_dir = '/Users/jia/CFHTLenS/catalogue/'
@@ -157,10 +158,10 @@ def SumSplitFile2Grid(Wx):
 	
 	for i in range(len(zbins)):
 		for hl in ('lo','hi'):
-			Me1_fn = cat_dir+'W%i_Me1w_%s_%s.fit'%(Wx, zbins[i],hl)
-			Me2_fn = cat_dir+'W%i_Me2w_%s_%s.fit'%(Wx, zbins[i],hl)
-			Mw_fn = cat_dir+'W%i_Mwm_%s_%s.fit'%(Wx, zbins[i],hl)
-			galn_fn = cat_dir+'W%i_galn_%s_%s.fit'%(Wx, zbins[i],hl)
+			Me1_fn = cat_dir+'Me_Mw_galn/W%i_Me1w_%s_%s.fit'%(Wx, zbins[i],hl)
+			Me2_fn = cat_dir+'Me_Mw_galn/W%i_Me2w_%s_%s.fit'%(Wx, zbins[i],hl)
+			Mw_fn = cat_dir+'Me_Mw_galn/W%i_Mwm_%s_%s.fit'%(Wx, zbins[i],hl)
+			galn_fn = cat_dir+'Me_Mw_galn/W%i_galn_%s_%s.fit'%(Wx, zbins[i],hl)
 			if hl=='hi' and i==len(zbins)-1:
 				continue
 			elif hl=='lo':
@@ -174,7 +175,47 @@ def SumSplitFile2Grid(Wx):
 				WLanalysis.writeFits(Mw_hi[i],Mw_fn, rewrite = True)
 				WLanalysis.writeFits(galn_hi[i],galn_fn, rewrite = True)
 
+#for Wx in range(1,5):
+	#SumSplitFile2Grid(Wx)
+PPA512=2.4633625
+def KSmap(iinput):
+	'''Input:
+	i = ith zbin for zcut
+	hl = 'hi' or 'lo' for higher/lower z of the zcut
+	sigmaG: smoothing scale
+	Wx = 1..4 of the field
+	Output:
+	smoothed KS map and galn map.
+	'''
+	Wx, sigmaG, i, hl = iinput
+	print 'Wx, sigmaG, i, hl:', Wx, sigmaG, i, hl
+	zdir
+	kmap_fn = cat_dir+'KS/W%i_KS_%s_%s_sigmaG%02d.fit'%(Wx, zbins[i],hl,sigamG*10)
+	galn_smooth_fn = cat_dir+'KS/W%i_galn_%s_%s_sigmaG%02d.fit'%(Wx, zbins[i],hl,sigamG*10)
+	
+	isfile_kmap, kmap = WLanalysis.TestFitsComplete(kmap_fn, return_file = True)
+	if isfile_kmap == False:
+		Me1_fn = cat_dir+'Me_Mw_galn/W%i_Me1w_%s_%s.fit'%(Wx, zbins[i],hl)
+		Me2_fn = cat_dir+'Me_Mw_galn/W%i_Me2w_%s_%s.fit'%(Wx, zbins[i],hl)
+		Mw_fn = cat_dir+'Me_Mw_galn/W%i_Mwm_%s_%s.fit'%(Wx, zbins[i],hl)
+		Me1 = WLanalysis.readFits(Me1_fn)
+		Me2 = WLanalysis.readFits(Me2_fn)
+		Mw = WLanalysis.readFits(Mw_fn)	
+		Me1_smooth = WLanalysis.weighted_smooth(Me1, Mw, PPA=PPA512, sigmaG=sigmaG)
+		Me2_smooth = WLanalysis.weighted_smooth(Me2, Mw, PPA=PPA512, sigmaG=sigmaG)
+		kmap = WLanalysis.KSvw(Me1_smooth, Me2_smooth)
+		WLanalysis.writeFits(kmap,kmap_fn)
+	isfile_galn, galn_smooth = WLanalysis.TestFitsComplete(galn_smooth_fn, return_file = True)
+	if isfile_galn == False:
+		galn_fn = cat_dir+'Me_Mw_galn/W%i_galn_%s_%s.fit'%(Wx, zbins[i],hl)
+		galn = WLanalysis.readFits(galn_fn)
+		galn_smooth = WLanalysis.smooth(galn, sigma=sigmaG*PPA512)
+		WLanalysis.writeFits(galn_smooth, galn_smooth_fn)
+	return kmap, galn_smooth
+
+sigmaG_arr = (0.5, 1, 1.8, 3.5, 5.3, 8.9)
+#Wx, sigmaG, i, hl
+Wx_sigmaG_i_hl_arr = [[Wx, sigmaG, i, hl] for Wx in range(1,5) for sigmaG in sigmaG_arr for i in range(0,len(zbins)-1) for hl in ['hi','lo']]+[[Wx, sigmaG, -1, 'lo'] for Wx in range(1,5) for sigmaG in sigmaG_arr]
+p = Pool(264)
+p.map(KSmap, Wx_sigmaG_i_hl_arr)
 print 'DONE-DONE-DONE'
-#pool = MPIPool()
-for Wx in range(1,5):
-	SumSplitFile2Grid(Wx)
