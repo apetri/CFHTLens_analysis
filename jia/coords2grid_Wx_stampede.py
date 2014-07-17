@@ -137,7 +137,7 @@ def SumSplitFile2Grid(Wx):
 				k = array([e1*w, e2*w, (1+m)*w])
 				x = radians(x)
 				y = radians(y)
-				print 'W'+str(Wx), iw, 'coords2grid, zbin =',zbins[i]
+				print 'W'+str(Wx), iW, 'coords2grid, zbin =',zbins[i]
 				A, galn = WLanalysis.coords2grid(x, y, k, size=isize)
 				if idx[0] == idx0[0]:
 					Me1_lo[i] += A[0]
