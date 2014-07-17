@@ -108,9 +108,9 @@ def SumSplitFile2Grid(Wx):
 	and create e1, e2 grid for mass construction.
 	Input: Wx=1,2,3,4
 	Output: (Me1, Me2, Mw, galn) split in each redshift bins'''
-	size = sizes[Wx-1]
-	ishape = (len(zbins), size, size)
-	ishape_hi = (len(zbins)-1, size, size)#no need to do hi for zcut=1.3 since it's everything
+	isize = sizes[Wx-1]
+	ishape = (len(zbins), isize, isize)
+	ishape_hi = (len(zbins)-1, isize, isize)#no need to do hi for zcut=1.3 since it's everything
 	Me1_hi = zeros(shape=ishape_hi)
 	Me2_hi = zeros(shape=ishape_hi)#hi is for higher redshift bins, lo is lower redshift
 	Mw_hi = zeros(shape=ishape_hi)
@@ -138,7 +138,7 @@ def SumSplitFile2Grid(Wx):
 				x = radians(x)
 				y = radians(y)
 				print 'W'+str(Wx), iw, 'coords2grid, zbin =',zbins[i]
-				A, galn = WLanalysis.coords2grid(x, y, k, size=size)
+				A, galn = WLanalysis.coords2grid(x, y, k, size=isize)
 				if idx[0] == idx0[0]:
 					Me1_lo[i] += A[0]
 					Me2_lo[i] += A[1]
