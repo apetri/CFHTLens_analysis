@@ -139,13 +139,14 @@ def SumSplitFile2Grid(Wx):
 				y = radians(y)
 				print 'W'+str(Wx), iW, 'coords2grid, zbin =',zbins[i]
 				A, galn = WLanalysis.coords2grid(x, y, k, size=isize)
-				if idx[0] == idx0[0]:
+				if len(idx1)==0:#no need to calculate hi bin for zcut=1.3
+					continue
+				elif idx[0] == idx0[0]:
 					Me1_lo[i] += A[0]
 					Me2_lo[i] += A[1]
 					Mw_lo[i] += A[2]
 					galn_lo[i] += galn
-				elif len(idx1)==0:#no need to calculate hi bin for zcut=1.3
-					break
+				
 				else:
 					Me1_hi[i] += A[0]
 					Me2_hi[i] += A[1]
