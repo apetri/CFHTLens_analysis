@@ -211,12 +211,13 @@ def KSmap(iinput):
 		galn = WLanalysis.readFits(galn_fn)
 		galn_smooth = WLanalysis.smooth(galn, sigma=sigmaG*PPA512)
 		WLanalysis.writeFits(galn_smooth, galn_smooth_fn)
-	return kmap, galn_smooth
+	#return kmap, galn_smooth
 
 
 Wx_sigmaG_i_hl_arr = [[Wx, sigmaG, i, hl] for Wx in range(1,5) for sigmaG in sigmaG_arr for i in range(0,len(zbins)-1) for hl in ['hi','lo']]+[[Wx, sigmaG, -1, 'lo'] for Wx in range(1,5) for sigmaG in sigmaG_arr]
-pool = MPIPool()
-pool.map(KSmap, Wx_sigmaG_i_hl_arr)
+#pool = MPIPool()
+#pool.map(KSmap, Wx_sigmaG_i_hl_arr)
+map(KSmap, Wx_sigmaG_i_hl_arr[::-1])
 
 ###############################################
 ######create mask using galn at 'hi' zcut######
