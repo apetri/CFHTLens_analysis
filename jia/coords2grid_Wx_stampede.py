@@ -216,6 +216,7 @@ def KSmap(iinput):
 sigmaG_arr = (0.5, 1, 1.8, 3.5, 5.3, 8.9)
 #Wx, sigmaG, i, hl
 Wx_sigmaG_i_hl_arr = [[Wx, sigmaG, i, hl] for Wx in range(1,5) for sigmaG in sigmaG_arr for i in range(0,len(zbins)-1) for hl in ['hi','lo']]+[[Wx, sigmaG, -1, 'lo'] for Wx in range(1,5) for sigmaG in sigmaG_arr]
-p = Pool(264)
-p.map(KSmap, Wx_sigmaG_i_hl_arr)
+#p = Pool(264)
+#p.map(KSmap, Wx_sigmaG_i_hl_arr)
+map(KSmap, Wx_sigmaG_i_hl_arr)
 print 'DONE-DONE-DONE'
