@@ -20,21 +20,29 @@ cat_dir='/home1/02977/jialiu/CFHT_cat/'
 split_dir = cat_dir+'split/'
 W_dir = lambda Wx: cat_dir+'W%s/'%(Wx) #dir for W1..W4 field
 splitfiles = os.listdir(split_dir)
-RA1 =(30.0, 39.0)#starting RA for W1
-DEC1=(-11.5,-3.5)
-RA2 =(132.0, 137.0)
-DEC2=(-6.0,-0.5)
-RA3 =(208.0, 221.0)
-DEC3=(51.0, 58.0)
-RA4 =(329.5, 336.0)
-DEC4=(-1.2, 5.0)
-RAs=(RA1,RA2,RA3,RA4)
-DECs=(DEC1,DEC2,DEC3,DEC4)
+
 centers = array([[34.5, -7.5], [134.5, -3.25],[214.5, 54.5],[ 332.75, 1.9]])
 
-dpp=0.0016914558667664816#degrees per pixel = sqrt(12)/2048
-xnum = lambda RA: round((amax(RA)-amin(RA))/dpp+1)
-ynum = lambda DEC:round((amax(DEC)-amin(DEC))/dpp+1)
+############################################################
+########## calculate map size ##############################
+#RA1 =(30.0, 39.0)#starting RA for W1
+#DEC1=(-11.5,-3.5)
+#RA2 =(132.0, 137.0)
+#DEC2=(-6.0,-0.5)
+#RA3 =(208.0, 221.0)
+#DEC3=(51.0, 58.0)
+#RA4 =(329.5, 336.0)
+#DEC4=(-1.2, 5.0)
+#RAs=(RA1,RA2,RA3,RA4)
+#DECs=(DEC1,DEC2,DEC3,DEC4)
+###dpp=0.0016914558667664816#degrees per pixel = sqrt(12)/2048
+#dpp = 0.0067658234670659265#degrees per pixel = sqrt(12)/512
+#xnum = lambda RA: round((amax(RA)-amin(RA))/dpp+1)
+#ynum = lambda DEC:round((amax(DEC)-amin(DEC))/dpp+1)
+##sized calculated using above 3 lines:
+## W1 1331, W2 814, W3 1922, W4 962
+sizes = (1331, 814, 1922, 962)
+############################################################
 
 z_arr = arange(0.025,3.5,.05)
 idx2z = lambda idx:z_arr[idx]
@@ -89,9 +97,83 @@ def OrganizeSplitFile(ifile):
 			WLanalysis.writeFits(xy_data, W_dir(Wx)+ifile+'.fit')#,fmt=['%i','%i','%s','%s','%s','%.3f'])
 		i+=1
 
-#ifile = splitfiles[0]
-#OrganizeSplitFile(ifile)
 pool = MPIPool()
-pool.map(OrganizeSplitFile,splitfiles)
+#############################################
+########## split file organizing ############
+########## uncomment next 1 line ############
+#pool.map(OrganizeSplitFile,splitfiles)
+#############################################
+zbins = array([0.4, 0.5, 0.6, 0.7, 0.85, 1.3])#arange(0.3,1.35,0.1)
+def SumSplitFile2Grid(Wx):
+	'''For Wx field, read in each split file, 
+	and create e1, e2 grid for mass construction.
+	Input: Wx=1,2,3,4
+	Output: (Me1, Me2, Mw, galn) split in each redshift bins'''
+	size = sizes[Wx-1]
+	ishape = (len(zbins), size, size)
+	ishape_hi = (len(zbins)-1, size, size)#no need to do hi for zcut=1.3 since it's everything
+	Me1_hi = zeros(shape=ishape_hi)
+	Me2_hi = zeros(shape=ishape_hi)#hi is for higher redshift bins, lo is lower redshift
+	Mw_hi = zeros(shape=ishape_hi)
+	#Mk_hi = zeros(shape=ishape_hi)
+	galn_hi = zeros(shape=ishape_hi)
+	
+	Me1_lo = zeros(shape=ishape)
+	Me2_lo = zeros(shape=ishape)
+	Mw_lo = zeros(shape=ishape)
+	#Mk_lo = zeros(shape=ishape)
+	galn_lo = zeros(shape=ishape)
+	
+	W_dir = lambda Wx: cat_dir+'W%s/'%(Wx)#directory where for all x??.fit
+	Wfiles = os.listdir(W_dir)#get the list of split file for Wx
+	for iW in iWfiles:
+		datas = WLanalysis.readFits(iW)
+		#cols: x, y, ra, dec, e1, e2, w, r, snr, m, c2, mag, z_peak, z_rand1, z_rand2
+		z_peak = datas[-3]
+		i = 0 #zbin count
+		for zcut in zbins:
+			idx0 = where(z<zcut)[0]
+			idx1 = where(z>=zcut)[0]
+			for idx in [idx0,idx1]:
+				y, x, e1, e2, w, m = (datas[idx].T)[0,1,4,5,6,9]#note x, y is reversed in python
+				k = array([e1*w, e2*w, (1+m)*w])
+				x = radians(x)
+				y = radians(y)
+				print 'W'+str(Wx), iw, 'coords2grid, zbin =',zbins[i]
+				A, galn = WLanalysis.coords2grid(x, y, k, size=size)
+				if idx[0] == idx0[0]:
+					Me1_lo[i] += A[0]
+					Me2_lo[i] += A[1]
+					Mw_lo[i] += A[2]
+					galn_lo[i] += galn
+				elif len(idx1)==0:#no need to calculate hi bin for zcut=1.3
+					break
+				else:
+					Me1_hi[i] += A[0]
+					Me2_hi[i] += A[1]
+					Mw_hi[i] += A[2]
+					galn_hi[i] += galn
+			i+=1
+	print 'Done collecting small fields for W'+str(Wx)
+	
+	for i in range(len(zbins)):
+		for hl in ('lo','hi')
+			Me1_fn = cat_dir+'W%i_Me1w_%s_%s.fit'%(Wx, zbins[i],hl)
+			Me2_fn = cat_dir+'W%i_Me2w_%s_%s.fit'%(Wx, zbins[i],hl)
+			Mw_fn = cat_dir+'W%i_Mwm_%s_%s.fit'%(Wx, zbins[i],hl)
+			galn_fn = cat_dir+'W%i_Me2w_%s_%s.fit'%(Wx, zbins[i],hl)
+			if hl=='hi' and i==len(zbins)-1:
+				continue
+			elif hl=='lo':
+				WLanalysis.writeFits(Me1_lo[i],Me1_fn)
+				WLanalysis.writeFits(Me2_lo[i],Me2_fn)
+				WLanalysis.writeFits(Mw_lo[i],Mw_fn)
+				WLanalysis.writeFits(galn_lo[i],galn_fn)
+			else:
+				WLanalysis.writeFits(Me1_hi[i],Me1_fn)
+				WLanalysis.writeFits(Me2_hi[i],Me2_fn)
+				WLanalysis.writeFits(Mw_hi[i],Mw_fn)
+				WLanalysis.writeFits(galn_hi[i],galn_fn)
 
 print 'DONE-DONE-DONE'
+
