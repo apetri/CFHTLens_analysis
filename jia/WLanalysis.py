@@ -62,9 +62,8 @@ def writeFits (data, filename, rewrite=True):
 			os.remove(filename)
 			hdu.writeto(filename)
 		else:
-			print 'file exist'
-			
-		
+			print filename,'exist'
+	
 
 def TestFitsComplete (fn, return_file = False):
 	'''Input: fn
