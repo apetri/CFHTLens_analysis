@@ -189,7 +189,6 @@ def KSmap(iinput):
 	'''
 	Wx, sigmaG, i, hl = iinput
 	print 'Wx, sigmaG, i, hl:', Wx, sigmaG, i, hl
-	zdir
 	kmap_fn = cat_dir+'KS/W%i_KS_%s_%s_sigmaG%02d.fit'%(Wx, zbins[i],hl,sigamG*10)
 	galn_smooth_fn = cat_dir+'KS/W%i_galn_%s_%s_sigmaG%02d.fit'%(Wx, zbins[i],hl,sigamG*10)
 	
