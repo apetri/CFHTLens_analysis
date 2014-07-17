@@ -44,7 +44,7 @@ sigmaG_arr = (0.5, 1, 1.8, 3.5, 5.3, 8.9)
 #ynum = lambda DEC:round((amax(DEC)-amin(DEC))/dpp+1)
 ##sized calculated using above 3 lines:
 ## W1 1331, W2 814, W3 1922, W4 962
-sizes = (1331, 814, 1922, 962)
+sizes = (1330, 800, 1120, 950)
 ############################################################
 
 z_arr = arange(0.025,3.5,.05)
@@ -100,11 +100,6 @@ def OrganizeSplitFile(ifile):
 			WLanalysis.writeFits(xy_data, W_dir(Wx)+ifile+'.fit')#,fmt=['%i','%i','%s','%s','%s','%.3f'])
 		i+=1
 
-#############################################
-########## split file organizing ############
-########## uncomment next 1 line ############
-#pool.map(OrganizeSplitFile,splitfiles)
-#############################################
 def SumSplitFile2Grid(Wx):
 	'''For Wx field, read in each split file, 
 	and create e1, e2 grid for mass construction.
@@ -141,7 +136,7 @@ def SumSplitFile2Grid(Wx):
 				y = radians(y)
 				print 'W'+str(Wx), iW, 'coords2grid, zbin =',zbins[i]
 				A, galn = WLanalysis.coords2grid(x, y, k, size=isize)
-				if len(idx1)==0:#no need to calculate hi bin for zcut=1.3
+				if len(idx)==0:#no need to calculate hi bin for zcut=1.3
 					continue
 				elif idx[0] == idx0[0]:
 					Me1_lo[i] += A[0]
@@ -176,8 +171,7 @@ def SumSplitFile2Grid(Wx):
 				WLanalysis.writeFits(Mw_hi[i],Mw_fn, rewrite = True)
 				WLanalysis.writeFits(galn_hi[i],galn_fn, rewrite = True)
 
-#for Wx in range(1,5):
-	#SumSplitFile2Grid(Wx)
+
 PPA512=2.4633625
 def KSmap(iinput):
 	'''Input:
@@ -215,11 +209,21 @@ def KSmap(iinput):
 
 
 Wx_sigmaG_i_hl_arr = [[Wx, sigmaG, i, hl] for Wx in range(1,5) for sigmaG in sigmaG_arr for i in range(0,len(zbins)-1) for hl in ['hi','lo']]+[[Wx, sigmaG, -1, 'lo'] for Wx in range(1,5) for sigmaG in sigmaG_arr]
-#pool = MPIPool()
-#pool.map(KSmap, Wx_sigmaG_i_hl_arr)
-map(KSmap, Wx_sigmaG_i_hl_arr[::-1])
 
-###############################################
-######create mask using galn at 'hi' zcut######
+################################################
+###(1) split file organizing ###################
+###    uncomment next 1 line ###################
+#pool.map(OrganizeSplitFile,splitfiles)
+################################################
+###(2) sum up the split file into 4 Wx fields###
+###    uncomment next 2 line ###################
+for Wx in range(1,5):
+	SumSplitFile2Grid(Wx)
+################################################
+###(3) create KS maps for 6 zbins 6 sigmaG #####
+###    total should have 528 files (galn, KS)###
+###    uncomment next 1 line ###################
+map(KSmap, Wx_sigmaG_i_hl_arr[::-1])
+################################################
 
 print 'DONE-DONE-DONE'
