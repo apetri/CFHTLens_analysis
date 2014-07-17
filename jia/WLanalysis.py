@@ -49,13 +49,22 @@ def readFits (fitsfile):
 	data = fitsio.read(fitsfile)#.astype(float)
 	return data
 
-def writeFits (data, filename):
+def writeFits (data, filename, rewrite=True):
 	'''Input:
 	data = to be written
 	filename = the file name of the fitsfile, note this needs to be the full path, otherwise will write to current directory.
 	'''
 	hdu = pyfits.PrimaryHDU(data)
-	hdu.writeto(filename)
+	try:
+		hdu.writeto(filename)
+	except IOError:
+		if rewrite:
+			os.remove(filename)
+			hdu.writeto(filename)
+		else:
+			print 'file exist'
+			
+		
 
 def TestFitsComplete (fn, return_file = False):
 	'''Input: fn
