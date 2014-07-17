@@ -14,7 +14,7 @@ from pylab import *
 import os
 import WLanalysis
 from emcee.utils import MPIPool
-from multiprocessing import Pool
+#from multiprocessing import Pool
 
 cat_dir='/home1/02977/jialiu/CFHT_cat/'
 #cat_dir = '/Users/jia/CFHTLenS/catalogue/'
@@ -22,7 +22,9 @@ split_dir = cat_dir+'split/'
 W_dir = lambda Wx: cat_dir+'W%s/'%(Wx) #dir for W1..W4 field
 splitfiles = os.listdir(split_dir)
 
+zbins = array([0.4, 0.5, 0.6, 0.7, 0.85, 1.3])#arange(0.3,1.35,0.1)
 centers = array([[34.5, -7.5], [134.5, -3.25],[214.5, 54.5],[ 332.75, 1.9]])
+sigmaG_arr = (0.5, 1, 1.8, 3.5, 5.3, 8.9)
 
 ############################################################
 ########## calculate map size ##############################
@@ -103,7 +105,6 @@ def OrganizeSplitFile(ifile):
 ########## uncomment next 1 line ############
 #pool.map(OrganizeSplitFile,splitfiles)
 #############################################
-zbins = array([0.4, 0.5, 0.6, 0.7, 0.85, 1.3])#arange(0.3,1.35,0.1)
 def SumSplitFile2Grid(Wx):
 	'''For Wx field, read in each split file, 
 	and create e1, e2 grid for mass construction.
@@ -212,10 +213,12 @@ def KSmap(iinput):
 		WLanalysis.writeFits(galn_smooth, galn_smooth_fn)
 	return kmap, galn_smooth
 
-sigmaG_arr = (0.5, 1, 1.8, 3.5, 5.3, 8.9)
-#Wx, sigmaG, i, hl
+
 Wx_sigmaG_i_hl_arr = [[Wx, sigmaG, i, hl] for Wx in range(1,5) for sigmaG in sigmaG_arr for i in range(0,len(zbins)-1) for hl in ['hi','lo']]+[[Wx, sigmaG, -1, 'lo'] for Wx in range(1,5) for sigmaG in sigmaG_arr]
-#p = Pool(264)
-#p.map(KSmap, Wx_sigmaG_i_hl_arr)
-map(KSmap, Wx_sigmaG_i_hl_arr)
+pool = MPIPool()
+pool.map(KSmap, Wx_sigmaG_i_hl_arr)
+
+###############################################
+######create mask using galn at 'hi' zcut######
+
 print 'DONE-DONE-DONE'
