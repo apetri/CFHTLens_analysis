@@ -502,6 +502,30 @@ def PowerSpectrum(img, sizedeg = 12.0, edges = None, logbins = True):#edges shou
 
 ########## end: power spectrum ############################
 
+
+def CrossCorrelate(img1, img2, edges = None, logbins = True):#edges should be pixels
+	'''Calculate the power spectrum for a square image, with normalization.
+	Input:
+	img1, img2 = input square image in numpy array.
+	edges = ell bin edges, length = nbin + 1, if not provided, then do 50 bins.
+	Output:
+	powspec = the power at the bins
+	ell_arr = lower bound of the binedges
+	'''
+	img1 = img1.astype(float)
+	img2 = img2.astype(float)
+	size = img1.shape[0]
+	sizedeg = (size/512.0)**2*12.0# assuming 512x512 for 12 deg^2 area
+	#F = fftpack.fftshift(fftpack.fft2(img))
+	F1 = fftshift(fftpack.fft2(img1))
+	F2 = fftshift(fftpack.fft2(img2))
+	psd2D = np.conj(F1)*F2#calculate cross correlation
+	ell_arr, psd1D = azimuthalAverage(psd2D, center=None, edges = edges,logbins = logbins)
+	ell_arr = edge2center(ell_arr)
+	ell_arr *= 360./sqrt(sizedeg)# normalized to our current map size
+	norm = ((2*pi*sqrt(sizedeg)/360.0)**2)/(size**2)**2
+	powspec = ell_arr*(ell_arr+1)/(2*pi) * norm * psd1D
+	return ell_arr, powspec
 ########## begin: peak counts ############################
 peaks_mat = lambda kmap: KSI.findpeak_mat(kmap.astype(float))
 peaks_list = lambda kmap: array(KSI.findpeak_list(kmap.astype(float)))

@@ -207,7 +207,37 @@ def KSmap(iinput):
 		WLanalysis.writeFits(galn_smooth, galn_smooth_fn)
 	#return kmap, galn_smooth
 
-
+def Bmode(iinput):
+	'''Input:
+	i = ith zbin for zcut
+	hl = 'hi' or 'lo' for higher/lower z of the zcut
+	sigmaG: smoothing scale
+	Wx = 1..4 of the field
+	Output:
+	smoothed KS map and galn map.
+	'''
+	Wx, sigmaG, i, hl = iinput
+	print 'Bmode - Wx, sigmaG, i, hl:', Wx, sigmaG, i, hl
+	bmap_fn = cat_dir+'KS/W%i_Bmode_%s_%s_sigmaG%02d.fit'%(Wx, zbins[i],hl,sigmaG*10)
+	#galn_smooth_fn = cat_dir+'KS/W%i_galn_%s_%s_sigmaG%02d.fit'%(Wx, zbins[i],hl,sigmaG*10)
+	
+	isfile_kmap, bmap = WLanalysis.TestFitsComplete(bmap_fn, return_file = True)
+	if isfile_kmap == False:
+		Me1_fn = cat_dir+'Me_Mw_galn/W%i_Me1w_%s_%s.fit'%(Wx, zbins[i],hl)
+		Me2_fn = cat_dir+'Me_Mw_galn/W%i_Me2w_%s_%s.fit'%(Wx, zbins[i],hl)
+		Mw_fn = cat_dir+'Me_Mw_galn/W%i_Mwm_%s_%s.fit'%(Wx, zbins[i],hl)
+		Me1 = WLanalysis.readFits(Me1_fn)
+		Me2 = WLanalysis.readFits(Me2_fn)
+		Mw = WLanalysis.readFits(Mw_fn)	
+		Me1_smooth = WLanalysis.weighted_smooth(Me1, Mw, PPA=PPA512, sigmaG=sigmaG)
+		Me2_smooth = WLanalysis.weighted_smooth(Me2, Mw, PPA=PPA512, sigmaG=sigmaG)
+		### Bmode conversion is equivalent to
+		### gamma1 -> gamma1' = -gamma2
+		### gamma2 -> gamma2' = gamma1
+		bmap = WLanalysis.KSvw(-Me2_smooth, Me1_smooth)
+		WLanalysis.writeFits(bmap,bmap_fn)
+	#return kmap, galn_smooth
+	
 Wx_sigmaG_i_hl_arr = [[Wx, sigmaG, i, hl] for Wx in range(1,5) for sigmaG in sigmaG_arr for i in range(0,len(zbins)-1) for hl in ['hi','lo']]+[[Wx, sigmaG, -1, 'lo'] for Wx in range(1,5) for sigmaG in sigmaG_arr]
 
 ################################################
@@ -217,13 +247,25 @@ Wx_sigmaG_i_hl_arr = [[Wx, sigmaG, i, hl] for Wx in range(1,5) for sigmaG in sig
 ################################################
 ###(2) sum up the split file into 4 Wx fields###
 ###    uncomment next 2 line ###################
-for Wx in range(1,5):
-	SumSplitFile2Grid(Wx)
+#for Wx in range(1,5):
+	#SumSplitFile2Grid(Wx)
 ################################################
 ###(3) create KS maps for 6 zbins 6 sigmaG #####
 ###    total should have 528 files (galn, KS)###
 ###    uncomment next 1 line ###################
-map(KSmap, Wx_sigmaG_i_hl_arr[::-1])
+#map(KSmap, Wx_sigmaG_i_hl_arr[::-1])
 ################################################
+###(4) B mode for picking out signals
+###    use 1000 maps with galaxies randomly
+###    rotated
+###    uncomment the next 1 line
+map(Bmode, Wx_sigmaG_i_hl_arr)
+################################################
+###(5) cross corrrelation
+###    put mask on KS map, and cross correlate##
+################################################
+
+
+
 
 print 'DONE-DONE-DONE'
