@@ -253,13 +253,13 @@ Wx_sigmaG_i_hl_arr = [[Wx, sigmaG, i, hl] for Wx in range(1,5) for sigmaG in sig
 ###(3) create KS maps for 6 zbins 6 sigmaG #####
 ###    total should have 528 files (galn, KS)###
 ###    uncomment next 1 line ###################
-#map(KSmap, Wx_sigmaG_i_hl_arr[::-1])
+map(KSmap, Wx_sigmaG_i_hl_arr[::-1])
 ################################################
 ###(4) B mode for picking out signals
 ###    use 1000 maps with galaxies randomly
 ###    rotated
 ###    uncomment the next 1 line
-#map(Bmode, Wx_sigmaG_i_hl_arr)
+map(Bmode, Wx_sigmaG_i_hl_arr)
 ################################################
 ###(5) cross corrrelation
 ###    put mask on KS map, and cross correlate
