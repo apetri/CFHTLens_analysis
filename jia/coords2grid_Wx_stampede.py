@@ -13,18 +13,18 @@ from scipy import *
 from pylab import *
 import os
 import WLanalysis
-from emcee.utils import MPIPool
+#from emcee.utils import MPIPool
 #from multiprocessing import Pool
 
-cat_dir='/home1/02977/jialiu/CFHT_cat/'
-#cat_dir = '/Users/jia/CFHTLenS/catalogue/'
+#cat_dir='/home1/02977/jialiu/CFHT_cat/'
+cat_dir = '/Users/jia/CFHTLenS/catalogue/'
 split_dir = cat_dir+'split/'
 W_dir = lambda Wx: cat_dir+'W%s/'%(Wx) #dir for W1..W4 field
 splitfiles = os.listdir(split_dir)
 
 zbins = array([0.4, 0.5, 0.6, 0.7, 0.85, 1.3])#arange(0.3,1.35,0.1)
 centers = array([[34.5, -7.5], [134.5, -3.25],[214.5, 54.5],[ 332.75, 1.9]])
-sigmaG_arr = (0.5, 1, 1.8, 3.5, 5.3, 8.9)
+sigmaG_arr = (0.1,)#(0.5, 1, 1.8, 3.5, 5.3, 8.9)
 
 ############################################################
 ########## calculate map size ##############################
@@ -236,7 +236,7 @@ def Bmode(iinput):
 		### gamma2 -> gamma2' = gamma1
 		bmap = WLanalysis.KSvw(-Me2_smooth, Me1_smooth)
 		WLanalysis.writeFits(bmap,bmap_fn)
-	#return kmap, galn_smooth
+	#return bmap
 	
 Wx_sigmaG_i_hl_arr = [[Wx, sigmaG, i, hl] for Wx in range(1,5) for sigmaG in sigmaG_arr for i in range(0,len(zbins)-1) for hl in ['hi','lo']]+[[Wx, sigmaG, -1, 'lo'] for Wx in range(1,5) for sigmaG in sigmaG_arr]
 
@@ -259,10 +259,68 @@ Wx_sigmaG_i_hl_arr = [[Wx, sigmaG, i, hl] for Wx in range(1,5) for sigmaG in sig
 ###    use 1000 maps with galaxies randomly
 ###    rotated
 ###    uncomment the next 1 line
-map(Bmode, Wx_sigmaG_i_hl_arr)
+#map(Bmode, Wx_sigmaG_i_hl_arr)
 ################################################
 ###(5) cross corrrelation
-###    put mask on KS map, and cross correlate##
+###    put mask on KS map, and cross correlate
+###    for both B-mode(for compare), and true KS
+### test on sigmaG=1.0, zcut=0.85
+plot_dir = '/Users/jia/CFHTLenS/plot/obsPK/'
+def plotimshow(img,ititle,vmin=None,vmax=None):		 
+	 #if vmin == None and vmax == None:
+	imgnonzero=img[nonzero(img)]
+	if vmin == None:
+		std0 = std(imgnonzero)
+		x0 = median(imgnonzero)
+		vmin = x0-3*std0
+		vmax = x0+3*std0
+	im=imshow(img,interpolation='nearest',origin='lower',aspect=1,vmin=vmin,vmax=vmax)
+	colorbar()
+	title(ititle,fontsize=16)
+	savefig(plot_dir+'%s.jpg'%(ititle))
+	close()	
+	
+test_dir = '/Users/jia/CFHTLenS/obsPK/'
+def TestCrossCorrelate (Wx, zcut, sigmaG):
+	'''Input: 
+	Wx - one of the W1..W4 field (= 1..4) 
+	zcut - redshift cut between KS background galaxies and forground cluster probe
+	sigmaG - smoothing
+	Output:
+	ell_arr, CCK, CCB
+	'''
+	galn_hi = WLanalysis.readFits(test_dir+'W%i_galn_%s_hi_sigmaG%02d.fit'%(Wx,zcut,sigmaG*10))
+	galn_lo = WLanalysis.readFits(test_dir+'W%i_galn_%s_lo_sigmaG%02d.fit'%(Wx,zcut,sigmaG*10))
+	galn_cut = 0.5*0.164794921875 #5gal/arcmin^2*arcmin^2/pix, arcmin/pix = 12.0*60**2/512.0**2 = 
+	bmap = WLanalysis.readFits(test_dir+'W%i_Bmode_%s_hi_sigmaG%02d.fit'%(Wx,zcut,sigmaG*10))
+	kmap = WLanalysis.readFits(test_dir+'W%i_KS_%s_hi_sigmaG%02d.fit'%(Wx,zcut,sigmaG*10))
+	mask = where(galn_hi<galn_cut)
+	bmap[mask]=0
+	kmap[mask]=0
+	edges=linspace(5,100,11)
+	ell_arr, CCB = WLanalysis.CrossCorrelate (bmap,galn_lo,edges=edges)
+	ell_arr, CCK = WLanalysis.CrossCorrelate (kmap,galn_lo,edges=edges)
+	f=figure(figsize=(8,6))
+	ax=f.add_subplot(111)
+	ax.plot(ell_arr, CCB, 'ro',label='B-mode')
+	ax.plot(ell_arr, CCK, 'bo', label='KS')
+	legend()
+	#ax.set_xscale('log')
+	ax.set_xlabel('ell')
+	ax.set_ylabel(r'$\ell(\ell+1)P_{n\kappa}(\ell)/2\pi$')
+	ax.set_title('W%i_zcut%shi_sigmaG%02d'%(Wx,zcut,sigmaG*10))
+	#show()
+	savefig(plot_dir+'CC_edges_W%i_zcut%shi_sigmaG%02d.jpg'%(Wx,zcut,sigmaG*10))
+	close()
+	#plotimshow(kmap,'kmap_W%i_zcut%shi_sigmaG%02d.jpg'%(Wx,zcut,sigmaG*10))
+	#plotimshow(bmap,'bmap_W%i_zcut%shi_sigmaG%02d.jpg'%(Wx,zcut,sigmaG*10))
+	#plotimshow(galn_lo,'galn_W%i_zcut%shi_sigmaG%02d.jpg'%(Wx,zcut,sigmaG*10))
+	
+Wx=1
+#for zcut in zbins[:-1]:
+	#for sigmaG in sigmaG_arr[:-2]:
+		#print 'Wx, zcut, sigmaG',Wx, zcut, sigmaG
+		#TestCrossCorrelate (Wx, zcut, sigmaG)
 ################################################
 
 
