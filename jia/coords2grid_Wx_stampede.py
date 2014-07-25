@@ -16,8 +16,8 @@ import WLanalysis
 #from emcee.utils import MPIPool
 #from multiprocessing import Pool
 
-cat_dir='/home1/02977/jialiu/CFHT_cat/'
-#cat_dir = '/Users/jia/CFHTLenS/catalogue/'
+#cat_dir='/home1/02977/jialiu/CFHT_cat/'
+cat_dir = '/Users/jia/CFHTLenS/catalogue/'
 split_dir = cat_dir+'split/'
 W_dir = lambda Wx: cat_dir+'W%s/'%(Wx) #dir for W1..W4 field
 splitfiles = os.listdir(split_dir)
@@ -253,13 +253,13 @@ Wx_sigmaG_i_hl_arr = [[Wx, sigmaG, i, hl] for Wx in range(1,5) for sigmaG in sig
 ###(3) create KS maps for 6 zbins 6 sigmaG #####
 ###    total should have 528 files (galn, KS)###
 ###    uncomment next 1 line ###################
-map(KSmap, Wx_sigmaG_i_hl_arr[::-1])
+#map(KSmap, Wx_sigmaG_i_hl_arr[::-1])
 ################################################
 ###(4) B mode for picking out signals
 ###    use 1000 maps with galaxies randomly
 ###    rotated
 ###    uncomment the next 1 line
-map(Bmode, Wx_sigmaG_i_hl_arr)
+#map(Bmode, Wx_sigmaG_i_hl_arr)
 ################################################
 ###(5) cross corrrelation
 ###    put mask on KS map, and cross correlate
@@ -317,10 +317,10 @@ def TestCrossCorrelate (Wx, zcut, sigmaG):
 	#plotimshow(galn_lo,'galn_W%i_zcut%shi_sigmaG%02d.jpg'%(Wx,zcut,sigmaG*10))
 	
 Wx=1
-#for zcut in zbins[:-1]:
-	#for sigmaG in sigmaG_arr[:-2]:
-		#print 'Wx, zcut, sigmaG',Wx, zcut, sigmaG
-		#TestCrossCorrelate (Wx, zcut, sigmaG)
+for zcut in zbins[:-1]:
+	for sigmaG in sigmaG_arr:
+		print 'Wx, zcut, sigmaG',Wx, zcut, sigmaG
+		TestCrossCorrelate (Wx, zcut, sigmaG)
 ################################################
 
 

@@ -45,6 +45,7 @@ def getps (cosmo_param):
 ps_mat_fn = emu_dir+'powspec_sum/ps_mat_sigma05.fit'
 if os.path.isfile(ps_mat_fn):
 	ps_mat = WLanalysis.readFits(ps_mat_fn).reshape(91,1000,-1)
+	#ps_mat = ps_mat[:,:,:-15]###cut ell
 else:
 	ps_mat = array(map(getps, cosmo_params))[:,:,11:]
 	WLanalysis.writeFits(ps_mat.reshape(91,-1), ps_mat_fn)
@@ -104,6 +105,8 @@ try_mask_powspec = 0
 check_shear_bad_ps_kmap = 0
 build_CFHT_KS_PS_PK = 0
 sample_interpolation = 0
+cosmo_params_2D = 0
+single_interpolation_fidu99 = 1
 
 PPA512=2.4633625
 
@@ -757,13 +760,15 @@ if test_MCMC:
 	#fidu_params = (0.26, -1, 0.8)
 	
 	
-	steps = 4000
+	steps = 2000
 	burn = 100 # make sure burn < steps
 	
 	#obs = fidu_avg#ps_CFHT#
 	#method = 'multiquadric'#'GP'#
-	for obs in (ps_CFHT,):#(fidu_avg, ps_CFHT):#(fidu_avg,):#
-		for method in ('multiquadric','GP'):#('multiquadric',):# ('GP',):#
+	#for obs in (ps_CFHT,):#(fidu_avg, ps_CFHT):#(fidu_avg,):#
+	for k in (10,20,45, 99, 260):#range(500,510):#
+		obs = ps_mat[48,k]
+		for method in ('multiquadric',):#('multiquadric','GP'):# ('GP',):#
 			print bool(obs[3]== fidu_avg[3]), method
 			def lnprior(params):
 				'''This gives the flat prior.
@@ -823,11 +828,15 @@ if test_MCMC:
 					fn = "emu_fidu_%s_peaks"%(method)
 				elif obs[3] == ps_CFHT[3]:
 					fn = "emu_CFHT_%s_peaks"%(method)
+				else:
+					fn = "emu_fidu%i_%s_peaks"%(k, method)
 			else:
 				if obs[3] == fidu_avg[3]:
 					fn ='emu_fidu_%s'%(method)
 				elif obs[3] == ps_CFHT[3]:
 					fn ='emu_CFHT_%s'%(method)
+				else:
+					fn = "emu_fidu%i_%s_ell_11_-15"%(k, method)
 			title('[%.3f, %.3f, %.3f]'%(errors[0,0], errors[1,0], errors[2,0]))
 			fig.savefig(plot_dir+'triangle_'+fn+'.jpg')
 			close()
@@ -1042,7 +1051,6 @@ if build_CFHT_KS_PS_PK:
 			pass
 
 
-cosmo_params_2D = 1
 if cosmo_params_2D:
 	om_arr = linspace(0,1,5)
 	w_arr = linspace(-3,0,5)
@@ -1086,4 +1094,49 @@ if cosmo_params_2D:
 	
 	savefig(plot_dir+'cosmo_params_2D.jpg')
 	savefig(plot_dir+'cosmo_params_2D.pdf')
+	close()
+	
+if single_interpolation_fidu99:	
+	method = 'multiquadric'
+	obs = ps_mat[48,99]
+	best_fit = [0.406, -1.513, 0.522]#errors[:,0]
+	lo_om = [0.25, -1.513, 0.522]
+	hi_om = [0.55, -1.513, 0.522]
+	hi_si8= [0.406, -1.513, 0.7]
+	lo_si8= [0.406, -1.513, 0.35]
+	lo_both = [0.25, -1.513, 0.35]
+	variations = [best_fit, hi_om, lo_om, hi_si8, lo_si8, lo_both]
+	variation_labels = ['best_fit', 'hi_om', 'lo_om', 'hi_si8', 'lo_si8', 'lo_both']
+	seed(69)
+	colors=rand(len(variations),3)
+	
+	f=figure(figsize=(8,8))
+	ax=f.add_subplot(gs[0])
+	ax2=f.add_subplot(gs[1],sharex=ax)
+	ax.errorbar(ell_arr,obs,fidu_std,color='k',linewidth=2)
+	ax.plot(ell_arr,obs,color='k',label='true',linewidth=2)
+	for i in range(len(variations)):
+		best_fit = variations[i]
+		ps_interp=interp_cosmo(best_fit,method=method)
+		
+		del_N = np.mat(ps_interp - obs)
+		chisq = float(del_N*cov_inv*del_N.T)/39.0
+		ax.plot(ell_arr, ps_interp, color=colors[i], label='%s [%.3f, %.3f, %.3f] $\chi^2$=%.2f' % (variation_labels[i], best_fit[0],best_fit[1],best_fit[2], chisq),linewidth=2)
+		ax2.plot(ell_arr,ps_interp/obs-1,color=colors[i],linewidth=2)
+		
+	ax2.plot(ell_arr,zeros(len(ell_arr)),'k-')
+	if not ps_replaced_with_pk:
+		ax.set_xscale('log')
+		ax2.set_xscale('log')
+		ax.set_yscale('log')
+		ax.set_xlabel('ell')
+		ax.set_ylim(2e-5, 1e-2)
+		ax.set_xlim(ell_arr[0],ell_arr[-1])
+
+	ax2.set_ylim(-0.3, 0.15)
+	leg=ax.legend(ncol=1, labelspacing=0.3, prop={'size':12},loc=0)
+	leg.get_frame().set_visible(False)
+	plt.setp(ax.get_xticklabels(), visible=False) 
+	plt.subplots_adjust(hspace=0.0)
+	savefig(plot_dir+'frac_diff_fidu99.jpg')
 	close()
