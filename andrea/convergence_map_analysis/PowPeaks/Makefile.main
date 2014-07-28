@@ -1,7 +1,0 @@
-checkMap: checkMap.o
-
-checkMap.o: checkMap.c
-
-.PHONY: clean
-clean:
-	rm -rf *.o checkMap *.dSYM core a.out

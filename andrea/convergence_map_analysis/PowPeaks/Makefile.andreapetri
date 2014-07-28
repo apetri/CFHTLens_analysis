@@ -1,8 +1,0 @@
-CC = clang
-CFLAGS = -g -Wall $(INCLUDES)
-LDFLAGS = -g
-
-LDLIBS = $(LINK)
-
-INCLUDES = -I/usr/local -I../include
-LINK = -L/usr/local -lcfitsio -lfftw3 -L../lib -lconvergence 
