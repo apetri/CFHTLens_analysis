@@ -3,6 +3,7 @@
 # currently only work with Jia's laptop
 
 import numpy as np
+import triangle
 from scipy import *
 import scipy.optimize as op
 import emcee
@@ -91,6 +92,7 @@ def getpk (cosmo_param, sigmaG=sigmaG, bins = 25):
 ps_replaced_by_good = 0
 ps_replaced_by_nicaea = 0
 ps_replaced_with_pk = 0# use the same plotting routine wrote for powspec to to peaks, simply make ps_mat = pk_mat
+combined_ps_pk = 1
 test_interp_method = 0#this is using spline
 draw2Dplane = 0
 test_gp = 0
@@ -106,7 +108,10 @@ check_shear_bad_ps_kmap = 0
 build_CFHT_KS_PS_PK = 0
 sample_interpolation = 0
 cosmo_params_2D = 0
-single_interpolation_fidu99 = 1
+single_interpolation_fidu99 = 0
+chisq_heat_map = 1
+draw_contour_chisq_map = 0
+draw_contour_smoothed_MCMC_map = 0
 
 PPA512=2.4633625
 
@@ -150,6 +155,29 @@ if ps_replaced_with_pk:
 	ps_CFHT_mat = WLanalysis.readFits('/Users/jia/CFHTLenS/CFHTKS/CFHT_peaks_sigma%02d_025bins.fit'%(sigmaG*10))
 	ps_CFHT = sum(ps_CFHT_mat, axis=0)
 
+if combined_ps_pk:
+	print 'combined_ps_pk'
+	
+	pk_mat_fn = emu_dir+'peaks_sum/pk_mat_sigma%02d_25bins.fit'%(sigmaG*10)
+	if os.path.isfile(pk_mat_fn):
+		pk_mat = WLanalysis.readFits(pk_mat_fn).reshape(91,1000,-1)
+	else:
+		pk_mat = array(map(getpk, cosmo_params))
+		WLanalysis.writeFits(pk_mat.reshape(91,-1), pk_mat_fn)
+	
+	
+	#pk_avg = mean(pk_mat,axis=1)
+	#pk_std = std(pk_mat, axis=1)	
+	pk_CFHT_mat = WLanalysis.readFits('/Users/jia/CFHTLenS/CFHTKS/CFHT_peaks_sigma%02d_025bins.fit'%(sigmaG*10))
+	pk_CFHT = sum(pk_CFHT_mat, axis=0)
+	
+	#ps_CFHT_mat = concatenate([ps_CFHT_mat,pk_CFHT_mat],axis=-1)
+	ps_CFHT = concatenate([ps_CFHT, pk_CFHT])
+	
+	ps_mat = concatenate([ps_mat,pk_mat],axis=-1)
+	ps_avg = mean(ps_mat,axis=1)
+	ps_std = std(ps_mat, axis=1)
+	ell_arr = concatenate([ell_arr,x])	
 #######################################################
 #### this is the fiducial cosmology for testing purpose
 #### previously used the fiducial from the 4 runs, but 
@@ -199,7 +227,7 @@ def plotimshow(img,ititle,vmin=None,vmax=None):
 		x0 = median(imgnonzero)
 		vmin = x0-3*std0
 		vmax = x0+3*std0
-	im=imshow(img,interpolation='nearest',origin='lower',aspect=1,vmin=vmin,vmax=vmax)
+	im=imshow(img,interpolation='nearest',origin='lower',vmin=vmin,aspect=1,vmax=vmax)
 	colorbar()
 	title(ititle,fontsize=16)
 	savefig(plot_dir+'%s.jpg'%(ititle))
@@ -765,9 +793,9 @@ if test_MCMC:
 	
 	#obs = fidu_avg#ps_CFHT#
 	#method = 'multiquadric'#'GP'#
-	#for obs in (ps_CFHT,):#(fidu_avg, ps_CFHT):#(fidu_avg,):#
-	for k in (10,20,45, 99, 260):#range(500,510):#
-		obs = ps_mat[48,k]
+	for obs in (ps_CFHT,):#(fidu_avg, ps_CFHT):#(fidu_avg,):#
+	#for k in (10,20,45, 99, 260):#range(500,510):#
+		#obs = ps_mat[48,k]
 		for method in ('multiquadric',):#('multiquadric','GP'):# ('GP',):#
 			print bool(obs[3]== fidu_avg[3]), method
 			def lnprior(params):
@@ -788,7 +816,8 @@ if test_MCMC:
 				model = interp_cosmo (params, method = method)
 				del_N = np.mat(model - obs)
 				chisq = del_N*cov_inv*del_N.T
-				Ln = -log(chisq) #likelihood, is the log of chisq
+				#Ln = -log(chisq) #likelihood, is the log of chisq
+				Ln = -chisq/2.0/39.0
 				return float(Ln)
 			
 			def lnprob(params, obs):
@@ -798,7 +827,7 @@ if test_MCMC:
 				else:
 					return lp + lnlike(params, obs)
 			
-			nll = lambda *args: -lnlike(*args)
+			nll = lambda *args: -lnlike(*args)#minimize chisq
 			result = op.minimize(nll, fidu_params, args=(obs,))
 			print result
 			
@@ -812,14 +841,17 @@ if test_MCMC:
 			print 'run mcmc'
 			sampler.run_mcmc(pos, steps)
 			samples = sampler.chain[:, burn:, :].reshape((-1, ndim))
-
+			
+			####################################
+			#WLanalysis.writeFits(samples,emu_dir+'MCMC_samples_CFHT_%isteps.fit'%(steps))
+			####################################
+			
 			errors = array(map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]), zip(*np.percentile(samples, [16, 50, 84],axis=0))))
 			print 'Result\t[best fits, lower error, upper error]'
 			print 'Omega_m:\t', errors[0]
 			print 'w:\t\t', errors[1]
 			print 'sigma_8:\t', errors[2]
-			
-			import triangle	
+				
 			fig = triangle.corner(samples, labels=["$\Omega_m$", "$w$", "$\sigma_8$"],  plot_datapoints=False)#,truths=fidu_params)
 			#fig.savefig(plot_dir+"emu_triangle_MCMC_fidu_%s.jpg"%(method))
 			if ps_replaced_with_pk:
@@ -836,9 +868,9 @@ if test_MCMC:
 				elif obs[3] == ps_CFHT[3]:
 					fn ='emu_CFHT_%s'%(method)
 				else:
-					fn = "emu_fidu%i_%s_ell_11_-15"%(k, method)
+					fn = "emu_fidu%i_%s"%(k, method)
 			title('[%.3f, %.3f, %.3f]'%(errors[0,0], errors[1,0], errors[2,0]))
-			fig.savefig(plot_dir+'triangle_'+fn+'.jpg')
+			fig.savefig(plot_dir+'triangle_'+fn+'_correct_Lnchisq.jpg')
 			close()
 	
 
@@ -1140,3 +1172,220 @@ if single_interpolation_fidu99:
 	plt.subplots_adjust(hspace=0.0)
 	savefig(plot_dir+'frac_diff_fidu99.jpg')
 	close()
+
+if chisq_heat_map:
+	#from multiprocessing import Pool
+	#p = Pool(101)
+	obs = ps_CFHT
+	l = 100
+	m = 102
+	om_arr = linspace(0,1.2,l)
+	si8_arr = linspace(0,1.6,m)
+	def plot_heat_map_w (w):
+		print 'w=',w	
+		#l = 10
+		#obs = ps_mat[48,99]
+		heatmap = zeros(shape=(l,m))
+		for i in range(l):
+			for j in range(m):
+				best_fit = (om_arr[i], w, si8_arr[j])
+				ps_interp = interp_cosmo(best_fit)	
+				del_N = np.mat(ps_interp - obs)
+				chisq = float(del_N*cov_inv*del_N.T)/39.0
+				heatmap[i,j] = chisq
+				
+				#f=figure(figsize=(8,8))
+				#ax=f.add_subplot(gs[0])
+				#ax2=f.add_subplot(gs[1],sharex=ax)
+				#ax.errorbar(ell_arr,obs,fidu_std,color='k',linewidth=2)
+				#ax.plot(ell_arr,obs,color='k',label='true',linewidth=2)
+				#ax.plot(ell_arr, ps_interp, color='r',linewidth=2)
+				#ax.set_title('[%.3f, %.3f, %.3f] $\chi^2$=%.2f' % (best_fit[0],best_fit[1],best_fit[2], chisq))
+				#ax2.plot(ell_arr,ps_interp/obs-1,'r',linewidth=2)
+					
+				#ax2.plot(ell_arr,zeros(len(ell_arr)),'k-')
+				
+				#ax.set_xscale('log')
+				#ax2.set_xscale('log')
+				#ax.set_yscale('log')
+				#ax.set_xlabel('ell')
+				#ax.set_ylim(2e-5, 1e-2)
+				#ax.set_xlim(ell_arr[0],ell_arr[-1])
+
+				#ax2.set_ylim(-0.5, 0.5)
+				#plt.setp(ax.get_xticklabels(), visible=False) 
+				#plt.subplots_adjust(hspace=0.0)
+				#savefig(plot_dir+'lowerleftcorner/test_lower_left_corner_%.3f_%.3f_%.3f.jpg' % (best_fit[0],best_fit[1],best_fit[2]))
+				#close()
+				
+				
+		figure(figsize=(6,8))
+		im=imshow(heatmap.T,interpolation='nearest',origin='lower',vmin=0,aspect=1,vmax=5, extent=[0,1.2,0,1.6])
+		xlabel('Omega_m')
+		ylabel('sigma8')
+		title('w='+str(w))
+		colorbar()
+		savefig(plot_dir+'chisq_cube/CFHT_combined_chisq_heat_map_w%.2f.jpg'%(w))
+		close()	
+		return heatmap
+	chisq_cube = array(map(plot_heat_map_w,linspace(0,-3,101)))#w, om, si8
+	WLanalysis.writeFits(chisq_cube.reshape(-1), emu_dir+'chisq_cube_combined.fit')
+
+#obs=ps_CFHT
+#best_fit = [1.2, -1.5, 0.22]
+#ps_interp = interp_cosmo(best_fit)	
+#del_N = np.mat(ps_interp - obs)
+#chisq=float(del_N*cov_inv*del_N.T)/39.0
+#f=figure(figsize=(8,8))
+#ax=f.add_subplot(gs[0])
+#ax2=f.add_subplot(gs[1],sharex=ax)
+#ax.errorbar(ell_arr,obs,fidu_std,color='k',linewidth=2)
+#ax.plot(ell_arr,obs,color='k',label='true',linewidth=2)
+#ax.plot(ell_arr, ps_interp, color='r',linewidth=2)
+#ax.set_title('[%.3f, %.3f, %.3f] $\chi^2$=%.2f' % (best_fit[0],best_fit[1],best_fit[2], chisq))
+#ax2.plot(ell_arr,ps_interp/obs-1,'r',linewidth=2)
+	
+#ax2.plot(ell_arr,zeros(len(ell_arr)),'k-')
+
+#ax.set_xscale('log')
+#ax2.set_xscale('log')
+#ax.set_yscale('log')
+#ax.set_xlabel('ell')
+#ax.set_ylim(2e-5, 1e-2)
+#ax.set_xlim(ell_arr[0],ell_arr[-1])
+
+#ax2.set_ylim(-0.5, 0.5)
+#plt.setp(ax.get_xticklabels(), visible=False) 
+#plt.subplots_adjust(hspace=0.0)
+#savefig(plot_dir+'lowerleftcorner/test_lower_left_corner_%.3f_%.3f_%.3f.jpg' % (best_fit[0],best_fit[1],best_fit[2]))
+#close()
+
+def drawContour2D (H, ititle, xvalues, yvalues, levels=[0.68,0.955, 0.997]):
+	'''draw a contour for a image for levels, title is the title and filename, x and y values are the values at dimentions 0, 1 bin center.'''
+	fn = plot_dir+ititle+'.jpg'
+	H /= float(sum(H))
+	#find 68%, 95%, 99%
+	idx = np.argsort(H.flat)
+	H_sorted = H.flat[idx]
+	H_cumsum = np.cumsum(H_sorted)
+	idx68 = where(abs(H_cumsum-0.683)==amin(abs(H_cumsum-0.683)))[0]	
+	idx95 = where(abs(H_cumsum-0.955)==amin(abs(H_cumsum-0.955)))[0]
+	idx99 = where(abs(H_cumsum-0.997)==amin(abs(H_cumsum-0.997)))[0]
+	v68 = float(H.flat[idx[idx68]])
+	v95 = float(H.flat[idx[idx95]])
+	v99 = float(H.flat[idx[idx99]])
+	print 'v68, v95, v99',v68, v95, v99
+	X, Y = np.meshgrid(xvalues, yvalues)
+	V = [v68, v95, v99]
+	figure(figsize=(6,8))
+	im=imshow(H.T, interpolation='bilinear', origin='lower', cmap=cm.gray, extent=(xvalues[0], xvalues[-1], yvalues[0], yvalues[-1]))
+	CS=plt.contour(X, Y, H.T, levels=V, origin='lower', extent=(xvalues[0], xvalues[-1], yvalues[0], yvalues[-1]), colors=('r', 'green', 'blue'), linewidths=2)#, (1,1,0), '#afeeee', '0.5'))
+	#levels = [0.68, 0.95, 0.99]
+	#plt.clabel(CS, levels, inline=1, fmt='%1.2f', fontsize=14)
+	xlabel('omega_m')
+	ylabel('simga_8')
+	title(ititle)
+	savefig(fn)
+	close()
+	
+if draw_contour_chisq_map:
+	l=100
+	m=102
+	cut=-1#83
+	om_arr = linspace(0,1.2,l)[:cut]
+	si8_arr = linspace(0,1.6,m)
+	w_arr = linspace(0,-3,101)
+	if ps_replaced_with_pk:
+		fn = emu_dir+'chisq_cube_peaks.fit'
+		ap = 'peaks'
+	elif combined_ps_pk:
+		fn = emu_dir+'chisq_cube_combined.fit'
+		ap = 'combined'
+	else:
+		fn = emu_dir+'chisq_cube.fit'	
+		ap = 'ps'
+	chisq_cube = WLanalysis.readFits(fn).reshape(-1,l,m)
+	chisq_cube = chisq_cube[:,:cut,:]
+	
+	#
+	P = sum(exp(-chisq_cube/2),axis=0)
+	P /= sum(P)
+	
+	######## draw heat map for each w ######################
+	#for i in range(len(w_arr)):
+		#figure(figsize=(6,6))
+		#heatmap = chisq_cube[i]
+		#w=w_arr[i]
+		#im=imshow(heatmap.T,interpolation='nearest',origin='lower',vmin=0,aspect=1,vmax=5, extent=[0,1.2,0,1.6])
+		#xlabel('Omega_m')
+		#ylabel('sigma8')
+		#title('w='+str(w))
+		#colorbar()
+		#savefig(plot_dir+'chisq_cube/100bins/CFHT_chisq_heat_map_w%.2f.jpg'%(w))
+		#close()	
+	
+	############ draw summed heat map #####################
+	drawContour2D(P, 'chisq_cube_omcut_contour_100bins_%s'%(ap), xvalues=om_arr, yvalues=si8_arr)
+	
+	
+	### plot sample points from the banana as a function of w
+	#P_sample = sort(P.flatten())[-200::30]	
+	#f=figure(figsize=(6,8))
+	##ax1=f.add_subplot(121)
+	#ax2=f.add_subplot(111)
+	
+	##points = [[21,50],[-1,14]]#,[84,64]]
+	#points = [where(P==iP) for iP in P_sample] 
+	##ax1.imshow(P.T, interpolation='bilinear', origin='lower', cmap=cm.gray, extent=(0,1.2,0,1.6))
+	##ax1.colorbar()	
+	#for ipoint in points:
+		#i,j = ipoint
+		#ichisq = chisq_cube[:,i,j]
+		#ax2.plot(w_arr,ichisq,label='[%.2f, %.2f]'%(om_arr[i],si8_arr[j]))
+	#leg=ax2.legend(ncol=1, labelspacing=0.3, prop={'size':12},loc=0)
+	#leg.get_frame().set_visible(False)
+	#ax2.set_xlabel('w')
+	#ax2.set_ylabel(r'$\chi^2$')
+	#savefig(plot_dir+'chisq_vs_w_sample.jpg')
+	#close()
+
+if draw_contour_smoothed_MCMC_map:
+	
+	import matplotlib.cm as cm
+	#samples = WLanalysis.readFits(emu_dir+'MCMC_samples_CFHT_10000steps.fit')
+	samples = WLanalysis.readFits(emu_dir+'MCMC_samples_CFHT_2000steps.fit')
+	om, w, si8 = samples.T
+	
+	H0, xedges, yedges = histogram2d(om, si8, bins=100)#H shape=(nx,ny)
+	
+	
+	def smoothed_contour (pix):
+		H = WLanalysis.smooth(H0, pix)
+		H /= float(sum(H))
+		#find 68%, 95%, 99%
+		idx = np.argsort(H.flat)
+		H_sorted = H.flat[idx]
+		H_cumsum = np.cumsum(H_sorted)
+		idx68 = where(abs(H_cumsum-0.683)==amin(abs(H_cumsum-0.683)))[0]	
+		idx95 = where(abs(H_cumsum-0.955)==amin(abs(H_cumsum-0.955)))[0]
+		idx99 = where(abs(H_cumsum-0.997)==amin(abs(H_cumsum-0.997)))[0]
+		v68 = float(H.flat[idx[idx68]])
+		v95 = float(H.flat[idx[idx95]])
+		v99 = float(H.flat[idx[idx99]])
+		X, Y = np.meshgrid(xedges[:-1]+0.5*(xedges[1]-xedges[0]), yedges[:-1]+0.5*(yedges[1]-yedges[0]))
+		V = [v68, v95, v99]
+		
+		figure(figsize=(6,8))
+		im=imshow(H.T, interpolation='bilinear', origin='lower', cmap=cm.gray, extent=(xedges[0], xedges[-1], yedges[0], yedges[-1]))
+
+		CS=plt.contour(X, Y, H.T, levels=V, origin='lower', extent=(xedges[0], xedges[-1], yedges[0], yedges[-1]))
+		levels = [0.68, 0.95, 0.99]
+		#plt.clabel(CS, levels, inline=1, fmt='%1.2f', fontsize=14)
+		xlabel('omega_m')
+		ylabel('simga_8')
+		title('Smoothed over %s pixels'%(pix))
+		savefig(plot_dir+'CFHT_contour_ps_pix%s.jpg'%(pix))
+		close()
+	map(smoothed_contour, (0.5, 1, 2, 5, 10))
+		
+	
