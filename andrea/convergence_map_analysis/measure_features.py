@@ -21,6 +21,8 @@ from lenstools import Ensemble
 import numpy as np
 from astropy.io import fits
 
+import progressbar
+
 ###########################################################################
 #############Read INI options file and write summary information###########
 ###########################################################################
@@ -152,6 +154,9 @@ if __name__=="__main__":
 	else:
 		logging.basicConfig(level=logging.INFO)
 
+	#Set progressbar attributes
+	widgets = ["Progress: ",progressbar.Percentage(),' ',progressbar.Bar(marker="+")]
+
 	#Parse INI options file
 	options = ConfigParser.ConfigParser()
 	with open(cmd_args.options_file,"r") as configfile:
@@ -170,6 +175,7 @@ if __name__=="__main__":
 
 	if options.has_section("power_spectrum"):
 		l_edges = np.ogrid[options.getfloat("power_spectrum","lmin"):options.getfloat("power_spectrum","lmax"):(options.getint("power_spectrum","num_bins")+1)*1j]
+		np.save(os.path.join(save_path,"ell.npy"),0.5*(l_edges[1:]+l_edges[:-1]))
 		feature_list.append(PowerSpectrum(l_edges))
 
 	if options.has_section("moments"):
@@ -177,10 +183,12 @@ if __name__=="__main__":
 
 	if options.has_section("peaks"):
 		th_peaks = np.ogrid[options.getfloat("peaks","th_min"):options.getfloat("peaks","th_max"):(options.getint("peaks","num_bins")+1)*1j]
+		np.save(os.path.join(save_path,"th_peaks.npy"),0.5*(th_peaks[1:]+th_peaks[:-1]))
 		feature_list.append(Peaks(th_peaks))
 
 	if options.has_section("minkowski_functionals"):
 		th_minkowski = np.ogrid[options.getfloat("minkowski_functionals","th_min"):options.getfloat("minkowski_functionals","th_max"):(options.getint("minkowski_functionals","num_bins")+1)*1j]
+		np.save(os.path.join(save_path,"th_minkowski.npy"),0.5*(th_minkowski[1:]+th_minkowski[:-1]))
 		feature_list.append(MinkowskiAll(th_minkowski))
 
 	idx = Indexer.stack(feature_list)
@@ -188,6 +196,10 @@ if __name__=="__main__":
 	#Write an info file with all the analysis information
 	with open(os.path.join(save_path,"INFO.txt"),"w") as infofile:
 		infofile.write(write_info(options))
+
+	#Build the progress bar
+	pbar = progressbar.ProgressBar(widgets=widgets,maxval=len(all_simulated_models[0:2])*len(subfields[0:2])*len(smoothing_scales[0:2])).start()
+	i = 0
 
 	#Cycle through the models and perform the measurements of the selected features (create the appropriate directories to save the outputs)
 	for model in all_simulated_models[0:2]:
@@ -212,7 +224,10 @@ if __name__=="__main__":
 				m.get_all_map_names()
 				m.measure()
 
+				i+=1
+				pbar.update(i)
 
+	pbar.finish()
 	logging.info("DONE!")
 
 
