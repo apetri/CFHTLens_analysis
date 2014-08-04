@@ -1,7 +1,8 @@
 from __future__ import print_function,division,with_statement
 
-import sys
+import os,sys
 import argparse,ConfigParser
+import StringIO
 
 ######################################################################
 ##################LensTools functionality#############################
@@ -10,6 +11,7 @@ import argparse,ConfigParser
 from lenstools.simulations import CFHTemu1
 from lenstools.defaults import convergence_measure_all 
 from lenstools.index import Indexer,PowerSpectrum,PDF,Peaks,MinkowskiAll,Moments
+from lenstools import Ensemble
 
 ########################################################################
 ##################Other functionality###################################
@@ -17,6 +19,41 @@ from lenstools.index import Indexer,PowerSpectrum,PDF,Peaks,MinkowskiAll,Moments
 
 import numpy as np
 from astropy.io import fits
+
+###########################################################################
+#############Read INI options file and write summary information###########
+###########################################################################
+
+def write_info(options):
+
+	s = StringIO.StringIO()
+
+	s.write("""
+Realizations to analyze: 1 to {0}
+
+###########################################
+
+""".format(options.get("analysis","num_realizations")))
+
+	s.write("""Implemented descriptors
+-------------------
+
+""")
+
+	if options.has_section("power_spectrum"):
+		s.write("""Power spectrum: {0} bins between l={1} and l={2}\n\n""".format(options.get("power_spectrum","num_bins"),options.get("power_spectrum","lmin"),options.get("power_spectrum","lmax")))
+
+	if options.has_section("moments"):
+		s.write("""The set of 9 moments\n\n""")
+
+	if options.has_section("peaks"):
+		s.write("""Peak counts: {0} bins between kappa={1} and kappa={2}\n\n""".format(options.get("peaks","num_bins"),options.get("peaks","th_min"),options.get("peaks","th_max")))
+
+	if options.has_section("minkowski_functionals"):
+		s.write("""Minkowski functionals: {0} bins between kappa={1} and kappa={2}\n\n""".format(options.get("minkowski_functionals","num_bins"),options.get("minkowski_functionals","th_min"),options.get("minkowski_functionals","th_max")))
+
+	s.seek(0)
+	return s.read()
 
 ##########################################################################################################################
 ##################FITS loader for the maps, must set angle explicitely since it's not contained in the header#############
@@ -44,11 +81,50 @@ class Measurement(object):
 	
 	"""
 
-	def __init__(self,model,options,measurer):
+	def __init__(self,model,options,subfield,smoothing_scale,measurer,**kwargs):
 
 		self.model = model
 		self.options = options
+		self.subfield = subfield
+		self.smoothing_scale = smoothing_scale
 		self.measurer = measurer
+		self.kwargs = kwargs
+
+		#Build elements of save path for the features
+		self.save_path = options.get("analysis","save_path")
+		self.cosmo_id = self.model._cosmo_id_string
+		self.subfield_name = "subfield{0}".format(self.subfield)
+		self.smoothing_name = "sigma{0:02d}".format(int(self.smoothing_scale * 10))
+
+
+	def get_all_map_names(self):
+		"""
+		Builds a list with all the names of the maps to be analyzed, for each subfield and smoothing scale
+
+		"""
+
+		realizations = range(1,options.getint("analysis","num_realizations")+1)
+		self.map_names = self.model.getNames(realizations=realizations,subfield=self.subfield,smoothing=self.smoothing_scale)
+
+	def measure():
+		"""
+		Measures the features specified in the Indexer for all the maps whose names are calculated by get_all_map_names; saves the ensemble results in numpy array format
+
+		"""
+
+		#Build the ensemble
+		ens = Ensemble.fromfilelist(self.map_names)
+
+		#Load the data into the ensemble by calling the measurer on each map
+		ens.load(callback_loader=self.measurer,**kwargs)
+
+		#Break the ensemble into sub-ensemble, one for each feature
+		single_feature_ensembles = ens.split(kwargs["index"])
+
+		#For each of the sub_ensembles, save it in the appropriate directory
+		full_save_path = os.path.join(self.save_path,self.cosmo_id,self.subfield_name,self.smoothing_name)
+		for n,ensemble in enumerate(single_feature_ensembles):
+			ensemble.save(os.path.join(full_save_path,self.kwargs["index"][n].name) + ".npy")
 
 
 
@@ -73,8 +149,13 @@ if __name__=="__main__":
 	with open(cmd_args.options_file,"r") as configfile:
 		options.readfp(configfile)
 
-	#Get the names of all the simulated models available for the CFHT analysis
+	#Read the save path from options
+	save_path = options.get("analysis","save_path")
+
+	#Get the names of all the simulated models available for the CFHT analysis, including smoothing scales and subfields
 	all_simulated_models = CFHTemu1.getModels(root_path=options.get("simulations","root_path"))
+	subfields = range(1,14)
+	smoothing_scales = [0.5,1.0,1.8,3.5,5.3,8.9]
 
 	#Build an Indexer instance, that will contain info on all the features to measure, including binning, etc... (read from options)
 	feature_list = list()
@@ -96,7 +177,32 @@ if __name__=="__main__":
 
 	idx = Indexer.stack(feature_list)
 
-	#Cycle through the models and perform the measurements of the selected features
+	#Write an info file with all the analysis information
+	with open(os.path.join(save_path,"INFO.txt")) as infofile:
+		infofile.write(write_info(options))
+
+	#Cycle through the models and perform the measurements of the selected features (create the appropriate directories to save the outputs)
+	for model in all_simulated_models[0:2]:
+
+		dir_to_make = os.path.join(save_path,model._cosmo_id_string)
+		if not os.path.exists(dir_to_make):
+			os.mkdir(dir_to_make)
+
+		for subfield in subfields[0:2]:
+
+			dir_to_make = os.path.join(save_path,model._cosmo_id_string,"subfield{0}".format(subfield))
+			if not os.path.exists(dir_to_make):
+				os.mkdir(dir_to_make)
+
+			for smoothing_scale in smoothing_scales[0:2]:
+
+				dir_to_make = os.path.join(save_path,model._cosmo_id_string,"subfield{0}".format(subfield),"sigma{0:02d}".format(int(smoothing_scale*10)))
+				if not os.path.exists(dir_to_make):
+					os.mkdir(dir_to_make)
+	
+				m = Measurement(model=all_simulated_models[0],options=options,subfield=subfield,smoothing_scale=smoothing_scale,measurer=convergence_measure_all,fits_loader=cfht_fits_loader,index=idx)
+				m.get_all_map_names()
+				m.measure()
 
 
 
