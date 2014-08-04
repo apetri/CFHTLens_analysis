@@ -2,6 +2,7 @@ from __future__ import print_function,division,with_statement
 
 import os,sys
 import argparse,ConfigParser
+import logging
 import StringIO
 
 ######################################################################
@@ -106,7 +107,7 @@ class Measurement(object):
 		realizations = range(1,options.getint("analysis","num_realizations")+1)
 		self.map_names = self.model.getNames(realizations=realizations,subfield=self.subfield,smoothing=self.smoothing_scale)
 
-	def measure():
+	def measure(self):
 		"""
 		Measures the features specified in the Indexer for all the maps whose names are calculated by get_all_map_names; saves the ensemble results in numpy array format
 
@@ -116,10 +117,10 @@ class Measurement(object):
 		ens = Ensemble.fromfilelist(self.map_names)
 
 		#Load the data into the ensemble by calling the measurer on each map
-		ens.load(callback_loader=self.measurer,**kwargs)
+		ens.load(callback_loader=self.measurer,**self.kwargs)
 
 		#Break the ensemble into sub-ensemble, one for each feature
-		single_feature_ensembles = ens.split(kwargs["index"])
+		single_feature_ensembles = ens.split(self.kwargs["index"])
 
 		#For each of the sub_ensembles, save it in the appropriate directory
 		full_save_path = os.path.join(self.save_path,self.cosmo_id,self.subfield_name,self.smoothing_name)
@@ -137,12 +138,19 @@ if __name__=="__main__":
 	#Parse command line options
 	parser = argparse.ArgumentParser()
 	parser.add_argument("-f","--file",dest="options_file",action="store",type=str,help="analysis options file")
+	parser.add_argument("-v","--verbose",dest="verbose",action="store_true",default=False,help="turn on verbosity")
 
 	cmd_args = parser.parse_args()
 
 	if cmd_args.options_file is None:
 		parser.print_help()
 		sys.exit(0)
+
+	#Set verbosity level
+	if cmd_args.verbose:
+		logging.basicConfig(level=logging.DEBUG)
+	else:
+		logging.basicConfig(level=logging.INFO)
 
 	#Parse INI options file
 	options = ConfigParser.ConfigParser()
@@ -178,7 +186,7 @@ if __name__=="__main__":
 	idx = Indexer.stack(feature_list)
 
 	#Write an info file with all the analysis information
-	with open(os.path.join(save_path,"INFO.txt")) as infofile:
+	with open(os.path.join(save_path,"INFO.txt"),"w") as infofile:
 		infofile.write(write_info(options))
 
 	#Cycle through the models and perform the measurements of the selected features (create the appropriate directories to save the outputs)
@@ -204,5 +212,7 @@ if __name__=="__main__":
 				m.get_all_map_names()
 				m.measure()
 
+
+	logging.info("DONE!")
 
 
