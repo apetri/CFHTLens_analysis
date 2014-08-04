@@ -109,7 +109,7 @@ class Measurement(object):
 		realizations = range(1,options.getint("analysis","num_realizations")+1)
 		self.map_names = self.model.getNames(realizations=realizations,subfield=self.subfield,smoothing=self.smoothing_scale)
 
-	def measure(self):
+	def measure(self,pool=None):
 		"""
 		Measures the features specified in the Indexer for all the maps whose names are calculated by get_all_map_names; saves the ensemble results in numpy array format
 
@@ -119,7 +119,7 @@ class Measurement(object):
 		ens = Ensemble.fromfilelist(self.map_names)
 
 		#Load the data into the ensemble by calling the measurer on each map
-		ens.load(callback_loader=self.measurer,**self.kwargs)
+		ens.load(callback_loader=self.measurer,pool=pool,**self.kwargs)
 
 		#Break the ensemble into sub-ensemble, one for each feature
 		single_feature_ensembles = ens.split(self.kwargs["index"])
