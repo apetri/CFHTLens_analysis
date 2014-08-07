@@ -96,7 +96,12 @@ class Measurement(object):
 
 		#Build elements of save path for the features
 		self.save_path = options.get("analysis","save_path")
-		self.cosmo_id = self.model._cosmo_id_string
+		
+		try:
+			self.cosmo_id = self.model._cosmo_id_string
+		except:
+			pass
+
 		self.subfield_name = "subfield{0}".format(self.subfield)
 		self.smoothing_name = "sigma{0:02d}".format(int(self.smoothing_scale * 10))
 
@@ -186,7 +191,7 @@ if __name__=="__main__":
 	observed_model = CFHTLens(root_path=options.get("observations","root_path"))
 
 	#Select subset
-	models = all_simulated_models
+	models = all_simulated_models[0:1]
 	subfields = all_subfields[0:1]
 	smoothing_scales = all_smoothing_scales[0:1]
 
@@ -221,7 +226,7 @@ if __name__=="__main__":
 		infofile.write(write_info(options))
 
 	#Build the progress bar
-	pbar = progressbar.ProgressBar(widgets=widgets,maxval=len(simulated_models)*len(subfields)*len(smoothing_scales)).start()
+	pbar = progressbar.ProgressBar(widgets=widgets,maxval=len(models)*len(subfields)*len(smoothing_scales)).start()
 	i = 0
 
 	#Cycle through the models and perform the measurements of the selected features (create the appropriate directories to save the outputs)
