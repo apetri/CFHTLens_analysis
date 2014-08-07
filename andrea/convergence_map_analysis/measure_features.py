@@ -10,6 +10,7 @@ import StringIO
 ######################################################################
 
 from lenstools.simulations import CFHTemu1
+from lenstools.observations import CFHTLens
 from lenstools.defaults import convergence_measure_all 
 from lenstools.index import Indexer,PowerSpectrum,PDF,Peaks,MinkowskiAll,Moments
 from lenstools import Ensemble
@@ -106,8 +107,13 @@ class Measurement(object):
 
 		"""
 
-		realizations = range(1,options.getint("analysis","num_realizations")+1)
-		self.map_names = self.model.getNames(realizations=realizations,subfield=self.subfield,smoothing=self.smoothing_scale)
+		if type(self.model) == CFHTemu1:
+			realizations = range(1,options.getint("analysis","num_realizations")+1)
+			self.map_names = self.model.getNames(realizations=realizations,subfield=self.subfield,smoothing=self.smoothing_scale)
+		elif type(self.model) == CFHTLens:
+			self.map_names = [self.model.getName(subfield=subfield,smoothing=smoothing_scale)]
+		else:
+			raise TypeError("Your model is not supported in this analysis!")
 
 	def measure(self,pool=None):
 		"""
@@ -125,7 +131,13 @@ class Measurement(object):
 		single_feature_ensembles = ens.split(self.kwargs["index"])
 
 		#For each of the sub_ensembles, save it in the appropriate directory
-		full_save_path = os.path.join(self.save_path,self.cosmo_id,self.subfield_name,self.smoothing_name)
+		if type(self.model) == CFHTemu1:
+			full_save_path = os.path.join(self.save_path,self.cosmo_id,self.subfield_name,self.smoothing_name)
+		elif type(self.model) == CFHTLens:
+			full_save_path = os.path.join(self.save_path,"observations",self.subfield_name,self.smoothing_name)
+		else:
+			raise TypeError("Your model is not supported in this analysis!")
+
 		for n,ensemble in enumerate(single_feature_ensembles):
 			ensemble.save(os.path.join(full_save_path,self.kwargs["index"][n].name) + ".npy")
 
@@ -170,10 +182,16 @@ if __name__=="__main__":
 	all_subfields = range(1,14)
 	all_smoothing_scales = [0.5,1.0,1.8,3.5,5.3,8.9]
 
+	#Get also the observation model instance
+	observed_model = CFHTLens(root_path=options.get("observations","root_path"))
+
 	#Select subset
 	models = all_simulated_models
 	subfields = all_subfields[0:1]
 	smoothing_scales = all_smoothing_scales[0:1]
+
+	#Append the observation to the maps to process
+	models.append(observed_model)
 
 	#Build an Indexer instance, that will contain info on all the features to measure, including binning, etc... (read from options)
 	feature_list = list()
@@ -207,21 +225,29 @@ if __name__=="__main__":
 	i = 0
 
 	#Cycle through the models and perform the measurements of the selected features (create the appropriate directories to save the outputs)
-	for model in simulated_models:
+	for model in models:
 
-		dir_to_make = os.path.join(save_path,model._cosmo_id_string)
+		if type(model) == CFHTemu1:
+			dir_to_make = os.path.join(save_path,model._cosmo_id_string)
+		elif type(model) == CFHTLens:
+			dir_to_make = os.path.join(save_path,"observations")
+		else:
+			raise TypeError("Your model is not supported in this analysis!")
+
+		base_model_dir = dir_to_make
+		
 		if not os.path.exists(dir_to_make):
 			os.mkdir(dir_to_make)
 
 		for subfield in subfields:
 
-			dir_to_make = os.path.join(save_path,model._cosmo_id_string,"subfield{0}".format(subfield))
+			dir_to_make = os.path.join(base_model_dir,"subfield{0}".format(subfield))
 			if not os.path.exists(dir_to_make):
 				os.mkdir(dir_to_make)
 
 			for smoothing_scale in smoothing_scales:
 
-				dir_to_make = os.path.join(save_path,model._cosmo_id_string,"subfield{0}".format(subfield),"sigma{0:02d}".format(int(smoothing_scale*10)))
+				dir_to_make = os.path.join(base_model_dir,"subfield{0}".format(subfield),"sigma{0:02d}".format(int(smoothing_scale*10)))
 				if not os.path.exists(dir_to_make):
 					os.mkdir(dir_to_make)
 	
