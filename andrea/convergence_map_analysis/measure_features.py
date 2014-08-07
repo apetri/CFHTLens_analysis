@@ -198,29 +198,29 @@ if __name__=="__main__":
 		infofile.write(write_info(options))
 
 	#Build the progress bar
-	pbar = progressbar.ProgressBar(widgets=widgets,maxval=len(all_simulated_models[0:2])*len(subfields[0:2])*len(smoothing_scales[0:2])).start()
+	pbar = progressbar.ProgressBar(widgets=widgets,maxval=len(all_simulated_models)*len(subfields[0:1])*len(smoothing_scales[0:1])).start()
 	i = 0
 
 	#Cycle through the models and perform the measurements of the selected features (create the appropriate directories to save the outputs)
-	for model in all_simulated_models[0:2]:
+	for model in all_simulated_models:
 
 		dir_to_make = os.path.join(save_path,model._cosmo_id_string)
 		if not os.path.exists(dir_to_make):
 			os.mkdir(dir_to_make)
 
-		for subfield in subfields[0:2]:
+		for subfield in subfields[0:1]:
 
 			dir_to_make = os.path.join(save_path,model._cosmo_id_string,"subfield{0}".format(subfield))
 			if not os.path.exists(dir_to_make):
 				os.mkdir(dir_to_make)
 
-			for smoothing_scale in smoothing_scales[0:2]:
+			for smoothing_scale in smoothing_scales[0:1]:
 
 				dir_to_make = os.path.join(save_path,model._cosmo_id_string,"subfield{0}".format(subfield),"sigma{0:02d}".format(int(smoothing_scale*10)))
 				if not os.path.exists(dir_to_make):
 					os.mkdir(dir_to_make)
 	
-				m = Measurement(model=all_simulated_models[0],options=options,subfield=subfield,smoothing_scale=smoothing_scale,measurer=convergence_measure_all,fits_loader=cfht_fits_loader,index=idx)
+				m = Measurement(model=model,options=options,subfield=subfield,smoothing_scale=smoothing_scale,measurer=convergence_measure_all,fits_loader=cfht_fits_loader,index=idx)
 				m.get_all_map_names()
 				m.measure()
 
