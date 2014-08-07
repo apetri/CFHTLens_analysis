@@ -62,9 +62,9 @@ Realizations to analyze: 1 to {0}
 ##################FITS loader for the maps, must set angle explicitely since it's not contained in the header#############
 ##########################################################################################################################
 
-def cfht_fits_loader(*args):
+def cfht_fits_loader(filename):
 
-	kappa_file = fits.open(args[0])
+	kappa_file = fits.open(filename)
 	angle = 3.4641016151377544
 
 	kappa = kappa_file[0].data.astype(np.float)
@@ -167,8 +167,13 @@ if __name__=="__main__":
 
 	#Get the names of all the simulated models available for the CFHT analysis, including smoothing scales and subfields
 	all_simulated_models = CFHTemu1.getModels(root_path=options.get("simulations","root_path"))
-	subfields = range(1,14)
-	smoothing_scales = [0.5,1.0,1.8,3.5,5.3,8.9]
+	all_subfields = range(1,14)
+	all_smoothing_scales = [0.5,1.0,1.8,3.5,5.3,8.9]
+
+	#Select subset
+	models = all_simulated_models
+	subfields = all_subfields[0:1]
+	smoothing_scales = all_smoothing_scales[0:1]
 
 	#Build an Indexer instance, that will contain info on all the features to measure, including binning, etc... (read from options)
 	feature_list = list()
@@ -198,23 +203,23 @@ if __name__=="__main__":
 		infofile.write(write_info(options))
 
 	#Build the progress bar
-	pbar = progressbar.ProgressBar(widgets=widgets,maxval=len(all_simulated_models)*len(subfields[0:1])*len(smoothing_scales[0:1])).start()
+	pbar = progressbar.ProgressBar(widgets=widgets,maxval=len(simulated_models)*len(subfields)*len(smoothing_scales)).start()
 	i = 0
 
 	#Cycle through the models and perform the measurements of the selected features (create the appropriate directories to save the outputs)
-	for model in all_simulated_models:
+	for model in simulated_models:
 
 		dir_to_make = os.path.join(save_path,model._cosmo_id_string)
 		if not os.path.exists(dir_to_make):
 			os.mkdir(dir_to_make)
 
-		for subfield in subfields[0:1]:
+		for subfield in subfields:
 
 			dir_to_make = os.path.join(save_path,model._cosmo_id_string,"subfield{0}".format(subfield))
 			if not os.path.exists(dir_to_make):
 				os.mkdir(dir_to_make)
 
-			for smoothing_scale in smoothing_scales[0:1]:
+			for smoothing_scale in smoothing_scales:
 
 				dir_to_make = os.path.join(save_path,model._cosmo_id_string,"subfield{0}".format(subfield),"sigma{0:02d}".format(int(smoothing_scale*10)))
 				if not os.path.exists(dir_to_make):
