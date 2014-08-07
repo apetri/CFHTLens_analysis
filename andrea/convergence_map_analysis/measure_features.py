@@ -113,10 +113,12 @@ class Measurement(object):
 		"""
 
 		if type(self.model) == CFHTemu1:
-			realizations = range(1,options.getint("analysis","num_realizations")+1)
+			realizations = range(1,self.options.getint("analysis","num_realizations")+1)
 			self.map_names = self.model.getNames(realizations=realizations,subfield=self.subfield,smoothing=self.smoothing_scale)
+			self.full_save_path = os.path.join(self.save_path,self.cosmo_id,self.subfield_name,self.smoothing_name)
 		elif type(self.model) == CFHTLens:
-			self.map_names = [self.model.getName(subfield=subfield,smoothing=smoothing_scale)]
+			self.map_names = [self.model.getName(subfield=self.subfield,smoothing=self.smoothing_scale)]
+			self.full_save_path = os.path.join(self.save_path,"observations",self.subfield_name,self.smoothing_name)
 		else:
 			raise TypeError("Your model is not supported in this analysis!")
 
@@ -136,15 +138,8 @@ class Measurement(object):
 		single_feature_ensembles = ens.split(self.kwargs["index"])
 
 		#For each of the sub_ensembles, save it in the appropriate directory
-		if type(self.model) == CFHTemu1:
-			full_save_path = os.path.join(self.save_path,self.cosmo_id,self.subfield_name,self.smoothing_name)
-		elif type(self.model) == CFHTLens:
-			full_save_path = os.path.join(self.save_path,"observations",self.subfield_name,self.smoothing_name)
-		else:
-			raise TypeError("Your model is not supported in this analysis!")
-
 		for n,ensemble in enumerate(single_feature_ensembles):
-			ensemble.save(os.path.join(full_save_path,self.kwargs["index"][n].name) + ".npy")
+			ensemble.save(os.path.join(self.full_save_path,self.kwargs["index"][n].name) + ".npy")
 
 
 
