@@ -179,16 +179,14 @@ if __name__=="__main__":
 
 	#Get the names of all the simulated models available for the CFHT analysis, including smoothing scales and subfields
 	all_simulated_models = CFHTemu1.getModels(root_path=options.get("simulations","root_path"))
-	all_subfields = range(1,14)
-	all_smoothing_scales = [0.5,1.0,1.8,3.5,5.3,8.9]
 
 	#Get also the observation model instance
 	observed_model = CFHTLens(root_path=options.get("observations","root_path"))
 
 	#Select subset
 	models = all_simulated_models[0:1]
-	subfields = all_subfields[0:1]
-	smoothing_scales = all_smoothing_scales[0:1]
+	subfields = [ int(subfield) for subfield in options.get("analysis","subfields").split(",") ]
+	smoothing_scales = [options.getfloat("analysis","smoothing_scale")]
 
 	#Append the observation to the maps to process
 	models.append(observed_model)

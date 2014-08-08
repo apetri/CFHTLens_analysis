@@ -1,5 +1,8 @@
 from __future__ import print_function,division,with_statement
 
+from operator import mul
+from functools import reduce
+
 import os,sys
 import argparse,ConfigParser
 import logging
@@ -60,8 +63,6 @@ if __name__=="__main__":
 
 	#Get the names of all the simulated models available for the CFHT analysis, including smoothing scales and subfields
 	all_simulated_models = CFHTemu1.getModels(root_path=options.get("simulations","root_path"))
-	all_subfields = range(1,14)
-	all_smoothing_scales = [0.5,1.0,1.8,3.5,5.3,8.9]
 
 	#Get also the observation model instance
 	observed_model = CFHTLens(root_path=options.get("observations","root_path"))
@@ -71,8 +72,12 @@ if __name__=="__main__":
 	#Use this model for the covariance matrix
 	covariance_model = 16
 	
-	subfields = all_subfields[0:1]
-	smoothing_scale = all_smoothing_scales[0] 
+	#Parse from options which subfields and smoothing scale to consider
+	subfields = [ int(subfield) for subfield in options.get("analysis","subfields").split(",") ]
+	smoothing_scale = options.getfloat("analysis","smoothing_scale")
+
+	#Parse from options which type of descriptors to use
+	feature_types = options.get("analysis","feature_types").split(",")
 
 	#Create a LikelihoodAnalysis instance and load the training models into it
 	analysis = LikelihoodAnalysis()
@@ -88,12 +93,13 @@ if __name__=="__main__":
 			m = Measurement(model=model,options=options,subfield=subfield,smoothing_scale=smoothing_scale,measurer=None)
 			m.get_all_map_names()
 
-			#Load the measured feature
-			ensemble_subfield = Ensemble.fromfilelist([os.path.join(m.full_save_path,"power_spectrum.npy")])
-			ensemble_subfield.load(from_old=True)
+			#Load the measured features
+			ensemble_subfield = [ Ensemble.fromfilelist([os.path.join(m.full_save_path,feature_type + ".npy")]) for feature_type in feature_types ]
+			for ens in ensemble_subfield: 
+				ens.load(from_old=True)
 
 			#Add the features to the cumulative subfield ensemble
-			ensemble_all_subfields += ensemble_subfield
+			ensemble_all_subfields += reduce(mul,ensemble_subfield)
 
 		#Add the feature to the LikelihoodAnalysis
 		analysis.add_model(parameters=model.squeeze(),feature=ensemble_all_subfields.mean())
@@ -111,11 +117,12 @@ if __name__=="__main__":
 		m.get_all_map_names()
 
 		#Load the measured feature
-		ensemble_subfield = Ensemble.fromfilelist([os.path.join(m.full_save_path,"power_spectrum.npy")])
-		ensemble_subfield.load(from_old=True)
+		ensemble_subfield = [ Ensemble.fromfilelist([os.path.join(m.full_save_path,feature_type + ".npy")]) for feature_type in feature_types]
+		for ens in ensemble_subfield:
+			ens.load(from_old=True)
 
 		#Add the features to the cumulative subfield ensemble
-		ensemble_all_subfields += ensemble_subfield
+		ensemble_all_subfields += reduce(mul,ensemble_subfield)
 
 	#Compute the average over subfields
 	observed_feature = ensemble_all_subfields.mean()
@@ -129,9 +136,9 @@ if __name__=="__main__":
 	analysis.train()
 
 	#Set the points in parameter space on which to compute the chi2 
-	Om = np.ogrid[0.13:0.3:10j]
-	w = np.ogrid[-3.0:-0.1:10j]
-	si8 = np.ogrid[0.2:1.6:10j]
+	Om = np.ogrid[options.getfloat("Omega_m","min"):options.getfloat("Omega_m","max"):options.getint("Omega_m","num_points")*1j]
+	w = np.ogrid[options.getfloat("w","min"):options.getfloat("w","max"):options.getint("w","num_points")*1j]
+	si8 = np.ogrid[options.getfloat("sigma8","min"):options.getfloat("sigma8","max"):options.getint("sigma8","num_points")*1j]
 
 	num_points = len(Om) * len(w) * len(si8) 
 
@@ -142,5 +149,5 @@ if __name__=="__main__":
 	chi_squared = analysis.chi2(points,observed_feature=observed_feature,features_covariance=features_covariance)
 
 	#save output
-	np.save("likelihood.npy",analysis.likelihood(chi_squared.reshape(Om.shape + w.shape + si8.shape)))
+	np.save("likelihood_{0}.npy".format("-".join(feature_types)),analysis.likelihood(chi_squared.reshape(Om.shape + w.shape + si8.shape)))
 
