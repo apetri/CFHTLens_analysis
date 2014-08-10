@@ -93,7 +93,8 @@ def OrganizeSplitFile(ifile):
 			#ifield = field[idx]	
 			ixylist = xylist[idx][:,1:]
 			iGB = GBlist[idx]
-			array_raytrace = concatenate((ixylist,iGB),axis=1)	savetxt(sf_dir(isf)+'MaskBad_subfield%i_%s'%(isf,ifile),array_raytrace,fmt=ray_fmt)
+			array_raytrace = concatenate((ixylist,iGB),axis=1)	
+			savetxt(sf_dir(isf)+'MaskBad_subfield%i_%s'%(isf,ifile),array_raytrace,fmt=ray_fmt)
 	else:
 		print ifile, 'is all bad fields:', unique(pointings)
 
