@@ -74,6 +74,7 @@ def OrganizeSplitFile(ifile):
 	'''Organize original CFHT catalogue file into 13 subfields. 
 	Output
 	'''
+	print ifile
 	pointings = genfromtxt(split_dir+ifile,usecols=0,dtype=str)
 	GBlist = array(map(pointings2GB,pointings))
 	if sum(GBlist) > 0:#process only if there's good fields
@@ -82,7 +83,7 @@ def OrganizeSplitFile(ifile):
 		# get subfield, x, y
 		radeclist = concatenate((field.reshape(-1,1),radec),axis=1)	
 		xylist = list2subfield(radeclist)#a function needs cleaning up
-		print 'xylist', xylist.shape, xylist
+		#print 'xylist', xylist.shape, xylist
 
 		subfields = unique(xylist[:,0])
 		subfields = delete(subfields, where(subfields==0)[0]).astype(int)
