@@ -99,7 +99,11 @@ def OrganizeSplitFile(ifile):
 	else:
 		print ifile, 'is all bad fields:', unique(pointings)
 
-map(OrganizeSplitFile, splitfiles)
+def createBadFieldMask (sf):
+	sf_splitfiles = os.listdir(sf_dir(sf))
+	datas = array(map(genfromtxt,sf_splitfiles))
+	
+#map(OrganizeSplitFile, splitfiles):
+	
+
 print 'Done-Done-Done'
-#OrganizeSplitFile(splitfiles[0])
-#savetxt(split_dir+'done.txt','done')
