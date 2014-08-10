@@ -22,8 +22,9 @@ kmin = -0.04 # lower bound of kappa bin = -2 SNR
 kmax = 0.12 # higher bound of kappa bin = 6 SNR
 plot_dir = '/Users/jia/weaklensing/CFHTLenS/plot/WLapprox/'
 emu_dir = '/Users/jia/CFHTLenS/emulator/'
-sigmaG=1.0#1.0
+sigmaG=1.0#1.0#1.0
 sigmaG_arr = (0.5, 1, 1.8, 3.5, 5.3, 8.9)
+bins=25#25
 galcount = array([342966,365597,322606,380838,
 		263748,317088,344887,309647,
 		333731,310101,273951,291234,
@@ -78,7 +79,7 @@ ell_arr = logspace(log10(110.01746692),log10(25207.90813028),50)[11:]
 x = linspace(-0.04, 0.12, 26)
 x = x[:-1]+0.5*(x[1]-x[0])
 
-def getpk (cosmo_param, sigmaG=sigmaG, bins = 25):
+def getpk (cosmo_param, sigmaG=sigmaG, bins = bins):
 	print cosmo_param
 	om, w, si8 = cosmo_param
 	pk_fn = 'SIM_peaks_sigma%02d_emu1-512b240_Om%.3f_Ol%.3f_w%.3f_ns0.960_si%.3f_600bins.fit'%(sigmaG*10, om,1-om,w,si8)
@@ -91,8 +92,8 @@ def getpk (cosmo_param, sigmaG=sigmaG, bins = 25):
 ######## knobs ##############
 ps_replaced_by_good = 0
 ps_replaced_by_nicaea = 0
-ps_replaced_with_pk = 0# use the same plotting routine wrote for powspec to to peaks, simply make ps_mat = pk_mat
-combined_ps_pk = 1
+ps_replaced_with_pk = 1# use the same plotting routine wrote for powspec to to peaks, simply make ps_mat = pk_mat
+combined_ps_pk = 0
 test_interp_method = 0#this is using spline
 draw2Dplane = 0
 test_gp = 0
@@ -109,9 +110,18 @@ build_CFHT_KS_PS_PK = 0
 sample_interpolation = 0
 cosmo_params_2D = 0
 single_interpolation_fidu99 = 0
-chisq_heat_map = 1
-draw_contour_chisq_map = 0
+chisq_heat_map = 0
+draw_contour_chisq_map = 1
 draw_contour_smoothed_MCMC_map = 0
+quick_test_ps_pk_plot = 0
+dC_dp = 0 #covariance matrix inverse dependence on parameter
+CFHT_ps_5bins = 0 # manually change the 5 outliers in CFHT ps, and do chisq
+pk_last_2bins = 0
+ps_only_2bins = 0
+ps_remove_4bins = 0
+varying_C = 0
+CFHT2pcf = 0
+
 
 PPA512=2.4633625
 
@@ -134,7 +144,7 @@ if ps_replaced_by_nicaea:
 if ps_replaced_with_pk:
 	print 'ps_replaced_with_pk'
 	
-	pk_mat_fn = emu_dir+'peaks_sum/pk_mat_sigma%02d_25bins.fit'%(sigmaG*10)
+	pk_mat_fn = emu_dir+'peaks_sum/pk_mat_sigma%02d_%02dbins.fit'%(sigmaG*10,bins)
 	if os.path.isfile(pk_mat_fn):
 		pk_mat = WLanalysis.readFits(pk_mat_fn).reshape(91,1000,-1)
 	else:
@@ -155,6 +165,34 @@ if ps_replaced_with_pk:
 	ps_CFHT_mat = WLanalysis.readFits('/Users/jia/CFHTLenS/CFHTKS/CFHT_peaks_sigma%02d_025bins.fit'%(sigmaG*10))
 	ps_CFHT = sum(ps_CFHT_mat, axis=0)
 
+if pk_last_2bins:
+	ps_CFHT = ps_CFHT[:-2]
+	ell_arr = ell_arr[:-2]
+	ps_mat = ps_mat[:,:,:-2]
+	ps_avg = std(ps_mat, axis=1)
+	ps_avg = mean(ps_mat,axis=1)
+	
+if ps_only_2bins:
+	#begin = 16
+	begin = int(sys.argv[1])
+	ps_CFHT = ps_CFHT[begin:begin+2]
+	ell_arr = ell_arr[begin:begin+2]
+	ps_mat = ps_mat[:,:,begin:begin+2]
+	ps_avg = std(ps_mat, axis=1)
+	ps_avg = mean(ps_mat,axis=1)
+
+if ps_remove_4bins:
+	ellcut = int(sys.argv[1])
+	idx = range(39)
+	#idx = delete(idx,[0,1,6,7,24,25])
+	#idx = delete(idx,range(22))
+	idx = delete(idx,range(ellcut))
+	ps_CFHT = ps_CFHT[idx]
+	ell_arr = ell_arr[idx]
+	ps_mat = ps_mat[:,:,idx]
+	ps_avg = std(ps_mat, axis=1)
+	ps_avg = mean(ps_mat,axis=1)
+	
 if combined_ps_pk:
 	print 'combined_ps_pk'
 	
@@ -694,9 +732,9 @@ if check_ps_sum:
 ### use only 90 cosmo to build model, cosmo #48 is used as fiducial
 ### uncomment next 3 lines 
 ######################################################################
-cosmo_params = delete(cosmo_params, 48, 0)
-ps_avg = delete(ps_avg, 48, 0)
-ps_std = delete(ps_std, 48, 0)
+#cosmo_params = delete(cosmo_params, 48, 0)
+#ps_avg = delete(ps_avg, 48, 0)
+#ps_std = delete(ps_std, 48, 0)
 
 
 m, w, s = cosmo_params.T
@@ -713,7 +751,7 @@ for ibin in range(ps_avg.shape[-1]):
 	gp = GaussianProcess(corr='squared_exponential', nugget=(dy / y) ** 2, random_start=100)
 	gp.fit(cosmo_params, y)
 	gp_interps.append(gp)
-	
+
 def interp_cosmo (params, method = 'multiquadric'):
 	'''Interpolate the powspec for certain param.
 	Params: list of 3 parameters = (om, w, si8)
@@ -793,7 +831,7 @@ if test_MCMC:
 	
 	#obs = fidu_avg#ps_CFHT#
 	#method = 'multiquadric'#'GP'#
-	for obs in (ps_CFHT,):#(fidu_avg, ps_CFHT):#(fidu_avg,):#
+	for obs in (fidu_avg,):#(ps_CFHT,):#(fidu_avg, ps_CFHT):#
 	#for k in (10,20,45, 99, 260):#range(500,510):#
 		#obs = ps_mat[48,k]
 		for method in ('multiquadric',):#('multiquadric','GP'):# ('GP',):#
@@ -816,8 +854,8 @@ if test_MCMC:
 				model = interp_cosmo (params, method = method)
 				del_N = np.mat(model - obs)
 				chisq = del_N*cov_inv*del_N.T
-				#Ln = -log(chisq) #likelihood, is the log of chisq
-				Ln = -chisq/2.0/39.0
+				Ln = -log(chisq) #likelihood, is the log of chisq
+				#Ln = -chisq/2.0/39.0
 				return float(Ln)
 			
 			def lnprob(params, obs):
@@ -843,7 +881,7 @@ if test_MCMC:
 			samples = sampler.chain[:, burn:, :].reshape((-1, ndim))
 			
 			####################################
-			#WLanalysis.writeFits(samples,emu_dir+'MCMC_samples_CFHT_%isteps.fit'%(steps))
+			WLanalysis.writeFits(samples,emu_dir+'MCMC_samples_fidu_%isteps_lnchisq.fit'%(steps))
 			####################################
 			
 			errors = array(map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]), zip(*np.percentile(samples, [16, 50, 84],axis=0))))
@@ -870,36 +908,36 @@ if test_MCMC:
 				else:
 					fn = "emu_fidu%i_%s"%(k, method)
 			title('[%.3f, %.3f, %.3f]'%(errors[0,0], errors[1,0], errors[2,0]))
-			fig.savefig(plot_dir+'triangle_'+fn+'_correct_Lnchisq.jpg')
+			fig.savefig(plot_dir+'triangle_'+fn+'_20140804_lnchisq.jpg')
 			close()
 	
 
-			best_fit = errors[:,0]
-			ps_interp=interp_cosmo(best_fit,method=method)
+			#best_fit = errors[:,0]
+			#ps_interp=interp_cosmo(best_fit,method=method)
 			
-			f=figure(figsize=(8,8))
-			ax=f.add_subplot(gs[0])
-			ax2=f.add_subplot(gs[1],sharex=ax)
-			ax.errorbar(ell_arr,obs,fidu_std,color='r',label=fn)
-			ax.plot(ell_arr,ps_interp,'b-',label=method)
-			ax2.plot(ell_arr,zeros(len(ell_arr)),'r-')
-			ax2.plot(ell_arr,ps_interp/obs-1,'b-')
+			#f=figure(figsize=(8,8))
+			#ax=f.add_subplot(gs[0])
+			#ax2=f.add_subplot(gs[1],sharex=ax)
+			#ax.errorbar(ell_arr,obs,fidu_std,color='r',label=fn)
+			#ax.plot(ell_arr,ps_interp,'b-',label=method)
+			#ax2.plot(ell_arr,zeros(len(ell_arr)),'r-')
+			#ax2.plot(ell_arr,ps_interp/obs-1,'b-')
 
-			if not ps_replaced_with_pk:
-				ax.set_xscale('log')
-				ax2.set_xscale('log')
-				ax.set_yscale('log')
-				ax.set_xlabel('ell')
-				ax.set_ylim(5e-5, 1e-2)
-				ax.set_xlim(ell_arr[0],ell_arr[-1])
+			#if not ps_replaced_with_pk:
+				#ax.set_xscale('log')
+				#ax2.set_xscale('log')
+				#ax.set_yscale('log')
+				#ax.set_xlabel('ell')
+				#ax.set_ylim(5e-5, 1e-2)
+				#ax.set_xlim(ell_arr[0],ell_arr[-1])
 
-			ax2.set_ylim(-0.1, 0.1)
-			leg=ax.legend(ncol=1, labelspacing=0.3, prop={'size':12},loc=0)
-			leg.get_frame().set_visible(False)
-			plt.setp(ax.get_xticklabels(), visible=False) 
-			plt.subplots_adjust(hspace=0.0)
-			savefig(plot_dir+'frac_diff'+fn+'.jpg')
-			close()
+			#ax2.set_ylim(-0.1, 0.1)
+			#leg=ax.legend(ncol=1, labelspacing=0.3, prop={'size':12},loc=0)
+			#leg.get_frame().set_visible(False)
+			#plt.setp(ax.get_xticklabels(), visible=False) 
+			#plt.subplots_adjust(hspace=0.0)
+			#savefig(plot_dir+'frac_diff'+fn+'.jpg')
+			#close()
 
 
 #best_spline_params=(0.46875562, -1.52936207, 0.5170796 )
@@ -1225,52 +1263,81 @@ if chisq_heat_map:
 		ylabel('sigma8')
 		title('w='+str(w))
 		colorbar()
-		savefig(plot_dir+'chisq_cube/CFHT_combined_chisq_heat_map_w%.2f.jpg'%(w))
+		savefig(plot_dir+'chisq_cube/CFHT_ellcut%s_ps_chisq_heat_map_w%.2f.jpg'%(ellcut,w))
 		close()	
+		
+		try:
+			drawContour2D(exp(-heatmap/2), 'ell_cut%s_cube_slices_%s_w%.2f'%(ellcut,ap,w), xvalues=om_arr, yvalues=si8_arr)
+		except Exception:
+			print 'fail'
+			pass
+		
 		return heatmap
 	chisq_cube = array(map(plot_heat_map_w,linspace(0,-3,101)))#w, om, si8
-	WLanalysis.writeFits(chisq_cube.reshape(-1), emu_dir+'chisq_cube_combined.fit')
+	WLanalysis.writeFits(chisq_cube.reshape(-1), emu_dir+'chisq_cube_ellcut%s.fit'%(ellcut))
 
-#obs=ps_CFHT
-#best_fit = [1.2, -1.5, 0.22]
-#ps_interp = interp_cosmo(best_fit)	
-#del_N = np.mat(ps_interp - obs)
-#chisq=float(del_N*cov_inv*del_N.T)/39.0
-#f=figure(figsize=(8,8))
-#ax=f.add_subplot(gs[0])
-#ax2=f.add_subplot(gs[1],sharex=ax)
-#ax.errorbar(ell_arr,obs,fidu_std,color='k',linewidth=2)
-#ax.plot(ell_arr,obs,color='k',label='true',linewidth=2)
-#ax.plot(ell_arr, ps_interp, color='r',linewidth=2)
-#ax.set_title('[%.3f, %.3f, %.3f] $\chi^2$=%.2f' % (best_fit[0],best_fit[1],best_fit[2], chisq))
-#ax2.plot(ell_arr,ps_interp/obs-1,'r',linewidth=2)
+if quick_test_ps_pk_plot:
+
+	#best_fit = [0.7, -1.0, 0.3]
+	obs=ps_CFHT
+	best_fit = [1.12, -1.5, 0.27]
+	ps_interp = interp_cosmo(best_fit)	
+	del_N = np.mat(ps_interp - obs)
+	chisq=float(del_N*cov_inv*del_N.T)/39.0
+	f=figure(figsize=(8,8))
+	ax=f.add_subplot(gs[0])
+	ax2=f.add_subplot(gs[1],sharex=ax)
+	ax.errorbar(ell_arr,obs,fidu_std,color='k',linewidth=1)
+	ax.errorbar(ell_arr,obs,fidu_std,color='k',label='CFHT',linewidth=1)
+	for r in linspace(0.91,0.98,8)[::2]:
+		seed(int(r*100))
+		obs0=ps_CFHT.copy()
+		obs0[6:11]=r*obs0[6:11]
+		ax.plot(ell_arr,obs0,label='r=%s'%(r),color=rand(3),linewidth=1)
+		#ax2.plot(ell_arr,(obs0-obs)/fidu_std,linewidth=1)
+		ax2.plot(ell_arr,(obs0-obs)/obs,color=rand(3),linewidth=1)
 	
-#ax2.plot(ell_arr,zeros(len(ell_arr)),'k-')
+	ax.plot(ell_arr, ps_interp, color='r',label='fit [%.3f, %.3f, %.3f] chi^2=%.2f' % (best_fit[0],best_fit[1],best_fit[2], chisq),linewidth=1)
+	ax.set_title('[%.3f, %.3f, %.3f] $\chi^2$=%.2f' % (best_fit[0],best_fit[1],best_fit[2], chisq))
+	#ax2.plot(ell_arr,(ps_interp-obs)/fidu_std,'r',linewidth=1)
+	ax2.plot(ell_arr,zeros(len(ell_arr)),'k-')
 
-#ax.set_xscale('log')
-#ax2.set_xscale('log')
-#ax.set_yscale('log')
-#ax.set_xlabel('ell')
-#ax.set_ylim(2e-5, 1e-2)
-#ax.set_xlim(ell_arr[0],ell_arr[-1])
+	## next 5 lines for ps only
+	ax.set_xscale('log')
+	ax2.set_xscale('log')
+	ax.set_yscale('log')
+	#ax.set_ylim(2e-5, 1e-2)
+	ax.set_ylim(6e-5, 5e-4)
+	ax.set_xlabel('ell')
+	
+	ax.set_xlim(ell_arr[3],ell_arr[13])
+	leg=ax.legend(ncol=1, labelspacing=0.3, prop={'size':12},loc=0)
+	leg.get_frame().set_visible(False)
+	#ax2.set_ylim(-0.5, 0.5)
+	plt.setp(ax.get_xticklabels(), visible=False) 
+	plt.subplots_adjust(hspace=0.0)
+	#show()
 
-#ax2.set_ylim(-0.5, 0.5)
-#plt.setp(ax.get_xticklabels(), visible=False) 
-#plt.subplots_adjust(hspace=0.0)
-#savefig(plot_dir+'lowerleftcorner/test_lower_left_corner_%.3f_%.3f_%.3f.jpg' % (best_fit[0],best_fit[1],best_fit[2]))
-#close()
+	savefig(plot_dir+'test_ps_5bins_%.3f_%.3f_%.3f.jpg' % (best_fit[0],best_fit[1],best_fit[2]))
 
-def drawContour2D (H, ititle, xvalues, yvalues, levels=[0.68,0.955, 0.997]):
-	'''draw a contour for a image for levels, title is the title and filename, x and y values are the values at dimentions 0, 1 bin center.'''
+	close()
+	
+	
+def drawContour2D (H, ititle, xvalues, yvalues, levels=[0.68,0.955, 0.997], handdrawpatch = 0):
+	'''draw a contour for a image for levels, title is the title and filename, x and y values are the values at dimentions 0, 1 bin center.
+	if handdrawpatch=1, highlight all the pathces within 1st level, instead of rely on contour routine.'''
 	fn = plot_dir+ititle+'.jpg'
 	H /= float(sum(H))
+	H[isnan(H)]=0
 	#find 68%, 95%, 99%
-	idx = np.argsort(H.flat)
+	idx = np.argsort(H.flat)[::-1]
 	H_sorted = H.flat[idx]
 	H_cumsum = np.cumsum(H_sorted)
+	#idx10 = where(abs(H_cumsum-0.1)==amin(abs(H_cumsum-0.1)))[0]
 	idx68 = where(abs(H_cumsum-0.683)==amin(abs(H_cumsum-0.683)))[0]	
 	idx95 = where(abs(H_cumsum-0.955)==amin(abs(H_cumsum-0.955)))[0]
 	idx99 = where(abs(H_cumsum-0.997)==amin(abs(H_cumsum-0.997)))[0]
+	#v10 = float(H.flat[idx[idx10]])
 	v68 = float(H.flat[idx[idx68]])
 	v95 = float(H.flat[idx[idx95]])
 	v99 = float(H.flat[idx[idx99]])
@@ -1278,8 +1345,11 @@ def drawContour2D (H, ititle, xvalues, yvalues, levels=[0.68,0.955, 0.997]):
 	X, Y = np.meshgrid(xvalues, yvalues)
 	V = [v68, v95, v99]
 	figure(figsize=(6,8))
+	
+	#if handdrawpatch:
+		#H[where(H>v68)]=1000
 	im=imshow(H.T, interpolation='bilinear', origin='lower', cmap=cm.gray, extent=(xvalues[0], xvalues[-1], yvalues[0], yvalues[-1]))
-	CS=plt.contour(X, Y, H.T, levels=V, origin='lower', extent=(xvalues[0], xvalues[-1], yvalues[0], yvalues[-1]), colors=('r', 'green', 'blue'), linewidths=2)#, (1,1,0), '#afeeee', '0.5'))
+	CS=plt.contour(X, Y, H.T, levels=V, origin='lower', extent=(xvalues[0], xvalues[-1], yvalues[0], yvalues[-1]), colors=('m', 'r', 'green', 'blue'), linewidths=2)#, (1,1,0), '#afeeee', '0.5'))
 	#levels = [0.68, 0.95, 0.99]
 	#plt.clabel(CS, levels, inline=1, fmt='%1.2f', fontsize=14)
 	xlabel('omega_m')
@@ -1290,42 +1360,43 @@ def drawContour2D (H, ititle, xvalues, yvalues, levels=[0.68,0.955, 0.997]):
 	
 if draw_contour_chisq_map:
 	l=100
-	m=102
-	cut=-1#83
+	ll=102
+	cut=86#-1
+	si0, si1 = 0,-10
 	om_arr = linspace(0,1.2,l)[:cut]
-	si8_arr = linspace(0,1.6,m)
+	si8_arr = linspace(0,1.6,ll)[si0:si1]
 	w_arr = linspace(0,-3,101)
+	
 	if ps_replaced_with_pk:
 		fn = emu_dir+'chisq_cube_peaks.fit'
 		ap = 'peaks'
 	elif combined_ps_pk:
 		fn = emu_dir+'chisq_cube_combined.fit'
 		ap = 'combined'
+	elif ps_remove_4bins:
+		fn = emu_dir+'chisq_cube_ellcut%s.fit'%(ellcut)
+		ap = 'ellcut%s'%(ellcut)
 	else:
 		fn = emu_dir+'chisq_cube.fit'	
 		ap = 'ps'
-	chisq_cube = WLanalysis.readFits(fn).reshape(-1,l,m)
-	chisq_cube = chisq_cube[:,:cut,:]
-	
-	#
+	chisq_cube = WLanalysis.readFits(fn).reshape(-1,l,ll)
+	w0, w1=16,70
+	chisq_cube = 39*chisq_cube[w0:w1,:cut,si0:si1]
+	#chisq_cube = 39*chisq_cube[17:67,:cut,:]
+
 	P = sum(exp(-chisq_cube/2),axis=0)
 	P /= sum(P)
 	
-	######## draw heat map for each w ######################
-	#for i in range(len(w_arr)):
-		#figure(figsize=(6,6))
-		#heatmap = chisq_cube[i]
-		#w=w_arr[i]
-		#im=imshow(heatmap.T,interpolation='nearest',origin='lower',vmin=0,aspect=1,vmax=5, extent=[0,1.2,0,1.6])
-		#xlabel('Omega_m')
-		#ylabel('sigma8')
-		#title('w='+str(w))
-		#colorbar()
-		#savefig(plot_dir+'chisq_cube/100bins/CFHT_chisq_heat_map_w%.2f.jpg'%(w))
-		#close()	
 	
 	############ draw summed heat map #####################
-	drawContour2D(P, 'chisq_cube_omcut_contour_100bins_%s'%(ap), xvalues=om_arr, yvalues=si8_arr)
+	#drawContour2D(P, 'contour_3D_%s_w-0.5_-2'%(ap), xvalues=om_arr, yvalues=si8_arr)
+	drawContour2D(P, 'contour_3D_%s_wcut'%(ap), xvalues=om_arr, yvalues=si8_arr)
+	#for i in range(101):
+		#print i
+		#try:
+			#drawContour2D(exp(-chisq_cube[i]/2), 'contour_2D_%s_w%.2f'%(ap,w_arr[i]), xvalues=om_arr, yvalues=si8_arr)
+		#except Exception:
+			#print 'fail'
 	
 	
 	### plot sample points from the banana as a function of w
@@ -1363,7 +1434,7 @@ if draw_contour_smoothed_MCMC_map:
 		H = WLanalysis.smooth(H0, pix)
 		H /= float(sum(H))
 		#find 68%, 95%, 99%
-		idx = np.argsort(H.flat)
+		idx = np.argsort(H.flat)[::-1]
 		H_sorted = H.flat[idx]
 		H_cumsum = np.cumsum(H_sorted)
 		idx68 = where(abs(H_cumsum-0.683)==amin(abs(H_cumsum-0.683)))[0]	
@@ -1384,8 +1455,150 @@ if draw_contour_smoothed_MCMC_map:
 		xlabel('omega_m')
 		ylabel('simga_8')
 		title('Smoothed over %s pixels'%(pix))
-		savefig(plot_dir+'CFHT_contour_ps_pix%s.jpg'%(pix))
+		savefig(plot_dir+'CFHT_MCMC_fixcontour_ps_pix%s.jpg'%(pix))
 		close()
 	map(smoothed_contour, (0.5, 1, 2, 5, 10))
-		
 	
+if dC_dp:
+	for i in range(len(ps_mat)):
+		iom, iw, isi8 = cosmo_params[i]
+		#icov_mat = mat(cov(ps_mat[i],rowvar=0))
+		#icov_inv = icov_mat.I
+		#ifrac = array(icov_inv/cov_inv-1)
+		icov_mat = cov(ps_mat[i],rowvar=0)
+		ifrac = array(icov_mat/cov_mat-1)
+		plotimshow(ifrac, 'dCmat_dp_lim45%.3f_%.3f_%.3f'%(iom,iw,isi8),vmin=-45, vmax=45)
+
+if CFHT_ps_5bins:
+	print 'CFHT_ps_5bins'	
+	#l = 100
+	#m = 102
+	l=50
+	m=50
+	om_arr = linspace(0,1.2,l)
+	si8_arr = linspace(0,1.6,m)
+	r_arr = linspace(0.91, 0.98, 8)
+	def plot_heat_map_r (r):
+		print r
+		obs = ps_CFHT.copy()
+		obs [6:11] = r*obs[6:11]
+		heatmap = zeros(shape=(l,m))
+		for i in range(l):
+			for j in range(m):
+				best_fit = (om_arr[i], -1.5, si8_arr[j])
+				ps_interp = interp_cosmo(best_fit)	
+				del_N = np.mat(ps_interp - obs)
+				chisq = float(del_N*cov_inv*del_N.T)/39.0
+				heatmap[i,j] = chisq
+		P = exp(-heatmap/2)
+		P /= sum(P)
+		drawContour2D(P, 'test_ps_contour_ratio%s'%(r), xvalues=om_arr, yvalues=si8_arr)
+		
+	#map(plot_heat_map_r, r_arr)
+	
+
+if varying_C:
+	l=50
+	ll=50
+	om_arr = linspace(0,1.2,l)
+	si8_arr = linspace(0,1.5,ll)
+	
+	##########################################
+	#interpolate covariance matrix
+	#cov_arr=[[],]*91
+	#for i in range(91):
+		#cov_arr[i] = cov(ps_mat[i],rowvar=0)
+	#cov_flatten = array(cov_arr).reshape(91,-1)
+	#cov_interps = list()
+	#for ibin in range(cov_flatten.shape[-1]):
+		#cov_model = cov_flatten[:,ibin]
+		#iinterp = interpolate.Rbf(m, w, s, cov_model)
+		#cov_interps.append(iinterp)
+	#def interp_inv(params):
+		#im, wm, sm = params
+		#gen_cov = lambda ibin: cov_interps[ibin](im, wm, sm)
+		#cov_interp = array(map(gen_cov, range(cov_flatten.shape[-1])))
+		#cov_interp = cov_interp.reshape(39,39).squeeze()
+		#return cov_interp
+	##########################################
+	
+	##########################################
+	##interpolate covariance inverse
+	#cov_inv_arr=[[],]*91
+	#for i in range(91):
+		#cov_inv_arr[i] = mat(cov(ps_mat[i],rowvar=0)).I
+	
+	#cov_inv_flatten = array(cov_inv_arr).reshape(91,-1)
+	#cov_inv_interps = list()
+	#for ibin in range(cov_inv_flatten.shape[-1]):
+		#cov_model = cov_inv_flatten[:,ibin]
+		#iinterp = interpolate.Rbf(m, w, s, cov_model)
+		#cov_inv_interps.append(iinterp)
+	#def interp_cov_inv(params):
+		#im, wm, sm = params
+		#gen_cov = lambda ibin: cov_inv_interps[ibin](im, wm, sm)
+		#cov_interp = array(map(gen_cov, range(cov_inv_flatten.shape[-1])))
+		#cov_interp = cov_interp.reshape(39,39).squeeze()
+		#return cov_interp
+	##########################################
+	
+	# find nearest point to interpolation point
+	#def find_nearest_cosmo(best_fit):
+		#best_fit = array(best_fit)
+		#dist = sum((best_fit - cosmo_params)**2,axis=1)
+		#return argmin(dist)
+	
+	# constant covariance inverse
+	obs = ps_CFHT.copy()
+	#obs = ps_avg[48]
+	heatmap = zeros(shape=(l,ll))
+	##for idx in range(91):
+	for i in range(l):
+		for j in range(ll):
+			print i,j
+			best_fit = (om_arr[i], -1.0, si8_arr[j])
+			ps_interp = interp_cosmo(best_fit)#,method='GP')	
+			del_N = np.mat(ps_interp - obs)
+			##############################################
+			#### next 3 lines use varying covariance matrix
+			#idx = find_nearest_cosmo(best_fit)#, interp=True)
+			#print 'best_fit, idx', best_fit, idx
+			#cov_inv = cov_inv_arr[idx]
+			##############################################
+			
+			##############################################
+			### next 1 line interpolate covariance matrix ##
+			#cov_inv = interp_cov_inv(best_fit) 	
+			#cov_mat = interp_inv(best_fit)
+			#cov_inv = mat(cov_mat).I
+			##############################################
+			chisq = float(del_N*cov_inv*del_N.T)#/39.0
+			heatmap[i,j] = chisq
+	P = exp(-heatmap/2)
+	P /= sum(P)
+	drawContour2D(P, 'ellcut%i_test_contour_plotting_CFHT_ps'%(ellcut), xvalues=om_arr, yvalues=si8_arr)
+
+if CFHT2pcf:
+	theta,xi_plus,sigma_plus,xi_minus,sigma_minus = genfromtxt('/Users/jia/CFHTLenS/2PCF/CFHT2pcf').T
+	#theta to ell
+	ell_CFHT = 360.0*60/theta
+	
+	
+	obs = ps_CFHT.copy()
+	f=figure(figsize=(8,8))
+	ax=f.add_subplot(111)
+	
+	ax.errorbar(ell_arr,obs,fidu_std,color='k',label='Power Spectrum',linewidth=1)
+	ax.errorbar(ell_CFHT, xi_plus, sqrt(sigma_plus),label='xi_+',linewidth=1)
+	ax.errorbar(ell_CFHT, xi_minus, sqrt(sigma_minus),label='xi_-',linewidth=1)
+	
+	## next 5 lines for ps only
+	ax.set_xscale('log')
+	ax.set_yscale('log')
+	ax.set_xlabel('ell')
+	leg=ax.legend(ncol=1, labelspacing=0.3, prop={'size':12},loc=0)
+	leg.get_frame().set_visible(False)
+	show()
+
+	#savefig(plot_dir+'compare_CFHT2pcf.jpg')
+	#close()
