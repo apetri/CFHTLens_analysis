@@ -38,19 +38,19 @@ def list2subfield(radeclist):
 		if len(idx) > 0:
 			print 'Found entry for W',i+1
 			sublist = radeclist[idx] #pick out W1 entries
-			print 'idx',idx
+			#print 'idx',idx
 			sort_subf = sort_subfs[i] #get W1 configurations
 			center = centers[i] #prepare for x,y calc
 			f_Wx = gnom_fun(center)
 			xy = degrees(array(map(f_Wx,sublist[:,1:3])))
-			print 'xy',xy
+			#print 'xy',xy
 			for isort_subf in sort_subf:
 				x0,x1,y0,y1 = isort_subf[5:9]
 				# find entries for each subfield
 				iidx = where((xy[:,0]<x1)&(xy[:,0]>x0)&(xy[:,1]<y1)&(xy[:,1]>y0))[0]
 				
 				if len(iidx) > 0:
-					print 'iidx j=',j,iidx
+					#print 'iidx j=',j,iidx
 					isublist = sublist[iidx]#subfield
 					icenter = isort_subf[-2:]#center for subfield
 					f_sub = gnom_fun(icenter)
