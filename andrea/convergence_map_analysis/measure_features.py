@@ -21,6 +21,7 @@ from lenstools import Ensemble
 
 import numpy as np
 from astropy.io import fits
+from emcee.utils import MPIPool
 
 import progressbar
 
@@ -166,6 +167,17 @@ if __name__=="__main__":
 	else:
 		logging.basicConfig(level=logging.INFO)
 
+	#Initialize MPIPool
+	try:
+		pool = MPIPool()
+	except:
+		pool = None
+
+	if (pool is not None) and not(pool.is_master()):
+		
+		pool.wait()
+		sys.exit(0)
+
 	#Set progressbar attributes
 	widgets = ["Progress: ",progressbar.Percentage(),' ',progressbar.Bar(marker="+")]
 
@@ -251,11 +263,14 @@ if __name__=="__main__":
 	
 				m = Measurement(model=model,options=options,subfield=subfield,smoothing_scale=smoothing_scale,measurer=convergence_measure_all,fits_loader=cfht_fits_loader,index=idx)
 				m.get_all_map_names()
-				m.measure()
+				m.measure(pool=pool)
 
 				i+=1
 				pbar.update(i)
 
+	if pool is not None:
+		pool.close()
+	
 	pbar.finish()
 	logging.info("DONE!")
 
