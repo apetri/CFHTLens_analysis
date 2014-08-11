@@ -80,6 +80,7 @@ def likelihood_values(likelihood,levels=[0.684],epsilon=0.01,max_iterations=1000
 def plot_contours(ax,likelihood,values,**kwargs):
 
 	assert "colors" in kwargs.keys() and "extent" in kwargs.keys()
+	assert len(kwargs["colors"]) == len(values)
 
 	ax1 = ax.imshow(likelihood,origin="lower",cmap=plt.cm.binary_r,extent=kwargs["extent"],aspect="auto")
 	plt.colorbar(ax1,ax=ax)
