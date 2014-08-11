@@ -112,7 +112,7 @@ def createBadFieldMask (sf):
 	idx = where(datas[:,-1]==1)[0]
 	datas = datas[idx]
 	y, x, k = datas.T
-	k, galn = WLanalysis.coords2grid(x, y, k)
+	k, galn = WLanalysis.coords2grid(x, y, [k,])
 	for sigmaG in sigmaG_arr:
 		print 'createBadFieldMask sf, sigmaG:', sf, sigmaG
 		Allmask = WLanalysis.readFits(mask_fcn(sigmaG, sf))#mask for all field
