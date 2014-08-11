@@ -4,7 +4,7 @@
 # and mask out the bad fields
 
 from WLanalysis import * #this includes scipy *, numpy as np
-
+import WLanalysis
 ## directories, etc ####
 #cat_dir = '/Users/jia/CFHTLenS/catalogue/'
 #subfields=genfromtxt('/Users/jia/Documents/code/CFHTLens_analysis/jia/subfieldcenters.ls')
