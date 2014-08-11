@@ -184,7 +184,7 @@ if __name__=="__main__":
 	observed_model = CFHTLens(root_path=options.get("observations","root_path"))
 
 	#Select subset
-	models = all_simulated_models[0:1]
+	models = all_simulated_models
 	subfields = [ int(subfield) for subfield in options.get("analysis","subfields").split(",") ]
 	smoothing_scales = [options.getfloat("analysis","smoothing_scale")]
 
