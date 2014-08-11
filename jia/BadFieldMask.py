@@ -103,7 +103,8 @@ mask_fcn = lambda sigmaG, i: '/scratch/02977/jialiu/KSsim/mask/CFHT_mask_ngal5_s
 badmask_fcn = lambda sigmaG, i: '/scratch/02977/jialiu/KSsim/mask/BAD_CFHT_mask_ngal5_sigma%02d_subfield%02d.fits'%(sigmaG*10,i)
 sigmaG_arr = (0.5, 1, 1.8, 3.5, 5.3, 8.9)
 PPA512=2.4633625
-ngal_cut = 5.0
+ngal_arcmin = 5.0
+ngal_cut = ngal_arcmin*(60**2*12)/512**2# = 0.82, cut = 5 / arcmin^2
 def createBadFieldMask (sf):
 	sf_splitfiles = os.listdir(sf_dir(sf))
 	genfromtxtA = lambda fn: genfromtxt(sf_dir(sf)+fn)
