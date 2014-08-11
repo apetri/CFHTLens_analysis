@@ -122,7 +122,22 @@ if __name__=="__main__":
 				ax_minkowski[0].plot(v_mf,mf0)
 				ax_minkowski[1].plot(v_mf,mf1)
 				ax_minkowski[2].plot(v_mf,mf2)
-		
+
+
+		#Set the axes labels
+		ax_power.set_xlabel(r"$l$")
+		ax_power.set_ylabel(r"$l(l+1)P_l/2\pi$")
+
+		ax_peaks.set_xlabel(r"$\kappa$")
+		ax_peaks.set_ylabel(r"$dN/d\kappa$")
+
+		ax_minkowski[0].set_xlabel(r"$\kappa$")
+		ax_minkowski[1].set_xlabel(r"$\kappa$")
+		ax_minkowski[2].set_xlabel(r"$\kappa$")
+
+		ax_minkowski[0].set_ylabel(r"$V_0$")
+		ax_minkowski[1].set_ylabel(r"$V_1$")
+		ax_minkowski[2].set_ylabel(r"$V_2$")
 
 		fig_minkowski.tight_layout()
 
