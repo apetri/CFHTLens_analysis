@@ -60,7 +60,7 @@ if __name__=="__main__":
 	observed_model = CFHTLens(root_path=options.get("observations","root_path"))
 
 	#Select subset of training models
-	training_models = all_simulated_models[:17]
+	training_models = all_simulated_models
 
 	#Parse from options which subfields and smoothing scale to consider
 	subfields = [ int(subfield) for subfield in options.get("analysis","subfields").split(",") ]
