@@ -127,6 +127,6 @@ def createBadFieldMask (sf):
 	#return datas
 
 #map(OrganizeSplitFile, splitfiles):
-map(createBadFieldMask (sf), range(1,14))	
+map(createBadFieldMask, range(1,14))	
 
 print 'Done-Done-Done'
