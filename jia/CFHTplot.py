@@ -37,6 +37,7 @@ emu_checkps = 0
 emu_checkpk = 0
 emu_check_single_ps = 0
 emu_interpolate_ps = 0
+plotimshow_badpointing = 1
 
 x = linspace(-0.04, 0.12, 26)
 x = x[:-1]+0.5*(x[1]-x[0])#the kappa_arr
@@ -1379,7 +1380,7 @@ if emu_checkpk:
 	sigmaGbins_arr = [[sigmaG, bins] for sigmaG in sigmaG_arr for bins in (25, 40)]
 	map(plotemupk, sigmaGbins_arr)
 
-ps_CFHT = WLanalysis.readFits('/Users/jia/CFHTLenS/KSsim/powspec_sum13fields/CFHT_powspec_sigma05.fit')	
+ps_CFHT = WLanalysis.readFits('/Users/jia/CFHTLenS/KSsim/powspec_sum13fields/nomask/CFHT_powspec_sigma05.fit')	
 
 if emu_check_single_ps:
 	# junk routine... one time use, forgot to do 13 subfields.. intead only 1 subfield were done
@@ -1420,7 +1421,11 @@ if emu_interpolate_ps:
 		# interp_param = interpolate.griddata(ps_model, params_model, ps_missing, method='cubic')
 		
 		
-	
+if plotimshow_badpointing:
+	for sigmaG in sigmaG_arr:
+		for i in range(1,14):
+			mask = WLanalysis.readFits('/Users/jia/CFHTLenS/catalogue/mask/BAD_CFHT_mask_ngal5_sigma%02d_subfield%02d.fits'%(sigmaG*10,i))
+			plotimshow(mask,'BADpointing_sigma%02d_subfield%02d'%(sigmaG*10,i),vmin=0,vmax=1)
 	
 	
 	
