@@ -58,8 +58,6 @@ if __name__=="__main__":
 
 	#Read the save path from options
 	save_path = options.get("analysis","save_path")
-	#Load feature index
-	l = np.load(os.path.join(save_path,"ell.npy"))
 
 	#Get the names of all the simulated models available for the CFHT analysis, including smoothing scales and subfields
 	all_simulated_models = CFHTemu1.getModels(root_path=options.get("simulations","root_path"))
@@ -68,7 +66,7 @@ if __name__=="__main__":
 	observed_model = CFHTLens(root_path=options.get("observations","root_path"))
 
 	#Select subset of training models
-	training_models = all_simulated_models[:17]
+	training_models = all_simulated_models
 	#Use this model for the covariance matrix
 	covariance_model = 16
 	
@@ -149,5 +147,5 @@ if __name__=="__main__":
 	chi_squared = analysis.chi2(points,observed_feature=observed_feature,features_covariance=features_covariance)
 
 	#save output
-	np.save("likelihood_{0}.npy".format("-".join(feature_types)),analysis.likelihood(chi_squared.reshape(Om.shape + w.shape + si8.shape)))
+	np.save("likelihood_{0}.npy".format("-".join(feature_types)),chi_squared.reshape(Om.shape + w.shape + si8.shape))
 
