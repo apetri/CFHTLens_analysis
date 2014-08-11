@@ -47,8 +47,8 @@ sigmaG_arr = [0.0, 1.0, 2.0, 5.0]
 #######################################################
 ###################### knobs###########################
 #######################################################
-plot_crosscorrelate_all = 1
-testCC = 0
+plot_crosscorrelate_all = 0
+testCC = 1
 #######################################################
 
 
@@ -192,7 +192,7 @@ def CrossPower(CCK, CCB, errK, errB, method='nearest', sigmaG=1.0, noise='noise'
 
 if plot_crosscorrelate_all:
 	for method in ('nearest',):#'linear','cubic'):
-		for sigmaG in sigmaG_arr:#(0.0,):#
+		for sigmaG in (0.0,):#sigmaG_arr:#
 			print 'method, sigmaG', method, sigmaG
 			CC_arr = array([KSxkSZ(Wx, method=method, sigmaG=sigmaG) for Wx in range(1,5)])
 			#CC_arr rows: 0 ell_arr, 1 CCK, 2 CCB, 3 errK, 4 errB, 5 CCO, 6 errO, 7 CCBMODE, 8 errBMODE
@@ -222,8 +222,9 @@ if plot_crosscorrelate_all:
 			#CrossPower(CCK, CCO, errK, errO, method=method, sigmaG=sigmaG, noise='offset')
 			#CrossPower(CCK, CCBMODE, errK, errBMODE, method=method, sigmaG=sigmaG, noise='offset')
 			
-			text_arr = array([ell_arr, CCK, CCO, CCB, CCBMODE]).T
-			savetxt(kSZ_dir+'CrossCorrelate_%s_sigmaG%02d.txt'%(method, sigmaG*10), text_arr, header='ell\tkSZxkappa\toffsetxkappa\tnoisexkappa\tkSZxBmode')
+			text_arr = array([ell_arr, CCK, CCO, CCB, CCBMODE, errK, errO, errB, errBMODE]).T
+			savetxt(kSZ_dir+'CrossCorrelate_%s_sigmaG%02d.txt'%(method, sigmaG*10), text_arr, header='ell\tkSZxkappa\toffsetxkappa\tnoisexkappa\tkSZxBmode\terr(kSZxkappa)\terr(offsetxkappa)\terr(noisexkappa)\terr(kSZxBmode)')
+			
 			
 			#####################################################
 			##test 7/28/2014 plot out each power spectrum:
@@ -249,34 +250,39 @@ if plot_crosscorrelate_all:
 if testCC:
 	Wx=1
 	#kSZCoord=genfromtxt('/Users/jia/CFHTLenS/kSZ/Jiatest_W1.txt')
-	kSZCoord=genfromtxt('/Users/jia/CFHTLenS/kSZ/ellmax3000/Jiatest_W1_hires.txt')
-	radeclist = kSZCoord[:,:-1]
-	values = kSZCoord.T[-1]
+	#kSZCoord=genfromtxt('/Users/jia/CFHTLenS/kSZ/ellmax3000/Jiatest_W1_hires.txt')
+	#radeclist = kSZCoord[:,:-1]
+	#values = kSZCoord.T[-1]
 	
-	size=sizes[Wx-1]
-	xy = list2coords(radeclist,Wx)
-	X,Y=meshgrid(range(size),range(size))
-	X=X.ravel()
-	Y=Y.ravel()
-	newxy=array([X,Y]).T
+	#size=sizes[Wx-1]
+	#xy = list2coords(radeclist,Wx)
+	#X,Y=meshgrid(range(size),range(size))
+	#X=X.ravel()
+	#Y=Y.ravel()
+	#newxy=array([X,Y]).T
 	
-	def plot_test_ps (method):
-		print method
-		newvalues = interpGridpoints (xy, values, newxy, method=method)
-		kSZmap = zeros(shape=(size,size))
-		kSZmap[Y,X]=newvalues
-		edges = edgesGen(Wx)
-		sizedeg = (sizes[Wx-1]/512.0)**2*12.0
-		ell_arr, ps = WLanalysis.PowerSpectrum(kSZmap, sizedeg=sizedeg, edges=edges)
-		WLanalysis.writeFits(kSZmap, kSZ_dir+'test_hires_powerspec_%s.fit'%(method))
+	#def plot_test_ps (method):
+		#print method
+		#newvalues = interpGridpoints (xy, values, newxy, method=method)
+		#kSZmap = zeros(shape=(size,size))
+		#kSZmap[Y,X]=newvalues
+		#edges = edgesGen(Wx)
+		#sizedeg = (sizes[Wx-1]/512.0)**2*12.0
+		#ell_arr, ps = WLanalysis.PowerSpectrum(kSZmap, sizedeg=sizedeg, edges=edges)
+		##WLanalysis.writeFits(kSZmap, kSZ_dir+'test_hires_powerspec_%s.fit'%(method))
 		
-		#plotimshow(kSZmap, 'test_powerspec_%s'%(method), vmin=None, vmax=None)
+		##plotimshow(kSZmap, 'test_powerspec_%s'%(method), vmin=None, vmax=None)
 		
-		savetxt(kSZ_dir+'test_hires_powspec_W1_%s.txt'%(method),array([ell_arr, ps, ps/(ell_arr*(ell_arr+1)/(2*pi))]).T)
-		return ell_arr, ps
+		#savetxt(kSZ_dir+'test_hires_powspec_W1_%s.txt'%(method),array([ell_arr, ps, ps/(ell_arr*(ell_arr+1)/(2*pi))]).T)
+		#return ell_arr, ps
+	sizedeg = (sizes[Wx-1]/512.0)**2*12.0
+	kSZmap = lambda method: WLanalysis.readFits(kSZ_dir+'test_hires_powerspec_%s.fit'%(method))
+	ps_prebin = lambda method: WLanalysis.PowerSpectrum(kSZmap(method),sizedeg=sizedeg)
+	ps_afterbin = lambda method: WLanalysis.PowerSpectrum_Pell_binning(kSZmap(method),sizedeg=sizedeg)
+
 	method_arr = ('nearest','linear','cubic')
-	ellps_arr = array(map(plot_test_ps, method_arr))
-	
+	ellps_arr = array(map(ps_prebin, method_arr))
+	ellps_after_arr = array(map(ps_afterbin, method_arr))
 	ell_arr = ellps_arr[0][0]
 	
 	f=figure(figsize=(8,6))
@@ -285,11 +291,17 @@ if testCC:
 	ax.set_ylabel(r'$\ell(\ell+1)P_{\kappa\kappa}(\ell)/2\pi$', fontsize=16)
 	ax.ticklabel_format(axis='y', style='sci', scilimits=(-2,2))
 	i=0
-	for ps in ellps_arr[:,1]:
-		ax.plot(ell_arr,ps,label=method_arr[i])
+	for ps1 in (ellps_arr[0,1],):
+		ax.plot(ell_arr,ps1,label='bin P '+method_arr[i])
+		i+=1
+	i=0
+	for ps in (ellps_after_arr[0,1],):
+		ax.plot(ell_arr,ps,label='bin P(l+1)l '+method_arr[i])
 		i+=1
 	#ax.set_title(method)
 	legend(loc=0)
-	savefig(plot_dir+'test_hires_powspec_W1.jpg')
+	#ax.set_xscale('log')
+	ax.set_xlim(0,3500)
+	savefig(plot_dir+'test_hires_powspec_W1_binning.jpg')
 	close()
 

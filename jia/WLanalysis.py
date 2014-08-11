@@ -500,6 +500,32 @@ def PowerSpectrum(img, sizedeg = 12.0, edges = None, logbins = True):#edges shou
 	powspec = ell_arr*(ell_arr+1)/(2*pi) * norm * psd1D
 	return ell_arr, powspec
 
+def PowerSpectrum_Pell_binning(img, sizedeg = 12.0, edges = None, logbins = True):#edges should be pixels
+	'''Calculate the power spectrum for a square image, with normalization.
+	Input:
+	img = input square image in numpy array.
+	sizedeg = image real size in deg^2
+	edges = ell bin edges, length = nbin + 1, if not provided, then do 1000 bins.
+	Output:
+	powspec = the power at the bins
+	ell_arr = lower bound of the binedges
+	'''
+	y, x = np.indices(img.shape)
+	center = np.array([(x.max()-x.min())/2.0, (x.max()-x.min())/2.0])
+	r = np.hypot(x - center[0], y - center[1])
+	r *= 360./sqrt(sizedeg)
+	
+	img = img.astype(float)
+	size = img.shape[0]
+	#F = fftpack.fftshift(fftpack.fft2(img))
+	F = fftshift(fftpack.fft2(img))
+	psd2D = np.abs(F)**2
+	ell_arr, psd1D = azimuthalAverage(psd2D*r*(r+1), center=None, edges = edges,logbins = logbins)
+	ell_arr = edge2center(ell_arr)
+	ell_arr *= 360./sqrt(sizedeg)# normalized to our current map size
+	norm = ((2*pi*sqrt(sizedeg)/360.0)**2)/(size**2)**2
+	powspec = 1/(2*pi) * norm * psd1D
+	return ell_arr, powspec
 ########## end: power spectrum ############################
 
 
