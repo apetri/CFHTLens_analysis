@@ -93,7 +93,7 @@ def KSmap (i):
 	for sigmaG in sigmaG_arr:	
 		print 'KSmap i, sigmaG', i, sigmaG
 		KS_fn = KS_dir+'CFHT_KS_sigma%02d_subfield%02d.fits'%(sigmaG*10,i)
-		mask_fn = KS_dir+'CFHT_mask_ngal%i_sigma%02d_subfield%02d.fits'%(ngal_arcmin,sigmaG*10,i)
+		mask_fn = '/scratch/02977/jialiu/KSsim/mask/CFHT_mask_ngal%i_sigma%02d_subfield%02d.fits'%(ngal_arcmin,sigmaG*10,i)
 		
 		if WLanalysis.TestComplete((KS_fn,mask_fn),rm=True):
 			kmap = WLanalysis.readFits(KS_fn)

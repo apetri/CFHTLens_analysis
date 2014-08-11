@@ -99,11 +99,34 @@ def OrganizeSplitFile(ifile):
 	else:
 		print ifile, 'is all bad fields:', unique(pointings)
 
+mask_fcn = lambda sigmaG, i: '/scratch/02977/jialiu/KSsim/mask/CFHT_mask_ngal5_sigma%02d_subfield%02d.fits'%(sigmaG*10,i)
+badmask_fcn = lambda sigmaG, i: '/scratch/02977/jialiu/KSsim/mask/BAD_CFHT_mask_ngal5_sigma%02d_subfield%02d.fits'%(sigmaG*10,i)
+sigmaG_arr = (0.5, 1, 1.8, 3.5, 5.3, 8.9)
+PPA512=2.4633625
+ngal_cut = 5.0
 def createBadFieldMask (sf):
 	sf_splitfiles = os.listdir(sf_dir(sf))
-	datas = array(map(genfromtxt,sf_splitfiles))
+	genfromtxtA = lambda fn: genfromtxt(sf_dir(sf)+fn)
+	datas = map(genfromtxtA,sf_splitfiles)#3 columns: RA, DEC, GB
+	datas = concatenate(datas,axis=0)
+	idx = where(datas[:,-1]==1)[0]
+	datas = datas[idx]
+	y, x, k = datas.T
+	k, galn = WLanalysis.coords2grid(x, y, k)
+	for sigmaG in sigmaG_arr:
+		print 'createBadFieldMask sf, sigmaG:', sf, sigmaG
+		Allmask = WLanalysis.readFits(mask_fcn(sigmaG, sf))#mask for all field
+		badmask_fn = badmask_fcn(sigmaG, sf)#file name for bad pointing mask, which is 75% area of Allmask
+		galn_smooth = snd.filters.gaussian_filter(galn.astype(float),sigmaG*PPA512, mode='constant')
+		#smooth the galn grid
+		Mmask = ones(shape=galn.shape)#create mask grid
+		Mmask[where(galn_smooth < ngal_cut)]=0#find the low density region in galn_smooth
+		Mmask *= Allmask#since I didn't do redshift cut in badmask, so here it takes care of it, since ALl mask has redshift cuts
+		WLanalysis.writeFits(Mmask, badmask_fn)
 	
+	#return datas
+
 #map(OrganizeSplitFile, splitfiles):
-	
+map(createBadFieldMask (sf), range(1,14))	
 
 print 'Done-Done-Done'
