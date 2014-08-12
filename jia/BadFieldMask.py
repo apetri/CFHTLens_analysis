@@ -58,8 +58,10 @@ def list2subfield(radeclist):
 					xylist[idx[iidx],0] = j2s(j)+1
 					xylist[idx[iidx],1:] = xy_sub					
 					if j in (4,9): # needs to turn 90 degrees, counterclock
-						iy = degrees(xy_sub.T[0])
-						ix = degrees(xy_sub.T[1])
+						ix = degrees(xy_sub.T[0])
+						iy = degrees(xy_sub.T[1])
+						#iy = degrees(xy_sub.T[0])
+						#ix = degrees(xy_sub.T[1])
 						#ix = -degrees(xy_sub.T[1])#problem!
 					else:
 						ix = degrees(xy_sub.T[0])
