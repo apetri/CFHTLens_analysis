@@ -1423,7 +1423,7 @@ if emu_interpolate_ps:
 		
 if plotimshow_badpointing:
 	for sigmaG in sigmaG_arr:
-		for i in range(1,14):
+		for i in (13,):#range(1,14):
 			mask = WLanalysis.readFits('/Users/jia/CFHTLenS/catalogue/mask/BAD_CFHT_mask_ngal5_sigma%02d_subfield%02d.fits'%(sigmaG*10,i))
 			plotimshow(mask,'BADpointing_sigma%02d_subfield%02d'%(sigmaG*10,i),vmin=0,vmax=1)
 	

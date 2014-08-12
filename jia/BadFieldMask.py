@@ -59,7 +59,8 @@ def list2subfield(radeclist):
 					xylist[idx[iidx],1:] = xy_sub					
 					if j in (4,9): # needs to turn 90 degrees, counterclock
 						iy = degrees(xy_sub.T[0])
-						ix =- degrees(xy_sub.T[1])
+						ix = degrees(xy_sub.T[1])
+						#ix = -degrees(xy_sub.T[1])#problem!
 					else:
 						ix = degrees(xy_sub.T[0])
 						iy = degrees(xy_sub.T[1])
@@ -127,7 +128,10 @@ def createBadFieldMask (sf):
 	
 	#return datas
 
-#map(OrganizeSplitFile, splitfiles):
-map(createBadFieldMask, range(1,14))	
+#map(OrganizeSplitFile, splitfiles)
+#fix sf 11, 13 problem
+sf1113splitfiles = list(genfromtxt('/home1/02977/jialiu/CFHT_cat/BadFieldsMask/sf11_sf13.ls',dtype=str))
+map(OrganizeSplitFile, sf1113splitfiles)
+map(createBadFieldMask, (11,13))#range(1,14))	
 
 print 'Done-Done-Done'

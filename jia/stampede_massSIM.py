@@ -12,12 +12,29 @@ import scipy.ndimage as snd
 import sys
 from multiprocessing import Pool
 
+######### 2014/08/12 use BAD pointing masks ######
+Mask_fn = lambda i, sigmaG: KS_dir+'mask/BAD_CFHT_mask_ngal5_sigma%02d_subfield%02d.fits'%(sigmaG*10, i)
+
+KSbad_dir = '/home1/02977/jialiu/KSsim/BADpointings/'
+peaks_fn = lambda i, cosmo, sigmaG, bins, R: KSbad_dir+'peaks/%s/subfield%i/sigma%02d/SIM_peaks_sigma%02d_subfield%i_%s_%03dbins_%04dr.fit'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo, bins, R)
+
+powspec_fn = lambda i, cosmo, sigmaG, R: KSbad_dir+'powspec/%s/subfield%i/sigma%02d/SIM_powspec_sigma%02d_subfield%i_%s_%04dr.fit'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo, R)
+
+peaks_sum_fn = lambda cosmo, sigmaG, bins: KSbad_dir+'peaks_sum/SIM_peaks_sigma%02d_%s_%03dbins.fit'%(sigmaG*10, cosmo, bins)
+
+powspec_sum_fn = lambda cosmo, sigmaG: KSbad_dir+'powspec_sum/SIM_powspec_sigma%02d_%s.fit'%(sigmaG*10, cosmo)
+
+peask_sum_sf_fn = lambda cosmo, sigmaG, bins, i: KSbad_dir+'peaks_sum/sf/SIM_peaks_sigma%02d_%s_%03dbins_subfield%02d.fit'%(sigmaG*10, cosmo, bins, i)
+
+powspec_sum_sf_fn = lambda cosmo, sigmaG, i: KSbad_dir+'powspec_sum/sf/SIM_powspec_sigma%02d_%s_subfield%02d.fit'%(sigmaG*10, cosmo, i)
+
+
 ########## define constants ############
 i = int(sys.argv[1])
 
 print 'start'
-sim_dir = '/home1/02977/jialiu/cat/'
 KS_dir = '/scratch/02977/jialiu/KSsim/'
+sim_dir = '/home1/02977/jialiu/cat/'
 cosmo_arr = os.listdir(sim_dir)
 params = genfromtxt(KS_dir+'cosmo_params.txt')
 
@@ -43,11 +60,11 @@ SIMfn = lambda i, cosmo, R: sim_dir+'%s/emulator_subfield%i_WL-only_%s_4096xy_%0
 
 KSfn = lambda i, cosmo, R, sigmaG: KS_dir+'%s/subfield%i/sigma%02d/SIM_KS_sigma%02d_subfield%i_%s_%04dr.fit'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo,R)
 
-Mask_fn = lambda i, sigmaG: KS_dir+'mask/CFHT_mask_ngal5_sigma%02d_subfield%02d.fits'%(sigmaG*10, i)
+#Mask_fn = lambda i, sigmaG: KS_dir+'mask/CFHT_mask_ngal5_sigma%02d_subfield%02d.fits'%(sigmaG*10, i)
 
-peaks_fn = lambda i, cosmo, sigmaG, bins, R: KS_dir+'peaks/%s/subfield%i/sigma%02d/SIM_peaks_sigma%02d_subfield%i_%s_%03dbins_%04dr.fit'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo, bins, R)
+#peaks_fn = lambda i, cosmo, sigmaG, bins, R: KS_dir+'peaks/%s/subfield%i/sigma%02d/SIM_peaks_sigma%02d_subfield%i_%s_%03dbins_%04dr.fit'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo, bins, R)
 
-powspec_fn = lambda i, cosmo, sigmaG, R: KS_dir+'powspec/%s/subfield%i/sigma%02d/SIM_powspec_sigma%02d_subfield%i_%s_%04dr.fit'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo, R)
+#powspec_fn = lambda i, cosmo, sigmaG, R: KS_dir+'powspec/%s/subfield%i/sigma%02d/SIM_powspec_sigma%02d_subfield%i_%s_%04dr.fit'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo, R)
 
 
 ######### functions ######################
@@ -192,13 +209,13 @@ def KSmap(iiRcosmo):
 ### !!!will only work if the previous step is done!!!
 ###############################################################
 
-peaks_sum_fn = lambda cosmo, sigmaG, bins: KS_dir+'peaks_sum/SIM_peaks_sigma%02d_%s_%03dbins.fit'%(sigmaG*10, cosmo, bins)
+#peaks_sum_fn = lambda cosmo, sigmaG, bins: KS_dir+'peaks_sum/SIM_peaks_sigma%02d_%s_%03dbins.fit'%(sigmaG*10, cosmo, bins)
 
-powspec_sum_fn = lambda cosmo, sigmaG: KS_dir+'powspec_sum/SIM_powspec_sigma%02d_%s.fit'%(sigmaG*10, cosmo)
+#powspec_sum_fn = lambda cosmo, sigmaG: KS_dir+'powspec_sum/SIM_powspec_sigma%02d_%s.fit'%(sigmaG*10, cosmo)
 
-peask_sum_sf_fn = lambda cosmo, sigmaG, bins, i: KS_dir+'peaks_sum/sf/SIM_peaks_sigma%02d_%s_%03dbins_subfield%02d.fit'%(sigmaG*10, cosmo, bins, i)
+#peask_sum_sf_fn = lambda cosmo, sigmaG, bins, i: KS_dir+'peaks_sum/sf/SIM_peaks_sigma%02d_%s_%03dbins_subfield%02d.fit'%(sigmaG*10, cosmo, bins, i)
 
-powspec_sum_sf_fn = lambda cosmo, sigmaG, i: KS_dir+'powspec_sum/sf/SIM_powspec_sigma%02d_%s_subfield%02d.fit'%(sigmaG*10, cosmo, i)
+#powspec_sum_sf_fn = lambda cosmo, sigmaG, i: KS_dir+'powspec_sum/sf/SIM_powspec_sigma%02d_%s_subfield%02d.fit'%(sigmaG*10, cosmo, i)
 
 galcount = array([342966,365597,322606,380838,
 		  263748,317088,344887,309647,
