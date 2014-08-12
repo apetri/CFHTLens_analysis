@@ -239,7 +239,7 @@ if __name__=="__main__":
 		fig_minkowski.tight_layout()
 
 		#Save the figures
-		fig_power.savefig(os.path.join(save_path,"plots","power_all_subfields_sigma{1:02d}.png".format(int(smoothing_scale*10))))
-		fig_peaks.savefig(os.path.join(save_path,"plots","peaks_all_subfields_sigma{1:02d}.png".format(int(smoothing_scale*10))))
-		fig_minkowski.savefig(os.path.join(save_path,"plots","minkowski_all_subfields_sigma{1:02d}.png".format(int(smoothing_scale*10))))
+		fig_power.savefig(os.path.join(save_path,"plots","power_all_subfields_sigma{0:02d}.png".format(int(smoothing_scale*10))))
+		fig_peaks.savefig(os.path.join(save_path,"plots","peaks_all_subfields_sigma{0:02d}.png".format(int(smoothing_scale*10))))
+		fig_minkowski.savefig(os.path.join(save_path,"plots","minkowski_all_subfields_sigma{0:02d}.png".format(int(smoothing_scale*10))))
 
