@@ -136,6 +136,6 @@ def createBadFieldMask (sf):
 #fix sf 11, 13 problem
 sf1113splitfiles = list(genfromtxt('/home1/02977/jialiu/CFHT_cat/BadFieldsMask/sf11_sf13.ls',dtype=str))
 #map(OrganizeSplitFile, sf1113splitfiles)
-map(createBadFieldMask, (11,13))#range(1,14))	
+map(createBadFieldMask, (13,))#range(1,14))	
 
 print 'Done-Done-Done'
