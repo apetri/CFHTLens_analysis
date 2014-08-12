@@ -125,7 +125,7 @@ def createBadFieldMask (sf):
 		#smooth the galn grid
 		Mmask = ones(shape=galn.shape)#create mask grid
 		Mmask[where(galn_smooth < ngal_cut)]=0#find the low density region in galn_smooth
-		Mmask *= Allmask#since I didn't do redshift cut in badmask, so here it takes care of it, since ALl mask has redshift cuts
+		#Mmask *= Allmask#since I didn't do redshift cut in badmask, so here it takes care of it, since ALl mask has redshift cuts
 		WLanalysis.writeFits(Mmask, badmask_fn)
 	
 	#return datas
