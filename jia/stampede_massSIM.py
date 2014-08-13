@@ -32,6 +32,7 @@ galcount = array([0.800968170166,0.639133453369,0.686164855957,0.553855895996,
 		  0.600227355957,0.527587890625,0.671237945557,0.494361877441,
 		  0.565235137939,0.592998504639,0.584747314453,0.530345916748,
 		  0.417697906494]).astype(float) # area for subfields, prepare for weighte sum powspec
+fsky = galcount
 ########## define constants ############
 i = int(sys.argv[1])
 
@@ -177,8 +178,8 @@ def KSmap(iiRcosmo):
 			mask = WLanalysis.readFits(Mask_fn(i, sigmaG))
 			
 			## change in 06/26/2014, put mask on power spectrum
-			## powspec = WLanalysis.PowerSpectrum(kmap, sizedeg=12.0)[-1]
-			powspec = WLanalysis.PowerSpectrum(kmap*mask, sizedeg=12.0)[-1]
+			## powspec = 1/fsky[i]*WLanalysis.PowerSpectrum(kmap, sizedeg=12.0)[-1]
+			powspec = 1/fsky[i]*WLanalysis.PowerSpectrum(kmap*mask, sizedeg=12.0)[-1]
 			
 			try:
 				WLanalysis.writeFits(powspec, ps_fn)
@@ -235,7 +236,7 @@ def gen_mat (i, cosmo, sigmaG, ispk = True):
 				pkps = WLanalysis.peaks_mask_hist(kmap, mask, bins, kmin = kmin, kmax = kmax)
 				
 			else:
-				pkps = WLanalysis.PowerSpectrum(kmap, sizedeg=12.0)[-1]
+				pkps = 1/fsky[i]*WLanalysis.PowerSpectrum(kmap, sizedeg=12.0)[-1]
 
 			WLanalysis.writeFits(pkps, fn)
 		return pkps
@@ -279,11 +280,11 @@ def sum_matrix (cosmosigmaG):
 ###############################################################
 ### (1)create KS map, uncomment next 4 lines
 ###############################################################
-#pool = MPIPool()
-#iRcosmo = [[i, R, cosmo] for R in R_arr[::-1] for cosmo in cosmo_arr]
-#pool.map(KSmap, iRcosmo)
-#pool.close()
-#print 'DONE DONE DONE'
+pool = MPIPool()
+iRcosmo = [[i, R, cosmo] for R in R_arr[::-1] for cosmo in cosmo_arr]
+pool.map(KSmap, iRcosmo)
+pool.close()
+print 'DONE DONE DONE'
 
 ###############################################################
 ### (2)sum over 13 sf for peaks and powspectrum, need to alter a little later, 
