@@ -50,7 +50,7 @@ def list2subfield(radeclist):
 				iidx = where((xy[:,0]<x1)&(xy[:,0]>x0)&(xy[:,1]<y1)&(xy[:,1]>y0))[0]
 				
 				if len(iidx) > 0:
-					#print 'iidx j=',j,iidx
+					print 'j=',j
 					isublist = sublist[iidx]#subfield
 					icenter = isort_subf[-2:]#center for subfield
 					f_sub = gnom_fun(icenter)
