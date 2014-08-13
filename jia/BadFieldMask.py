@@ -55,19 +55,20 @@ def list2subfield(radeclist):
 					icenter = isort_subf[-2:]#center for subfield
 					f_sub = gnom_fun(icenter)
 					xy_sub = array(map(f_sub,isublist[:,1:3]))
-					xylist[idx[iidx],0] = j2s(j)+1
-					xylist[idx[iidx],1:] = xy_sub					
+										
 					if j in (4,9): # needs to turn 90 degrees, counterclock
-						iy = degrees(xy_sub.T[0])
-						ix = -degrees(xy_sub.T[1])-3.45
+						#iy = degrees(xy_sub.T[0])
+						#ix = -degrees(xy_sub.T[1])-3.45
 						
 						#ix = iy
 						#iy = ix-3.45
-						#iy = degrees(xy_sub.T[0])
-						#ix = -degrees(xy_sub.T[1])#problem!
+						iy = degrees(xy_sub.T[0])
+						ix = -degrees(xy_sub.T[1])#problem!
 					else:
 						ix = degrees(xy_sub.T[0])
 						iy = degrees(xy_sub.T[1])
+					xylist[idx[iidx],0] = j2s(j)+1
+					xylist[idx[iidx],1:] = array([ix,iy]).T
 				j+=1
 		else:
 			j+=len(sort_subfs[i])
