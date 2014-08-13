@@ -68,7 +68,7 @@ def list2subfield(radeclist):
 					#else:
 						#ix = degrees(xy_sub.T[0])
 						#iy = degrees(xy_sub.T[1])
-						iy = xy_sub.T[0]
+						iy = -xy_sub.T[0]-0.03
 						ix = -xy_sub.T[1]
 						xylist[idx[iidx],1:] = array([ix,iy]).T
 				j+=1
@@ -138,7 +138,7 @@ def createBadFieldMask (sf):
 #map(OrganizeSplitFile, splitfiles)
 #fix sf 11, 13 problem
 sf1113splitfiles = list(genfromtxt('/home1/02977/jialiu/CFHT_cat/BadFieldsMask/sf11_sf13.ls',dtype=str))
-#map(OrganizeSplitFile, sf1113splitfiles)
+map(OrganizeSplitFile, sf1113splitfiles)
 map(createBadFieldMask, (13,))#range(1,14))	
 
 print 'Done-Done-Done'
