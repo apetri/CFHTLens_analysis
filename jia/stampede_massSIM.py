@@ -13,6 +13,7 @@ import sys
 from multiprocessing import Pool
 
 ######### 2014/08/12 use BAD pointing masks ######
+# also search for '#commented out 2014/08/13 for bad pointing ps pk'
 Mask_fn = lambda i, sigmaG: KS_dir+'mask/BAD_CFHT_mask_ngal5_sigma%02d_subfield%02d.fits'%(sigmaG*10, i)
 
 KSbad_dir = '/home1/02977/jialiu/KSsim/BADpointings/'
@@ -147,8 +148,8 @@ def KSmap(iiRcosmo):
 			create_ps_pk = 1
 			break
 	if create_ps_pk:
-		print 'creating KSmap i, R, cosmo', i, R, cosmo
-		Me1, Me2 = fileGen(i, R, cosmo)
+		print 'creating ps pk i, R, cosmo', i, R, cosmo
+		#Me1, Me2 = fileGen(i, R, cosmo)#commented out 2014/08/13 for bad pointing ps pk
 		#Mw = Mw_arr[i-1]
 		for sigmaG in sigmaG_arr:
 			ps_fn = powspec_fn(i, cosmo, sigmaG, R)
