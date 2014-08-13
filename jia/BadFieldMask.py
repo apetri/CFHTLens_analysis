@@ -6,10 +6,12 @@
 from WLanalysis import * #this includes scipy *, numpy as np
 import WLanalysis
 ## directories, etc ####
-#cat_dir = '/Users/jia/CFHTLenS/catalogue/'
-#subfields=genfromtxt('/Users/jia/Documents/code/CFHTLens_analysis/jia/subfieldcenters.ls')
-cat_dir='/home1/02977/jialiu/CFHT_cat/'
-subfields=genfromtxt('/home1/02977/jialiu/CFHTLens_analysis/jia/subfieldcenters.ls')
+cat_dir = '/Users/jia/CFHTLenS/catalogue/'
+subfields=genfromtxt('/Users/jia/Documents/code/CFHTLens_analysis/jia/subfieldcenters.ls')
+mask_dir = '/Users/jia/CFHTLenS/catalogue/mask/'
+#cat_dir='/home1/02977/jialiu/CFHT_cat/'
+#subfields=genfromtxt('/home1/02977/jialiu/CFHTLens_analysis/jia/subfieldcenters.ls')
+#mask_dir = '/scratch/02977/jialiu/KSsim/mask/'
 
 goodlist = genfromtxt(cat_dir+('BadFieldsMask/goodfields.txt'),dtype=str)
 split_dir = cat_dir+'split/'
@@ -107,12 +109,21 @@ def OrganizeSplitFile(ifile):
 	else:
 		print ifile, 'is all bad fields:', unique(pointings)
 
-mask_fcn = lambda sigmaG, i: '/scratch/02977/jialiu/KSsim/mask/CFHT_mask_ngal5_sigma%02d_subfield%02d.fits'%(sigmaG*10,i)
-badmask_fcn = lambda sigmaG, i: '/scratch/02977/jialiu/KSsim/mask/BAD_CFHT_mask_ngal5_sigma%02d_subfield%02d.fits'%(sigmaG*10,i)
+mask_fcn = lambda sigmaG, i: mask_dir+'CFHT_mask_ngal5_sigma%02d_subfield%02d.fits'%(sigmaG*10,i)
+badmask_fcn = lambda sigmaG, i: mask_dir+'BAD_CFHT_mask_ngal5_sigma%02d_subfield%02d.fits'%(sigmaG*10,i)
 sigmaG_arr = (0.5, 1, 1.8, 3.5, 5.3, 8.9)
 PPA512=2.4633625
 ngal_arcmin = 5.0
 ngal_cut = ngal_arcmin*(60**2*12)/512**2# = 0.82, cut = 5 / arcmin^2
+
+adHocFix(mask,i):
+	'because problem with sf 11, and 13, I have to flip left to right the left portion of the subfield, since I forgot what I did long time ago... now this one is purely by eye to match the hole patterns'
+	if i == 11:
+		mask[:,0:120]=1#because it's all good pointings, mask[:,0:120][:,::-1]
+	elif i == 13:
+		mask[:,0:202]=mask[:,0:202][:,::-1]
+	return mask
+	
 def createBadFieldMask (sf):
 	sf_splitfiles = os.listdir(sf_dir(sf))
 	genfromtxtA = lambda fn: genfromtxt(sf_dir(sf)+fn)
@@ -130,18 +141,14 @@ def createBadFieldMask (sf):
 		#smooth the galn grid
 		Mmask = ones(shape=galn.shape)#create mask grid
 		Mmask[where(galn_smooth < ngal_cut)]=0#find the low density region in galn_smooth
-		#Mmask *= Allmask#since I didn't do redshift cut in badmask, so here it takes care of it, since ALl mask has redshift cuts
+		Mmask = adHocFix(Mmask,sf)
+		Mmask *= Allmask#since I didn't do redshift cut in badmask, so here it takes care of it, since ALl mask has redshift cuts
 		WLanalysis.writeFits(Mmask, badmask_fn)
 	
 	#return datas
 
 #map(OrganizeSplitFile, splitfiles)
-#fix sf 11, 13 problem
 print 'start'
-
-sf1113splitfiles = list(genfromtxt('/home1/02977/jialiu/CFHT_cat/BadFieldsMask/sf11_sf13.ls',dtype=str))
-#map(OrganizeSplitFile, sf1113splitfiles)
-
-map(createBadFieldMask, (13,))#range(1,14))	
+map(createBadFieldMask, (11,13))#range(1,14))	
 
 print 'Done-Done-Done'

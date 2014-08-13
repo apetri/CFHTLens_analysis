@@ -28,7 +28,10 @@ peask_sum_sf_fn = lambda cosmo, sigmaG, bins, i: KSbad_dir+'peaks_sum/sf/SIM_pea
 
 powspec_sum_sf_fn = lambda cosmo, sigmaG, i: KSbad_dir+'powspec_sum/sf/SIM_powspec_sigma%02d_%s_subfield%02d.fit'%(sigmaG*10, cosmo, i)
 
-
+galcount = array([0.800968170166,0.639133453369,0.686164855957,0.553855895996,
+		  0.600227355957,0.527587890625,0.671237945557,0.494361877441,
+		  0.565235137939,0.592998504639,0.584747314453,0.530345916748,
+		  0.417697906494]).astype(float) # area for subfields, prepare for weighte sum powspec
 ########## define constants ############
 i = int(sys.argv[1])
 
@@ -193,15 +196,6 @@ def KSmap(iiRcosmo):
 	else:
 		print 'already done KSmap i, R, cosmo', i, R, cosmo
 
-###############################################################
-### create KS map, uncomment next 4 lines
-###############################################################
-
-#pool = MPIPool()
-#iRcosmo = [[i, R, cosmo] for R in R_arr[::-1] for cosmo in cosmo_arr]
-#pool.map(KSmap, iRcosmo)
-#pool.close()
-#print 'DONE DONE DONE'
 
 ###############################################################
 ### collect all the ps and pk single file to matrix
@@ -217,10 +211,10 @@ def KSmap(iiRcosmo):
 
 #powspec_sum_sf_fn = lambda cosmo, sigmaG, i: KS_dir+'powspec_sum/sf/SIM_powspec_sigma%02d_%s_subfield%02d.fit'%(sigmaG*10, cosmo, i)
 
-galcount = array([342966,365597,322606,380838,
-		  263748,317088,344887,309647,
-		  333731,310101,273951,291234,
-		  308864]).astype(float) # galaxy counts for subfields, prepare for weighte sum powspec
+#galcount = array([342966,365597,322606,380838,
+		  #263748,317088,344887,309647,
+		  #333731,310101,273951,291234,
+		  #308864]).astype(float) # galaxy counts for subfields, prepare for weighte sum powspec
 galcount /= sum(galcount)
 
 #p = Pool(1000)
@@ -278,11 +272,24 @@ def sum_matrix (cosmosigmaG):
 				WLanalysis.writeFits(ipeak, ipeak_fn)
 			print 'pk', i
 			peaks_mat += ipeak
-		WLanalysis.writeFits(peaks_mat, pkfn)	
+
+
+		WLanalysis.writeFits(peaks_mat, pkfn)
+
 ###############################################################
-### sum over 13 sf for peaks and powspectrum, need to alter a little later, 
+### (1)create KS map, uncomment next 4 lines
+###############################################################
+#pool = MPIPool()
+#iRcosmo = [[i, R, cosmo] for R in R_arr[::-1] for cosmo in cosmo_arr]
+#pool.map(KSmap, iRcosmo)
+#pool.close()
+#print 'DONE DONE DONE'
+
+###############################################################
+### (2)sum over 13 sf for peaks and powspectrum, need to alter a little later, 
 ### to save subfield info matrix as well
 ### uncomment the rest of the next 5 lines to run this part
+### !!!will only work if the previous step is done!!!
 ###############################################################
 
 cosmosigmaG_arr = [[cosmo, sigmaG] for cosmo in cosmo_arr[::-1] for sigmaG in sigmaG_arr]

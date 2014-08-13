@@ -1418,14 +1418,42 @@ if emu_interpolate_ps:
 
 		rbf=interpolate.Rbf(ps_model[:,0],ps_model[:,1],ps_model[:,2],params_model[:,0])
 		# interpolate from ps to params
-		# interp_param = interpolate.griddata(ps_model, params_model, ps_missing, method='cubic')
-		
+		# interp_param = interpolate.griddata(ps_model, params_model, ps_missing, method='cubic')	
 		
 if plotimshow_badpointing:
-	for sigmaG in (0.5,):#sigmaG_arr:
-		for i in (13,):#range(1,14):
-			mask = WLanalysis.readFits('/Users/jia/CFHTLenS/catalogue/mask/BAD_CFHT_mask_ngal5_sigma%02d_subfield%02d.fits'%(sigmaG*10,i))
-			plotimshow(mask,'transpose_BADpointing_sigma%02d_subfield%02d'%(sigmaG*10,i),vmin=0,vmax=1)
+	for i in range(1,14):#(11,13):#
+		for sigmaG in (0.5,):#sigmaG_arr:#
+
+			mask_fn = '/Users/jia/CFHTLenS/catalogue/mask/BAD_CFHT_mask_ngal5_sigma%02d_subfield%02d.fits'%(sigmaG*10,i)
+			mask = WLanalysis.readFits(mask_fn)
+			#mask_junk_fn = '/Users/jia/CFHTLenS/catalogue/mask/junk/BAD_CFHT_mask_ngal5_sigma%02d_subfield%02d.fits'%(sigmaG*10,i)
+			#Allmask_fn = '/Users/jia/CFHTLenS/catalogue/mask/CFHT_mask_ngal5_sigma%02d_subfield%02d.fits'%(sigmaG*10,i)
+			
+			#Allmask = WLanalysis.readFits(Allmask_fn)
+			#mask = WLanalysis.readFits(mask_junk_fn)
+			#if i == 11:
+				#mask[:,0:120]=1#because it's all good pointings, mask[:,0:120][:,::-1]
+			#elif i == 13:
+				#mask[:,0:202]=mask[:,0:202][:,::-1]
+			
+			########## no need for the following part ###########
+			##zeroidx=where(sum(mask,axis=0)==0)[0]
+			##try:
+				##y0=amax(zeroidx[where(zeroidx<20)])+1
+			##except ValueError:
+				##y0=0
+			##y1=amin(zeroidx[where(zeroidx>20)])
+			##if sigmaG==0.5:
+				##print i, y0, y1
+			##flipped = (mask[:,y0:y1][:,::-1]).copy()
+			##mask[:,y0:y1]=0
+			##mask[:,2:2+y1-y0]=flipped
+			######################################################
+			#print i,sigmaG,
+			print sum(mask)/512**2
+			
+			#WLanalysis.writeFits(mask*Allmask,mask_fn)
+			#plotimshow(mask*Allmask,'Badpointing_sigma%02d_subfield%02d'%(sigmaG*10,i),vmin=0,vmax=1)
 	
 	
 	
