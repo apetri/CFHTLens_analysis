@@ -9,6 +9,7 @@ import StringIO
 ##################LensTools functionality#############################
 ######################################################################
 
+from lenstools import ConvergenceMap
 from lenstools.simulations import CFHTemu1
 from lenstools.observations import CFHTLens
 from lenstools.index import Indexer,PowerSpectrum,PDF,Peaks,MinkowskiAll,Moments
@@ -111,7 +112,7 @@ def cfht_convergence_measure_all(filename,index,mask_filename):
 			if mask_filename is None:
 				l,observables[descriptors[n].first:descriptors[n].last] = conv_map.powerSpectrum(descriptors[n].l_edges)
 			else:
-				l,observables[descriptors[n].first:descriptors[n].last] = (conv_map*mask_profile).PowerSpectrum(descriptors[n].l_edges)
+				l,observables[descriptors[n].first:descriptors[n].last] = (conv_map*mask_profile).powerSpectrum(descriptors[n].l_edges)
 
 		elif type(descriptors[n]) == Moments:
 
@@ -186,9 +187,9 @@ class Measurement(object):
 		self.smoothing_name = "sigma{0:02d}".format(int(self.smoothing_scale * 10))
 
 		if options.getboolean("analysis","mask"):
-			self.kwargs["mask_file"] = os.path.join(options.get("analysis","mask_directory"),options.get("analysis","mask_prefix")+"_sigma{0:02d}_subfield{1:02d}.fits".format(self.subfield,int(self.smoothing_scale * 10)))
+			self.kwargs["mask_filename"] = os.path.join(options.get("analysis","mask_directory"),options.get("analysis","mask_prefix")+"_sigma{0:02d}_subfield{1:02d}.fits".format(int(self.smoothing_scale * 10),self.subfield))
 		else:
-			self.kwargs["mask_file"] = None
+			self.kwargs["mask_filename"] = None
 
 
 	def get_all_map_names(self):
@@ -351,11 +352,11 @@ if __name__=="__main__":
 
 				i+=1
 				pbar.update(i)
-
-	if pool is not None:
-		pool.close()
 	
 	pbar.finish()
 	logging.info("DONE!")
+
+	if pool is not None:
+		pool.close()
 
 
