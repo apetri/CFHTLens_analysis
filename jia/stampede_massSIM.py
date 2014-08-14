@@ -281,11 +281,11 @@ def sum_matrix (cosmosigmaG):
 ###############################################################
 ### (1)create KS map, uncomment next 4 lines
 ###############################################################
-pool = MPIPool()
-iRcosmo = [[i, R, cosmo] for R in R_arr[::-1] for cosmo in cosmo_arr]
-pool.map(KSmap, iRcosmo)
-pool.close()
-print 'DONE DONE DONE'
+#pool = MPIPool()
+#iRcosmo = [[i, R, cosmo] for R in R_arr[::-1] for cosmo in cosmo_arr]
+#pool.map(KSmap, iRcosmo)
+#pool.close()
+#print 'DONE DONE DONE'
 
 ###############################################################
 ### (2)sum over 13 sf for peaks and powspectrum, need to alter a little later, 
