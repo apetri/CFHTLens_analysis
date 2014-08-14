@@ -11,7 +11,6 @@ import StringIO
 
 from lenstools.simulations import CFHTemu1
 from lenstools.observations import CFHTLens
-from lenstools.defaults import convergence_measure_all 
 from lenstools.index import Indexer,PowerSpectrum,PDF,Peaks,MinkowskiAll,Moments
 from lenstools import Ensemble
 
@@ -75,6 +74,86 @@ def cfht_fits_loader(filename):
 
 	return angle,kappa
 
+###########################################################################
+########################CFHT convergence maps measurer#####################
+###########################################################################
+
+def cfht_convergence_measure_all(filename,index,mask_filename):
+
+	"""
+	Measures all the statistical descriptors of a convergence map as indicated by the index instance
+	
+	"""
+
+	logging.debug("Processing {0}".format(filename))
+
+	#Load the map
+	conv_map = ConvergenceMap.fromfilename(filename,loader=cfht_fits_loader)
+
+	if mask_filename is not None:
+		
+		#Load the mask
+		mask_profile = ConvergenceMap.fromfilename(mask_filename,loader=cfht_fits_loader)
+		logging.debug("Loading mask from {0}".format(mask_filename))
+		#Mask the map
+		masked_conv_map = conv_map.mask(mask_profile)
+
+	#Allocate memory for observables
+	descriptors = index
+	observables = np.zeros(descriptors.size)
+
+	#Measure descriptors as directed by input
+	for n in range(descriptors.num_descriptors):
+
+		
+		if type(descriptors[n]) == PowerSpectrum:
+			
+			if mask_filename is None:
+				l,observables[descriptors[n].first:descriptors[n].last] = conv_map.powerSpectrum(descriptors[n].l_edges)
+			else:
+				l,observables[descriptors[n].first:descriptors[n].last] = (conv_map*mask_profile).PowerSpectrum(descriptors[n].l_edges)
+
+		elif type(descriptors[n]) == Moments:
+
+			if mask_filename is None:
+				observables[descriptors[n].first:descriptors[n].last] = conv_map.moments(connected=descriptors[n].connected)
+			else:
+				observables[descriptors[n].first:descriptors[n].last] = masked_conv_map.moments(connected=descriptors[n].connected)
+		
+		elif type(descriptors[n]) == Peaks:
+			
+			if mask_filename is None:
+				v,observables[descriptors[n].first:descriptors[n].last] = conv_map.peakCount(descriptors[n].thresholds,norm=descriptors[n].norm)
+			else:
+				v,observables[descriptors[n].first:descriptors[n].last] = masked_conv_map.peakCount(descriptors[n].thresholds,norm=descriptors[n].norm)
+
+		elif type(descriptors[n]) == PDF:
+
+			if mask_filename is None:
+				v,observables[descriptors[n].first:descriptors[n].last] = conv_map.pdf(descriptors[n].thresholds,norm=descriptors[n].norm)
+			else:
+				v,observables[descriptors[n].first:descriptors[n].last] = masked_conv_map.pdf(descriptors[n].thresholds,norm=descriptors[n].norm)
+		
+		elif type(descriptors[n]) == MinkowskiAll:
+			
+			if mask_filename is None:
+				v,V0,V1,V2 = conv_map.minkowskiFunctionals(descriptors[n].thresholds,norm=descriptors[n].norm)
+			else:
+				v,V0,V1,V2 = masked_conv_map.minkowskiFunctionals(descriptors[n].thresholds,norm=descriptors[n].norm)
+			
+			observables[descriptors[n].first:descriptors[n].last] = np.hstack((V0,V1,V2))
+		
+		elif type(descriptors[n]) == MinkowskiSingle:
+			
+			raise ValueError("Due to computational performance you have to measure all Minkowski functionals at once!")
+		
+		else:
+			
+			raise ValueError("Measurement of this descriptor not implemented!!!")
+
+	#Return
+	return observables
+
 ######################################################################################
 ##########Measurement object, handles the feature measurements from the maps##########
 ######################################################################################
@@ -105,6 +184,11 @@ class Measurement(object):
 
 		self.subfield_name = "subfield{0}".format(self.subfield)
 		self.smoothing_name = "sigma{0:02d}".format(int(self.smoothing_scale * 10))
+
+		if options.getboolean("analysis","mask"):
+			self.kwargs["mask_file"] = os.path.join(options.get("analysis","mask_directory"),options.get("analysis","mask_prefix")+"_sigma{0:02d}_subfield{1:02d}.fits".format(self.subfield,int(self.smoothing_scale * 10)))
+		else:
+			self.kwargs["mask_file"] = None
 
 
 	def get_all_map_names(self):
@@ -261,7 +345,7 @@ if __name__=="__main__":
 				if not os.path.exists(dir_to_make):
 					os.mkdir(dir_to_make)
 	
-				m = Measurement(model=model,options=options,subfield=subfield,smoothing_scale=smoothing_scale,measurer=convergence_measure_all,fits_loader=cfht_fits_loader,index=idx)
+				m = Measurement(model=model,options=options,subfield=subfield,smoothing_scale=smoothing_scale,measurer=cfht_convergence_measure_all,index=idx)
 				m.get_all_map_names()
 				m.measure(pool=pool)
 
