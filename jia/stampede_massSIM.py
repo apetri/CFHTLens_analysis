@@ -294,7 +294,7 @@ def sum_matrix (cosmosigmaG):
 ### !!!will only work if the previous step is done!!!
 ###############################################################
 
-cosmosigmaG_arr = [[cosmo, sigmaG] for cosmo in cosmo_arr[::-1] for sigmaG in sigmaG_arr]
+cosmosigmaG_arr = [[cosmo, sigmaG] for cosmo in cosmo_arr for sigmaG in sigmaG_arr]
 pool = MPIPool()
 pool.map(sum_matrix, cosmosigmaG_arr)
 pool.close()
