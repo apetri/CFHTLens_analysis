@@ -237,7 +237,7 @@ def gen_mat (i, cosmo, sigmaG, ispk = True):
 				pkps = WLanalysis.peaks_mask_hist(kmap, mask, bins, kmin = kmin, kmax = kmax)
 				
 			else:
-				pkps = 1/fsky[i]*WLanalysis.PowerSpectrum(kmap, sizedeg=12.0)[-1]
+				pkps = 1/fsky[i-1]*WLanalysis.PowerSpectrum(kmap, sizedeg=12.0)[-1]
 
 			WLanalysis.writeFits(pkps, fn)
 		return pkps
