@@ -16,7 +16,7 @@ from multiprocessing import Pool
 # also search for '#commented out 2014/08/13 for bad pointing ps pk'
 Mask_fn = lambda i, sigmaG: KS_dir+'mask/BAD_CFHT_mask_ngal5_sigma%02d_subfield%02d.fits'%(sigmaG*10, i)
 
-KSbad_dir = '/home1/02977/jialiu/KSsim/BADpt/'
+KSbad_dir = '/home1/02977/jialiu/KSsim/GoodOnly/'
 peaks_fn = lambda i, cosmo, sigmaG, bins, R: KSbad_dir+'peaks/%s/subfield%i/sigma%02d/SIM_peaks_sigma%02d_subfield%i_%s_%03dbins_%04dr.fit'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo, bins, R)
 
 powspec_fn = lambda i, cosmo, sigmaG, R: KSbad_dir+'powspec/%s/subfield%i/sigma%02d/SIM_powspec_sigma%02d_subfield%i_%s_%04dr.fit'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo, R)
@@ -180,7 +180,7 @@ def KSmap(iiRcosmo):
 			
 			## change in 06/26/2014, put mask on power spectrum
 			## powspec = 1/fsky[i]*WLanalysis.PowerSpectrum(kmap, sizedeg=12.0)[-1]
-			powspec = 1/fsky[i]*WLanalysis.PowerSpectrum(kmap*mask, sizedeg=12.0)[-1]
+			powspec = 1/fsky[i-1]*WLanalysis.PowerSpectrum(kmap*mask, sizedeg=12.0)[-1]
 			
 			try:
 				WLanalysis.writeFits(powspec, ps_fn)
