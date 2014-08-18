@@ -90,8 +90,14 @@ if __name__=="__main__":
 
 	#Create a LikelihoodAnalysis instance and load the training models into it
 	analysis = LikelihoodAnalysis()
+
+	#Start loading the data
+	logging.debug("Loading features...")
 	
 	for n,model in enumerate(training_models):
+
+		logging.debug("Model {0}".format(n))
+		logging.debug(model)
 
 		#First create an empty ensemble
 		ensemble_all_subfields = Ensemble()
@@ -118,6 +124,7 @@ if __name__=="__main__":
 			features_covariance = ensemble_all_subfields.covariance()
 
 	#Finally, measure the observed feature
+	logging.debug("Loading observations...")
 	ensemble_all_subfields = Ensemble()
 
 	for subfield in subfields:
