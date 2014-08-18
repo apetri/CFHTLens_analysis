@@ -27,6 +27,7 @@ from measure_features import Measurement
 ######################################################################
 
 import numpy as np
+from emcee.utils import MPIPool
 
 ######################################################################
 ###################Main execution#####################################
@@ -50,6 +51,16 @@ if __name__=="__main__":
 		logging.basicConfig(level=logging.DEBUG)
 	else:
 		logging.basicConfig(level=logging.INFO)
+
+	#Initialize MPI Pool
+	try:
+		pool = MPIPool()
+	except:
+		pool = None
+
+	if (pool is not None) and (not pool.is_master()):
+		pool.wait()
+		sys.exit(0)
 
 	#Parse INI options file
 	options = ConfigParser.ConfigParser()
@@ -144,7 +155,16 @@ if __name__=="__main__":
 
 	#Now compute the chi2 at each of these points
 	logging.debug("Computing chi squared...")
-	chi_squared = analysis.chi2(points,observed_feature=observed_feature,features_covariance=features_covariance)
+	if pool:
+		split_chunks = pool.size
+	else:
+		split_chunks = None
+	
+	chi_squared = analysis.chi2(points,observed_feature=observed_feature,features_covariance=features_covariance,pool=pool,split_chunks=split_chunks)
+
+	#Close MPI Pool
+	if pool is not None:
+		pool.close()
 
 	#save output
 	np.save("likelihood_{0}.npy".format("-".join(feature_types)),chi_squared.reshape(Om.shape + w.shape + si8.shape))
