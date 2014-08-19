@@ -160,12 +160,22 @@ if __name__=="__main__":
 	fig,ax = plt.subplots()
 	
 	values,p_values = likelihood_values(marginalized_likelihood,levels=levels)
-	print("p_values:",p_values)
+	print("Original p_values:",levels)
+	print("Computed p_values:",p_values)
 	
 	plot_contours(ax,marginalized_likelihood,values=values,levels=levels,display_percentages=display_percentages,extent=extent,colors=colors[:len(values)])
 	
 	ax.set_xlabel(cosmo_labels[cosmo_parameters[0]])
 	ax.set_ylabel(cosmo_labels[cosmo_parameters[1]])
+
+	#Save the contours figure as png
+	contours_dir = os.path.join(options.get("analysis","save_path"),"contours")
+	if not os.path.isdir(contours_dir):
+		os.mkdir(contours_dir)
+
+	figure_name = options.get("contours","figure_name")
+	if figure_name=="None":
+		figure_name = cmd_args.likelihood_npy_file[0].replace("npy","png").replace("likelihoods","contours")
 	
-	fig.savefig(options.get("contours","figure_name")) 
+	fig.savefig(figure_name) 
 

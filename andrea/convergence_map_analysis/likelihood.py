@@ -178,6 +178,10 @@ if __name__=="__main__":
 		pool.close()
 
 	#save output
-	np.save("chi2_{0}.npy".format("-".join(feature_types)),chi_squared.reshape(Om.shape + w.shape + si8.shape))
-	np.save("likelihood_{0}.npy".format("-".join(feature_types)),analysis.likelihood(chi_squared.reshape(Om.shape + w.shape + si8.shape)))
+	likelihoods_dir = os.path.join(options.get("analysis","save_path"),"likelihoods")
+	if not os.path.isdir(likelihoods_dir):
+		os.mkdir(likelihoods_dir)
+
+	np.save(os.path.join(likelihoods_dir,"chi2_{0}.npy".format("-".join(feature_types)),chi_squared.reshape(Om.shape + w.shape + si8.shape)))
+	np.save(os.path.join(likelihoods_dir,"likelihood_{0}.npy".format("-".join(feature_types)),analysis.likelihood(chi_squared.reshape(Om.shape + w.shape + si8.shape))))
 
