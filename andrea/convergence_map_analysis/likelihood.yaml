@@ -1,0 +1,4 @@
+command: mpiexec -n 101 -hostfile %hostfile% python likelihood.py -f options_bnl.ini -v -s points.npy
+mode: bycore
+N: 101
+hostfile: auto
