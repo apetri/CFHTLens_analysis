@@ -182,6 +182,6 @@ if __name__=="__main__":
 	if not os.path.isdir(likelihoods_dir):
 		os.mkdir(likelihoods_dir)
 
-	np.save(os.path.join(likelihoods_dir,"chi2_{0}.npy".format("-".join(feature_types)),chi_squared.reshape(Om.shape + w.shape + si8.shape)))
-	np.save(os.path.join(likelihoods_dir,"likelihood_{0}.npy".format("-".join(feature_types)),analysis.likelihood(chi_squared.reshape(Om.shape + w.shape + si8.shape))))
+	np.save(os.path.join(likelihoods_dir,"chi2_{0}.npy".format("-".join(feature_types))),chi_squared.reshape(Om.shape + w.shape + si8.shape))
+	np.save(os.path.join(likelihoods_dir,"likelihood_{0}.npy".format("-".join(feature_types))),analysis.likelihood(chi_squared.reshape(Om.shape + w.shape + si8.shape)))
 
