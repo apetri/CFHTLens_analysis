@@ -77,12 +77,16 @@ def likelihood_values(likelihood,levels=[0.684],epsilon=0.01,max_iterations=1000
 ##############Plot the contours on top of the likelihood##############
 ######################################################################
 
-def plot_contours(ax,likelihood,values,levels,display_percentages,**kwargs):
+def plot_contours(ax,likelihood,values,levels,display_percentages,display_maximum,**kwargs):
 
 	assert "colors" in kwargs.keys() and "extent" in kwargs.keys()
 	assert len(kwargs["colors"]) == len(values)
 
-	ax1 = ax.imshow(likelihood,origin="lower",cmap=plt.cm.binary_r,extent=kwargs["extent"],aspect="auto")
+	extent = kwargs["extent"]
+	unit_j = (extent[1] - extent[0])/(likelihood.shape[1] - 1)
+	unit_i = (extent[3] - extent[2])/(likelihood.shape[0] - 1) 
+
+	ax1 = ax.imshow(likelihood,origin="lower",cmap=plt.cm.binary_r,extent=extent,aspect="auto")
 	plt.colorbar(ax1,ax=ax)
 
 	#Build contour levels
@@ -95,6 +99,16 @@ def plot_contours(ax,likelihood,values,levels,display_percentages,**kwargs):
 	
 	if display_percentages:
 		plt.clabel(cs,fmt=fmt,inline=1,fontsize=9)
+
+	if display_maximum:
+		
+		#Find the maximum
+		likelihood_max = likelihood.max()
+		imax,jmax = np.where(likelihood==likelihood_max)
+
+		#Plot scaling to physical values
+		ax.plot(extent[0] + np.arange(likelihood.shape[1])*unit_j,np.ones(likelihood.shape[1])*imax[0]*unit_i + extent[2],linestyle="--",color="green")
+		ax.plot(extent[0] + np.ones(likelihood.shape[0])*jmax[0]*unit_j,extent[2] + np.arange(likelihood.shape[0])*unit_i,linestyle="--",color="green")
 
 ################################################################
 #####################Main execution#############################
@@ -144,8 +158,9 @@ if __name__=="__main__":
 	cosmo_parameters.pop(cosmo_parameters.index(marginalize_over))
 	extent = (options.getfloat(cosmo_parameters[0],"min"),options.getfloat(cosmo_parameters[0],"max"),options.getfloat(cosmo_parameters[1],"min"),options.getfloat(cosmo_parameters[1],"max"))
 
-	#Decide if showing percentages on plot
+	#Decide if showing percentages and maximum on plot
 	display_percentages = options.getboolean("contours","display_percentages")
+	display_maximum = options.getboolean("contours","display_maximum")
 
 	#Marginalize over one of the parameters
 	if full_likelihood.ndim == 3:
@@ -163,7 +178,7 @@ if __name__=="__main__":
 	print("Original p_values:",levels)
 	print("Computed p_values:",p_values)
 	
-	plot_contours(ax,marginalized_likelihood,values=values,levels=levels,display_percentages=display_percentages,extent=extent,colors=colors[:len(values)])
+	plot_contours(ax,marginalized_likelihood,values=values,levels=levels,display_percentages=display_percentages,display_maximum=display_maximum,extent=extent,colors=colors[:len(values)])
 	
 	ax.set_xlabel(cosmo_labels[cosmo_parameters[0]])
 	ax.set_ylabel(cosmo_labels[cosmo_parameters[1]])
