@@ -133,6 +133,8 @@ if __name__=="__main__":
 
 	#Start loading the data
 	logging.debug("Loading features...")
+	for feature_type in features_to_measure.keys():
+		logging.info("{0}, smoothing scales: {1} arcmin".format(feature_type,",".join([ str(s) for s in features_to_measure[feature_type] ])))
 	
 	for n,model in enumerate(training_models):
 
