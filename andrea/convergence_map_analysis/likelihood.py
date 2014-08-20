@@ -80,7 +80,7 @@ if __name__=="__main__":
 	#Select subset of training models
 	training_models = all_simulated_models
 	#Use this model for the covariance matrix
-	covariance_model = 16
+	covariance_model = options.getint("analysis","covariance_model") - 1
 	
 	#Parse from options which subfields and smoothing scale to consider
 	subfields = [ int(subfield) for subfield in options.get("analysis","subfields").split(",") ]
