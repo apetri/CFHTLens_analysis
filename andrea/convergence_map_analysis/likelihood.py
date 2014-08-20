@@ -3,7 +3,7 @@ from __future__ import print_function,division,with_statement
 from operator import mul
 from functools import reduce
 
-import os,sys
+import os,sys,re
 import argparse,ConfigParser
 import logging
 
@@ -12,6 +12,7 @@ import logging
 ######################################################################
 
 from lenstools import Ensemble
+from lenstools.index import Indexer,MinkowskiAll
 from lenstools.constraints import LikelihoodAnalysis
 from lenstools.simulations import CFHTemu1
 from lenstools.observations import CFHTLens
@@ -28,6 +29,40 @@ from measure_features import Measurement
 
 import numpy as np
 from emcee.utils import MPIPool
+
+#######################################################################
+###################Parse feature types#################################
+#######################################################################
+
+def parse_features(feature_string):
+
+	all_smoothing_scales = list()
+	features_to_measure = dict()
+
+	features = feature_string.replace(" ","").split("*")
+
+	for feature in features:
+
+		feature_name = feature.split(":")[0]
+		smoothing_scales = [ float(theta) for theta in feature.split(":")[1].split(",") ]
+
+		features_to_measure[feature_name] = smoothing_scales
+
+		for theta in smoothing_scales:
+			if theta not in all_smoothing_scales:
+				all_smoothing_scales.append(theta)
+
+	return all_smoothing_scales,features_to_measure
+
+def npy_filename(feature_type):
+
+	if "minkowski" in feature_type:
+		return "minkowski_all.npy"
+	else:
+		return feature_type+".npy"
+
+def output_string(feature_string):
+	return feature_string.replace(" ","").replace(":","--").replace("*","_").replace(",","-")
 
 ######################################################################
 ###################Main execution#####################################
@@ -71,6 +106,10 @@ if __name__=="__main__":
 	#Read the save path from options
 	save_path = options.get("analysis","save_path")
 
+	#Construct an index for the minkowski functionals, it will be useful for later
+	mink_idx = MinkowskiAll(thresholds=np.load(os.path.join(options.get("analysis","save_path"),"th_minkowski.npy"))).separate()
+	mink_idx = Indexer(mink_idx)
+
 	#Get the names of all the simulated models available for the CFHT analysis, including smoothing scales and subfields
 	all_simulated_models = CFHTemu1.getModels(root_path=options.get("simulations","root_path"))
 
@@ -84,10 +123,10 @@ if __name__=="__main__":
 	
 	#Parse from options which subfields and smoothing scale to consider
 	subfields = [ int(subfield) for subfield in options.get("analysis","subfields").split(",") ]
-	smoothing_scale = options.getfloat("analysis","smoothing_scale")
 
-	#Parse from options which type of descriptors to use
-	feature_types = options.get("analysis","feature_types").split(",")
+	#Parse from options which type of descriptors (features) to use
+	feature_string = options.get("analysis","feature_types")
+	smoothing_scales,features_to_measure = parse_features(feature_string)
 
 	#Create a LikelihoodAnalysis instance and load the training models into it
 	analysis = LikelihoodAnalysis()
@@ -106,13 +145,29 @@ if __name__=="__main__":
 		#Then cycle through all the subfields and gather the features for each one
 		for subfield in subfields:
 			
-			m = Measurement(model=model,options=options,subfield=subfield,smoothing_scale=smoothing_scale,measurer=None)
-			m.get_all_map_names()
+			m = dict()
+			for smoothing_scale in smoothing_scales:
+				m[smoothing_scale] = Measurement(model=model,options=options,subfield=subfield,smoothing_scale=smoothing_scale,measurer=None)
+				m.get_all_map_names()
 
-			#Load the measured features
-			ensemble_subfield = [ Ensemble.fromfilelist([os.path.join(m.full_save_path,feature_type + ".npy")]) for feature_type in feature_types ]
-			for ens in ensemble_subfield: 
-				ens.load(from_old=True)
+			#Construct one ensemble for each feature (with included smoothing scales) and load in the data
+			ensemble_subfield = list()
+			for feature_type in features_to_measure.keys():
+				
+				for smoothing_scale in features_to_measure[feature_type]:
+					
+					ens = Ensemble.fromfilelist([os.path.join(m[smoothing_scale].full_save_path,npy_filename(feature_type))])
+					ens.load(from_old=True)
+
+					#Check if we want to discard some of the Minkowski functionals
+					num = re.match(r"minkowski_([0-2]+)",feature_type)
+					if num is not None:
+						mink_to_measure = [ int(n) for n in list(num) ]
+						ens_split = ens.split(mink_idx)
+						[ ensemble_subfield.append(ens_split[n]) for n in mink_to_measure ]
+					else:
+						ensemble_subfield.append(ens)
+
 
 			#Add the features to the cumulative subfield ensemble
 			ensemble_all_subfields += reduce(mul,ensemble_subfield)
@@ -129,14 +184,29 @@ if __name__=="__main__":
 	ensemble_all_subfields = Ensemble()
 
 	for subfield in subfields:
+		
+		m = dict()
+		for smoothing_scale in smoothing_scales:
+			m[smoothing_scale] = Measurement(model=observed_model,options=options,subfield=subfield,smoothing_scale=smoothing_scale,measurer=None)
+			m.get_all_map_names()
 
-		m = Measurement(model=observed_model,options=options,subfield=subfield,smoothing_scale=smoothing_scale,measurer=None)
-		m.get_all_map_names()
+		#Construct one ensemble for each feature (with included smoothing scales) and load in the data
+		ensemble_subfield = list()
+		for feature_type in features_to_measure.keys():
+			
+			for smoothing_scale in features_to_measure[feature_type]:
+				
+				ens = Ensemble.fromfilelist([os.path.join(m[smoothing_scale].full_save_path,npy_filename(feature_type))])
+				ens.load(from_old=True)
 
-		#Load the measured feature
-		ensemble_subfield = [ Ensemble.fromfilelist([os.path.join(m.full_save_path,feature_type + ".npy")]) for feature_type in feature_types]
-		for ens in ensemble_subfield:
-			ens.load(from_old=True)
+				#Check if we want to discard some of the Minkowski functionals
+				num = re.match(r"minkowski_([0-2]+)",feature_type)
+				if num is not None:
+					mink_to_measure = [ int(n) for n in list(num) ]
+					ens_split = ens.split(mink_idx)
+					[ ensemble_subfield.append(ens_split[n]) for n in mink_to_measure ]
+				else:
+					ensemble_subfield.append(ens)
 
 		#Add the features to the cumulative subfield ensemble
 		ensemble_all_subfields += reduce(mul,ensemble_subfield)
@@ -182,8 +252,8 @@ if __name__=="__main__":
 	if not os.path.isdir(likelihoods_dir):
 		os.mkdir(likelihoods_dir)
 	
-	chi2_file = os.path.join(likelihoods_dir,"chi2_{0}.npy".format("-".join(feature_types)))
-	likelihood_file = os.path.join(likelihoods_dir,"likelihood_{0}.npy".format("-".join(feature_types)))
+	chi2_file = os.path.join(likelihoods_dir,"chi2_{0}.npy".format(output_string(feature_string)))
+	likelihood_file = os.path.join(likelihoods_dir,"likelihood_{0}.npy".format(output_string(feature_string)))
 
 	logging.debug("Saving chi2 to {0}".format(chi2_file))
 	np.save(chi2_file,chi_squared.reshape(Om.shape + w.shape + si8.shape))
