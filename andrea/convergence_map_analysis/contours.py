@@ -22,6 +22,19 @@ class ContourPlot(object):
 	def __init__(self):
 
 		self.fig,self.ax = plt.subplots()
+		self.min = dict()
+		self.max = dict()
+		self.npoints = dict()
+		self.unit = dict()
+
+	def savefig(self,figname):
+
+		"""
+		Save the plot to file
+
+		"""
+
+		self.fig.savefig(figname)
 
 	def getUnitsFromOptions(self,options):
 		
@@ -33,15 +46,51 @@ class ContourPlot(object):
 		assert hasattr(self,"parameter_axes"),"You have to load in the likelihood first!"
 		parameters = self.parameter_axes.keys()
 
-		self.min = dict()
-		self.max = dict()
-		self.npoints = dict()
-		self.unit = dict()
-
 		for parameter in parameters:
 			
 			self.min[parameter],self.max[parameter],self.npoints[parameter] = options.getfloat(parameter,"min"),options.getfloat(parameter,"max"),options.getint(parameter,"num_points")
+			assert self.npoints[parameter] == self.likelihood.shape[self.parameter_axes[parameter]]
 			self.unit[parameter] = (self.max[parameter] - self.min[parameter]) / (self.npoints[parameter] - 1)
+
+	def setUnits(self,parameter,parameter_min,parameter_max,parameter_unit):
+
+		"""
+		Set manually the physical units for each of the likelihood axes
+
+		"""
+		assert hasattr(self,"parameter_axes"),"You have to load in the likelihood first!"
+		assert parameter in self.parameter_axes.keys(),"You are trying to set units for a parameter that doesn't exist!"
+
+		self.min[parameter] = parameter_min
+		self.max[parameter] = parameter_max
+		self.unit[parameter] = parameter_unit
+
+		print("Units set for {0}; min={1:.3f} max={2:.3f} unit={3:.3f}".format(parameter,parameter_min,parameter_max,parameter_unit))
+
+	def value(self,*coordinates):
+
+		"""
+		Compute the (un-normalized) likelihood value at the specified point in parameter space
+
+		"""
+
+		assert len(coordinates) == self.likelihood.ndim,"You must specify a coordinate (and only one) for each axis"
+
+		#Compute the physical values of the pixels
+		pix = np.zeros(len(coordinates))
+		for parameter in self.parameter_axes.keys():
+
+			assert parameter in self.unit.keys() and parameter in self.min.keys()
+			axis = self.parameter_axes[parameter]
+			pix[axis] = int((coordinates[axis] - self.min[parameter])/(self.unit[parameter]))
+
+		#Return the found likelihood value
+		try:
+			return self.likelihood[tuple(pix)]
+		except IndexError:
+			print("Out of bounds!")
+			return None
+
 
 	def getLikelihood(self,likelihood_filename,parameter_axes={"Omega_m":0,"w":1,"sigma8":2},parameter_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","sigma8":r"$\sigma_8$"}):
 		
@@ -64,6 +113,7 @@ class ContourPlot(object):
 		"""
 
 		assert hasattr(self,"likelihood"),"You have to load in the likelihood first!"
+		assert parameter_name in self.parameter_axes.keys(),"You are trying to marginalize over a parameter that does not exist!"
 		
 		if self.likelihood.ndim<3:
 			
@@ -79,6 +129,8 @@ class ContourPlot(object):
 			#Find the remaining parameters
 			self.remaining_parameters = self.parameter_axes.keys()
 			self.remaining_parameters.pop(self.remaining_parameters.index(parameter_name))
+			#Sort the remaining parameter names so that the corresponding axes are in increasing order
+			self.remaining_parameters.sort(key=self.parameter_axes.get)
 		
 		self.extent = (self.min[self.remaining_parameters[0]],self.max[self.remaining_parameters[0]],self.min[self.remaining_parameters[1]],self.max[self.remaining_parameters[1]])
 		self.ax.set_xlim(self.extent[0],self.extent[1])
@@ -196,7 +248,7 @@ class ContourPlot(object):
 	##############Plot the contours on top of the likelihood##############
 	######################################################################
 
-	def plotContours(self,colors=["red","green","blue"],display_percentages=True,display_maximum=True):
+	def plotContours(self,colors=["red","green","blue"],display_percentages=True,display_maximum=True,fill=False):
 
 		"""
 		Display the confidence likelihood contours
@@ -221,7 +273,10 @@ class ContourPlot(object):
 		for n,value in enumerate(values):
 			fmt[value] = "{0:.1f}%".format(self.computed_p_values[n]*100)
 
-		self.contour = self.ax.contour(likelihood,values,colors=colors,origin="lower",extent=extent,aspect="auto")
+		if fill:
+			self.contour = self.ax.contourf(likelihood,values,colors=colors,origin="lower",extent=extent,aspect="auto")
+		else:
+			self.contour = self.ax.contour(likelihood,values,colors=colors,origin="lower",extent=extent,aspect="auto")
 		
 		if display_percentages:
 			plt.clabel(self.contour,fmt=fmt,inline=1,fontsize=9)
@@ -240,10 +295,10 @@ class ContourPlot(object):
 #####################Main execution#############################
 ################################################################
 
-if __name__=="__main__":
+def main():
 
 	#Parameters of which we want to compute the confidence estimates
-	cosmo_parameters = ["Omega_m","w","sigma8"]
+	parameter_axes = {"Omega_m":0,"w":1,"sigma8":2}
 	cosmo_labels = {"Omega_m":r"$\Omega_m$","w":r"$w$","sigma8":r"$\sigma_8$"}
 	
 	#Parse command line options
@@ -257,59 +312,38 @@ if __name__=="__main__":
 		parser.print_help()
 		sys.exit(0)
 
-	full_likelihood = np.load(cmd_args.likelihood_npy_file[0])
-
 	#Parse options from configuration file
 	options = ConfigParser.ConfigParser()
 	with open(cmd_args.options_file,"r") as configfile:
 		options.readfp(configfile)
 
-	#Decide the axis on which to marginalize
-	marginalize_over = options.get("contours","marginalize_over")
-	if marginalize_over == "Omega_m":
-		marginalize_axis = 0
-	elif marginalize_over == "w":
-		marginalize_axis = 1
-	elif marginalize_over == "sigma8":
-		marginalize_axis = 2
-	else:
-		raise ValueError("Invalid parameter name")
-
 	#Decide the confidence levels to display
 	levels = [ float(level) for level in options.get("contours","levels").split(",") ]
-	#Parse a list of pretty colors
-	colors = options.get("contours","colors").split(",")
-
-	#Set the extent of the plot once the parameters to display are known
-	cosmo_parameters.pop(cosmo_parameters.index(marginalize_over))
-	extent = (options.getfloat(cosmo_parameters[0],"min"),options.getfloat(cosmo_parameters[0],"max"),options.getfloat(cosmo_parameters[1],"min"),options.getfloat(cosmo_parameters[1],"max"))
+	#Parse from options a list of pretty colors
+	colors = options.get("contours","colors").split(",")[:3]
 
 	#Decide if showing percentages and maximum on plot
 	display_percentages = options.getboolean("contours","display_percentages")
 	display_maximum = options.getboolean("contours","display_maximum")
 
+	#Build the contour plot with the ContourPlot class handler
+	contour = ContourPlot()
+	#Load the likelihood
+	contour.getLikelihood(cmd_args.likelihood_npy_file[0],parameter_axes=parameter_axes,parameter_labels=cosmo_labels)
+	#Set the physical units
+	contour.getUnitsFromOptions(options)
 	#Marginalize over one of the parameters
-	if full_likelihood.ndim == 3:
-		marginalized_likelihood = full_likelihood.sum(marginalize_axis).transpose()
-	else:
-		marginalized_likelihood = full_likelihood.transpose()
+	contour.marginalize(options.get("contours","marginalize_over"))
+	#Show the full likelihood
+	contour.show()
+	#Compute the likelihood levels
+	contour.getLikelihoodValues(levels=levels)
+	print("Desired p_values:",contour.original_p_values)
+	print("Calculated p_values",contour.computed_p_values)
+	#Display the contours
+	contour.plotContours(colors=colors,fill=False)
 
-	#Normalize
-	marginalized_likelihood /= marginalized_likelihood.sum()
-
-	#Find values and plot contours
-	fig,ax = plt.subplots()
-	
-	values,p_values = likelihood_values(marginalized_likelihood,levels=levels)
-	print("Original p_values:",levels)
-	print("Computed p_values:",p_values)
-	
-	plot_contours(ax,marginalized_likelihood,values=values,levels=levels,display_percentages=display_percentages,display_maximum=display_maximum,extent=extent,colors=colors[:len(values)])
-	
-	ax.set_xlabel(cosmo_labels[cosmo_parameters[0]])
-	ax.set_ylabel(cosmo_labels[cosmo_parameters[1]])
-
-	#Save the contours figure as png
+	#Save the result
 	contours_dir = os.path.join(options.get("analysis","save_path"),"contours")
 	if not os.path.isdir(contours_dir):
 		os.mkdir(contours_dir)
@@ -318,5 +352,8 @@ if __name__=="__main__":
 	if figure_name=="None":
 		figure_name = cmd_args.likelihood_npy_file[0].replace("npy","png").replace("likelihoods","contours")
 	
-	fig.savefig(figure_name) 
+	contour.savefig(figure_name)
 
+
+if __name__=="__main__":
+	main()
