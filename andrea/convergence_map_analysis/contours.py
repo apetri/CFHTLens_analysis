@@ -320,7 +320,7 @@ def main():
 	#Decide the confidence levels to display
 	levels = [ float(level) for level in options.get("contours","levels").split(",") ]
 	#Parse from options a list of pretty colors
-	colors = options.get("contours","colors").split(",")[:3]
+	colors = options.get("contours","colors").split(",")[:len(levels)]
 
 	#Decide if showing percentages and maximum on plot
 	display_percentages = options.getboolean("contours","display_percentages")
