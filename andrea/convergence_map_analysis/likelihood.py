@@ -107,7 +107,8 @@ if __name__=="__main__":
 	save_path = options.get("analysis","save_path")
 
 	#Construct an index for the minkowski functionals, it will be useful for later
-	mink_idx = MinkowskiAll(thresholds=np.load(os.path.join(options.get("analysis","save_path"),"th_minkowski.npy"))).separate()
+	th_minkowski = np.ogrid[options.getfloat("minkowski_functionals","th_min"):options.getfloat("minkowski_functionals","th_max"):(options.getint("minkowski_functionals","num_bins")+1)*1j]
+	mink_idx = MinkowskiAll(thresholds=th_minkowski).separate()
 	mink_idx = Indexer(mink_idx)
 
 	#Get the names of all the simulated models available for the CFHT analysis, including smoothing scales and subfields
@@ -150,7 +151,7 @@ if __name__=="__main__":
 			m = dict()
 			for smoothing_scale in smoothing_scales:
 				m[smoothing_scale] = Measurement(model=model,options=options,subfield=subfield,smoothing_scale=smoothing_scale,measurer=None)
-				m.get_all_map_names()
+				m[smoothing_scale].get_all_map_names()
 
 			#Construct one ensemble for each feature (with included smoothing scales) and load in the data
 			ensemble_subfield = list()
@@ -164,7 +165,7 @@ if __name__=="__main__":
 					#Check if we want to discard some of the Minkowski functionals
 					num = re.match(r"minkowski_([0-2]+)",feature_type)
 					if num is not None:
-						mink_to_measure = [ int(n) for n in list(num) ]
+						mink_to_measure = [ int(n) for n in list(num.group(1)) ]
 						ens_split = ens.split(mink_idx)
 						[ ensemble_subfield.append(ens_split[n]) for n in mink_to_measure ]
 					else:
@@ -190,7 +191,7 @@ if __name__=="__main__":
 		m = dict()
 		for smoothing_scale in smoothing_scales:
 			m[smoothing_scale] = Measurement(model=observed_model,options=options,subfield=subfield,smoothing_scale=smoothing_scale,measurer=None)
-			m.get_all_map_names()
+			m[smoothing_scale].get_all_map_names()
 
 		#Construct one ensemble for each feature (with included smoothing scales) and load in the data
 		ensemble_subfield = list()
@@ -204,7 +205,7 @@ if __name__=="__main__":
 				#Check if we want to discard some of the Minkowski functionals
 				num = re.match(r"minkowski_([0-2]+)",feature_type)
 				if num is not None:
-					mink_to_measure = [ int(n) for n in list(num) ]
+					mink_to_measure = [ int(n) for n in list(num.group(1)) ]
 					ens_split = ens.split(mink_idx)
 					[ ensemble_subfield.append(ens_split[n]) for n in mink_to_measure ]
 				else:
@@ -243,7 +244,7 @@ if __name__=="__main__":
 	else:
 		split_chunks = None
 	
-	chi_squared = analysis.chi2(points,observed_feature=observed_feature,features_covariance=features_covariance,pool=pool,split_chunks=split_chunks)
+	#chi_squared = analysis.chi2(points,observed_feature=observed_feature,features_covariance=features_covariance,pool=pool,split_chunks=split_chunks)
 
 	#Close MPI Pool
 	if pool is not None:
@@ -258,9 +259,9 @@ if __name__=="__main__":
 	likelihood_file = os.path.join(likelihoods_dir,"likelihood_{0}.npy".format(output_string(feature_string)))
 
 	logging.debug("Saving chi2 to {0}".format(chi2_file))
-	np.save(chi2_file,chi_squared.reshape(Om.shape + w.shape + si8.shape))
+	#np.save(chi2_file,chi_squared.reshape(Om.shape + w.shape + si8.shape))
 
 	logging.debug("Saving full likelihood to {0}".format(likelihood_file))
-	np.save(likelihood_file,analysis.likelihood(chi_squared.reshape(Om.shape + w.shape + si8.shape)))
+	#np.save(likelihood_file,analysis.likelihood(chi_squared.reshape(Om.shape + w.shape + si8.shape)))
 
 	logging.info("DONE!!")
