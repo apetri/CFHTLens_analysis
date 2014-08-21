@@ -165,9 +165,9 @@ if __name__=="__main__":
 					#Check if we want to discard some of the Minkowski functionals
 					num = re.match(r"minkowski_([0-2]+)",feature_type)
 					if num is not None:
-						mink_to_measure = [ int(n) for n in list(num.group(1)) ]
+						mink_to_measure = [ int(n_mf) for n_mf in list(num.group(1)) ]
 						ens_split = ens.split(mink_idx)
-						[ ensemble_subfield.append(ens_split[n]) for n in mink_to_measure ]
+						[ ensemble_subfield.append(ens_split[n_mf]) for n_mf in mink_to_measure ]
 					else:
 						ensemble_subfield.append(ens)
 
@@ -205,9 +205,9 @@ if __name__=="__main__":
 				#Check if we want to discard some of the Minkowski functionals
 				num = re.match(r"minkowski_([0-2]+)",feature_type)
 				if num is not None:
-					mink_to_measure = [ int(n) for n in list(num.group(1)) ]
+					mink_to_measure = [ int(n_mf) for n_mf in list(num.group(1)) ]
 					ens_split = ens.split(mink_idx)
-					[ ensemble_subfield.append(ens_split[n]) for n in mink_to_measure ]
+					[ ensemble_subfield.append(ens_split[n_mf]) for n_mf in mink_to_measure ]
 				else:
 					ensemble_subfield.append(ens)
 
