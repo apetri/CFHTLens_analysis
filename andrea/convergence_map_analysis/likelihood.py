@@ -244,7 +244,7 @@ if __name__=="__main__":
 	else:
 		split_chunks = None
 	
-	#chi_squared = analysis.chi2(points,observed_feature=observed_feature,features_covariance=features_covariance,pool=pool,split_chunks=split_chunks)
+	chi_squared = analysis.chi2(points,observed_feature=observed_feature,features_covariance=features_covariance,pool=pool,split_chunks=split_chunks)
 
 	#Close MPI Pool
 	if pool is not None:
@@ -259,9 +259,9 @@ if __name__=="__main__":
 	likelihood_file = os.path.join(likelihoods_dir,"likelihood_{0}.npy".format(output_string(feature_string)))
 
 	logging.debug("Saving chi2 to {0}".format(chi2_file))
-	#np.save(chi2_file,chi_squared.reshape(Om.shape + w.shape + si8.shape))
+	np.save(chi2_file,chi_squared.reshape(Om.shape + w.shape + si8.shape))
 
 	logging.debug("Saving full likelihood to {0}".format(likelihood_file))
-	#np.save(likelihood_file,analysis.likelihood(chi_squared.reshape(Om.shape + w.shape + si8.shape)))
+	np.save(likelihood_file,analysis.likelihood(chi_squared.reshape(Om.shape + w.shape + si8.shape)))
 
 	logging.info("DONE!!")
