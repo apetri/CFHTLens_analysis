@@ -70,6 +70,10 @@ def output_string(feature_string):
 
 if __name__=="__main__":
 
+	#################################################
+	############Option parsing#######################
+	#################################################
+
 	#Parse command line options
 	parser = argparse.ArgumentParser()
 	parser.add_argument("-f","--file",dest="options_file",action="store",type=str,help="analysis options file")
@@ -131,6 +135,10 @@ if __name__=="__main__":
 
 	#Create a LikelihoodAnalysis instance and load the training models into it
 	analysis = LikelihoodAnalysis()
+
+	###########################################################
+	###############Feature loading#############################
+	###########################################################
 
 	#Start loading the data
 	logging.debug("Loading features...")
