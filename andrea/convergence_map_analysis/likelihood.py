@@ -266,11 +266,12 @@ if __name__=="__main__":
 		np.save(cmd_args.save_points.rstrip(".npy")+".npy",points)
 
 	#Now compute the chi2 at each of these points
-	logging.debug("Computing chi squared...")
 	if pool:
 		split_chunks = pool.size
+		logging.debug("Computing chi squared for {0} parameter combinations using {1} cores...".format(points.shape[0],pool.size))
 	else:
 		split_chunks = None
+		logging.debug("Computing chi squared for {0} parameter combinations using 1 core...".format(points.shape[0]))
 	
 	chi_squared = analysis.chi2(points,observed_feature=observed_feature,features_covariance=features_covariance,pool=pool,split_chunks=split_chunks)
 
