@@ -30,9 +30,20 @@ A "plot" directory will appear in your save_path
 
 	python likelihood.py -f options.ini
 
-or 
+or, if you want to speed up the $$$\chi^2$$$ calculations using MPI 
 
 	mpiexec -n 101 python likelihood.py -f options.ini
+
+A quick note on the options file: the parameter likelihood profile depends on which features (statistical descriptors) you want to use in the analysis. You can specify those in the options.ini file inputing a string in the _feature_types_ options. There is a particular syntax for the string formatting:
+
+1. Different descriptors should be separated by a *
+2. You must specify the smoothing scales after each descriptor type by a :
+3. Different smoothing scales are to be separated by a ,
+4. Current statistical features implemented are to be selected in (power_spectrum,moments,peaks,minkowski_012)
+
+Suppose I want to compute the parameter likelihood using the power spectrum with 0.5 arcmin smoothing combined with the peak counts with 0.5 and 1.0 arcmin smoothing. Then the corresponding line in options.ini should be
+
+	feature_types = power_spectrum:0.5 * peaks:0.5,1.0 
 
 4. Plot the confidence contours
 -------------------------------
