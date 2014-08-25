@@ -9,7 +9,7 @@ import StringIO
 ##################LensTools functionality#############################
 ######################################################################
 
-from lenstools import ConvergenceMap
+from lenstools import ConvergenceMap,Mask
 from lenstools.simulations import CFHTemu1
 from lenstools.observations import CFHTLens
 from lenstools.index import Indexer,PowerSpectrum,PDF,Peaks,MinkowskiAll,Moments
@@ -190,6 +190,15 @@ class Measurement(object):
 			self.kwargs["mask_filename"] = os.path.join(options.get("analysis","mask_directory"),options.get("analysis","mask_prefix")+"_sigma{0:02d}_subfield{1:02d}.fits".format(int(self.smoothing_scale * 10),self.subfield))
 		else:
 			self.kwargs["mask_filename"] = None
+
+	@property
+	def maskedFraction(self):
+
+		if "mask_filename" in self.kwargs.keys():
+			mask_profile = Mask.fromfilename(self.kwargs["mask_filename"],loader=cfht_fits_loader)
+			return mask_profile.maskedFraction
+		else:
+			return 0.0
 
 
 	def get_all_map_names(self):

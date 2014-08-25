@@ -103,6 +103,8 @@ if __name__=="__main__":
 		sys.exit(0)
 
 	#Parse INI options file
+	logging.debug("Parsing options from {0}".format(cmd_args.options_file))
+
 	options = ConfigParser.ConfigParser()
 	with open(cmd_args.options_file,"r") as configfile:
 		options.readfp(configfile)
@@ -170,6 +172,15 @@ if __name__=="__main__":
 					ens = Ensemble.fromfilelist([os.path.join(m[smoothing_scale].full_save_path,npy_filename(feature_type))])
 					ens.load(from_old=True)
 
+					#Check the masked fraction of the field of view
+					masked_fraction = m[smoothing_scale].maskedFraction
+
+					#Scale to the non masked area (only for power spectrum and peaks)
+					if feature_type=="power_spectrum":
+						ens.scale(1.0/(1.0 - masked_fraction)**2)
+					elif feature_type=="peaks":
+						ens.scale(1.0/(1.0 - masked_fraction))
+
 					#Check if we want to discard some of the Minkowski functionals
 					num = re.match(r"minkowski_([0-2]+)",feature_type)
 					if num is not None:
@@ -209,6 +220,15 @@ if __name__=="__main__":
 				
 				ens = Ensemble.fromfilelist([os.path.join(m[smoothing_scale].full_save_path,npy_filename(feature_type))])
 				ens.load(from_old=True)
+
+				#Check the masked fraction of the field of view
+				masked_fraction = m[smoothing_scale].maskedFraction
+
+				#Scale to the non masked area (only for power spectrum and peaks)
+				if feature_type=="power_spectrum":
+					ens.scale(1.0/(1.0 - masked_fraction)**2)
+				elif feature_type=="peaks":
+					ens.scale(1.0/(1.0 - masked_fraction))
 
 				#Check if we want to discard some of the Minkowski functionals
 				num = re.match(r"minkowski_([0-2]+)",feature_type)
