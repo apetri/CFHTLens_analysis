@@ -105,6 +105,9 @@ class ContourPlot(object):
 
 		assert len(self.parameter_axes.keys()) == self.likelihood.ndim,"The number of parameters should be the same as the number of dimensions of the likelihood!"
 
+		#Construct title label
+		self.title_label = os.path.split(likelihood_filename)[1].lstrip("likelihood_").rstrip(".npy")
+
 	def marginalize(self,parameter_name="w"):
 
 		"""
@@ -150,6 +153,7 @@ class ContourPlot(object):
 
 		self.ax.set_xlabel(self.parameter_labels[self.remaining_parameters[0]])
 		self.ax.set_ylabel(self.parameter_labels[self.remaining_parameters[1]])
+		self.ax.set_title(self.title_label)
 
 	def point(self,coordinate_x,coordinate_y,color="green",marker="o"):
 
