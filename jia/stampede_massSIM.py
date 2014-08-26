@@ -33,7 +33,7 @@ galcount = array([0.800968170166,0.639133453369,0.686164855957,0.553855895996,
 		  0.600227355957,0.527587890625,0.671237945557,0.494361877441,
 		  0.565235137939,0.592998504639,0.584747314453,0.530345916748,
 		  0.417697906494]).astype(float) # area for subfields, prepare for weighte sum powspec
-fsky = galcount
+fsky = galcount.copy()
 ########## define constants ############
 i = int(sys.argv[1])
 
