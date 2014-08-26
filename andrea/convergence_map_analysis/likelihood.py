@@ -78,6 +78,7 @@ if __name__=="__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument("-f","--file",dest="options_file",action="store",type=str,help="analysis options file")
 	parser.add_argument("-v","--verbose",dest="verbose",action="store_true",default=False,help="turn on verbosity")
+	parser.add_argument("-m","--mask_scale",dest="mask_scale",action="store_true",default=False,help="scale peaks and power spectrum to unmasked area")
 	parser.add_argument("-s","--save_points",dest="save_points",action="store",default=None,help="save points in parameter space to external npy file")
 	parser.add_argument("-ss","--save_debug",dest="save_debug",action="store_true",default=False,help="save a bunch of debugging info for the analysis")
 
@@ -176,11 +177,13 @@ if __name__=="__main__":
 					#Check the masked fraction of the field of view
 					masked_fraction = m[smoothing_scale].maskedFraction
 
-					#Scale to the non masked area (only for power spectrum and peaks)
-					if feature_type=="power_spectrum":
-						ens.scale(1.0/(1.0 - masked_fraction)**2)
-					elif feature_type=="peaks":
-						ens.scale(1.0/(1.0 - masked_fraction))
+					#Scale to the non masked area (only for power spectrum and peaks if option is enabled)
+					if cmd_args.mask_scale:
+						
+						if feature_type=="power_spectrum":
+							ens.scale(1.0/(1.0 - masked_fraction)**2)
+						elif feature_type=="peaks":
+							ens.scale(1.0/(1.0 - masked_fraction))
 
 					#Check if we want to discard some of the Minkowski functionals
 					num = re.match(r"minkowski_([0-2]+)",feature_type)
@@ -225,12 +228,14 @@ if __name__=="__main__":
 				#Check the masked fraction of the field of view
 				masked_fraction = m[smoothing_scale].maskedFraction
 
-				#Scale to the non masked area (only for power spectrum and peaks)
-				if feature_type=="power_spectrum":
-					ens.scale(1.0/(1.0 - masked_fraction)**2)
-				elif feature_type=="peaks":
-					logging.debug("Scaling peak counts of subfield {0}, masked fraction {1}".format(subfield,masked_fraction))
-					ens.scale(1.0/(1.0 - masked_fraction))
+				#Scale to the non masked area (only for power spectrum and peaks if option is enabled)
+				if cmd_args.mask_scale:
+				
+					if feature_type=="power_spectrum":
+						ens.scale(1.0/(1.0 - masked_fraction)**2)
+					elif feature_type=="peaks":
+						logging.debug("Scaling peak counts of subfield {0}, masked fraction {1}".format(subfield,masked_fraction))
+						ens.scale(1.0/(1.0 - masked_fraction))
 
 				#Check if we want to discard some of the Minkowski functionals
 				num = re.match(r"minkowski_([0-2]+)",feature_type)
