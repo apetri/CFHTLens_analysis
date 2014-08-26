@@ -79,6 +79,7 @@ if __name__=="__main__":
 	parser.add_argument("-f","--file",dest="options_file",action="store",type=str,help="analysis options file")
 	parser.add_argument("-v","--verbose",dest="verbose",action="store_true",default=False,help="turn on verbosity")
 	parser.add_argument("-s","--save_points",dest="save_points",action="store",default=None,help="save points in parameter space to external npy file")
+	parser.add_argument("-ss","--save_debug",dest="save_debug",action="store_true",default=False,help="save a bunch of debugging info for the analysis")
 
 	cmd_args = parser.parse_args()
 
@@ -249,9 +250,29 @@ if __name__=="__main__":
 	#####################Feature loading complete, ready for analysis###############################
 	################################################################################################
 
+	#If save_debug is enabled, save the training features, covariance and observed feature to npy files for check
+	if cmd_args.save_debug:
+		
+		logging.debug("Saving debug info...")
+		np.save("training_parameters.npy",analysis.parameter_set)
+		np.save("training_{0}.npy".format(output_string(feature_string)),analysis.training_set)
+		np.save("covariance_{0}.npy".format(output_string(feature_string)),features_covariance)
+		np.save("observation_{0}.npy".format(output_string(feature_string)),observed_feature)
+
+
 	#Train the interpolators using the simulated features
 	logging.debug("Training interpolators...")
 	analysis.train()
+
+	#If save_debug is enabled, test the interpolators for a fiducial cosmological model and save the result
+	if cmd_args.save_debug:
+
+		test_parameters = np.array([0.26,-1.0,0.8])
+		logging.debug("Testing simple interpolation for Omega_m={0[0]},w={0[1]},sigma8={0[2]}...".format(test_parameters))
+
+		test_interpolated_feature = analysis.predict(parameters)
+
+		np.save("testinterp_{0}.npy".format(output_string(feature_string)),test_interpolated_feature)
 
 	#Set the points in parameter space on which to compute the chi2 
 	Om = np.ogrid[options.getfloat("Omega_m","min"):options.getfloat("Omega_m","max"):options.getint("Omega_m","num_points")*1j]
