@@ -70,6 +70,8 @@ def output_string(feature_string):
 
 if __name__=="__main__":
 
+	DEBUG_PLUS = 5
+
 	#################################################
 	############Option parsing#######################
 	#################################################
@@ -78,6 +80,7 @@ if __name__=="__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument("-f","--file",dest="options_file",action="store",type=str,help="analysis options file")
 	parser.add_argument("-v","--verbose",dest="verbose",action="store_true",default=False,help="turn on verbosity")
+	parser.add_argument("-vv","--verbose_plus",dest="verbose_plus",action="store_true",default=False,help="turn on additional verbosity")
 	parser.add_argument("-m","--mask_scale",dest="mask_scale",action="store_true",default=False,help="scale peaks and power spectrum to unmasked area")
 	parser.add_argument("-s","--save_points",dest="save_points",action="store",default=None,help="save points in parameter space to external npy file")
 	parser.add_argument("-ss","--save_debug",dest="save_debug",action="store_true",default=False,help="save a bunch of debugging info for the analysis")
@@ -89,7 +92,9 @@ if __name__=="__main__":
 		sys.exit(0)
 
 	#Set verbosity level
-	if cmd_args.verbose:
+	if cmd_args.verbose_plus:
+		logging.basicConfig(level=DEBUG_PLUS)
+	elif cmd_args.verbose:
 		logging.basicConfig(level=logging.DEBUG)
 	else:
 		logging.basicConfig(level=logging.INFO)
@@ -181,8 +186,10 @@ if __name__=="__main__":
 					if cmd_args.mask_scale:
 						
 						if feature_type=="power_spectrum":
+							logging.log(DEBUG_PLUS,"Scaling power spectrum of subfield {0}, masked fraction {1}, multiplying by {2}".format(subfield,masked_fraction,1.0/(1.0 - masked_fraction)**2))
 							ens.scale(1.0/(1.0 - masked_fraction)**2)
 						elif feature_type=="peaks":
+							logging.log(DEBUG_PLUS,"Scaling peak counts of subfield {0}, masked fraction {1}, multiplying by {2}".format(subfield,masked_fraction,1.0/(1.0 - masked_fraction)))
 							ens.scale(1.0/(1.0 - masked_fraction))
 
 					#Check if we want to discard some of the Minkowski functionals
@@ -232,9 +239,10 @@ if __name__=="__main__":
 				if cmd_args.mask_scale:
 				
 					if feature_type=="power_spectrum":
+						logging.log(DEBUG_PLUS,"Scaling power spectrum of subfield {0}, masked fraction {1}, multiplying by {2}".format(subfield,masked_fraction,1.0/(1.0 - masked_fraction)**2))
 						ens.scale(1.0/(1.0 - masked_fraction)**2)
 					elif feature_type=="peaks":
-						logging.debug("Scaling peak counts of subfield {0}, masked fraction {1}".format(subfield,masked_fraction))
+						logging.log(DEBUG_PLUS,"Scaling peak counts of subfield {0}, masked fraction {1}, multiplying by {2}".format(subfield,masked_fraction,1.0/(1.0 - masked_fraction)))
 						ens.scale(1.0/(1.0 - masked_fraction))
 
 				#Check if we want to discard some of the Minkowski functionals
