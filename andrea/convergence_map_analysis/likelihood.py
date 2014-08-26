@@ -229,6 +229,7 @@ if __name__=="__main__":
 				if feature_type=="power_spectrum":
 					ens.scale(1.0/(1.0 - masked_fraction)**2)
 				elif feature_type=="peaks":
+					logging.debug("Scaling peak counts of subfield {0}, masked fraction {1}".format(subfield,masked_fraction))
 					ens.scale(1.0/(1.0 - masked_fraction))
 
 				#Check if we want to discard some of the Minkowski functionals
@@ -257,6 +258,7 @@ if __name__=="__main__":
 		np.save("training_parameters.npy",analysis.parameter_set)
 		np.save("training_{0}.npy".format(output_string(feature_string)),analysis.training_set)
 		np.save("covariance_{0}.npy".format(output_string(feature_string)),features_covariance)
+		np.save("covariance_observed_{0}.npy".format(output_string(feature_string)),ensemble_all_subfields.covariance())
 		np.save("observation_{0}.npy".format(output_string(feature_string)),observed_feature)
 
 
@@ -270,7 +272,7 @@ if __name__=="__main__":
 		test_parameters = np.array([0.26,-1.0,0.8])
 		logging.debug("Testing simple interpolation for Omega_m={0[0]},w={0[1]},sigma8={0[2]}...".format(test_parameters))
 
-		test_interpolated_feature = analysis.predict(parameters)
+		test_interpolated_feature = analysis.predict(test_parameters)
 
 		np.save("testinterp_{0}.npy".format(output_string(feature_string)),test_interpolated_feature)
 
