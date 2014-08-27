@@ -111,7 +111,7 @@ if __name__=="__main__":
 		sys.exit(0)
 
 	#Parse INI options file
-	logging.debug("Parsing options from {0}".format(cmd_args.options_file))
+	logging.info("Parsing options from {0}".format(cmd_args.options_file))
 
 	options = ConfigParser.ConfigParser()
 	with open(cmd_args.options_file,"r") as configfile:
@@ -151,7 +151,7 @@ if __name__=="__main__":
 	###########################################################
 
 	#Start loading the data
-	logging.debug("Loading features...")
+	logging.info("Loading features...")
 	for feature_type in features_to_measure.keys():
 		logging.info("{0}, smoothing scales: {1} arcmin".format(feature_type,",".join([ str(s) for s in features_to_measure[feature_type] ])))
 	
@@ -208,6 +208,7 @@ if __name__=="__main__":
 
 		#If option is specified, group all the subfields together, for each realization
 		if cmd_args.group_subfields:
+			logging.log(DEBUG_PLUS,"Taking means over the {0} subfields...".format(len(subfields)))
 			ensemble_all_subfields.group(group_size=len(subfields),kind="sparse")
 
 		#Add the feature to the LikelihoodAnalysis
@@ -218,7 +219,7 @@ if __name__=="__main__":
 			features_covariance = ensemble_all_subfields.covariance()
 
 	#Finally, measure the observed feature
-	logging.debug("Loading observations...")
+	logging.info("Loading observations...")
 	ensemble_all_subfields = Ensemble()
 
 	for subfield in subfields:
@@ -272,7 +273,7 @@ if __name__=="__main__":
 	#If save_debug is enabled, save the training features, covariance and observed feature to npy files for check
 	if cmd_args.save_debug:
 		
-		logging.debug("Saving debug info...")
+		logging.info("Saving debug info...")
 		np.save("training_parameters.npy",analysis.parameter_set)
 		np.save("training_{0}.npy".format(output_string(feature_string)),analysis.training_set)
 		np.save("covariance_{0}.npy".format(output_string(feature_string)),features_covariance)
@@ -281,14 +282,14 @@ if __name__=="__main__":
 
 
 	#Train the interpolators using the simulated features
-	logging.debug("Training interpolators...")
+	logging.info("Training interpolators...")
 	analysis.train()
 
 	#If save_debug is enabled, test the interpolators for a fiducial cosmological model and save the result
 	if cmd_args.save_debug:
 
 		test_parameters = np.array([0.26,-1.0,0.8])
-		logging.debug("Testing simple interpolation for Omega_m={0[0]},w={0[1]},sigma8={0[2]}...".format(test_parameters))
+		logging.info("Testing simple interpolation for Omega_m={0[0]},w={0[1]},sigma8={0[2]}...".format(test_parameters))
 
 		test_interpolated_feature = analysis.predict(test_parameters)
 
@@ -303,16 +304,16 @@ if __name__=="__main__":
 
 	points = np.array(np.meshgrid(Om,w,si8,indexing="ij")).reshape(3,num_points).transpose()
 	if cmd_args.save_points is not None:
-		logging.debug("Saving points to {0}.npy".format(cmd_args.save_points.rstrip(".npy")))
+		logging.info("Saving points to {0}.npy".format(cmd_args.save_points.rstrip(".npy")))
 		np.save(cmd_args.save_points.rstrip(".npy")+".npy",points)
 
 	#Now compute the chi2 at each of these points
 	if pool:
 		split_chunks = pool.size
-		logging.debug("Computing chi squared for {0} parameter combinations using {1} cores...".format(points.shape[0],pool.size))
+		logging.info("Computing chi squared for {0} parameter combinations using {1} cores...".format(points.shape[0],pool.size))
 	else:
 		split_chunks = None
-		logging.debug("Computing chi squared for {0} parameter combinations using 1 core...".format(points.shape[0]))
+		logging.info("Computing chi squared for {0} parameter combinations using 1 core...".format(points.shape[0]))
 	
 	chi_squared = analysis.chi2(points,observed_feature=observed_feature,features_covariance=features_covariance,pool=pool,split_chunks=split_chunks)
 
@@ -328,10 +329,10 @@ if __name__=="__main__":
 	chi2_file = os.path.join(likelihoods_dir,"chi2_{0}.npy".format(output_string(feature_string)))
 	likelihood_file = os.path.join(likelihoods_dir,"likelihood_{0}.npy".format(output_string(feature_string)))
 
-	logging.debug("Saving chi2 to {0}".format(chi2_file))
+	logging.info("Saving chi2 to {0}".format(chi2_file))
 	np.save(chi2_file,chi_squared.reshape(Om.shape + w.shape + si8.shape))
 
-	logging.debug("Saving full likelihood to {0}".format(likelihood_file))
+	logging.info("Saving full likelihood to {0}".format(likelihood_file))
 	np.save(likelihood_file,analysis.likelihood(chi_squared.reshape(Om.shape + w.shape + si8.shape)))
 
 	logging.info("DONE!!")
