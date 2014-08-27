@@ -1,4 +1,4 @@
-command: mpiexec -n 101 -hostfile %hostfile% python likelihood.py -f options_bnl.ini -v -ss
+command: mpiexec -n 101 -hostfile %hostfile% python likelihood.py -f options_bnl.ini -vv -ss --group_subfields
 mode: bycore
 N: 101
 hostfile: auto

@@ -82,6 +82,7 @@ if __name__=="__main__":
 	parser.add_argument("-v","--verbose",dest="verbose",action="store_true",default=False,help="turn on verbosity")
 	parser.add_argument("-vv","--verbose_plus",dest="verbose_plus",action="store_true",default=False,help="turn on additional verbosity")
 	parser.add_argument("-m","--mask_scale",dest="mask_scale",action="store_true",default=False,help="scale peaks and power spectrum to unmasked area")
+	parser.add_argument("-g","--group_subfields",dest="group_subfields",action="store_true",default=False,help="group feature realizations by taking the mean over subfields, this makes a big difference in the covariance matrix")
 	parser.add_argument("-s","--save_points",dest="save_points",action="store",default=None,help="save points in parameter space to external npy file")
 	parser.add_argument("-ss","--save_debug",dest="save_debug",action="store_true",default=False,help="save a bunch of debugging info for the analysis")
 
@@ -204,6 +205,10 @@ if __name__=="__main__":
 
 			#Add the features to the cumulative subfield ensemble
 			ensemble_all_subfields += reduce(mul,ensemble_subfield)
+
+		#If option is specified, group all the subfields together, for each realization
+		if cmd_args.group_subfields:
+			ensemble_all_subfields.group(group_size=len(subfields),kind="sparse")
 
 		#Add the feature to the LikelihoodAnalysis
 		analysis.add_model(parameters=model.squeeze(),feature=ensemble_all_subfields.mean())
