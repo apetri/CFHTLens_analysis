@@ -1,20 +1,29 @@
 from __future__ import print_function,division,with_statement
 
 import os,sys
+import argparse
 
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 
-#TODO: these options are hard coded, make them command line instead in the future
-
-cfht_directory = "cfht_masked_BAD"
-feature_string = "minkowski_2--1.0"
-feature_label_file = "new_th_minkowski.npy"
-feature_label_x = r"$\kappa$"
-feature_label_y = r"$V_2$"
-
 def main():
+
+	#Command line arguments
+	parser = argparse.ArgumentParser()
+	parser.add_argument("-d","--directory",dest="directory",action="store",default="cfht_masked_BAD",help="base directory in which all the outputs are")
+	parser.add_argument("-s","--string",dest="string",action="store",default="peaks--1.0",help="feature string identifier")
+	parser.add_argument("-l","--label",dest="label",action="store",default="th_peaks.npy",help="feature label file")
+	parser.add_argument("-x","--xlabel",dest="xlabel",action="store",default="\kappa",help="x label in tex format")
+	parser.add_argument("-y","--ylabel",dest="ylabel",action="store",default="N",help="y label in tex format")
+
+	#Parse arguments
+	cmd_args = parser.parse_args()
+	cfht_directory = cmd_args.directory
+	feature_string = cmd_args.string
+	feature_label_file = cmd_args.label
+	feature_label_x = r"${0}$".format(cmd_args.xlabel)
+	feature_label_y = r"${0}$".format(cmd_args.ylabel)
 
 	#Load the observed and the interpolated feature
 	feature_label = np.load(os.path.join(cfht_directory,feature_label_file))

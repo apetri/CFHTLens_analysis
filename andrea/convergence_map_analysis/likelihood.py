@@ -78,6 +78,10 @@ def output_string(feature_string):
 
 class FeatureLoader(object):
 
+	################################################################################
+	##############Constructor takes care of options parsing#########################
+	################################################################################
+
 	def __init__(self,cmd_args):
 
 		self.cmd_args = cmd_args
@@ -113,7 +117,9 @@ class FeatureLoader(object):
 		self.feature_string = self.options.get("analysis","feature_types")
 		self.smoothing_scales,self.features_to_measure = parse_features(self.feature_string)
 
-	#####################################################################################################################################
+	#################################################################################################################################################
+	##################################This is the function that does the dirty work, probably all you need to care about#############################
+	#################################################################################################################################################
 
 	def load_features(self,model,save_new=False):
 
@@ -130,10 +136,12 @@ class FeatureLoader(object):
 
 			#Construct one ensemble for each feature (with included smoothing scales) and load in the data
 			ensemble_subfield = list()
+			
 			for feature_type in self.features_to_measure.keys():
 			
 				for smoothing_scale in self.features_to_measure[feature_type]:
 				
+					
 					ens = Ensemble.fromfilelist([os.path.join(m[smoothing_scale].full_save_path,npy_filename(feature_type))])
 					ens.load(from_old=True)
 
