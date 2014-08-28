@@ -82,6 +82,7 @@ if __name__=="__main__":
 	parser.add_argument("-v","--verbose",dest="verbose",action="store_true",default=False,help="turn on verbosity")
 	parser.add_argument("-vv","--verbose_plus",dest="verbose_plus",action="store_true",default=False,help="turn on additional verbosity")
 	parser.add_argument("-m","--mask_scale",dest="mask_scale",action="store_true",default=False,help="scale peaks and power spectrum to unmasked area")
+	parser.add_argument("-c","--cut_convergence",dest="cut_convergence",action="store",default=None,help="select convergence values in (min,max) to compute the likelihood. Safe for single descriptor only!!")
 	parser.add_argument("-g","--group_subfields",dest="group_subfields",action="store_true",default=False,help="group feature realizations by taking the mean over subfields, this makes a big difference in the covariance matrix")
 	parser.add_argument("-s","--save_points",dest="save_points",action="store",default=None,help="save points in parameter space to external npy file")
 	parser.add_argument("-ss","--save_debug",dest="save_debug",action="store_true",default=False,help="save a bunch of debugging info for the analysis")
@@ -124,6 +125,15 @@ if __name__=="__main__":
 	th_minkowski = np.ogrid[options.getfloat("minkowski_functionals","th_min"):options.getfloat("minkowski_functionals","th_max"):(options.getint("minkowski_functionals","num_bins")+1)*1j]
 	mink_idx = MinkowskiAll(thresholds=th_minkowski).separate()
 	mink_idx = Indexer(mink_idx)
+
+	#Load the peaks and minkowski thresholds
+	kappa_peaks = np.load(os.path.join(save_path,"th_peaks.npy"))
+	kappa_minkowski = np.load(os.path.join(save_path,"th_minkowski.npy")) 
+
+	#Parse convergence cuts from command line
+	if cmd_args.cut_convergence is not None:
+		kappa_min,kappa_max = [ float(kappa_lim) for kappa_lim in cmd_args.cut_convergence.split(",") ]
+		assert kappa_min<kappa_max
 
 	#Get the names of all the simulated models available for the CFHT analysis, including smoothing scales and subfields
 	all_simulated_models = CFHTemu1.getModels(root_path=options.get("simulations","root_path"))
@@ -180,6 +190,11 @@ if __name__=="__main__":
 					ens = Ensemble.fromfilelist([os.path.join(m[smoothing_scale].full_save_path,npy_filename(feature_type))])
 					ens.load(from_old=True)
 
+					#Check if we want to cut out some of the peaks
+					if cmd_args.cut_convergence and feature_type=="peaks":
+						new_thresholds = ens.cut(kappa_min,kappa_max,feature_label=kappa_peaks)
+						logging.log(DEBUG_PLUS,"Performed cut on the peaks convergence, new limits are {0[0]},{0[-1]}".format(new_thresholds))
+
 					#Check the masked fraction of the field of view
 					masked_fraction = m[smoothing_scale].maskedFraction
 
@@ -198,9 +213,19 @@ if __name__=="__main__":
 					if num is not None:
 						mink_to_measure = [ int(n_mf) for n_mf in list(num.group(1)) ]
 						ens_split = ens.split(mink_idx)
+
+						#Perform the convergence cut if option is enabled
+						if cmd_args.cut_convergence:
+							new_thresholds = [ ens_split[n_mf].cut(kappa_min,kappa_max,feature_label=kappa_minkowski) for n_mf in mink_to_measure ]
+							logging.log(DEBUG_PLUS,"Performed cut on the minkowski convergence, new limits are {0[0]},{0[-1]}".format(new_thresholds[0]))
+						
 						[ ensemble_subfield.append(ens_split[n_mf]) for n_mf in mink_to_measure ]
+					
 					else:
+						
 						ensemble_subfield.append(ens)
+						if cmd_args.cut_convergence:
+							logging.log(DEBUG_PLUS,"Convergence cut on MFs not performed, select minkowski_012 instead of minkowski_all")
 
 
 			#Add the features to the cumulative subfield ensemble
@@ -238,6 +263,12 @@ if __name__=="__main__":
 				ens = Ensemble.fromfilelist([os.path.join(m[smoothing_scale].full_save_path,npy_filename(feature_type))])
 				ens.load(from_old=True)
 
+				#Check if we want to cut out some of the peaks
+				if cmd_args.cut_convergence and feature_type=="peaks":
+					new_thresholds = ens.cut(kappa_min,kappa_max,feature_label=kappa_peaks)
+					logging.log(DEBUG_PLUS,"Performed cut on the peaks convergence, new limits are {0[0]},{0[-1]}".format(new_thresholds))
+					np.save(os.path.join(save_path,"new_th_peaks.npy"),new_thresholds)
+
 				#Check the masked fraction of the field of view
 				masked_fraction = m[smoothing_scale].maskedFraction
 
@@ -254,11 +285,23 @@ if __name__=="__main__":
 				#Check if we want to discard some of the Minkowski functionals
 				num = re.match(r"minkowski_([0-2]+)",feature_type)
 				if num is not None:
+					
 					mink_to_measure = [ int(n_mf) for n_mf in list(num.group(1)) ]
 					ens_split = ens.split(mink_idx)
+					
+					#Perform the convergence cut if option is enabled
+					if cmd_args.cut_convergence:
+						new_thresholds = [ ens_split[n_mf].cut(kappa_min,kappa_max,feature_label=kappa_minkowski) for n_mf in mink_to_measure ]
+						logging.log(DEBUG_PLUS,"Performed cut on the minkowski convergence, new limits are {0[0]},{0[-1]}".format(new_thresholds[0]))
+						np.save(os.path.join(save_path,"new_th_minkowski.npy"),new_thresholds[0])
+					
 					[ ensemble_subfield.append(ens_split[n_mf]) for n_mf in mink_to_measure ]
+				
 				else:
+
 					ensemble_subfield.append(ens)
+					if cmd_args.cut_convergence:
+						logging.log(DEBUG_PLUS,"Convergence cut on MFs not performed, select minkowski_012 instead of minkowski_all")
 
 		#Add the features to the cumulative subfield ensemble
 		ensemble_all_subfields += reduce(mul,ensemble_subfield)
