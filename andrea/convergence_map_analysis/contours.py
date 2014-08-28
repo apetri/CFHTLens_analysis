@@ -19,9 +19,14 @@ class ContourPlot(object):
 
 	"""
 
-	def __init__(self):
+	def __init__(self,fig=None,ax=None):
 
-		self.fig,self.ax = plt.subplots()
+		if (fig is None) or (ax is None):
+			self.fig,self.ax = plt.subplots()
+		else:
+			self.fig = fig
+			self.ax = ax
+		
 		self.min = dict()
 		self.max = dict()
 		self.npoints = dict()
