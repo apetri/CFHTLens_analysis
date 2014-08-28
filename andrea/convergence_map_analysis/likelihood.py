@@ -6,6 +6,7 @@ from functools import reduce
 import os,sys,re
 import argparse,ConfigParser
 import logging
+import time
 
 ######################################################################
 ##################LensTools functionality#############################
@@ -165,6 +166,8 @@ if __name__=="__main__":
 	for feature_type in features_to_measure.keys():
 		logging.info("{0}, smoothing scales: {1} arcmin".format(feature_type,",".join([ str(s) for s in features_to_measure[feature_type] ])))
 	
+	start = time.time()
+
 	for n,model in enumerate(training_models):
 
 		logging.debug("Model {0}".format(n))
@@ -378,4 +381,7 @@ if __name__=="__main__":
 	logging.info("Saving full likelihood to {0}".format(likelihood_file))
 	np.save(likelihood_file,analysis.likelihood(chi_squared.reshape(Om.shape + w.shape + si8.shape)))
 
+	end = time.time()
+
 	logging.info("DONE!!")
+	logging.info("Completed in {0:.1f}s".format(end-start))
