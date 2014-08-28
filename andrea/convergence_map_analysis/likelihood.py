@@ -132,7 +132,7 @@ if __name__=="__main__":
 
 	#Parse convergence cuts from command line
 	if cmd_args.cut_convergence is not None:
-		kappa_min,kappa_max = [ float(kappa_lim) for kappa_lim in cmd_args.cut_convergence.split(",") ]
+		kappa_min,kappa_max = [ float(kappa_lim.lstrip("\\")) for kappa_lim in cmd_args.cut_convergence.split(",") ]
 		assert kappa_min<kappa_max
 
 	#Get the names of all the simulated models available for the CFHT analysis, including smoothing scales and subfields
@@ -193,7 +193,7 @@ if __name__=="__main__":
 					#Check if we want to cut out some of the peaks
 					if cmd_args.cut_convergence and feature_type=="peaks":
 						new_thresholds = ens.cut(kappa_min,kappa_max,feature_label=kappa_peaks)
-						logging.log(DEBUG_PLUS,"Performed cut on the peaks convergence, new limits are {0[0]},{0[-1]}".format(new_thresholds))
+						logging.log(DEBUG_PLUS,"Performed cut on the peaks convergence, new limits are {0},{1}".format(new_thresholds[0],new_thresholds[-1]))
 
 					#Check the masked fraction of the field of view
 					masked_fraction = m[smoothing_scale].maskedFraction
@@ -217,7 +217,7 @@ if __name__=="__main__":
 						#Perform the convergence cut if option is enabled
 						if cmd_args.cut_convergence:
 							new_thresholds = [ ens_split[n_mf].cut(kappa_min,kappa_max,feature_label=kappa_minkowski) for n_mf in mink_to_measure ]
-							logging.log(DEBUG_PLUS,"Performed cut on the minkowski convergence, new limits are {0[0]},{0[-1]}".format(new_thresholds[0]))
+							logging.log(DEBUG_PLUS,"Performed cut on the minkowski convergence, new limits are {0},{1}".format(new_thresholds[0][0],new_thresholds[0][-1]))
 						
 						[ ensemble_subfield.append(ens_split[n_mf]) for n_mf in mink_to_measure ]
 					
@@ -266,7 +266,7 @@ if __name__=="__main__":
 				#Check if we want to cut out some of the peaks
 				if cmd_args.cut_convergence and feature_type=="peaks":
 					new_thresholds = ens.cut(kappa_min,kappa_max,feature_label=kappa_peaks)
-					logging.log(DEBUG_PLUS,"Performed cut on the peaks convergence, new limits are {0[0]},{0[-1]}".format(new_thresholds))
+					logging.log(DEBUG_PLUS,"Performed cut on the peaks convergence, new limits are {0},{1}".format(new_thresholds[0],new_thresholds[-1]))
 					np.save(os.path.join(save_path,"new_th_peaks.npy"),new_thresholds)
 
 				#Check the masked fraction of the field of view
@@ -292,7 +292,7 @@ if __name__=="__main__":
 					#Perform the convergence cut if option is enabled
 					if cmd_args.cut_convergence:
 						new_thresholds = [ ens_split[n_mf].cut(kappa_min,kappa_max,feature_label=kappa_minkowski) for n_mf in mink_to_measure ]
-						logging.log(DEBUG_PLUS,"Performed cut on the minkowski convergence, new limits are {0[0]},{0[-1]}".format(new_thresholds[0]))
+						logging.log(DEBUG_PLUS,"Performed cut on the minkowski convergence, new limits are {0},{1}".format(new_thresholds[0][0],new_thresholds[0][-1]))
 						np.save(os.path.join(save_path,"new_th_minkowski.npy"),new_thresholds[0])
 					
 					[ ensemble_subfield.append(ens_split[n_mf]) for n_mf in mink_to_measure ]
