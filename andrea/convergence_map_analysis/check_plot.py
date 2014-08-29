@@ -33,6 +33,15 @@ def main():
 	observed_covariance = np.load(os.path.join(cfht_directory,"covariance_"+feature_string+".npy"))
 	interpolated_feature = np.load(os.path.join(cfht_directory,"testinterp_")+feature_string+".npy")
 
+	if "power_spectrum" in feature_string:
+		
+		l = feature_label
+		observed_feature *= l*(l+1)/(2.0*np.pi)
+		interpolated_feature *= l*(l+1)/(2.0*np.pi)
+		observed_covariance *= (l*(l+1)/(2.0*np.pi))**2
+		feature_label_x = r"$l$"
+		feature_label_y = r"$l(l+1)P_l/2\pi$"
+
 	#Build the figure
 	fig = plt.figure(figsize=(16,8))
 	gs = gridspec.GridSpec(2,1,height_ratios=[3,1])
@@ -44,6 +53,10 @@ def main():
 	ax0.set_xlabel(feature_label_x)
 	ax0.set_ylabel(feature_label_y)
 	ax0.legend(loc="upper right")
+
+	if "power_spectrum" in feature_string:
+		ax0.set_xscale("log")
+		ax0.set_yscale("log")
 
 	#Plot the fractional difference at the bottom
 	ax1 = plt.subplot(gs[1])
