@@ -117,6 +117,43 @@ class FeatureLoader(object):
 		self.feature_string = self.options.get("analysis","feature_types")
 		self.smoothing_scales,self.features_to_measure = parse_features(self.feature_string)
 
+		#Get masked area information
+		self.get_masked_fractions()
+
+	#################################################################################################################################################
+	##################################We need to gather all the masked area fractions, for all smoothing scales######################################
+	#################################################################################################################################################
+
+	def get_masked_fractions(self):
+
+		logging.info("Gathering masked area fractions...")
+
+		#It's convenient to group those in a two level dictionary, indexed by smoothing scale and subfield
+		self.masked_fraction = dict()
+		self.total_non_masked_fraction = dict()
+
+		#Loop over smoothing scales and subfields
+		for smoothing_scale in self.smoothing_scales:
+
+			self.masked_fraction[smoothing_scale] = dict()
+			self.total_non_masked_fraction[smoothing_scale] = 0.0
+
+			for subfield in self.subfields:
+
+				m = Measurement(model=None,options=self.options,subfield=subfield,smoothing_scale=smoothing_scale,measurer=None)
+				
+				self.masked_fraction[smoothing_scale][subfield] = m.maskedFraction
+				logging.debug("Masked fraction of subfield {0}, {1} arcmin smoothing is {2}".format(subfield,smoothing_scale,self.masked_fraction[smoothing_scale][subfield]))
+
+				self.total_non_masked_fraction[smoothing_scale] += 1.0 - self.masked_fraction[smoothing_scale][subfield]
+
+			logging.debug("Total non masked area fraction of CFHT subfields with {0} arcmin smoothing is {1}".format(smoothing_scale,self.total_non_masked_fraction[smoothing_scale]))
+
+		#Finished gathering the info
+		logging.info("Gathered masked area info.")
+
+
+
 	#################################################################################################################################################
 	##################################This is the function that does the dirty work, probably all you need to care about#############################
 	#################################################################################################################################################
@@ -129,7 +166,9 @@ class FeatureLoader(object):
 		#Then cycle through all the subfields and gather the features for each one
 		for subfield in self.subfields:
 		
+			#Dictionary that holds all the measurements
 			m = dict()
+
 			for smoothing_scale in self.smoothing_scales:
 				m[smoothing_scale] = Measurement(model=model,options=self.options,subfield=subfield,smoothing_scale=smoothing_scale,measurer=None)
 				m[smoothing_scale].get_all_map_names()
@@ -140,8 +179,8 @@ class FeatureLoader(object):
 			for feature_type in self.features_to_measure.keys():
 			
 				for smoothing_scale in self.features_to_measure[feature_type]:
-				
 					
+					#Construct the subfield/smoothing scale/feature specific ensemble
 					ens = Ensemble.fromfilelist([os.path.join(m[smoothing_scale].full_save_path,npy_filename(feature_type))])
 					ens.load(from_old=True)
 
@@ -154,10 +193,14 @@ class FeatureLoader(object):
 							np.save(os.path.join(self.save_path,"th_new_peaks.npy"),new_thresholds)
 
 					#Check the masked fraction of the field of view
-					masked_fraction = m[smoothing_scale].maskedFraction
+					masked_fraction = self.masked_fraction[smoothing_scale][subfield]
 
-					#Scale to the non masked area (only for power spectrum and peaks if option is enabled)
-					if self.cmd_args.mask_scale:
+					###########################################################################################################################################################################################################
+					#Scale to the non masked area: if we treat each subfield independently (i.e. group_subfields is False) then we need to scale each subfield to the same area when considering the power spectrum and peaks##
+					#if on the other hand we group subfields together, then the power spectrum and peaks are simply added between subfields, but the MFs and the moments need to be scaled#####################################
+					###########################################################################################################################################################################################################
+
+					if (self.cmd_args.mask_scale) and not(self.cmd_args.group_subfields):
 					
 						if feature_type=="power_spectrum":
 							logging.log(DEBUG_PLUS,"Scaling power spectrum of subfield {0}, masked fraction {1}, multiplying by {2}".format(subfield,masked_fraction,1.0/(1.0 - masked_fraction)**2))
@@ -166,7 +209,16 @@ class FeatureLoader(object):
 							logging.log(DEBUG_PLUS,"Scaling peak counts of subfield {0}, masked fraction {1}, multiplying by {2}".format(subfield,masked_fraction,1.0/(1.0 - masked_fraction)))
 							ens.scale(1.0/(1.0 - masked_fraction))
 
-					#Check if we want to discard some of the Minkowski functionals
+					elif (self.cmd_args.mask_scale) and (self.cmd_args.group_subfields):
+
+						if "minkowski" in feature_type or "moments" in feature_type:
+							logging.log(DEBUG_PLUS,"Scaling {0} of subfield {1}, masked fraction {2}, multiplying by {3}".format(feature_type,subfield,masked_fraction,(1.0 - masked_fraction)/self.total_non_masked_fraction[smoothing_scale]))
+							ens.scale((1.0 - masked_fraction)/self.total_non_masked_fraction[smoothing_scale])
+
+					###############################################################################
+					##MFs only: check if we want to discard some of the Minkowski functionals######
+					###############################################################################
+
 					num = re.match(r"minkowski_([0-2]+)",feature_type)
 					if num is not None:
 						
@@ -188,6 +240,8 @@ class FeatureLoader(object):
 						ensemble_subfield.append(ens)
 						if self.cmd_args.cut_convergence:
 							logging.log(DEBUG_PLUS,"Convergence cut on MFs not performed, select minkowski_012 instead of minkowski_all")
+
+					#############################################################################################
 
 
 			#Add the features to the cumulative subfield ensemble
@@ -246,6 +300,9 @@ def main():
 		pool.wait()
 		sys.exit(0)
 
+	if pool is not None:
+		logging.info("Started MPI Pool.")
+
 	#Instantiate a FeatureLoader object that will take care of the memory loading
 	feature_loader = FeatureLoader(cmd_args)
 
@@ -270,6 +327,7 @@ def main():
 
 	#Start loading the data
 	logging.info("Loading features...")
+	
 	for feature_type in feature_loader.features_to_measure.keys():
 		logging.info("{0}, smoothing scales: {1} arcmin".format(feature_type,",".join([ str(s) for s in feature_loader.features_to_measure[feature_type] ])))
 	
@@ -290,12 +348,20 @@ def main():
 		if n==covariance_model:
 			features_covariance = ensemble_all_subfields.covariance()
 
+	now = time.time()
+	logging.info("Simulated features loaded in {0:.1f}s".format(now-start))
+	last_timestamp = now
+
 	#Load the observed feature
 	logging.info("Loading observations...")
 	ensemble_all_subfields = feature_loader.load_features(observed_model,save_new=True)
 
 	#Compute the average over subfields
 	observed_feature = ensemble_all_subfields.mean()
+
+	now = time.time()
+	logging.info("Observed feature loaded in {0:.1f}s".format(now-last_timestamp))
+	last_timestamp = now
 
 	################################################################################################
 	#####################Feature loading complete, ready for analysis###############################
@@ -350,6 +416,11 @@ def main():
 	#Close MPI Pool
 	if pool is not None:
 		pool.close()
+		logging.info("Closed MPI Pool.")
+
+	now = time.time()
+	logging.info("chi2 calculations completed in {0:.1f}s".format(now-last_timestamp))
+	last_timestamp = now
 
 	#save output
 	likelihoods_dir = os.path.join(feature_loader.options.get("analysis","save_path"),"likelihoods")
