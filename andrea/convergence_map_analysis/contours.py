@@ -113,6 +113,21 @@ class ContourPlot(object):
 		#Construct title label
 		self.title_label = os.path.split(likelihood_filename)[1].lstrip("likelihood_").rstrip(".npy")
 
+	def getMaximum(self):
+
+		"""
+		Find the point in parameter space on which the likelihood is maximum
+
+		"""
+
+		max_loc = np.where(self.likelihood==self.likelihood.max())
+		max_parameters = dict()
+
+		for parameter in self.parameter_axes.keys():
+			max_parameters[parameter] = max_loc[self.parameter_axes[parameter]][0] * self.unit[parameter] + self.min[parameter]
+
+		return max_parameters
+
 	def marginalize(self,parameter_name="w"):
 
 		"""
@@ -341,6 +356,8 @@ def main():
 	contour.getLikelihood(cmd_args.likelihood_npy_file[0],parameter_axes=parameter_axes,parameter_labels=cosmo_labels)
 	#Set the physical units
 	contour.getUnitsFromOptions(options)
+	#Find the maximum value of the likelihood
+	print("Likelihood is maximum at {0}".format(contour.getMaximum()))
 	#Marginalize over one of the parameters
 	contour.marginalize(options.get("contours","marginalize_over"))
 	#Show the full likelihood
