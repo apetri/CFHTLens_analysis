@@ -275,6 +275,7 @@ def main():
 	parser.add_argument("-g","--group_subfields",dest="group_subfields",action="store_true",default=False,help="group feature realizations by taking the mean over subfields, this makes a big difference in the covariance matrix")
 	parser.add_argument("-s","--save_points",dest="save_points",action="store",default=None,help="save points in parameter space to external npy file")
 	parser.add_argument("-ss","--save_debug",dest="save_debug",action="store_true",default=False,help="save a bunch of debugging info for the analysis")
+	parser.add_argument("-p","--pickle",dest="pickle",action="store_true",default=False,help="pickle the emulator and save it in binary format for future reuse")
 
 	cmd_args = parser.parse_args()
 
@@ -380,6 +381,12 @@ def main():
 	#Train the interpolators using the simulated features
 	logging.info("Training interpolators...")
 	analysis.train()
+
+	#Pickle the emulator after training for future reuse
+	if cmd_args.pickle:
+		emulator_file = "emulator_{0}.p".format(feature_loader.feature_string)
+		logging.info("Pickling emulator and saving it to {0}".format(emulator_file))
+		analysis.save(emulator_file)
 
 	#If save_debug is enabled, test the interpolators for a fiducial cosmological model and save the result
 	if cmd_args.save_debug:
