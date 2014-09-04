@@ -170,6 +170,15 @@ class ContourPlot(object):
 		
 		self.likelihood_image = self.ax.imshow(self.marginalized_likelihood.transpose(),origin="lower",cmap=plt.cm.binary_r,extent=self.extent,aspect="auto")
 		self.colorbar = plt.colorbar(self.likelihood_image,ax=self.ax)
+		self.labels()
+		
+
+	def labels(self):
+
+		"""
+		Put the labels on the plot
+
+		"""
 
 		self.ax.set_xlabel(self.parameter_labels[self.remaining_parameters[0]])
 		self.ax.set_ylabel(self.parameter_labels[self.remaining_parameters[1]])
