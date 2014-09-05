@@ -16,7 +16,6 @@ from lenstools import Ensemble
 from lenstools.index import Indexer,MinkowskiAll
 from lenstools.constraints import LikelihoodAnalysis
 from lenstools.simulations import CFHTemu1
-from lenstools.observations import CFHTLens
 
 #################################################################################
 ####################Borrow the Measurer class from measure_features##############
