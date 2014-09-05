@@ -354,7 +354,7 @@ def main():
 
 	#Log timestamp
 	now = time.time()
-	logging.info("Emulator trained in {0:.1f}s".format(now-start))
+	logging.info("Emulator trained in {0:.1f}s".format(now-last_timestamp))
 	last_timestamp = now
 
 	#Pickle the emulator and save it to a .p file

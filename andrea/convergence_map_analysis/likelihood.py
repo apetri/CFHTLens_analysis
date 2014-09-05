@@ -6,6 +6,14 @@ import logging
 import time
 
 #################################################################################
+####################LensTools functionality######################################
+#################################################################################
+
+from lenstools.simulations import CFHTemu1
+from lenstools.observations import CFHTLens
+from lenstools.constraints import LikelihoodAnalysis
+
+#################################################################################
 ####################Borrow the FeatureLoader class from train####################
 #################################################################################
 
