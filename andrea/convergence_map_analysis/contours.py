@@ -141,13 +141,13 @@ class ContourPlot(object):
 		if self.likelihood.ndim<3:
 			
 			print("The likelihood is already marginal!")
-			self.marginalized_likelihood = self.likelihood / self.likelihood.sum()
+			self.reduced_likelihood = self.likelihood / self.likelihood.sum()
 			self.remaining_parameters = self.parameter_axes.keys()
 
 		else:
 
-			self.marginalized_likelihood = self.likelihood.sum(self.parameter_axes[parameter_name])
-			self.marginalized_likelihood /= self.marginalized_likelihood.sum()
+			self.reduced_likelihood = self.likelihood.sum(self.parameter_axes[parameter_name])
+			self.reduced_likelihood /= self.reduced_likelihood.sum()
 
 			#Find the remaining parameters
 			self.remaining_parameters = self.parameter_axes.keys()
@@ -166,9 +166,9 @@ class ContourPlot(object):
 
 		"""
 
-		assert self.marginalized_likelihood.ndim == 2,"The marginalized likelihood must be two dimensional!!"
+		assert self.reduced_likelihood.ndim == 2,"The marginalized likelihood must be two dimensional!!"
 		
-		self.likelihood_image = self.ax.imshow(self.marginalized_likelihood.transpose(),origin="lower",cmap=plt.cm.binary_r,extent=self.extent,aspect="auto")
+		self.likelihood_image = self.ax.imshow(self.reduced_likelihood.transpose(),origin="lower",cmap=plt.cm.binary_r,extent=self.extent,aspect="auto")
 		self.colorbar = plt.colorbar(self.likelihood_image,ax=self.ax)
 		self.labels()
 		
@@ -199,7 +199,7 @@ class ContourPlot(object):
 		self.ax.plot(coordinate_x,coordinate_y,color=color,marker=marker)
 
 		#Return the likelihood value at the specified point
-		return self.marginalized_likelihood[px,py]
+		return self.reduced_likelihood[px,py]
 
 
 	#################################################################################################
@@ -212,7 +212,7 @@ class ContourPlot(object):
 		Find the likelihood values that correspond to the selected p_values
 		"""
 
-		likelihood = self.marginalized_likelihood
+		likelihood = self.reduced_likelihood
 		self.original_p_values = levels
 
 		#Check sanity of input, likelihood must be normalized
@@ -294,7 +294,7 @@ class ContourPlot(object):
 		assert len(colors) == len(self.likelihood_values)
 
 		extent = self.extent
-		likelihood = self.marginalized_likelihood.transpose()
+		likelihood = self.reduced_likelihood.transpose()
 		values = self.likelihood_values
 
 		unit_j = (extent[1] - extent[0])/(likelihood.shape[1] - 1)
