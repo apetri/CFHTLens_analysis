@@ -357,7 +357,12 @@ def main():
 	last_timestamp = now
 
 	#Pickle the emulator and save it to a .p file
-	emulator_file = os.path.join("emulators","emulator_{0}_{1}.p".format(cmd_args.prefix,output_string(feature_loader.feature_string)))
+
+	emulators_dir = os.path.join(feature_loader.options.get("analysis","save_path"),"emulators")
+	if not os.path.isdir(emulators_dir):
+		os.mkdir(emulators_dir)
+	
+	emulator_file = os.path.join(emulators_dir,"emulator{0}_{1}.p".format(cmd_args.prefix,output_string(feature_loader.feature_string)))
 	logging.info("Pickling emulator and saving it to {0}".format(emulator_file))
 	analysis.save(emulator_file)
 

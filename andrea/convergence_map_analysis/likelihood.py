@@ -123,7 +123,8 @@ def main():
 	################################################################################################################################################
 
 	#Create a LikelihoodAnalysis instance by unpickling one of the emulators
-	emulator_file = os.path.join("emulators","emulator_{0}_{1}.p".format(cmd_args.prefix,output_string(feature_loader.feature_string)))
+	emulators_dir = os.path.join(feature_loader.options.get("analysis","save_path"),"emulators")
+	emulator_file = os.path.join(emulators_dir,"emulator{0}_{1}.p".format(cmd_args.prefix,output_string(feature_loader.feature_string)))
 	logging.info("Unpickling emulator from {0}...".format(emulator_file))
 	analysis = LikelihoodAnalysis.load(emulator_file)
 
