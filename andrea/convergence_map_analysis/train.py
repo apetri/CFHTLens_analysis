@@ -296,10 +296,26 @@ def main():
 	all_simulated_models = CFHTemu1.getModels(root_path=feature_loader.options.get("simulations","root_path"))
 
 	#Select subset of training models
-	training_models = all_simulated_models
-	
-	#Use this model for the covariance matrix
-	covariance_model = feature_loader.options.getint("analysis","covariance_model") - 1
+	try:
+		
+		training_models = list()
+		excluded_models = feature_loader.options.get("analysis","exclude_models").split(",")
+		excluded_models = [ int(excluded_model) - 1 for excluded_model in excluded_models ]
+		
+		for n in range(len(all_simulated_models)):
+			
+			if n in excluded_models:
+				logging.info("Excluding model {0}".format(all_simulated_models[n]))
+			else:
+				logging.info("Keeping model {0}".format(all_simulated_models[n]))
+				training_models.append(all_simulated_models[n])
+
+	except:
+
+		logging.info("Keeping all the {0} models".format(len(all_simulated_models)))
+		training_models = all_simulated_models
+
+	##############################################################################################################################
 
 	#Create a LikelihoodAnalysis instance and load the training models into it
 	analysis = LikelihoodAnalysis()
