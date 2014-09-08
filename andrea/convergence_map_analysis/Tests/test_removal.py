@@ -199,8 +199,6 @@ def main():
 	likelihood_cube = analysis.likelihood(chi_squared.reshape(Om.shape + w.shape + si8.shape))
 	np.save(likelihood_file,likelihood_cube)
 
-	end = time.time()
-
 	#Find the maximum of the likelihood using ContourPlot functionality
 	contour = ContourPlot()
 	contour.getLikelihood(likelihood_cube)
@@ -213,6 +211,8 @@ def main():
 	best_fit_parameters = [ parameters_maximum[par_key] for par_key in parameter_keys ]
 	logging.info("New best fit is [ {0[0]:.2f} {0[1]:.2f} {0[2]:.2f} ], chi2={1[0]:.3f}".format(best_fit_parameters,analysis.chi2(np.array(best_fit_parameters),features_covariance=features_covariance,observed_feature=observed_feature)))
 
+	#End
+	end = time.time()
 	logging.info("DONE!!")
 	logging.info("Completed in {0:.1f}s".format(end-start))
 

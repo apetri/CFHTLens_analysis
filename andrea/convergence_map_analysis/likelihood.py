@@ -20,6 +20,12 @@ from lenstools.constraints import LikelihoodAnalysis
 from train import FeatureLoader
 from train import output_string
 
+#################################################################################
+####################Borrow the ContourPlot class from contours###################
+#################################################################################
+
+from contours import ContourPlot
+
 ######################################################################
 ###################Other functionality################################
 ######################################################################
@@ -182,7 +188,20 @@ def main():
 	np.save(chi2_file,chi_squared.reshape(Om.shape + w.shape + si8.shape))
 
 	logging.info("Saving full likelihood to {0}".format(likelihood_file))
-	np.save(likelihood_file,analysis.likelihood(chi_squared.reshape(Om.shape + w.shape + si8.shape)))
+	likelihood_cube = analysis.likelihood(chi_squared.reshape(Om.shape + w.shape + si8.shape))
+	np.save(likelihood_file,likelihood_cube)
+
+	#Find the maximum of the likelihood using ContourPlot functionality
+	contour = ContourPlot()
+	contour.getLikelihood(likelihood_cube)
+	contour.getUnitsFromOptions(feature_loader.options)
+	parameters_maximum = contour.getMaximum()
+	parameter_keys = parameters_maximum.keys()
+	parameter_keys.sort(key=contour.parameter_axes.get)
+
+	#Display the new best fit before exiting
+	best_fit_parameters = [ parameters_maximum[par_key] for par_key in parameter_keys ]
+	logging.info("Best fit is [ {0[0]:.2f} {0[1]:.2f} {0[2]:.2f} ], chi2={1[0]:.3f}".format(best_fit_parameters,analysis.chi2(np.array(best_fit_parameters),features_covariance=features_covariance,observed_feature=observed_feature)))
 
 	end = time.time()
 
