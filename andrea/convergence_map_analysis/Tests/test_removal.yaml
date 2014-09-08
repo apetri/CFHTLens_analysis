@@ -1,0 +1,4 @@
+command: mpiexec -n 101 -hostfile %hostfile% python test_removal.py -f ../options_bnl.ini -vv --group_subfields --mask_scale --remove 24
+mode: bycore
+N: 101
+hostfile: auto

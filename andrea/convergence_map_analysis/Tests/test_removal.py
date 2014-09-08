@@ -139,7 +139,7 @@ def main():
 	analysis.train()
 
 	#Treat the removed model as data
-	logging.info("Treating model {0} as data, loading features...".format(analysis.parameter_set[remove_index]))
+	logging.info("Treating model {0} as data, loading features...".format(model_to_remove))
 	observed_feature = feature_loader.load_features(model_to_remove).mean()
 
 	####################################################################################################################
