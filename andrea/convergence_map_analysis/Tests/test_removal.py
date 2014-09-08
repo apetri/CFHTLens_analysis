@@ -124,23 +124,25 @@ def main():
 
 	##################################################################################################################################################
 
-	#Remove one of the models from the emulator, and treat it as data to fit
+	#Treat the removed model as data
 	model_to_remove = all_simulated_models[cmd_args.remove]
-
-	logging.info("Removing model {0} from emulator training".format(model_to_remove))
-	
 	parameters_to_remove = model_to_remove.squeeze()
+	logging.info("Treating model {0} as data, loading features...".format(model_to_remove))
+	observed_feature = feature_loader.load_features(model_to_remove).mean()
+
+	#Compute the chi2 for this observed feature without removing it from the emulator (must be close to 0)
+	logging.info("Chi2 before removal: {0} ({1} dof)".format(analysis.chi2(parameters_to_remove,features_covariance=features_covariance,observed_feature=observed_feature),analysis.training_set.shape[1]))
+
+	#Remove the model from the emulator
 	remove_index = analysis.find(parameters_to_remove)[0]
-	
 	logging.info("Removing model {0} with parameters {1} from emulator...".format(remove_index,analysis.parameter_set[remove_index]))
 	analysis.remove_model(remove_index)
 
 	#Retrain without the removed model
 	analysis.train()
 
-	#Treat the removed model as data
-	logging.info("Treating model {0} as data, loading features...".format(model_to_remove))
-	observed_feature = feature_loader.load_features(model_to_remove).mean()
+	#Compute the chi2 for this observed feature after removing it from the emulator (likely it's not 0 anymore)
+	logging.info("Chi2 after removal: {0} ({1} dof)".format(analysis.chi2(parameters_to_remove,features_covariance=features_covariance,observed_feature=observed_feature),analysis.training_set.shape[1]))
 
 	####################################################################################################################
 	######################################Compute the chi2 cube#########################################################
