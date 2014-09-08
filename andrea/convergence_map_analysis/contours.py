@@ -21,11 +21,18 @@ class ContourPlot(object):
 
 	def __init__(self,fig=None,ax=None):
 
-		if (fig is None) or (ax is None):
-			self.fig,self.ax = plt.subplots()
-		else:
-			self.fig = fig
-			self.ax = ax
+		try:
+			
+			if (fig is None) or (ax is None):
+				self.fig,self.ax = plt.subplots()
+			else:
+				self.fig = fig
+				self.ax = ax
+
+		except:
+
+			print("Warning, no matplotlib functionalities!")
+			pass
 		
 		self.min = dict()
 		self.max = dict()
@@ -106,7 +113,11 @@ class ContourPlot(object):
 
 		self.parameter_axes = parameter_axes
 		self.parameter_labels = parameter_labels
-		self.likelihood = np.load(likelihood_filename)
+
+		if type(likelihood_filename)==str:
+			self.likelihood = np.load(likelihood_filename)
+		elif type(likelihood_filename)==np.ndarray:
+			self.likelihood = likelihood_filename
 
 		assert len(self.parameter_axes.keys()) == self.likelihood.ndim,"The number of parameters should be the same as the number of dimensions of the likelihood!"
 
