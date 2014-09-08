@@ -137,7 +137,7 @@ def main():
 	observed_feature = feature_loader.load_features(model_to_remove).mean()
 
 	#Compute the chi2 for this observed feature without removing it from the emulator (must be close to 0)
-	logging.info("Chi2 before removal: {0} ({1} dof)".format(analysis.chi2(parameters_to_remove,features_covariance=features_covariance,observed_feature=observed_feature),analysis.training_set.shape[1]))
+	logging.info("Chi2 before removal: {0[0]:.3f} ({1} dof)".format(analysis.chi2(parameters_to_remove,features_covariance=features_covariance,observed_feature=observed_feature),analysis.training_set.shape[1]))
 
 	#Remove the model from the emulator
 	remove_index = analysis.find(parameters_to_remove)[0]
@@ -148,7 +148,7 @@ def main():
 	analysis.train()
 
 	#Compute the chi2 for this observed feature after removing it from the emulator (likely it's not 0 anymore)
-	logging.info("Chi2 after removal: {0} ({1} dof)".format(analysis.chi2(parameters_to_remove,features_covariance=features_covariance,observed_feature=observed_feature),analysis.training_set.shape[1]))
+	logging.info("Chi2 after removal: {0[0]:.3f} ({1} dof)".format(analysis.chi2(parameters_to_remove,features_covariance=features_covariance,observed_feature=observed_feature),analysis.training_set.shape[1]))
 
 	####################################################################################################################
 	######################################Compute the chi2 cube#########################################################
@@ -206,10 +206,12 @@ def main():
 	contour.getLikelihood(likelihood_cube)
 	contour.getUnitsFromOptions(feature_loader.options)
 	parameters_maximum = contour.getMaximum()
+	parameter_keys = parameters_maximum.keys()
+	parameter_keys.sort(key=contour.parameter_axes.get)
 
 	#Display the new best fit before exiting
-	best_fit_parameters = [ parameters_maximum[par_key] for par_key in parameters_maximum.keys().sort(key=contours.parameter_axes.get) ]
-	print("New best fit is {0}, chi2={1}".format(best_fit_parameters,analysis.chi2(np.array(best_fit_parameters),features_covariance=features_covariance,observed_feature=observed_feature)))
+	best_fit_parameters = [ parameters_maximum[par_key] for par_key in parameter_keys ]
+	logging.info("New best fit is [ {0[0]:.2f} {0[1]:.2f} {0[2]:.2f} ], chi2={1[0]:.3f}".format(best_fit_parameters,analysis.chi2(np.array(best_fit_parameters),features_covariance=features_covariance,observed_feature=observed_feature)))
 
 	logging.info("DONE!!")
 	logging.info("Completed in {0:.1f}s".format(end-start))
