@@ -147,6 +147,8 @@ class ContourPlot(object):
 		else:
 
 			self.reduced_likelihood = self.likelihood.sum(self.parameter_axes[parameter_name])
+
+			#Normalize
 			self.reduced_likelihood /= self.reduced_likelihood.sum()
 
 			#Find the remaining parameters
@@ -158,6 +160,46 @@ class ContourPlot(object):
 		self.extent = (self.min[self.remaining_parameters[0]],self.max[self.remaining_parameters[0]],self.min[self.remaining_parameters[1]],self.max[self.remaining_parameters[1]])
 		self.ax.set_xlim(self.extent[0],self.extent[1])
 		self.ax.set_ylim(self.extent[2],self.extent[3])
+
+	def slice(self,parameter_name="w",parameter_value=-1.0):
+
+		"""
+		Slice the likelihood cube by fixing one of the parameters
+
+		"""
+
+		assert hasattr(self,"likelihood"),"You have to load in the likelihood first!"
+		assert parameter_name in self.parameter_axes.keys(),"You are trying to get a slice with a parameter that does not exist!"
+		
+		if self.likelihood.ndim<3:
+			
+			print("The likelihood is already sliced!")
+			self.reduced_likelihood = self.likelihood / self.likelihood.sum()
+			self.remaining_parameters = self.parameter_axes.keys()
+
+		else:
+			
+			#Select the slice
+			slice_axis = self.parameter_axes[parameter_name]
+			slice_index = int((parameter_value - self.min[parameter_name]) / self.unit[parameter_name])
+			assert slice_index<self.npoints[parameter_name],"Out of bounds!"
+
+			#Get the slice
+			self.reduced_likelihood = np.split(self.likelihood,self.npoints[parameter_name],axis=slice_axis)[slice_index].squeeze()
+			
+			#Normalize
+			self.reduced_likelihood /= self.reduced_likelihood.sum()
+
+			#Find the remaining parameters
+			self.remaining_parameters = self.parameter_axes.keys()
+			self.remaining_parameters.pop(self.remaining_parameters.index(parameter_name))
+			#Sort the remaining parameter names so that the corresponding axes are in increasing order
+			self.remaining_parameters.sort(key=self.parameter_axes.get)
+		
+		self.extent = (self.min[self.remaining_parameters[0]],self.max[self.remaining_parameters[0]],self.min[self.remaining_parameters[1]],self.max[self.remaining_parameters[1]])
+		self.ax.set_xlim(self.extent[0],self.extent[1])
+		self.ax.set_ylim(self.extent[2],self.extent[3])
+
 
 	def show(self):
 
