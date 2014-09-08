@@ -113,18 +113,28 @@ class ContourPlot(object):
 		#Construct title label
 		self.title_label = os.path.split(likelihood_filename)[1].lstrip("likelihood_").rstrip(".npy")
 
-	def getMaximum(self):
+	def getMaximum(self,which="full"):
 
 		"""
 		Find the point in parameter space on which the likelihood is maximum
 
 		"""
-
-		max_loc = np.where(self.likelihood==self.likelihood.max())
 		max_parameters = dict()
 
-		for parameter in self.parameter_axes.keys():
-			max_parameters[parameter] = max_loc[self.parameter_axes[parameter]][0] * self.unit[parameter] + self.min[parameter]
+		if which=="full":
+			
+			max_loc = np.where(self.likelihood==self.likelihood.max())
+			for parameter in self.parameter_axes.keys():
+				max_parameters[parameter] = max_loc[self.parameter_axes[parameter]][0] * self.unit[parameter] + self.min[parameter]
+		
+		elif which=="reduced":
+			
+			max_loc = np.where(self.reduced_likelihood==self.reduced_likelihood.max())
+			for n,parameter in enumerate(self.remaining_parameters):
+				max_parameters[parameter] = max_loc[n][0] * self.unit[parameter] + self.min[parameter]
+		
+		else:
+			raise ValueError("which must be either 'full' or 'reduced'")
 
 		return max_parameters
 
@@ -408,9 +418,10 @@ def main():
 	#Set the physical units
 	contour.getUnitsFromOptions(options)
 	#Find the maximum value of the likelihood
-	print("Likelihood is maximum at {0}".format(contour.getMaximum()))
+	print("Full likelihood is maximum at {0}".format(contour.getMaximum(which="full")))
 	#Marginalize over one of the parameters
 	contour.marginalize(options.get("contours","marginalize_over"))
+	print("Marginalized likelihood is maximum at {0}".format(contour.getMaximum(which="reduced")))
 	#Show the full likelihood
 	contour.show()
 	#Compute the likelihood levels
@@ -418,7 +429,7 @@ def main():
 	print("Desired p_values:",contour.original_p_values)
 	print("Calculated p_values",contour.computed_p_values)
 	#Display the contours
-	contour.plotContours(colors=colors,fill=False)
+	contour.plotContours(colors=colors,fill=False,display_percentages=True)
 
 	#Save the result
 	contours_dir = os.path.join(options.get("analysis","save_path"),"contours")
