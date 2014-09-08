@@ -115,14 +115,18 @@ class ContourPlot(object):
 		self.parameter_labels = parameter_labels
 
 		if type(likelihood_filename)==str:
+			
 			self.likelihood = np.load(likelihood_filename)
+			#Construct title label
+			self.title_label = os.path.split(likelihood_filename)[1].lstrip("likelihood_").rstrip(".npy")
+		
 		elif type(likelihood_filename)==np.ndarray:
+			
 			self.likelihood = likelihood_filename
+			#Construct title label
+			self.title_label = "Default"
 
 		assert len(self.parameter_axes.keys()) == self.likelihood.ndim,"The number of parameters should be the same as the number of dimensions of the likelihood!"
-
-		#Construct title label
-		self.title_label = os.path.split(likelihood_filename)[1].lstrip("likelihood_").rstrip(".npy")
 
 	def getMaximum(self,which="full"):
 
