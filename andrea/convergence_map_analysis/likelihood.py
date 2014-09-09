@@ -105,7 +105,8 @@ def main():
 	all_simulated_models = CFHTemu1.getModels(root_path=feature_loader.options.get("simulations","root_path"))
 
 	#Use this model for the covariance matrix
-	covariance_model = all_simulated_models[feature_loader.options.getint("analysis","covariance_model") - 1]
+	covariance_model = all_simulated_models[feature_loader.options.getint("analysis","covariance_model")]
+	logging.info("Measuring covariance matrix from model {0}".format(covariance_model))
 	#Load in the covariance matrix
 	features_covariance = feature_loader.load_features(covariance_model).covariance()
 
