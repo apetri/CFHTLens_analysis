@@ -61,6 +61,7 @@ def main():
 	parser.add_argument("-ss","--save_debug",dest="save_debug",action="store_true",default=False,help="save a bunch of debugging info for the analysis")
 	parser.add_argument("-p","--prefix",dest="prefix",action="store",default="",help="prefix of the emulator to pickle")
 	parser.add_argument("-r","--remove",dest="remove",action="store",type=int,default=24,help="model to remove from the analysis")
+	parser.add_argument("-R","--random",dest="random",action="store",type=int,default=0,help="random seed initialization for realization picking")
 
 	cmd_args = parser.parse_args()
 
@@ -130,11 +131,15 @@ def main():
 
 	##################################################################################################################################################
 
+	#Initialize random seed
+	np.random.seed(cmd_args.random)
+	realization = np.random.randint(0,1000)
+
 	#Treat the removed model as data
 	model_to_remove = all_simulated_models[cmd_args.remove]
 	parameters_to_remove = model_to_remove.squeeze()
-	logging.info("Treating model {0} as data, loading features...".format(model_to_remove))
-	observed_feature = feature_loader.load_features(model_to_remove).mean()
+	logging.info("Treating model {0}, realization {1} as data, loading features...".format(model_to_remove,realization+1))
+	observed_feature = feature_loader.load_features(model_to_remove)[np.random.randint(0,1000)]
 
 	#Compute the chi2 for this observed feature without removing it from the emulator (must be close to 0)
 	logging.info("Chi2 before removal: {0[0]:.3f} ({1} dof)".format(analysis.chi2(parameters_to_remove,features_covariance=features_covariance,observed_feature=observed_feature),analysis.training_set.shape[1]))
