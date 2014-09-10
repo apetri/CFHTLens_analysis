@@ -16,8 +16,8 @@ import WLanalysis
 #from emcee.utils import MPIPool
 #from multiprocessing import Pool
 
-#cat_dir='/home1/02977/jialiu/CFHT_cat/'
-cat_dir = '/Users/jia/CFHTLenS/catalogue/'
+cat_dir='/home1/02977/jialiu/CFHT_cat/'
+#cat_dir = '/Users/jia/CFHTLenS/catalogue/'
 split_dir = cat_dir+'split/'
 W_dir = lambda Wx: cat_dir+'W%s/'%(Wx) #dir for W1..W4 field
 splitfiles = os.listdir(split_dir)
@@ -237,7 +237,31 @@ def Bmode(iinput):
 		bmap = WLanalysis.KSvw(-Me2_smooth, Me1_smooth)
 		WLanalysis.writeFits(bmap,bmap_fn)
 	#return bmap
+def Noise(iinput):
+	'''Input: (Wx, iseed)
+	Return: files of noise KS map, using randomly rotated galaxy.
+	'''
+	Wx, iseed = iinput
+	seed(iseed)
+	print 'Bmode - Wx, iseed:', Wx, iseed
+	bmap_fn = cat_dir+'Noise/W%i/W%i_Noise_sigmaG10_%04d.fit'%(Wx, Wx, iseed)
 	
+	isfile_kmap, bmap = WLanalysis.TestFitsComplete(bmap_fn, return_file = True)
+	if isfile_kmap == False:
+		Me1_fn = cat_dir+'Me_Mw_galn/W%i_Me1w_1.3_lo.fit'%(Wx)
+		Me2_fn = cat_dir+'Me_Mw_galn/W%i_Me2w_1.3_lo.fit'%(Wx)
+		Mw_fn = cat_dir+'Me_Mw_galn/W%i_Mwm_1.3_lo.fit'%(Wx)
+		Me1_init = WLanalysis.readFits(Me1_fn)
+		Me2_init = WLanalysis.readFits(Me2_fn)
+		#### randomly rotate Me1, Me2 ###
+		Me1, Me2 = WLanalysis.rndrot(Me1_init, Me2_init)
+		#################################
+		Mw = WLanalysis.readFits(Mw_fn)	
+		Me1_smooth = WLanalysis.weighted_smooth(Me1, Mw, PPA=PPA512, sigmaG=sigmaG)
+		Me2_smooth = WLanalysis.weighted_smooth(Me2, Mw, PPA=PPA512, sigmaG=sigmaG)
+		bmap = WLanalysis.KSvw(Me1_smooth, Me2_smooth)
+		WLanalysis.writeFits(bmap,bmap_fn)
+		
 Wx_sigmaG_i_hl_arr = [[Wx, sigmaG, i, hl] for Wx in range(1,5) for sigmaG in sigmaG_arr for i in range(0,len(zbins)-1) for hl in ['hi','lo']]+[[Wx, sigmaG, -1, 'lo'] for Wx in range(1,5) for sigmaG in sigmaG_arr]
 
 ################################################
@@ -261,7 +285,13 @@ Wx_sigmaG_i_hl_arr = [[Wx, sigmaG, i, hl] for Wx in range(1,5) for sigmaG in sig
 ###    uncomment the next 1 line
 #map(Bmode, Wx_sigmaG_i_hl_arr)
 ################################################
-###(5) cross corrrelation
+###(5) Create Noise KS maps by randomly rotate
+###    galaxies (2014/09/09)
+noise_input_arr =[[Wx, iseed] for Wx in range(1,5) for iseed in range(200)]
+map(Noise, noise_input_arr)
+
+################################################
+###(6) cross corrrelation
 ###    put mask on KS map, and cross correlate
 ###    for both B-mode(for compare), and true KS
 ### test on sigmaG=1.0, zcut=0.85
@@ -317,10 +347,10 @@ def TestCrossCorrelate (Wx, zcut, sigmaG):
 	#plotimshow(galn_lo,'galn_W%i_zcut%shi_sigmaG%02d.jpg'%(Wx,zcut,sigmaG*10))
 	
 Wx=1
-for zcut in zbins[:-1]:
-	for sigmaG in sigmaG_arr:
-		print 'Wx, zcut, sigmaG',Wx, zcut, sigmaG
-		TestCrossCorrelate (Wx, zcut, sigmaG)
+#for zcut in zbins[:-1]:
+	#for sigmaG in sigmaG_arr:
+		#print 'Wx, zcut, sigmaG',Wx, zcut, sigmaG
+		#TestCrossCorrelate (Wx, zcut, sigmaG)
 ################################################
 
 

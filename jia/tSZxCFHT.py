@@ -11,11 +11,22 @@ import os
 import WLanalysis
 from scipy import interpolate
 
-kSZ_dir = '/Users/jia/CFHTLenS/kSZ/ellmax3000/'
-plot_dir = '/Users/jia/CFHTLenS/plot/tSZxCFHT/ellmax3000/'
-kSZCoordsGen = lambda i: WLanalysis.readFits(kSZ_dir+'kSZ2_W%i_ellmax3000.fit'%(i))
-noiseCoordsGen = lambda i: WLanalysis.readFits(kSZ_dir+'kSZ2_noise_W%i_ellmax3000.fit'%(i))
-offsetCoordsGen = lambda i: WLanalysis.readFits(kSZ_dir+'kSZ2_W%i_ellmax3000_offset.fit'%(i))
+
+###################### knobs###########################
+plot_crosscorrelate_all = 0
+testCC = 0
+test_powspec = 0
+create_noise_KS = 1
+#######################################################
+
+
+kSZ_dir = '/Users/jia/CFHTLenS/kSZ/newfil/'
+#kSZ_dir = '/Users/jia/CFHTLenS/kSZ/ellmax3000/'
+plot_dir = '/Users/jia/CFHTLenS/plot/tSZxCFHT/newfil/'#ellmax3000/'
+kSZCoordsGen = lambda i: WLanalysis.readFits(kSZ_dir+'LGMCA_W%i_flipper8192_kSZfilt_squared_toJia.fit'%(i))
+#kSZCoordsGen = lambda i: WLanalysis.readFits(kSZ_dir+'kSZ2_W%i_ellmax3000.fit'%(i))
+#noiseCoordsGen = lambda i: WLanalysis.readFits(kSZ_dir+'kSZ2_noise_W%i_ellmax3000.fit'%(i))
+#offsetCoordsGen = lambda i: WLanalysis.readFits(kSZ_dir+'kSZ2_W%i_ellmax3000_offset.fit'%(i))
 
 kmapGen = lambda i: WLanalysis.readFits('/Users/jia/CFHTLenS/obsPK/W%i_KS_1.3_lo_sigmaG05.fit'%(i))
 bmodeGen = lambda i: WLanalysis.readFits('/Users/jia/CFHTLenS/obsPK/W%i_Bmode_1.3_lo_sigmaG05.fit'%(i))
@@ -24,13 +35,19 @@ centers = array([[34.5, -7.5], [134.5, -3.25],[214.5, 54.5],[ 332.75, 1.9]])
 sizes = (1330, 800, 1120, 950)
 PPR512=8468.416479647716
 PPA512=2.4633625
-edgesGen = lambda Wx: linspace(5,100,11)*sizes[Wx-1]/1330.0
+edgesGen = lambda Wx: linspace(5,80,11)*sizes[Wx-1]/1330.0
 rad2pix=lambda x, size: around(size/2.0-0.5 + x*PPR512).astype(int)
 sigmaG_arr = [0.0, 1.0, 2.0, 5.0]
 
 #######################################################
 ###### convert from txt to fits #######################
 #######################################################
+#for i in range(1,5):
+	#print 'txt2fits',i
+	#fn = kSZ_dir+'LGMCA_W%i_flipper8192_kSZfilt_squared_toJia'%(i)
+	#data = genfromtxt(fn+'.txt')
+	#WLanalysis.writeFits(data, fn+'.fit')
+	
 #kSZCoordsGen = lambda i: genfromtxt(kSZ_dir+'kSZ2_W%i_ellmax3000.txt'%(i))
 #noiseCoordsGen = lambda i: genfromtxt(kSZ_dir+'kSZ2_noise_W%i_ellmax3000.txt'%(i))
 #offsetCoordsGen = lambda i: genfromtxt(kSZ_dir+'kSZ2_W%i_ellmax3000_offset.txt'%(i))
@@ -41,14 +58,6 @@ sigmaG_arr = [0.0, 1.0, 2.0, 5.0]
 #map(txt2fits_kSZ,range(1,5))
 #map(txt2fits_noise,range(1,5))
 #map(txt2fits_offset,range(1,5))
-#######################################################
-
-
-#######################################################
-###################### knobs###########################
-#######################################################
-plot_crosscorrelate_all = 0
-testCC = 1
 #######################################################
 
 
@@ -118,13 +127,16 @@ def kSZmapGen (Wx, noise=False, offset=False, method='nearest'):
 		kSZmap = kSZmap.T
 	return kSZmap
 
-def KSxkSZ (Wx, method='nearest', sigmaG = 1.0):
-	
+def KSxkSZ (Wx, method='nearest', sigmaG = 0.0):
+	print 'KSxkSZ',Wx
 	KS = kmapGen(Wx)
 	Bmode = bmodeGen(Wx)
 	kSZ = kSZmapGen (Wx, method=method)
-	noise = kSZmapGen (Wx, method=method, noise=True)
-	offset = kSZmapGen (Wx, method=method, offset=True)
+	noise = kSZ
+	offset = kSZ
+	###adhoc fix 2014-09-05
+	#noise = kSZmapGen (Wx, method=method, noise=True)
+	#offset = kSZmapGen (Wx, method=method, offset=True)
 
 	## masking
 	galn = galnGen(Wx)
@@ -183,6 +195,7 @@ def CrossPower(CCK, CCB, errK, errB, method='nearest', sigmaG=1.0, noise='noise'
 	leg=ax.legend(ncol=1, labelspacing=0.3, prop={'size':16},loc=0)
 	leg.get_frame().set_visible(False)
 	#ax.set_xscale('log')
+	ax.set_xlim(0,3000)
 	ax.set_xlabel(r'$\ell$', fontsize=16)
 	ax.set_ylabel(r'$\ell(\ell+1)P_{n\kappa}(\ell)/2\pi$', fontsize=16)
 	ax.set_title('%s, %s arcmin'%(method, sigmaG))
@@ -220,7 +233,7 @@ if plot_crosscorrelate_all:
 			
 			#CrossPower(CCK, CCB, errK, errB, method=method, sigmaG=sigmaG, noise='noise')
 			#CrossPower(CCK, CCO, errK, errO, method=method, sigmaG=sigmaG, noise='offset')
-			#CrossPower(CCK, CCBMODE, errK, errBMODE, method=method, sigmaG=sigmaG, noise='offset')
+			#CrossPower(CCK, CCBMODE, errK, errBMODE, method=method, sigmaG=sigmaG, noise='Bmode')
 			
 			text_arr = array([ell_arr, CCK, CCO, CCB, CCBMODE, errK, errO, errB, errBMODE]).T
 			savetxt(kSZ_dir+'CrossCorrelate_%s_sigmaG%02d.txt'%(method, sigmaG*10), text_arr, header='ell\tkSZxkappa\toffsetxkappa\tnoisexkappa\tkSZxBmode\terr(kSZxkappa)\terr(offsetxkappa)\terr(noisexkappa)\terr(kSZxBmode)')
@@ -305,3 +318,38 @@ if testCC:
 	savefig(plot_dir+'test_hires_powspec_W1_binning.jpg')
 	close()
 
+if test_powspec:
+	f=figure(figsize=(10,8))
+	for Wx in range(1,5):
+		print Wx
+		kSZ = kSZmapGen (Wx)
+		mask = zeros(shape=kSZ.shape)
+		mask[25:-25,25:-25] = 1
+		mask10 = WLanalysis.smooth(mask,10)
+		mask20 = WLanalysis.smooth(mask,20)
+		#plotimshow(kSZ,'kSZ_map_W%i'%(Wx),vmin=None,vmax=None)
+		sizedeg = (sizes[Wx-1]/512.0)**2*12.0
+		edges = edgesGen(Wx)
+		ell_arr, autokSZ = WLanalysis.PowerSpectrum(kSZ, sizedeg = sizedeg, edges=edges)
+		ell_arr, autokSZ_smooth10 = WLanalysis.PowerSpectrum(kSZ*mask10, sizedeg = sizedeg, edges=edges)
+		ell_arr, autokSZ_smooth20 = WLanalysis.PowerSpectrum(kSZ*mask20, sizedeg = sizedeg, edges=edges)
+		
+		ax=f.add_subplot(2,2,Wx)
+		ax.plot(ell_arr,autokSZ,label='no smooth')
+		ax.plot(ell_arr,autokSZ_smooth10,'--',label='4 arcmin')
+		ax.plot(ell_arr,autokSZ_smooth20,'-.',label='8 arcmin')
+		#ax.set_xscale('log')
+		#ax.set_yscale('log')
+		ax.set_xlabel(r'$\ell$')
+		ax.set_ylabel(r'$\ell(\ell+1)\rm{P(\ell)/2\pi}$')
+		ax.set_xlim(ell_arr[0],ell_arr[-1])
+		title('W%i'%(Wx))
+		if Wx==1:
+			leg=ax.legend(ncol=1, labelspacing=0.3, prop={'size':12},loc=0)
+			leg.get_frame().set_visible(False)
+		#savefig(plot_dir+'test_powspec_W%i.jpg'%(Wx))
+		#savetxt(kSZ_dir+'test_smooth_AutoPowspec_W%i.txt'%(Wx), array([ell_arr,autokSZ_smooth]).T, header='ell\tell(ell+1)P/2pi')
+	savefig(plot_dir+'test_powspec_smooth_mult.jpg')
+	close()
+	
+if create_noise_KS:
