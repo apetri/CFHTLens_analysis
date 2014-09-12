@@ -2777,7 +2777,9 @@ if theory_powspec_err:
 	
 	sf1_ps_mat = WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/GoodOnly/powspec_sum/SIM_powspec_sigma05_emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765_subfield01.fit')[:,11:]/7.6645622253410002
 	
-	sf1_noiseless_ps_mat = WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/ps_mat_kappa_noiselss_sf1.fit')[:,11:]
+	
+	sf1_noiseless_ps_mat = WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/ps_mat_sf1_shear_noiseless.fit')[:,11:]#ps_mat_kappa_noiselss_sf1
+	
 	delpp_noiseless = std(sf1_noiseless_ps_mat,axis=0)/mean(sf1_noiseless_ps_mat,axis=0)
 	
 	delpp_sf1 = std(sf1_ps_mat,axis=0)/mean(sf1_ps_mat,axis=0)
