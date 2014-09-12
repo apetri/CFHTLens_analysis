@@ -21,7 +21,7 @@ kappaGen = lambda r: WLanalysis.readFits( sim_dir+'emu1-512b240_Om0.305_Ol0.695_
 y, x = WLanalysis.readFits(KS_dir+'yxewm_subfield1_zcut0213.fit').T[:2]
 
 def kmapPs (r):
-	print i
+	print r
 	k = kappaGen(r)
 	kmap, galn = WLanalysis.coords2grid(x, y, array([k, ]))
 	kmap_smooth = WLanalysis.weighted_smooth(kmap, galn, PPA=PPA512, sigmaG=sigmaG)
