@@ -14,7 +14,6 @@ sigmaG = 0.5
 PPA512 = 2.4633625
 KS_dir = '/scratch/02977/jialiu/KSsim/GoodOnly/noiseless/'
 sim_dir = '/home1/02977/jialiu/cat/'
-params = genfromtxt(KS_dir+'cosmo_params.txt')
 
 kappaGen = lambda r: WLanalysis.readFits( sim_dir+'emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765/emulator_subfield9_WL-only_emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765_4096xy_%04dr.fit'%(r)).T[0]
 #k, s1, s2
