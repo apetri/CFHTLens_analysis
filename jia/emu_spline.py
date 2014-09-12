@@ -2777,12 +2777,17 @@ if theory_powspec_err:
 	
 	sf1_ps_mat = WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/GoodOnly/powspec_sum/SIM_powspec_sigma05_emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765_subfield01.fit')[:,11:]/7.6645622253410002
 	
+	sf1_noiseless_ps_mat = WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/ps_mat_kappa_noiselss_sf1.fit')[:,11:]
+	delpp_noiseless = std(sf1_noiseless_ps_mat,axis=0)/mean(sf1_noiseless_ps_mat,axis=0)
+	
 	delpp_sf1 = std(sf1_ps_mat,axis=0)/mean(sf1_ps_mat,axis=0)
 	plankerr = 1/sqrt(fsky[0]*12.0/41253.0*(2*ell_arr+1)*del_ell)
+	#plankerr = 1/sqrt(fsky_all[0]*12.0/41253.0*(2*ell_arr+1)*del_ell)
 	
 	f=figure(figsize=(8,6))
 	ax=f.add_subplot(111)
 	ax.plot(ell_arr,delpp_sf1,'-k',linewidth=2,label=r'$\rm{Simulation}$')
+	ax.plot(ell_arr,delpp_noiseless,'-g',linewidth=2,label=r'$\rm{Sim_noiseless}$')
 	ax.plot(ell_arr,1/sqrt(N_sim),'--m',linewidth=2,label=r'$1/\sqrt{N}$')
 	ax.plot(ell_arr,1/sqrt(N_sim/2.0),'-.g',linewidth=2,label=r'$2/\sqrt{N}$')
 	
