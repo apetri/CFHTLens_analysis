@@ -22,7 +22,7 @@ y, x = WLanalysis.readFits(KS_dir+'yxewm_subfield1_zcut0213.fit').T[:2]
 
 def kmapPs (r):
 	print r
-	k, s1, s2 = kappaGen(r)[:4]
+	k, s1, s2 = kappaGen(r)[:3]
 	Ms1,Ms2, galn = WLanalysis.coords2grid(x, y, array([s1,s2 ]))
 	s1_smooth = WLanalysis.weighted_smooth(Ms1, galn, PPA=PPA512, sigmaG=sigmaG)
 	s2_smooth = WLanalysis.weighted_smooth(Ms1, galn, PPA=PPA512, sigmaG=sigmaG)
