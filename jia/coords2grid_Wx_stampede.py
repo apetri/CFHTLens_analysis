@@ -16,8 +16,8 @@ import WLanalysis
 #from emcee.utils import MPIPool
 #from multiprocessing import Pool
 
-cat_dir='/home1/02977/jialiu/CFHT_cat/'
-#cat_dir = '/Users/jia/CFHTLenS/catalogue/'
+#cat_dir='/home1/02977/jialiu/CFHT_cat/'
+cat_dir = '/Users/jia/CFHTLenS/catalogue/'
 split_dir = cat_dir+'split/'
 W_dir = lambda Wx: cat_dir+'W%s/'%(Wx) #dir for W1..W4 field
 splitfiles = os.listdir(split_dir)
@@ -287,7 +287,7 @@ Wx_sigmaG_i_hl_arr = [[Wx, sigmaG, i, hl] for Wx in range(1,5) for sigmaG in sig
 ################################################
 ###(5) Create Noise KS maps by randomly rotate
 ###    galaxies (2014/09/09)
-noise_input_arr =[[Wx, iseed] for Wx in range(1,5) for iseed in range(200)]
+noise_input_arr =[[Wx, iseed] for Wx in range(1,5) for iseed in range(200,500)]
 map(Noise, noise_input_arr)
 
 ################################################

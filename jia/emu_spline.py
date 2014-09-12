@@ -62,7 +62,7 @@ single_interpolation_fidu99 = 0
 
 draw_contour_chisq_map = 0 #contour using chisq
 draw_contour_smoothed_MCMC_map = 0
-quick_test_ps_pk_plot = 1
+quick_test_ps_pk_plot = 0
 dC_dp = 0 #covariance matrix inverse dependence on parameter
 CFHT_ps_5bins = 0 # manually change the 5 outliers in CFHT ps, and do chisq
 pk_last_2bins = 0
@@ -73,9 +73,9 @@ CFHT2pcf = 0
 combined_smoothing_scale = 0
 CFHT_ps_full_vs_good_sky = 0
 correlation_matrix = 0
-ps_from_2pcf = 1
+ps_from_2pcf = 0
 std_converge = 0
-theory_powspec_err = 0
+theory_powspec_err = 1
 
 cosmo_labels = [r'${\rm\Omega_m}$',r'$\rm{w}$',r'${\rm\sigma_8}$']
 
@@ -2764,6 +2764,11 @@ if std_converge:
 	close()
 
 if theory_powspec_err:	
+	ell_edges, psd1D = WLanalysis.azimuthalAverage(ones(shape=(512,512)))
+	ell_edges *= 360./sqrt(12)
+	del_ell = ell_edges[1:]-ell_edges[:-1]
+	del_ell = del_ell[11:]
+	
 	N_sim = array([   12,     8,    16,    20,    24,    28,    24,    44,    48,
           76,    76,   116,   124,   164,   200,   252,   296,   408,
          472,   608,   756,   936,  1184,  1460,  1840,  2284,  2860,
@@ -2773,10 +2778,16 @@ if theory_powspec_err:
 	sf1_ps_mat = WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/GoodOnly/powspec_sum/SIM_powspec_sigma05_emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765_subfield01.fit')[:,11:]/7.6645622253410002
 	
 	delpp_sf1 = std(sf1_ps_mat,axis=0)/mean(sf1_ps_mat,axis=0)
+	plankerr = 1/sqrt(fsky[0]*12.0/41253.0*(2*ell_arr+1)*del_ell)
+	
 	f=figure(figsize=(8,6))
 	ax=f.add_subplot(111)
 	ax.plot(ell_arr,delpp_sf1,'-k',linewidth=2,label=r'$\rm{Simulation}$')
 	ax.plot(ell_arr,1/sqrt(N_sim),'--m',linewidth=2,label=r'$1/\sqrt{N}$')
+	ax.plot(ell_arr,1/sqrt(N_sim/2.0),'-.g',linewidth=2,label=r'$2/\sqrt{N}$')
+	
+	ax.plot(ell_arr,plankerr,'-r',linewidth=1,label=r'$PlanckXVIII$')
+	
 	ax.set_xscale('log')
 	ax.set_xlim(ell_arr[0],ell_arr[-5])
 	leg=ax.legend(ncol=1, labelspacing=0.3, prop={'size':16},loc=0)
