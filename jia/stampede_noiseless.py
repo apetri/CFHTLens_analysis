@@ -27,7 +27,7 @@ def kmapPs (r):
 	Ms1,Ms2 = A
 	s1_smooth = WLanalysis.weighted_smooth(Ms1, galn, PPA=PPA512, sigmaG=sigmaG)
 	s2_smooth = WLanalysis.weighted_smooth(Ms1, galn, PPA=PPA512, sigmaG=sigmaG)
-	kmap_smooth = WLanalysis.KSvw(s1_smooth, s2_smooth)
+	kmap = WLanalysis.KSvw(s1_smooth, s2_smooth)
 	ps = WLanalysis.PowerSpectrum(kmap,sizedeg=12.0)[-1]
 	return ps
 
