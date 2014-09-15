@@ -2716,25 +2716,45 @@ if correlation_matrix:
 if ps_from_2pcf:
 	from scipy.integrate import quad
 	r, xi_plus = genfromtxt('/Users/jia/CFHTLenS/2PCF/CFHT2pcf').T[:2]#,:15] # r in arcmin
-	r = radians(r/60.0)#convert from degrees to radians
-	xi_interp = lambda x: interpolate.interp1d(r,xi_plus)(x)
-	bessel = lambda theta, k, r: exp(-1j*k*r*cos(theta))
-	#r xi(r)  d theta  exp(i k r cos(theta))
-	def integrand (ir, k):
-		return float(ir*xi_interp(ir)*quad(bessel, 0, 2*pi, (k, ir))[0])
 	
-	ps_2pcf = zeros(len(ell_arr))
-	i = 0
-	for k in ell_arr:
-		print i
-		ps_2pcf[i] = quad(integrand,r[0],r[-1],(k,))[0]
-		i+=1
+	def xi_bad(end):
+		xi_b = xi_plus.copy()
+		xi_b[5:]+=end#linspace(1,end,len(xi_plus[7:]))
+		return xi_b
+	#loglog(r, xi_plus, '+', label='xi+')
+	#for end in linspace(0.2e-5, 1e-5,3):
+		#loglog(r, xi_bad(end), 'o',label='xi bad %s'%(end))
+	#legend(fontsize=12)
+	#xlim(r[0],r[-1])
+	#show()
+
+	r = radians(r/60.0)#convert from degrees to radians
+	
+	def interpPS (xi_plus):
+		xi_interp = lambda x: interpolate.interp1d(r,xi_plus)(x)
+		bessel = lambda theta, k, r: exp(-1j*k*r*cos(theta))
+		#r xi(r)  d theta  exp(i k r cos(theta))
+		def integrand (ir, k):
+			return float(ir*xi_interp(ir)*quad(bessel, 0, 2*pi, (k, ir))[0])
+		
+		ps_2pcf = zeros(len(ell_arr))
+		i = 0
+		for k in ell_arr:
+			print i
+			ps_2pcf[i] = quad(integrand,r[0],r[-1],(k,))[0]
+			i+=1
+		return ps_2pcf
 	f=figure()
 	ax=f.add_subplot(111)
 
 	#ax.plot(ell_arr, ps_2pcf*ell_arr*(ell_arr+1)/2/pi,'ro',label='Kilbinger+ 2013')
-	ax.plot(ell_arr, ps_2pcf*ell_arr*(ell_arr+1),'ro',label='Kilbinger+ 2013')
-	ax.plot(ell_arr, fidu_avg,'b-',label='Power Spectrum')
+	ps_2pcf = interpPS(xi_plus)
+	ax.plot(ell_arr, ps_2pcf*ell_arr*(ell_arr+1),'+',label='Kilbinger+ 2013')
+	for end in linspace(0.2e-5, 1e-5,3):
+		print end
+		ps_2pcf = interpPS(xi_bad(end))
+		ax.plot(ell_arr, ps_2pcf*ell_arr*(ell_arr+1),'o',label='+%s'%(end))
+	ax.plot(ell_arr, fidu_avg,'k-',label='Power Spectrum')
 	ax.set_ylim(5e-6, 5e-2)
 	ax.set_xlim(ell_arr[0],ell_arr[-1])
 	ax.set_yscale('log')
@@ -2743,7 +2763,7 @@ if ps_from_2pcf:
 	ax.set_ylabel(r'$\ell(\ell+1)\rm{P(\ell)/2\pi}$')
 	leg=ax.legend(ncol=1, labelspacing=0.3, prop={'size':12},loc=0)
 	leg.get_frame().set_visible(False)
-	savefig(plot_dir+'ps_2pcf_2pi.jpg')
+	savefig(plot_dir+'ps_2pcf_2pi_bad.jpg')
 	close()
 
 if std_converge:
@@ -2778,22 +2798,24 @@ if theory_powspec_err:
 	sf1_ps_mat = WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/GoodOnly/powspec_sum/SIM_powspec_sigma05_emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765_subfield01.fit')[:,11:]/7.6645622253410002
 	
 	
-	sf1_noiseless_ps_mat = WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/ps_mat_sf1_shear_noiseless.fit')[:,11:]#ps_mat_kappa_noiselss_sf1
+	sf1_noiseless_ps_mat = WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/ps_mat_sf1_shear_noiseless_mask.fit')[:,11:]#ps_mat_kappa_noiselss_sf1
+	sf1_noiseless_ps_mat /= fsky[0]
 	
 	delpp_noiseless = std(sf1_noiseless_ps_mat,axis=0)/mean(sf1_noiseless_ps_mat,axis=0)
 	
 	delpp_sf1 = std(sf1_ps_mat,axis=0)/mean(sf1_ps_mat,axis=0)
-	plankerr = 1/sqrt(fsky[0]*12.0/41253.0*(2*ell_arr+1)*del_ell)
+	plankerr = sqrt(2.0)/sqrt(fsky[0]*12.0/41253.0*(2*ell_arr+1)*del_ell)
 	#plankerr = 1/sqrt(fsky_all[0]*12.0/41253.0*(2*ell_arr+1)*del_ell)
 	
 	f=figure(figsize=(8,6))
 	ax=f.add_subplot(111)
-	ax.plot(ell_arr,delpp_sf1,'-k',linewidth=2,label=r'$\rm{Simulation}$')
-	ax.plot(ell_arr,delpp_noiseless,'-g',linewidth=2,label=r'$\rm{Sim_noiseless}$')
+	ax.plot(ell_arr,delpp_sf1,'-k',linewidth=2,label='Simulation')
+	ax.plot(ell_arr,delpp_noiseless,'-g',linewidth=2,label='Sim_noiseless')
 	ax.plot(ell_arr,1/sqrt(N_sim),'--m',linewidth=2,label=r'$1/\sqrt{N}$')
-	ax.plot(ell_arr,1/sqrt(N_sim/2.0),'-.g',linewidth=2,label=r'$2/\sqrt{N}$')
+	ax.plot(ell_arr,1/sqrt(N_sim/2.0),'-.g',linewidth=2,label=r'$1/\sqrt{N/2}$')
 	
 	ax.plot(ell_arr,plankerr,'-r',linewidth=1,label=r'$PlanckXVIII$')
+	#ax.plot(ell_arr,1/sqrt(ell_arr),'-.k',linewidth=1,label=r'$sqrt(2/(2elll+1))$')
 	
 	ax.set_xscale('log')
 	ax.set_xlim(ell_arr[0],ell_arr[-5])
