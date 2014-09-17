@@ -9,7 +9,7 @@ import time
 ####################LensTools functionality######################################
 #################################################################################
 
-from lenstools.simulations import CFHTemu1
+from lenstools.simulations import CFHTemu1,CFHTcov
 from lenstools.observations import CFHTLens
 from lenstools.constraints import LikelihoodAnalysis
 

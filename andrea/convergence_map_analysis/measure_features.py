@@ -10,7 +10,7 @@ import StringIO
 ######################################################################
 
 from lenstools import ConvergenceMap,Mask
-from lenstools.simulations import CFHTemu1
+from lenstools.simulations import CFHTemu1,CFHTcov
 from lenstools.observations import CFHTLens
 from lenstools.index import Indexer,PowerSpectrum,PDF,Peaks,MinkowskiAll,Moments
 from lenstools import Ensemble
@@ -21,6 +21,7 @@ from lenstools import Ensemble
 
 import numpy as np
 from astropy.io import fits
+from astropy.units import deg
 from emcee.utils import MPIPool
 
 import progressbar
@@ -67,7 +68,7 @@ Realizations to analyze: 1 to {0}
 def cfht_fits_loader(filename):
 
 	kappa_file = fits.open(filename)
-	angle = 3.4641016151377544
+	angle = 3.4641016151377544*deg
 
 	kappa = kappa_file[0].data.astype(np.float)
 
@@ -207,7 +208,7 @@ class Measurement(object):
 
 		"""
 
-		if type(self.model) == CFHTemu1:
+		if type(self.model) in [CFHTemu1,CFHTcov]:
 			realizations = range(1,self.options.getint("analysis","num_realizations")+1)
 			self.map_names = self.model.getNames(realizations=realizations,subfield=self.subfield,smoothing=self.smoothing_scale)
 			self.full_save_path = os.path.join(self.save_path,self.cosmo_id,self.subfield_name,self.smoothing_name)
@@ -335,7 +336,7 @@ if __name__=="__main__":
 	#Cycle through the models and perform the measurements of the selected features (create the appropriate directories to save the outputs)
 	for model in models:
 
-		if type(model) == CFHTemu1:
+		if type(model) in [CFHTemu1,CFHTcov]:
 			dir_to_make = os.path.join(save_path,model._cosmo_id_string)
 		elif type(model) == CFHTLens:
 			dir_to_make = os.path.join(save_path,"observations")
