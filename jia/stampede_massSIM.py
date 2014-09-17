@@ -90,7 +90,7 @@ KSfn = lambda i, cosmo, R, sigmaG: '/home1/02977/jialiu/KSsim/cfhtcov/subfield%i
 #Mw = WLanalysis.readFits(Mw_fn)
 
 Mw_fcn = lambda i: WLanalysis.readFits(KS_dir+'SIM_Mw_subfield%i.fit'%(i))
-#Mw_arr = map(Mw_fcn, i_arr) # Mw = w (1+m) in a grid
+Mw_arr = map(Mw_fcn, i_arr) # Mw = w (1+m) in a grid
 
 yxewm_fcn = lambda i: WLanalysis.readFits(KS_dir+'yxewm_subfield%i_zcut0213.fit'%(i))
 yxewm_arr = map(yxewm_fcn, i_arr)
