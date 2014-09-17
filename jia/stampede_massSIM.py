@@ -17,9 +17,16 @@ from multiprocessing import Pool
 Mask_fn = lambda i, sigmaG: KS_dir+'mask/BAD_CFHT_mask_ngal5_sigma%02d_subfield%02d.fits'%(sigmaG*10, i)
 
 KSbad_dir = '/home1/02977/jialiu/KSsim/GoodOnly/'
-peaks_fn = lambda i, cosmo, sigmaG, bins, R: KSbad_dir+'peaks/%s/subfield%i/sigma%02d/SIM_peaks_sigma%02d_subfield%i_%s_%03dbins_%04dr.fit'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo, bins, R)
 
-powspec_fn = lambda i, cosmo, sigmaG, R: KSbad_dir+'powspec/%s/subfield%i/sigma%02d/SIM_powspec_sigma%02d_subfield%i_%s_%04dr.fit'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo, R)
+####### next 2 line commented out for cov mat KS creation 09/17/2014
+#peaks_fn = lambda i, cosmo, sigmaG, bins, R: KSbad_dir+'peaks/%s/subfield%i/sigma%02d/SIM_peaks_sigma%02d_subfield%i_%s_%03dbins_%04dr.fit'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo, bins, R)
+
+#powspec_fn = lambda i, cosmo, sigmaG, R: KSbad_dir+'powspec/%s/subfield%i/sigma%02d/SIM_powspec_sigma%02d_subfield%i_%s_%04dr.fit'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo, R)
+
+peaks_fn = lambda i, cosmo, sigmaG, bins, R: '/home1/02977/jialiu/KSsim/cfhtcov/pk/SIM_peaks_sigma%02d_subfield%i_%s_%03dbins_%04dr.fit'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo, bins, R)
+
+powspec_fn = lambda i, cosmo, sigmaG, R: '/home1/02977/jialiu/KSsim/cfhtcov/ps/SIM_powspec_sigma%02d_subfield%i_%s_%04dr.fit'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo, R)
+
 
 peaks_sum_fn = lambda cosmo, sigmaG, bins: KSbad_dir+'peaks_sum/SIM_peaks_sigma%02d_%s_%03dbins.fit'%(sigmaG*10, cosmo, bins)
 
@@ -154,8 +161,8 @@ def KSmap(iiRcosmo):
 			break
 	if create_ps_pk:
 		print 'creating ps pk i, R, cosmo', i, R, cosmo
-		#Me1, Me2 = fileGen(i, R, cosmo)#commented out 2014/08/13 for bad pointing ps pk
-		#Mw = Mw_arr[i-1]
+		Me1, Me2 = fileGen(i, R, cosmo)#commented out 2014/08/13 for bad pointing ps pk
+		Mw = Mw_arr[i-1]
 		for sigmaG in sigmaG_arr:
 			ps_fn = powspec_fn(i, cosmo, sigmaG, R)
 			pk_fn = peaks_fn(i, cosmo, sigmaG, bins, R)
