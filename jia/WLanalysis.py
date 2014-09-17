@@ -37,16 +37,16 @@ SIMz = array([ 0.00962476,  0.02898505,  0.04849778,  0.0681688 ,  0.08800411,
 idx2SIMz = lambda idx:SIMz[idx]
 
 ######### functions ############
-import fitsio
+#import fitsio
 def readFits (fitsfile):
 	'''Input: 
 	fitsfile = file name of the fitsfile
 	Output:
 	data array for the fitsfile.
 	'''
-	#hdulist = pyfits.open(fitsfile)
-	#data = np.array(hdulist[0].data)
-	data = fitsio.read(fitsfile)#.astype(float)
+	hdulist = pyfits.open(fitsfile)
+	data = np.array(hdulist[0].data)
+	#data = fitsio.read(fitsfile)#.astype(float)
 	return data
 
 def writeFits (data, filename, rewrite = False):
