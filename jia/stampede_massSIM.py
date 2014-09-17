@@ -57,7 +57,7 @@ sigmaG_arr = (0.5, 1, 1.8, 3.5, 5.3, 8.9)
 #i_arr = arange(1,14)
 R_arr = arange(1,1001)
 PPA512 = 2.4633625
-i_arr = (i,)
+i_arr = range(1,14)
 ###############################################################
 # constants not used
 # zmax = 1.3
@@ -93,7 +93,7 @@ Mw_fcn = lambda i: WLanalysis.readFits(KS_dir+'SIM_Mw_subfield%i.fit'%(i))
 #Mw_arr = map(Mw_fcn, i_arr) # Mw = w (1+m) in a grid
 
 yxewm_fcn = lambda i: WLanalysis.readFits(KS_dir+'yxewm_subfield%i_zcut0213.fit'%(i))
-#yxewm_arr = map(yxewm_fcn, i_arr)
+yxewm_arr = map(yxewm_fcn, i_arr)
 
 ###############################################################
 ## this is customized to one subfield at a time, uncomment to use for 1 subfield
@@ -115,7 +115,7 @@ def fileGen(i, R, cosmo):
 	Me2 = e2*w
 	
 	'''
-	#y, x, e1, e2, w, m = yxewm_arr[i-1].T
+	y, x, e1, e2, w, m = yxewm_arr[i-1].T
 	k, s1, s2 = (WLanalysis.readFits(SIMfn(i,cosmo,R)).T)[[0,1,2]]
 	s1 *= (1+m)
 	s2 *= (1+m)
