@@ -61,9 +61,14 @@ i_arr = (i,)
 #rad2pix = lambda x: around(512/2.0-0.5 + x*PPR512).astype(int) #from radians to pixel location
 ###############################################################
 
-SIMfn = lambda i, cosmo, R: sim_dir+'%s/emulator_subfield%i_WL-only_%s_4096xy_%04dr.fit'%(cosmo, i, cosmo, R)
+#SIMfn = lambda i, cosmo, R: sim_dir+'%s/emulator_subfield%i_WL-only_%s_4096xy_%04dr.fit'%(cosmo, i, cosmo, R)
 
-KSfn = lambda i, cosmo, R, sigmaG: KS_dir+'%s/subfield%i/sigma%02d/SIM_KS_sigma%02d_subfield%i_%s_%04dr.fit'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo,R)
+#KSfn = lambda i, cosmo, R, sigmaG: KS_dir+'%s/subfield%i/sigma%02d/SIM_KS_sigma%02d_subfield%i_%s_%04dr.fit'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo,R)
+
+########## 08/17/2014 next 2 lines are for cov matrix simulations #####
+SIMfn = lambda i, cosmo, R: '/home1/02977/jialiu/cov_cat/emulator_subfield%i_WL-only_cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800_4096xy_%04dr.fit'%(i, R)
+
+KSfn = lambda i, cosmo, R, sigmaG: '/home1/02977/jialiu/KSsim/cfhtcov/subfield%i/sigma%02d/SIM_KS_sigma%02d_subfield%i_WL-only_cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800_4096xy_%04dr.fit'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo,R)
 
 #Mask_fn = lambda i, sigmaG: KS_dir+'mask/CFHT_mask_ngal5_sigma%02d_subfield%02d.fits'%(sigmaG*10, i)
 
@@ -281,11 +286,13 @@ def sum_matrix (cosmosigmaG):
 ###############################################################
 ### (1)create KS map, uncomment next 4 lines
 ###############################################################
-#pool = MPIPool()
-#iRcosmo = [[i, R, cosmo] for R in R_arr for cosmo in cosmo_arr]
-#pool.map(KSmap, iRcosmo)
-#pool.close()
-#print 'DONE DONE DONE'
+
+pool = MPIPool()
+cosmo='WL-only_cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800'
+iRcosmo = [[i, R, cosmo] for i in range(1,14) for R in R_arr]# for cosmo in cosmo_arr]
+pool.map(KSmap, iRcosmo)
+pool.close()
+print 'DONE DONE DONE'
 
 ###############################################################
 ### (2)sum over 13 sf for peaks and powspectrum, need to alter a little later, 
@@ -294,8 +301,8 @@ def sum_matrix (cosmosigmaG):
 ### !!!will only work if the previous step is done!!!
 ###############################################################
 
-cosmosigmaG_arr = [[cosmo, sigmaG] for cosmo in cosmo_arr for sigmaG in sigmaG_arr]
-pool = MPIPool()
-pool.map(sum_matrix, cosmosigmaG_arr)
-pool.close()
-print 'SUM-SUM-SUM'
+#cosmosigmaG_arr = [[cosmo, sigmaG] for cosmo in cosmo_arr for sigmaG in sigmaG_arr]
+#pool = MPIPool()
+#pool.map(sum_matrix, cosmosigmaG_arr)
+#pool.close()
+#print 'SUM-SUM-SUM'

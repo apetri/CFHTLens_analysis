@@ -5,7 +5,7 @@
 import numpy as np
 import triangle
 from scipy import *
-#import scipy.optimize as op
+import scipy.optimize as op
 import emcee
 from scipy import interpolate#,stats
 import os
@@ -34,6 +34,7 @@ sample_points = 0#for final fits wiht 3 random points
 good_bad_peaks = 0
 contour_ps_fieldselect = 0
 m_correction = 0
+SIGMA_contour = 1
 ######## tests ##############
 compare_pk_contour_andrea = 0
 bad_pointings = 1
@@ -52,7 +53,7 @@ project_sims_3D = 0
 check_bad_ps = 0#plot out all 1000 ps for each realization, see if there's outliers
 bad_KSmap = 0
 check_ps_sum = 0
-test_MCMC = 0
+test_MCMC = 1
 peaks_13subfield_sum = 0
 try_mask_powspec = 0
 check_shear_bad_ps_kmap = 0
@@ -75,7 +76,7 @@ CFHT_ps_full_vs_good_sky = 0
 correlation_matrix = 0
 ps_from_2pcf = 0
 std_converge = 0
-theory_powspec_err = 1
+theory_powspec_err = 0
 
 cosmo_labels = [r'${\rm\Omega_m}$',r'$\rm{w}$',r'${\rm\sigma_8}$']
 
@@ -931,13 +932,13 @@ if check_ps_sum:
 ### uncomment next 3 lines 
 ######################################################################
 #icosmo = 48
-icosmo = int(sys.argv[1])
-ps_fidu = ps_mat.copy()[icosmo]
-fidu_params = cosmo_params.copy()[icosmo]
-fidu_avg = ps_avg.copy()[icosmo]
-cosmo_params = delete(cosmo_params, icosmo, 0)
-ps_avg = delete(ps_avg, icosmo, 0)
-ps_std = delete(ps_std, icosmo, 0)
+#icosmo = int(sys.argv[1])
+#ps_fidu = ps_mat.copy()[icosmo]
+#fidu_params = cosmo_params.copy()[icosmo]
+#fidu_avg = ps_avg.copy()[icosmo]
+#cosmo_params = delete(cosmo_params, icosmo, 0)
+#ps_avg = delete(ps_avg, icosmo, 0)
+#ps_std = delete(ps_std, icosmo, 0)
 
 m, w, s = cosmo_params.T
 spline_interps = list()
@@ -981,7 +982,7 @@ if test_MCMC:
 	#fidu_params = (0.26, -1, 0.8)
 	
 	
-	steps = 2000
+	steps = 1000
 	burn = 100 # make sure burn < steps
 	
 	#obs = fidu_avg#ps_CFHT#
@@ -1009,7 +1010,7 @@ if test_MCMC:
 				model = interp_cosmo (params, method = method)
 				del_N = np.mat(model - obs)
 				chisq = del_N*cov_inv*del_N.T
-				Ln = -log(chisq) #likelihood, is the log of chisq
+				Ln = -log(chisq/2.0) #likelihood, is the log of chisq
 				#Ln = -chisq/2.0/39.0
 				return float(Ln)
 			
@@ -1036,7 +1037,8 @@ if test_MCMC:
 			samples = sampler.chain[:, burn:, :].reshape((-1, ndim))
 			
 			####################################
-			WLanalysis.writeFits(samples,emu_dir+'MCMC_samples_fidu_%isteps_lnchisq.fit'%(steps))
+			#WLanalysis.writeFits(samples,emu_dir+'MCMC_samples_fidu_%isteps_lnchisq.fit'%(steps))
+			WLanalysis.writeFits(samples,emu_dir+'MCMC_samples_fidu-ps_%isteps_lnchisq.fit'%(steps))
 			####################################
 			
 			errors = array(map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]), zip(*np.percentile(samples, [16, 50, 84],axis=0))))
@@ -1063,7 +1065,7 @@ if test_MCMC:
 				else:
 					fn = "emu_fidu%i_%s"%(k, method)
 			title('[%.3f, %.3f, %.3f]'%(errors[0,0], errors[1,0], errors[2,0]))
-			fig.savefig(plot_dir+'triangle_'+fn+'_20140804_lnchisq.jpg')
+			fig.savefig(plot_dir+'triangle_'+fn+'_20140916_lnchisq.jpg')
 			close()
 	
 
@@ -2795,13 +2797,17 @@ if theory_powspec_err:
         3588,  4444,  5580,  6928,  8680, 10816, 13500, 16864, 21056,
        26276, 32812, 40980]).astype(float)
 	
-	sf1_ps_mat = WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/GoodOnly/powspec_sum/SIM_powspec_sigma05_emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765_subfield01.fit')[:,11:]/7.6645622253410002
+	sf1_ps_mat = WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/GoodOnly/powspec_sum/SIM_powspec_sigma05_emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765_subfield01.fit')[:,11:]#/7.6645622253410002
 	
 	
 	sf1_noiseless_ps_mat = WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/ps_mat_sf1_shear_noiseless_mask.fit')[:,11:]#ps_mat_kappa_noiselss_sf1
-	sf1_noiseless_ps_mat /= fsky[0]
+	#sf1_noiseless_ps_mat /= fsky[0]
+	
+	sf1_noiseless_ps_mat_50 = WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/ps_mat_sf1_fidu_shear_noiseless_mask.fit')[:,11:]#ps_mat_kappa_noiselss_sf1
+	#sf1_noiseless_ps_mat_50 /= fsky[0]
 	
 	delpp_noiseless = std(sf1_noiseless_ps_mat,axis=0)/mean(sf1_noiseless_ps_mat,axis=0)
+	delpp_noiseless_50 = std(sf1_noiseless_ps_mat_50,axis=0)/mean(sf1_noiseless_ps_mat_50,axis=0)
 	
 	delpp_sf1 = std(sf1_ps_mat,axis=0)/mean(sf1_ps_mat,axis=0)
 	plankerr = sqrt(2.0)/sqrt(fsky[0]*12.0/41253.0*(2*ell_arr+1)*del_ell)
@@ -2809,12 +2815,13 @@ if theory_powspec_err:
 	
 	f=figure(figsize=(8,6))
 	ax=f.add_subplot(111)
-	ax.plot(ell_arr,delpp_sf1,'-k',linewidth=2,label='Simulation')
+	ax.plot(ell_arr,delpp_sf1,'-k',linewidth=2,label='Simulation_noise')
 	ax.plot(ell_arr,delpp_noiseless,'-g',linewidth=2,label='Sim_noiseless')
-	ax.plot(ell_arr,1/sqrt(N_sim),'--m',linewidth=2,label=r'$1/\sqrt{N}$')
+	ax.plot(ell_arr,delpp_noiseless_50,'-y',linewidth=2,label='Sim50_noiseless')
+	#ax.plot(ell_arr,1/sqrt(N_sim),'--m',linewidth=2,label=r'$1/\sqrt{N}$')
 	ax.plot(ell_arr,1/sqrt(N_sim/2.0),'-.g',linewidth=2,label=r'$1/\sqrt{N/2}$')
 	
-	ax.plot(ell_arr,plankerr,'-r',linewidth=1,label=r'$PlanckXVIII$')
+	ax.plot(ell_arr,plankerr,'-r',linewidth=1,label='PlanckXVIII')
 	#ax.plot(ell_arr,1/sqrt(ell_arr),'-.k',linewidth=1,label=r'$sqrt(2/(2elll+1))$')
 	
 	ax.set_xscale('log')
@@ -2825,3 +2832,19 @@ if theory_powspec_err:
 	ax.set_xlabel(r'$\ell$',fontsize=16)
 	savefig(plot_dir+'official/variance_sim_theory.jpg')
 	close()
+
+if SIGMA_contour:
+	# quote delta Sigma = simga_8*(omega_m/0.26)^0.6
+	# steps: 
+	# 1) find alpha
+	# 2) interpolator for Sigma
+	# 3) marginalized over w, and fixed w
+	print 'SIGMA_contour'
+	
+	samples_ps = WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/goodonly/MCMC_samples_fidu-ps_1000steps_lnchisq.fit')[:,[0,2]]
+	samples_pk = WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/MCMC_samples_fidu-pk_1000steps_lnchisq.fit')[:,[0,2]]
+	
+	from sklearn.decomposition import PCA
+	pca = PCA(n_components=2)
+	pca.fit(samples_ps)
+	
