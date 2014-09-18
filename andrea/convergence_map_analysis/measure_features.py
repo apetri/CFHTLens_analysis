@@ -209,12 +209,20 @@ class Measurement(object):
 		"""
 
 		if type(self.model) in [CFHTemu1,CFHTcov]:
+			
 			realizations = range(1,self.options.getint("analysis","num_realizations")+1)
 			self.map_names = self.model.getNames(realizations=realizations,subfield=self.subfield,smoothing=self.smoothing_scale)
-			self.full_save_path = os.path.join(self.save_path,self.cosmo_id,self.subfield_name,self.smoothing_name)
+
+			if type(self.model)==CFHTemu1:
+				self.full_save_path = os.path.join(self.save_path,self.cosmo_id,self.subfield_name,self.smoothing_name)
+			else:
+				self.full_save_path = os.path.join(self.save_path,self.cosmo_id+"_cov",self.subfield_name,self.smoothing_name)
+		
 		elif type(self.model) == CFHTLens:
+			
 			self.map_names = [self.model.getName(subfield=self.subfield,smoothing=self.smoothing_scale)]
 			self.full_save_path = os.path.join(self.save_path,"observations",self.subfield_name,self.smoothing_name)
+		
 		else:
 			raise TypeError("Your model is not supported in this analysis!")
 
@@ -284,23 +292,30 @@ if __name__=="__main__":
 	#Read the save path from options
 	save_path = options.get("analysis","save_path")
 
-	#Get the names of all the simulated models available for the CFHT analysis, including smoothing scales and subfields
+	#Get the names of all the simulated models available for the CFHT analysis, including smoothing scales and subfields (CFHTemu1)
 	all_simulated_models = CFHTemu1.getModels(root_path=options.get("simulations","root_path"))
 
-	#Get also the observation model instance
-	observed_model = CFHTLens(root_path=options.get("observations","root_path"))
+	#Get also the CFHTcov model instance, to measure the covariance matrix
+	covariance_model = CFHTcov.getModels(root_path=options.get("simulations","root_path"))
 
-	#Select subset
+	#Get also the observation model instance
+	observation = CFHTLens(root_path=options.get("observations","root_path"))
+
+	#Select subset of (simulations,covariance,observations)
 	if options.getboolean("analysis","measure_simulations"):
 		models = all_simulated_models
 	else:
 		models = list()
 
+	if options.getboolean("analysis","measure_simulations_covariance"):
+		models.append(covariance_model)
+
+	if options.getboolean("analysis","measure_observations"):
+		models.append(observation)
+
+	#Subfields and smoothing scales
 	subfields = [ int(subfield) for subfield in options.get("analysis","subfields").split(",") ]
 	smoothing_scales = [options.getfloat("analysis","smoothing_scale")]
-
-	#Append the observation to the maps to process
-	models.append(observed_model)
 
 	#Build an Indexer instance, that will contain info on all the features to measure, including binning, etc... (read from options)
 	feature_list = list()
@@ -336,8 +351,10 @@ if __name__=="__main__":
 	#Cycle through the models and perform the measurements of the selected features (create the appropriate directories to save the outputs)
 	for model in models:
 
-		if type(model) in [CFHTemu1,CFHTcov]:
+		if type(model)==CFHTemu1:
 			dir_to_make = os.path.join(save_path,model._cosmo_id_string)
+		elif type(model)==CFHTcov:
+			dir_to_make = os.path.join(save_path,model._cosmo_id_string+"_cov")
 		elif type(model) == CFHTLens:
 			dir_to_make = os.path.join(save_path,"observations")
 		else:
