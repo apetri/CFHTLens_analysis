@@ -101,11 +101,8 @@ def main():
 
 	###########################################################################################################################################
 
-	#Get the names of all the simulated models available for the CFHT analysis, including smoothing scales and subfields
-	all_simulated_models = CFHTemu1.getModels(root_path=feature_loader.options.get("simulations","root_path"))
-
-	#Use this model for the covariance matrix
-	covariance_model = all_simulated_models[feature_loader.options.getint("analysis","covariance_model")]
+	#Use this model for the covariance matrix (from the new set of 50 N body simulations)
+	covariance_model = CFHTcov.getModels(root_path=feature_loader.options.get("simulations","root_path"))
 	logging.info("Measuring covariance matrix from model {0}".format(covariance_model))
 	#Load in the covariance matrix
 	features_covariance = feature_loader.load_features(covariance_model).covariance()
@@ -117,7 +114,7 @@ def main():
 
 	################################################################################################################################################
 
-	#Get also the observation model instance
+	#Get also the observation instance
 	observation = CFHTLens(root_path=feature_loader.options.get("observations","root_path"))
 	#And load the observations
 	observed_feature = feature_loader.load_features(observation).mean()
