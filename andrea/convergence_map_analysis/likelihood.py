@@ -179,8 +179,8 @@ def main():
 	if not os.path.isdir(likelihoods_dir):
 		os.mkdir(likelihoods_dir)
 	
-	chi2_file = os.path.join(likelihoods_dir,"chi2_{0}_{1}.npy".format(cmd_args.prefix,output_string(feature_loader.feature_string)))
-	likelihood_file = os.path.join(likelihoods_dir,"likelihood_{0}_{1}.npy".format(cmd_args.prefix,output_string(feature_loader.feature_string)))
+	chi2_file = os.path.join(likelihoods_dir,"chi2{0}_{1}.npy".format(cmd_args.prefix,output_string(feature_loader.feature_string)))
+	likelihood_file = os.path.join(likelihoods_dir,"likelihood{0}_{1}.npy".format(cmd_args.prefix,output_string(feature_loader.feature_string)))
 
 	logging.info("Saving chi2 to {0}".format(chi2_file))
 	np.save(chi2_file,chi_squared.reshape(Om.shape + w.shape + si8.shape))
