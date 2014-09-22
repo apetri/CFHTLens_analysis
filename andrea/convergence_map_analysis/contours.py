@@ -403,8 +403,9 @@ def main():
 	
 	#Parse command line options
 	parser = argparse.ArgumentParser(prog=sys.argv[0])
-	parser.add_argument("likelihood_npy_file",nargs="+")
+	parser.add_argument("likelihood_npy_file",nargs="*")
 	parser.add_argument("-f","--file",dest="options_file",action="store",type=str,help="analysis options file")
+	parser.add_argument("-a","--all",dest="all",action="store_true",help="If specified, plots all the contours in a single figure")
 
 	cmd_args = parser.parse_args()
 
@@ -426,36 +427,74 @@ def main():
 	display_percentages = options.getboolean("contours","display_percentages")
 	display_maximum = options.getboolean("contours","display_maximum")
 
-	#Build the contour plot with the ContourPlot class handler
-	contour = ContourPlot()
-	#Load the likelihood
-	contour.getLikelihood(cmd_args.likelihood_npy_file[0],parameter_axes=parameter_axes,parameter_labels=cosmo_labels)
-	#Set the physical units
-	contour.getUnitsFromOptions(options)
-	#Find the maximum value of the likelihood
-	print("Full likelihood is maximum at {0}".format(contour.getMaximum(which="full")))
-	#Marginalize over one of the parameters
-	contour.marginalize(options.get("contours","marginalize_over"))
-	print("Marginalized likelihood is maximum at {0}".format(contour.getMaximum(which="reduced")))
-	#Show the full likelihood
-	contour.show()
-	#Compute the likelihood levels
-	contour.getLikelihoodValues(levels=levels)
-	print("Desired p_values:",contour.original_p_values)
-	print("Calculated p_values",contour.computed_p_values)
-	#Display the contours
-	contour.plotContours(colors=colors,fill=False,display_percentages=True)
+	if cmd_args.all:
 
-	#Save the result
-	contours_dir = os.path.join(options.get("analysis","save_path"),"contours")
-	if not os.path.isdir(contours_dir):
-		os.mkdir(contours_dir)
+		#These are all the names of the likelihood files
+		likelihood_dir = os.path.join(options.get("analysis","save_path"),"likelihoods")
+		likelihood_files = ["likelihood_power_spectrum--1.0.npy","likelihood_peaks--1.0.npy","likelihood_moments--1.0.npy","likelihood_minkowski_0--1.0.npy","likelihood_minkowski_1--1.0.npy","likelihood_minkowski_2--1.0.npy"] 
 
-	figure_name = options.get("contours","figure_name")
-	if figure_name=="None":
-		figure_name = cmd_args.likelihood_npy_file[0].replace("npy","png").replace("likelihoods","contours")
+		#Build a figure that contains all the plots
+		fig,ax = plt.subplots(3,2,figsize=(16,24))
+
+		#Plot the contours
+		for i in range(3):
+			for j in range(2):
+
+				contour = ContourPlot(fig=fig,ax=ax[i,j])
+				contour.getLikelihood(os.path.join(likelihood_dir,likelihood_files[2*i + j]),parameter_axes=parameter_axes,parameter_labels=cosmo_labels)
+				contour.getUnitsFromOptions(options)
+				contour.marginalize(options.get("contours","marginalize_over"))
+				contour.show()
+				contour.getLikelihoodValues(levels=levels)
+				contour.plotContours(colors=colors,fill=False,display_percentages=True)
+
+
+		#Save the result
+		contours_dir = os.path.join(options.get("analysis","save_path"),"contours")
+		if not os.path.isdir(contours_dir):
+			os.mkdir(contours_dir)
+
+		figure_name = options.get("contours","figure_name")
+		if figure_name=="None":
+			figure_name = os.path.join(contours_dir,"likelihood_all--1.0.png")
 	
-	contour.savefig(figure_name)
+		contour.savefig(figure_name)
+
+
+
+
+	else:
+		
+		#Build the contour plot with the ContourPlot class handler
+		contour = ContourPlot()
+		#Load the likelihood
+		contour.getLikelihood(cmd_args.likelihood_npy_file[0],parameter_axes=parameter_axes,parameter_labels=cosmo_labels)
+		#Set the physical units
+		contour.getUnitsFromOptions(options)
+		#Find the maximum value of the likelihood
+		print("Full likelihood is maximum at {0}".format(contour.getMaximum(which="full")))
+		#Marginalize over one of the parameters
+		contour.marginalize(options.get("contours","marginalize_over"))
+		print("Marginalized likelihood is maximum at {0}".format(contour.getMaximum(which="reduced")))
+		#Show the full likelihood
+		contour.show()
+		#Compute the likelihood levels
+		contour.getLikelihoodValues(levels=levels)
+		print("Desired p_values:",contour.original_p_values)
+		print("Calculated p_values",contour.computed_p_values)
+		#Display the contours
+		contour.plotContours(colors=colors,fill=False,display_percentages=True)
+
+		#Save the result
+		contours_dir = os.path.join(options.get("analysis","save_path"),"contours")
+		if not os.path.isdir(contours_dir):
+			os.mkdir(contours_dir)
+
+		figure_name = options.get("contours","figure_name")
+		if figure_name=="None":
+			figure_name = cmd_args.likelihood_npy_file[0].replace("npy","png").replace("likelihoods","contours")
+	
+		contour.savefig(figure_name)
 
 
 if __name__=="__main__":

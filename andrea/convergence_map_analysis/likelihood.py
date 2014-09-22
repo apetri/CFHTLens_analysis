@@ -116,6 +116,7 @@ def main():
 
 	#Get also the observation instance
 	observation = CFHTLens(root_path=feature_loader.options.get("observations","root_path"))
+	logging.info("Measuring the observations from {0}".format(observation))
 	#And load the observations
 	observed_feature = feature_loader.load_features(observation).mean()
 
