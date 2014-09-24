@@ -391,10 +391,11 @@ if __name__=="__main__":
 	logging.info("DONE!")
 
 	if pool is not None:
+		
 		pool.close()
-
-	pool.comm.Barrier()
-	MPI.Finalize()
+		pool.comm.Barrier()
+		MPI.Finalize()
+	
 	sys.exit(0)
 
 
