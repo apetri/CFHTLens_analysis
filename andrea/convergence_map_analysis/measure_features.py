@@ -19,6 +19,7 @@ from lenstools import Ensemble
 ##################Other functionality###################################
 ########################################################################
 
+from mpi4py import MPI
 import numpy as np
 from astropy.io import fits
 from astropy.units import deg
@@ -279,6 +280,8 @@ if __name__=="__main__":
 	if (pool is not None) and not(pool.is_master()):
 		
 		pool.wait()
+		pool.comm.Barrier()
+		MPI.Finalize()
 		sys.exit(0)
 
 	#Set progressbar attributes
@@ -389,5 +392,9 @@ if __name__=="__main__":
 
 	if pool is not None:
 		pool.close()
+
+	pool.comm.Barrier()
+	MPI.Finalize()
+	sys.exit(0)
 
 
