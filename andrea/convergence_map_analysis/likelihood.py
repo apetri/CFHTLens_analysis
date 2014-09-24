@@ -108,7 +108,7 @@ def main():
 	#Load in the covariance matrix
 	fiducial_feature_ensemble = feature_loader.load_features(covariance_model)
 	fiducial_features = fiducial_feature_ensemble.mean()
-	features_covariance = fiducial_features_ensemble.covariance()
+	features_covariance = fiducial_feature_ensemble.covariance()
 
 	#timestamp
 	now = time.time()
@@ -208,7 +208,7 @@ def main():
 	#Additionally save some debugging info to plot, etc...
 	if cmd_args.save_debug:
 
-		troubleshoot_dir = os.path.join(feature_loader.options.get("analysis","save_path"))
+		troubleshoot_dir = os.path.join(feature_loader.options.get("analysis","save_path"),"troubleshoot")
 		if not os.path.isdir(troubleshoot_dir):
 			os.mkdir(troubleshoot_dir)
 
