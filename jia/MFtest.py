@@ -34,8 +34,9 @@ fsky_all = array([0.839298248291,0.865875244141,0.809467315674,
 def sumMF (iparam, loadcov=False):
 	Om, w, si8 = iparam
 	if loadcov:
-		loadMF = loadMF_cov
-	iMF = array([loadMF(Om, w, si8, i) for i in range(1,14)])
+		iMF = array([loadMF_cov(i) for i in range(1,14)])
+	else:
+		iMF = array([loadMF(Om, w, si8, i) for i in range(1,14)])
 	sumMF = sum(fsky.reshape(13,1,1)*iMF,axis=0)/float(sum(fsky))
 	return sumMF
 
