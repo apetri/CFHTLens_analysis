@@ -36,14 +36,16 @@ contour_ps_fieldselect = 0
 m_correction = 0
 SIGMA_contour = 1
 ######## tests ##############
-compare_pk_contour_andrea = 0
 bad_pointings = 1
+ps_replaced_with_pk = 0
+combined_smoothing_scale = 1
+
+compare_pk_contour_andrea = 0
 chisq_heat_map = 0
 ps_remove_4bins = 0
-
 ps_replaced_by_good = 0
 ps_replaced_by_nicaea = 0
-ps_replaced_with_pk = 0# use the same plotting routine wrote for powspec to to peaks, simply make ps_mat = pk_mat
+# use the same plotting routine wrote for powspec to to peaks, simply make ps_mat = pk_mat
 combined_ps_pk = 0
 test_interp_method = 0#this is using spline
 draw2Dplane = 0
@@ -53,7 +55,7 @@ project_sims_3D = 0
 check_bad_ps = 0#plot out all 1000 ps for each realization, see if there's outliers
 bad_KSmap = 0
 check_ps_sum = 0
-test_MCMC = 1
+test_MCMC = 0
 peaks_13subfield_sum = 0
 try_mask_powspec = 0
 check_shear_bad_ps_kmap = 0
@@ -71,7 +73,6 @@ ps_only_2bins = 0
 
 varying_C = 0
 CFHT2pcf = 0
-combined_smoothing_scale = 0
 CFHT_ps_full_vs_good_sky = 0
 correlation_matrix = 0
 ps_from_2pcf = 0
@@ -456,7 +457,7 @@ def test_interp_cosmo(i, ifcn='multiquadric', smooth=0):
 	#print ibin, ps_interp/ps_missing-1
 	return ps_missing, ps_interp
 
-def plotimshow(img,ititle,vmin=None,vmax=None):		 
+def plotimshow(img,ititle,vmin=None,vmax=None,extent=None):		 
 	 #if vmin == None and vmax == None:
 	imgnonzero=img[nonzero(img)]
 	if vmin == None:
@@ -464,7 +465,7 @@ def plotimshow(img,ititle,vmin=None,vmax=None):
 		x0 = median(imgnonzero)
 		vmin = x0-3*std0
 		vmax = x0+3*std0
-	im=imshow(img,interpolation='nearest',origin='lower',vmin=vmin,aspect=1,vmax=vmax)
+	im=imshow(img,interpolation='nearest',origin='lower',vmin=vmin,aspect=1,vmax=vmax, extent=extent)
 	colorbar()
 	title(ititle,fontsize=16)
 	savefig(plot_dir+'%s.jpg'%(ititle))
@@ -1573,7 +1574,7 @@ if quick_test_ps_pk_plot:
 	close()
 	
 	
-def drawContour2D (H, ititle, xvalues, yvalues, levels=[0.68,0.955, 0.997], handdrawpatch = 0):
+def drawContour2D (H, ititle, xvalues, yvalues, levels=[0.68,0.955, 0.997], handdrawpatch = 0, iylabel='simga_8', ixlabel='omega_m'):
 	'''draw a contour for a image for levels, title is the title and filename, x and y values are the values at dimentions 0, 1 bin center.
 	if handdrawpatch=1, highlight all the pathces within 1st level, instead of rely on contour routine.'''
 	fn = plot_dir+ititle+'.jpg'
@@ -1602,8 +1603,8 @@ def drawContour2D (H, ititle, xvalues, yvalues, levels=[0.68,0.955, 0.997], hand
 	CS=plt.contour(X, Y, H.T, levels=V, origin='lower', extent=(xvalues[0], xvalues[-1], yvalues[0], yvalues[-1]), colors=('m', 'r', 'green', 'blue'), linewidths=2)#, (1,1,0), '#afeeee', '0.5'))
 	#levels = [0.68, 0.95, 0.99]
 	#plt.clabel(CS, levels, inline=1, fmt='%1.2f', fontsize=14)
-	xlabel('omega_m')
-	ylabel('simga_8')
+	xlabel(ixlabel)
+	ylabel(iylabel)
 	title(ititle)
 	savefig(fn)
 	close()
@@ -2832,7 +2833,39 @@ if theory_powspec_err:
 	ax.set_xlabel(r'$\ell$',fontsize=16)
 	savefig(plot_dir+'official/variance_sim_theory.jpg')
 	close()
-
+	
+def findlevel1D (prob, xvalues):
+	idx = argmax(prob)
+	bestfit = xvalues[idx]
+	
+	########### first method #######
+	#left = idx - 1
+	#right = idx + 1
+	#tolprob = prob[idx]
+	#while tolprob < 0.68:
+		#if prob[left] > prob[right]:
+			#print left
+			#tolprob += prob[left]
+			#left += 1
+		#else:
+			#print right
+			#tolprob += prob[left]
+			#right +=1
+		#print tolprob
+	#print xvalues[right], xvalues[left]
+	#width = (xvalues[right]-xvalues[left])/2.0
+	###########
+	
+	####### 2nd method ##########
+	sortprob = sort(prob)[::-1]
+	tolprob = cumsum(sortprob)
+	idx = where(abs(tolprob-0.68) == sort(abs(tolprob-0.68))[0])
+	val = sortprob[idx]
+	left,right=xvalues[where(prob>val)][[0,-1]]-bestfit
+	return bestfit, left, right
+	
+	
+	
 if SIGMA_contour:
 	# quote delta Sigma = simga_8*(omega_m/0.26)^0.6
 	# steps: 
@@ -2841,10 +2874,112 @@ if SIGMA_contour:
 	# 3) marginalized over w, and fixed w
 	print 'SIGMA_contour'
 	
-	samples_ps = WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/goodonly/MCMC_samples_fidu-ps_1000steps_lnchisq.fit')[:,[0,2]]
-	samples_pk = WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/MCMC_samples_fidu-pk_1000steps_lnchisq.fit')[:,[0,2]]
+	######### the following block is to find alpha for ps, pk ######
+	#samples_ps = WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/goodonly/MCMC_samples_fidu-ps_1000steps_lnchisq.fit')[:,[0,2]]
+	#samples_pk = WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/MCMC_samples_fidu-pk_1000steps_lnchisq.fit')[:,[0,2]]
 	
-	from sklearn.decomposition import PCA
-	pca = PCA(n_components=2)
-	pca.fit(samples_ps)
+	#Sigma_ps = lambda alpha: std(samples_ps.T[0]**alpha*samples_ps.T[1])
+	#Sigma_pk = lambda alpha: std(samples_pk.T[0]**alpha*samples_pk.T[1])
 	
+	#alpha_arr = linspace(0,1,101)
+	#Sps_arr = array(map(Sigma_ps, alpha_arr))
+	#Spk_arr = array(map(Sigma_pk, alpha_arr))
+	#plot(alpha_arr, Sps_arr,'r-',label='Powspec')
+	#plot(alpha_arr, Spk_arr,'b--',label='Peaks')
+	#xlabel(r'$\alpha$')
+	#ylabel(r'$std [\sigma_8\Omega_m^{\alpha}]$')
+	#legend()
+	#show()
+	#alpha_ps, alpha_pk = alpha_arr[argmin(Sps_arr)],alpha_arr[argmin(Spk_arr)]
+	#######################################################
+	
+	######### build interpolator for 2D array ###
+	#alpha_ps, alpha_pk = 0.77, 0.72
+	#alpha = 0.75
+	#alpha = 0.61
+	#if ps_replaced_with_pk:
+		#alpha = 0.51
+	#Sps = (m/0.27)**alpha*s
+	S_arr = linspace(0,1.3,200)
+	#S_arr = linspace(0, 0.8, 100)
+	w_arr = linspace(-2.2, -0.2, 101)
+	
+	########## next block is for computing heatmap ############
+	#S_interps = list()
+	#for ibin in range(ps_avg.shape[-1]):
+		#ps_model = ps_avg[:,ibin]
+		#iinterp = interpolate.Rbf(Sps, w, ps_model)
+		#S_interps.append(iinterp)
+	
+	#def interp_S (params):
+		#Sps, w = params
+		#gen_ps = lambda ibin: S_interps[ibin](Sps, w)
+		#ps_interp = array(map(gen_ps, range(ps_avg.shape[-1])))
+		#ps_interp = ps_interp.reshape(-1,1).squeeze()
+		#return ps_interp
+	
+	#heatmap = zeros(shape=(200,101))
+	#obs = ps_CFHT
+	#for i in range(200):
+		#for j in range(101):
+			#best_fit = (S_arr[i],w_arr[j])
+			#ps_interp = interp_S(best_fit)
+			#del_N = np.mat(ps_interp - obs)
+			#chisq = float(del_N*cov_inv*del_N.T)
+			#heatmap[i,j] = chisq
+
+	
+	#if ps_replaced_with_pk:
+		#pkps = 'pk'
+		#if combined_smoothing_scale:
+			#pkps = 'pk_2smoothing'
+	#elif combined_ps_pk:
+		#pkps = 'combined'
+	#else:
+		#pkps = 'ps'
+	#WLanalysis.writeFits(heatmap, emu_dir+'chisq_S_w_%s_%03d.fit'%(pkps,alpha*100))
+	###################################
+	
+	#heatmap = WLanalysis.readFits(emu_dir+'chisq_S_w_%s_075.fit'%(pkps))
+	##plotimshow(heatmap,'contour_2D_S_w_%s_075'%(pkps),vmin=0, vmax=len(ps_CFHT)*3,extent=[w_arr[0],w_arr[-1],S_arr[0],S_arr[-1]])
+	#P = exp(-heatmap/2)
+	#drawContour2D(P, 'contour_S_w_%s'%(pkps), S_arr, w_arr, ixlabel='SIGMA', iylabel='w')
+	
+	########### final plots to find SIGMA########
+	heat_pk = WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/chisq_S_w_pk_2smoothing_051.fit')#[:,10:-10]
+	heat_ps = WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/goodonly/chisq_S_w_ps_061.fit')#[:,10:-10]
+	
+	heat_pk_055 = WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/chisq_S_w_pk_2smoothing_055.fit')#[:,10:-10]
+	heat_ps_055 = WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/goodonly/chisq_S_w_ps_055.fit')#[:,10:-10]
+	
+	
+	Ppk = exp(-heat_pk/2)
+	Pps = exp(-heat_ps/2)
+	Pcomb = exp(-heat_pk_055/2)*exp(-heat_ps_055/2)
+	#drawContour2D(Pcomb, 'contour_cob_S_w_div027', S_arr, w_arr, ixlabel='SIGMA', iylabel='w')
+	
+	Ppk_marg = sum(Ppk, axis=1)/sum(Ppk)
+	Pps_marg = sum(Pps, axis=1)/sum(Pps)
+	Pcomb_marg = sum(Pcomb, axis=1)/sum(Pcomb)
+	Pcomb_marg_after = Ppk_marg*Pps_marg/(sum(Ppk_marg*Pps_marg))
+	
+	plot(S_arr, Pps_marg, label='Power Spectrum')
+	plot(S_arr, Ppk_marg,label='Peaks')
+	plot(S_arr, Pcomb_marg, label='Power Spectrum + Peaks')
+	# fixed w=1
+	plot(S_arr, Pps[:,60]/sum(Pps[:,60]),'--',label='Power Spectrum(w=-1)')
+	plot(S_arr, Ppk[:,60]/sum(Ppk[:,60]),'--', label='Peaks (w=-1)')
+	#plot(S_arr, Pcomb_marg_after, label = 'comb after')
+	plot(S_arr, Pps[:,60]*Ppk[:,60]/sum(Pps[:,60]*Ppk[:,60]),'--', label='Power Spectrum + Peaks (w=-1)')
+	legend(fontsize=12)
+	xlim(0.2, 1.5)
+	xlabel('SIGMA=(si8*(om/0.27)^alpha)')
+	ylabel('Probability')
+	#show()
+	savefig(plot_dir+'SIGMA_marg_prob_div027_alpha.jpg')
+	close()
+	
+	findlevel1D(Pps_marg, S_arr)
+	findlevel1D(Ppk_marg, S_arr)
+	findlevel1D(Pcomb_marg, S_arr)
+		
