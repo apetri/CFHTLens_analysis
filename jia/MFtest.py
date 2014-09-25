@@ -34,7 +34,9 @@ fsky_all = array([0.839298248291,0.865875244141,0.809467315674,
 def sumMF (iparam, loadcov=False):
 	Om, w, si8 = iparam
 	if loadcov:
-		iMF = array(map(loadMF_cov,range(1,14)))
+		iMF = zeros(13,1000,150)
+		for i in range(1,14):
+			iMF[i] = loadMF_cov(i)
 	else:
 		iMF = array([loadMF(Om, w, si8, i) for i in range(1,14)])
 	isumMF = sum(fsky.reshape(13,1,1)*iMF,axis=0)/float(sum(fsky))
@@ -43,5 +45,5 @@ def sumMF (iparam, loadcov=False):
 ### covariance matrix
 iparam = params[0]
 isumMF = sumMF(iparam)
-isumMF_cov = sumMF(iparam,cov=1)
+isumMF_cov = sumMF(iparam,loadcov=1)
 '/home1/02977/jialiu/KSsim/MF_sum'
