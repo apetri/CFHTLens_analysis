@@ -15,16 +15,16 @@ import matplotlib.gridspec as gridspec
 import scipy.ndimage as snd
 
 ############# knobs ############################
-plot_all_cov = 0
+plot_all_cov = 1
 plot_fidu_obs_MF = 0
 plot_contours = 0
 #############################################
 #50 bins between kappa=-0.15 and kappa=0.15
 plot_dir = '/Users/jia/weaklensing/CFHTLenS/plot/MF/'
-#params =  genfromtxt('/Users/jia/CFHTLenS/emulator/cosmo_params.txt')
+params =  genfromtxt('/Users/jia/CFHTLenS/emulator/cosmo_params.txt')
 
 ################### stampede ################
-params = genfromtxt('/scratch/02977/jialiu/KSsim/cosmo_params.txt')
+#params = genfromtxt('/scratch/02977/jialiu/KSsim/cosmo_params.txt')
 
 loadMF = lambda Om, w, si8, i: np.load('/scratch/02918/apetri/Storage/wl/features/CFHT/cfht_masked_BAD/Om%.3f_Ol%.3f_w%.3f_ns0.960_si%.3f/subfield%i/sigma10/minkowski_all.npy'%(Om,1-Om,w,si8,i))
 
@@ -58,8 +58,8 @@ def sumMF (iparam, loadcov=False):
 ### organize files on stampede, and then need to download 
 ### to local for further analysis
 
-isumMF_cov = sumMF(iparam,loadcov=1)
-np.save('/home1/02977/jialiu/KSsim/MF_sum/MF_sum_cov',isumMF_cov)
+#isumMF_cov = sumMF((0,0,0),loadcov=1)
+#np.save('/home1/02977/jialiu/KSsim/MF_sum/MF_sum_cov',isumMF_cov)
 
 #all_MF = array(map(sumMF, params))#shape=(91,1000,150)
 #np.save('/home1/02977/jialiu/KSsim/MF_sum/MF_sum_91cosmo',all_MF.reshape(91,-1))
@@ -68,6 +68,8 @@ np.save('/home1/02977/jialiu/KSsim/MF_sum/MF_sum_cov',isumMF_cov)
 Mat_MF = np.load('/Users/jia/CFHTLenS/emulator/MF/MF_sum_91cosmo.npy').reshape(91,1000,-1)
 avg_MF = mean(Mat_MF,axis=1)
 obs_MF = np.load('/Users/jia/CFHTLenS/emulator/MF/obs.npy')
+fidu_MF = np.load('/Users/jia/CFHTLenS/emulator/MF/MF_sum_cov.npy')
+fidu_avg_MF = mean(fidu_MF,axis=0)
 
 spline_interps = WLanalysis.buildInterpolator(avg_MF,params)
 
@@ -81,7 +83,7 @@ def interp_cosmo (params, spline_interps = spline_interps):
 	MF_interp = MF_interp.reshape(-1,1).squeeze()
 	return MF_interp
 
-cov_mat = cov(Mat_MF[48], rowvar=0)
+cov_mat = cov(fidu_MF, rowvar=0)
 
 def probMap (obs, cov_mat, spline_interps, ms, ss):
 	'''return a probability map for observation'''
@@ -116,22 +118,34 @@ def drawcontour2D(H, V, xvalues, yvalues, ititle, iylabel='simga_8', ixlabel='om
 	close()
 
 if plot_contours:
-	idx = range(50)	
-	ms = linspace(0.2,0.8,40)
-	ss = linspace(0.2,1.0,41)
-	iobs = obs_MF[idx]
-	icov_mat = cov(Mat_MF[48][:,idx], rowvar=0)
-	ispline_interps = array(spline_interps)[idx]
-	P = probMap(iobs, icov_mat, ispline_interps, ms, ss)
-	V = WLanalysis.findlevel(P)
-	drawcontour2D(P, V, ms, ss, 'MF0_50bins')
+	#for x0 in range(0,50,5):
+		#x1 = x0+5
+	x0, x1 = 5, 25
+	for z in (0, 50, 100):
+		print z
+		idx = range(x0+z,x1+z)	
+		ms = linspace(0,1,40)
+		ss = linspace(0.2,1.0,41)
+		iobs = obs_MF[idx]
+		#iobs = fidu_avg_MF[idx]
+		icov_mat = cov(fidu_MF[:,idx], rowvar=0)
+		ispline_interps = array(spline_interps)[idx]
+		P = probMap(iobs, icov_mat, ispline_interps, ms, ss)
+		V = WLanalysis.findlevel(P)
+		drawcontour2D(P, V, ms, ss, 'MF%i_obs_bin%02d-%02d'%(z/50, x0,x1))
 	
 	
 def plotcov (Cov, ititle):
-	X, Y = meshgrid(diag(Cov),diag(Cov))	
+	X, Y = meshgrid(diag(Cov),diag(Cov))
 	Corr = Cov/sqrt(X*Y)
-	J, K = meshgrid(avg_MF[48],avg_MF[48])
-	Cov_rel = Cov/sqrt(abs(J*K))
+	J, K = meshgrid(fidu_avg_MF,fidu_avg_MF)
+	Cov_rel = Cov.copy()
+	Cov_rel[:150,:150]/=sqrt(abs(J*K))
+	figure()
+	plot(Corr[:-1,-1])
+	title(ititle)
+	savefig(plot_dir+'Corr_1D'+ititle+'.jpg')
+	close()
 	
 	figure(figsize=(10,10))
 	subplot(221)
@@ -153,17 +167,24 @@ def plotcov (Cov, ititle):
 	close()	
 
 if plot_all_cov:
-	cov_arr = (cov_mat, cov_mat_m, cov_mat_w, cov_mat_s)
-	title_arr = ('mat_1000r', 'mat_om', 'mat_w', 'mat_si8')
-	mat_mf_m = array([interp_cosmo ((m, -1.0, 0.80)) for m in linspace(0.2, 0.8, 100)])
-	mat_mf_w = array([interp_cosmo ((0.26, w, 0.80)) for w in linspace(-2.2,-0.4,100)])
-	mat_mf_s = array([interp_cosmo ((0.26, -1.0, s)) for s in linspace(0.2, 0.8, 100)])
+	m_arr = linspace(0.2, 0.8, 100)
+	w_arr = linspace(-2.2,-0.4,100)
+	s_arr = linspace(0.2, 0.8, 100)
+	mat_mf_m = array([interp_cosmo ((m, -1.0, 0.80)) for m in m_arr])
+	mat_mf_w = array([interp_cosmo ((0.26, w, 0.80)) for w in w_arr])
+	mat_mf_s = array([interp_cosmo ((0.26, -1.0, s)) for s in s_arr])
+	mat_mf_m = concatenate([mat_mf_m,m_arr.reshape(-1,1)],axis=1)
+	mat_mf_w = concatenate([mat_mf_w,w_arr.reshape(-1,1)],axis=1)
+	mat_mf_s = concatenate([mat_mf_s,s_arr.reshape(-1,1)],axis=1)
 	cov_mat_m = cov(mat_mf_m, rowvar=0)
 	cov_mat_w = cov(mat_mf_w, rowvar=0)
 	cov_mat_s = cov(mat_mf_s, rowvar=0)
-	for i in range(4):
+	
+	cov_arr = (cov_mat, cov_mat_m, cov_mat_w, cov_mat_s)
+	title_arr = ('mat_1000r', 'mat_om', 'mat_w', 'mat_si8')
+	for i in range(1,4):
 		print i
-		plotcov(cov_arr[i], title_arr[i])
+		plotcov(cov_arr[i], 'par_'+title_arr[i])
 
 if plot_fidu_obs_MF:
 	fidu_MF = interp_cosmo ((0.26, -1.0, 0.80))
