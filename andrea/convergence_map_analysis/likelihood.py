@@ -202,7 +202,7 @@ def main():
 	parameter_keys.sort(key=contour.parameter_axes.get)
 
 	#Display the new best fit before exiting
-	best_fit_parameters = [ parameters_maximum[par_key] for par_key in parameter_keys ]
+	best_fit_parameters = np.array([ parameters_maximum[par_key] for par_key in parameter_keys ])
 	logging.info("Best fit is [ {0[0]:.2f} {0[1]:.2f} {0[2]:.2f} ], chi2={1[0]:.3f}({2} dof)".format(best_fit_parameters,analysis.chi2(np.array(best_fit_parameters),features_covariance=features_covariance,observed_feature=observed_feature),analysis.training_set.shape[1]))
 
 	#Additionally save some debugging info to plot, etc...
@@ -217,8 +217,9 @@ def main():
 		np.save(os.path.join(troubleshoot_dir,"observation_{0}.npy".format(output_string(feature_loader.feature_string))),observed_feature)
 		np.save(os.path.join(troubleshoot_dir,"covariance_{0}.npy".format(output_string(feature_loader.feature_string))),features_covariance)
 		np.save(os.path.join(troubleshoot_dir,"fiducial_{0}.npy".format(output_string(feature_loader.feature_string))),fiducial_features)
-		np.save(os.path.join(troubleshoot_dir,"best_fit_features_{0}.npy".format(output_string(feature_loader.feature_string))),analysis.predict(np.array(best_fit_parameters)))
+		np.save(os.path.join(troubleshoot_dir,"best_fit_features_{0}.npy".format(output_string(feature_loader.feature_string))),analysis.predict(best_fit_parameters))
 		np.save(os.path.join(troubleshoot_dir,"fiducial_from_interpolator_{0}.npy".format(output_string(feature_loader.feature_string))),analysis.predict(np.array([0.26,-1.0,0.800])))
+		np.save(os.path.joib(troubleshoot_dir,"chi2_contributions_{0}.npy".format(output_string(feature_loader.feature_string))),analysis.chi2Contributions(best_fit_parameters,observed_feature=observed_feature,features_covariance=features_covariance))
 
 	end = time.time()
 
