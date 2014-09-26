@@ -564,8 +564,6 @@ def peaks_mask_hist (kmap, mask, bins, kmin = -0.04, kmax = 0.12):
 	peaks = peaks_list(kmap_masked)
 	peaks_hist = histogram(peaks,range=(kmin,kmax),bins=bins)[0]
 	return peaks_hist
-	
-	
 ########## end: peak counts ############################	
 	
 def create_dir_if_nonexist(dirname):
@@ -574,3 +572,43 @@ def create_dir_if_nonexist(dirname):
 	except Exception:
 		print 'error'
 		pass
+
+######### begin: build interpolator ###############
+def buildInterpolator(obs_arr, cosmo_params):
+	'''Build an interpolator:
+	input:
+	obs_arr = (points, Nbin), where points are the # of param sets
+	cosmo_params = (points, Nparams), currently Nparams is hard-coded
+	to be 3 (om,w,si8)
+	output:
+	spline_interps
+	Usage:
+	spline_interps[ibin](im, wm, sm)
+	'''
+	m, w, s = cosmo_params.T
+	spline_interps = list()
+	for ibin in range(obs_arr.shape[-1]):
+		model = obs_arr[:,ibin]
+		iinterp = interpolate.Rbf(m, w, s, model)
+		spline_interps.append(iinterp)
+	return spline_interps
+
+def findlevel (H):
+	'''Find 68%, 95%, 99% confidence level for a probability 2D plane H.
+	return V = [v68, v95, v99]
+	'''
+	H /= sum(H)
+	H /= float(sum(H))
+	H[isnan(H)]=0
+	
+	idx = np.argsort(H.flat)[::-1]
+	H_sorted = H.flat[idx]
+	H_cumsum = np.cumsum(H_sorted)
+	idx68 = where(abs(H_cumsum-0.683)==amin(abs(H_cumsum-0.683)))[0]	
+	idx95 = where(abs(H_cumsum-0.955)==amin(abs(H_cumsum-0.955)))[0]
+	idx99 = where(abs(H_cumsum-0.997)==amin(abs(H_cumsum-0.997)))[0]
+	v68 = float(H.flat[idx[idx68]])
+	v95 = float(H.flat[idx[idx95]])
+	v99 = float(H.flat[idx[idx99]])
+	V = [v68, v95, v99]
+	return V
