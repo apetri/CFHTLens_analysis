@@ -118,7 +118,7 @@ def main():
 	################################################################################################################################################
 
 	#Treat the 50N-body simulation set as data
-	observation = CFHTcov(root_path=feature_loader.options.get("observations","root_path"))
+	observation = CFHTcov.getModels(root_path=feature_loader.options.get("observations","root_path"))
 	logging.info("Measuring the observations from {0}".format(observation))
 	
 	#And load the observations
@@ -197,7 +197,7 @@ def main():
 
 		#Display the new best fit before exiting
 		best_fit_parameters = np.array([ parameters_maximum[par_key] for par_key in parameter_keys ])
-		logging.info("Best fit for realization {3} is [ {0[0]:.2f} {0[1]:.2f} {0[2]:.2f} ], chi2={1[0]:.3f}({2} dof)".format(best_fit_parameters,analysis.chi2(best_fit_parameters,features_covariance=features_covariance,observed_feature=observed_feature),analysis.training_set.shape[1],nreal+1))
+		logging.info("Best fit for realization {3} is [ {0[0]:.2f} {0[1]:.2f} {0[2]:.2f} ], chi2={1[0]:.3f}({2} dof)".format(best_fit_parameters,analysis.chi2(best_fit_parameters,features_covariance=features_covariance,observed_feature=observed_feature[nreal]),analysis.training_set.shape[1],nreal+1))
 
 		#Update global array with best fit parameters
 		best_fit_all[nreal,:] = best_fit_parameters.copy()
