@@ -34,7 +34,7 @@ sample_points = 0#for final fits wiht 3 random points
 good_bad_peaks = 0
 contour_ps_fieldselect = 0
 m_correction = 0
-SIGMA_contour = 1
+SIGMA_contour = 0
 ######## tests ##############
 bad_pointings = 1
 ps_replaced_with_pk = 0

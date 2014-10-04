@@ -220,7 +220,7 @@ def CrossPower(CCK, CCB, errK, errB, method='nearest', sigma_pix=10, noise='nois
 	ax.set_ylabel(r'$\ell(\ell+1)P_{n\kappa}(\ell)/2\pi$', fontsize=16)
 	ax.set_title('%s, %s pix mask, 1 arcmin smooth conv. map'%(method, sigma_pix))
 	ax.ticklabel_format(axis='y', style='sci', scilimits=(-2,2))
-	savefig(plot_dir+'kSZxCFHT_%s_sigmapix%s_%s.jpg'%(method,sigma_pix, noise))
+	savefig(plot_dir+'test_kSZxCFHT_%s_sigmapix%s_%s.jpg'%(method,sigma_pix, noise))
 	close()
 
 if plot_crosscorrelate_all:
@@ -259,6 +259,9 @@ if plot_crosscorrelate_all:
 		avgN = sum(avgN_arr*weightN,axis=0)
 		
 		CrossPower(CCK, avgN, errK, errN, method=method, noise='KappaNoise')
+		text_arr = array([ell_arr, CCK, avgN, errK, errN]).T
+		savetxt(kSZ_dir+'CrossCorrelate_%s_sigmaG10.txt'%(method), text_arr, header='ell\tkSZxkappa\tkSZxkappa_noise\terr(kSZxkappa)\terr(kSZxkappa_noise)')
+		
 		#CrossPower(CCK, CCB, errK, errB, method=method, sigmaG=sigmaG, noise='noise')
 		#CrossPower(CCK, CCO, errK, errO, method=method, sigmaG=sigmaG, noise='offset')
 		#CrossPower(CCK, CCBMODE, errK, errBMODE, method=method, sigmaG=sigmaG, noise='Bmode')

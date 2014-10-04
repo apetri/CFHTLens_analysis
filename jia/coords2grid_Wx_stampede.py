@@ -261,40 +261,7 @@ def Noise(iinput):
 		Me2_smooth = WLanalysis.weighted_smooth(Me2, Mw, PPA=PPA512, sigmaG=sigmaG)
 		bmap = WLanalysis.KSvw(Me1_smooth, Me2_smooth)
 		WLanalysis.writeFits(bmap,bmap_fn)
-		
-Wx_sigmaG_i_hl_arr = [[Wx, sigmaG, i, hl] for Wx in range(1,5) for sigmaG in sigmaG_arr for i in range(0,len(zbins)-1) for hl in ['hi','lo']]+[[Wx, sigmaG, -1, 'lo'] for Wx in range(1,5) for sigmaG in sigmaG_arr]
 
-################################################
-###(1) split file organizing ###################
-###    uncomment next 1 line ###################
-#pool.map(OrganizeSplitFile,splitfiles)
-################################################
-###(2) sum up the split file into 4 Wx fields###
-###    uncomment next 2 line ###################
-#for Wx in range(1,5):
-	#SumSplitFile2Grid(Wx)
-################################################
-###(3) create KS maps for 6 zbins 6 sigmaG #####
-###    total should have 528 files (galn, KS)###
-###    uncomment next 1 line ###################
-#map(KSmap, Wx_sigmaG_i_hl_arr[::-1])
-################################################
-###(4) B mode for picking out signals
-###    use 1000 maps with galaxies randomly
-###    rotated
-###    uncomment the next 1 line
-#map(Bmode, Wx_sigmaG_i_hl_arr)
-################################################
-###(5) Create Noise KS maps by randomly rotate
-###    galaxies (2014/09/09)
-noise_input_arr =[[Wx, iseed] for Wx in range(1,5) for iseed in range(200,500)]
-map(Noise, noise_input_arr)
-
-################################################
-###(6) cross corrrelation
-###    put mask on KS map, and cross correlate
-###    for both B-mode(for compare), and true KS
-### test on sigmaG=1.0, zcut=0.85
 plot_dir = '/Users/jia/CFHTLenS/plot/obsPK/'
 def plotimshow(img,ititle,vmin=None,vmax=None):		 
 	 #if vmin == None and vmax == None:
@@ -345,15 +312,50 @@ def TestCrossCorrelate (Wx, zcut, sigmaG):
 	#plotimshow(kmap,'kmap_W%i_zcut%shi_sigmaG%02d.jpg'%(Wx,zcut,sigmaG*10))
 	#plotimshow(bmap,'bmap_W%i_zcut%shi_sigmaG%02d.jpg'%(Wx,zcut,sigmaG*10))
 	#plotimshow(galn_lo,'galn_W%i_zcut%shi_sigmaG%02d.jpg'%(Wx,zcut,sigmaG*10))
-	
-Wx=1
+		
+Wx_sigmaG_i_hl_arr = [[Wx, sigmaG, i, hl] for Wx in range(1,5) for sigmaG in sigmaG_arr for i in range(0,len(zbins)-1) for hl in ['hi','lo']]+[[Wx, sigmaG, -1, 'lo'] for Wx in range(1,5) for sigmaG in sigmaG_arr]
+
+################################################
+###(1) split file organizing ###################
+###    uncomment next 1 line ###################
+#pool.map(OrganizeSplitFile,splitfiles)
+################################################
+###(2) sum up the split file into 4 Wx fields###
+###    uncomment next 2 line ###################
+#for Wx in range(1,5):
+	#SumSplitFile2Grid(Wx)
+################################################
+###(3) create KS maps for 6 zbins 6 sigmaG #####
+###    total should have 528 files (galn, KS)###
+###    uncomment next 1 line ###################
+#map(KSmap, Wx_sigmaG_i_hl_arr[::-1])
+################################################
+###(4) B mode for picking out signals
+###    use 1000 maps with galaxies randomly
+###    rotated
+###    uncomment the next 1 line
+#map(Bmode, Wx_sigmaG_i_hl_arr)
+################################################
+###(5) Create Noise KS maps by randomly rotate
+###    galaxies (2014/09/09)
+#noise_input_arr =[[Wx, iseed] for Wx in range(1,5) for iseed in range(200,500)]
+#map(Noise, noise_input_arr)
+
+################################################
+###(6) cross corrrelation
+###    put mask on KS map, and cross correlate
+###    for both B-mode(for compare), and true KS
+### test on sigmaG=1.0, zcut=0.85	
+#Wx=1
 #for zcut in zbins[:-1]:
 	#for sigmaG in sigmaG_arr:
 		#print 'Wx, zcut, sigmaG',Wx, zcut, sigmaG
 		#TestCrossCorrelate (Wx, zcut, sigmaG)
 ################################################
+###(7) organize the Wx file, with 
+concWx = lambda Wx: array([WLanalysis.readFits(W_dir(Wx)+iW) for iW in os.listdir(W_dir(Wx))])
 
-
+#y, x, ra, dec, e1, e2, w, r, snr, m, c2, mag, z_peak, z_rand1, z_rand2
 
 
 print 'DONE-DONE-DONE'
