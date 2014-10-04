@@ -312,7 +312,20 @@ def TestCrossCorrelate (Wx, zcut, sigmaG):
 	#plotimshow(kmap,'kmap_W%i_zcut%shi_sigmaG%02d.jpg'%(Wx,zcut,sigmaG*10))
 	#plotimshow(bmap,'bmap_W%i_zcut%shi_sigmaG%02d.jpg'%(Wx,zcut,sigmaG*10))
 	#plotimshow(galn_lo,'galn_W%i_zcut%shi_sigmaG%02d.jpg'%(Wx,zcut,sigmaG*10))
-		
+
+concWx = lambda Wx: array([WLanalysis.readFits(W_dir(Wx)+iW) for iW in os.listdir(W_dir(Wx))])
+def sortWx(Wx):
+	#collect all the ifiles for each of the 4 Wx field, and store into one .npy file
+	#with columns:
+	#y, x, ra, dec, e1, e2, w, r, snr, m, c2, mag, z_peak, z_rand1, z_rand2
+
+	print Wx
+	ifile_arr = concWx(Wx)
+	sum_arr = array([ifile_arr[i][j] for i in range(len(ifile_arr)) for j in range(len(ifile_arr[i])) ])
+	#np.save(cat_dir+'W%s_cat_z0213'%(Wx), sum_arr)
+	#save only the columns needed for project-B
+	np.save(cat_dir+'W%s_cat_z0213_ra_dec_mag_zpeak'%(Wx), sum_arr[:,[2,3,11,12]])
+	
 Wx_sigmaG_i_hl_arr = [[Wx, sigmaG, i, hl] for Wx in range(1,5) for sigmaG in sigmaG_arr for i in range(0,len(zbins)-1) for hl in ['hi','lo']]+[[Wx, sigmaG, -1, 'lo'] for Wx in range(1,5) for sigmaG in sigmaG_arr]
 
 ################################################
@@ -352,14 +365,10 @@ Wx_sigmaG_i_hl_arr = [[Wx, sigmaG, i, hl] for Wx in range(1,5) for sigmaG in sig
 		#print 'Wx, zcut, sigmaG',Wx, zcut, sigmaG
 		#TestCrossCorrelate (Wx, zcut, sigmaG)
 ################################################
-###(7) organize the Wx file, with 
-concWx = lambda Wx: array([WLanalysis.readFits(W_dir(Wx)+iW) for iW in os.listdir(W_dir(Wx))])
-#y, x, ra, dec, e1, e2, w, r, snr, m, c2, mag, z_peak, z_rand1, z_rand2
-def sortWx(Wx):
-	print Wx
-	ifile_arr = concWx(Wx)
-	sum_arr = array([ifile_arr[i][j] for i in range(len(ifile_arr)) for j in range(len(ifile_arr[i])) ])
-	np.save(cat_dir+'W%s_cat_z0213'%(Wx), sum_arr)
+###(7) organize the Wx file into 4 catalogues with
+###    columns:
+###    y, x, ra, dec, e1, e2, w, r, snr, m, c2, mag, z_peak, z_rand1, z_rand2
+#map(sortWx, range(1,5))
+################################################
 
-map(sortWx, range(1,5))	
 print 'DONE-DONE-DONE'

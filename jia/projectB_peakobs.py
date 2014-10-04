@@ -17,6 +17,7 @@ from scipy import interpolate
 
 plot_galn_vs_kappa_hist = 0
 
+
 plot_dir = '/Users/jia/weaklensing/CFHTLenS/plot/obsPK/'
 kmapGen = lambda i, z: WLanalysis.readFits('/Users/jia/CFHTLenS/obsPK/maps/W%i_KS_%s_sigmaG10.fit'%(i, z))
 galnGen = lambda i, z: WLanalysis.readFits('/Users/jia/CFHTLenS/obsPK/maps/W%i_galn_%s_hi_sigmaG10.fit'%(i, z))
