@@ -354,8 +354,12 @@ Wx_sigmaG_i_hl_arr = [[Wx, sigmaG, i, hl] for Wx in range(1,5) for sigmaG in sig
 ################################################
 ###(7) organize the Wx file, with 
 concWx = lambda Wx: array([WLanalysis.readFits(W_dir(Wx)+iW) for iW in os.listdir(W_dir(Wx))])
-
 #y, x, ra, dec, e1, e2, w, r, snr, m, c2, mag, z_peak, z_rand1, z_rand2
+def sortWx(Wx):
+	print Wx
+	ifile_arr = concWx(Wx)
+	sum_arr = array([ifile_arr[i][j] for i in range(len(ifile_arr)) for j in range(len(ifile_arr[i])) ])
+	np.save(cat_dir+'W%s_cat_z0213'%(Wx), sum_arr)
 
-
+map(sortWx, range(1,5))	
 print 'DONE-DONE-DONE'
