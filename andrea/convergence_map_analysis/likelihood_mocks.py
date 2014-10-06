@@ -210,7 +210,7 @@ def main():
 		logging.info("Closed MPI Pool.")
 
 	#Save the best fit parameters for all realizations
-	best_fit_filename = os.path.join(feature_loader.options.get("analysis","save_path"),"best_fit_all_{0}.npy".format(output_string(feature_loader.feature_string)))
+	best_fit_filename = os.path.join(feature_loader.options.get("analysis","save_path"),"troubleshoot","best_fit_all_{0}.npy".format(output_string(feature_loader.feature_string)))
 	logging.info("Saving best fit to {0}...".format(best_fit_filename))
 	np.save(best_fit_filename,best_fit_all)
 
