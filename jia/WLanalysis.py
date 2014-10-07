@@ -113,7 +113,7 @@ def gnom_fun(center):
 	Input:
 	center = (ra0,dec0) in degrees (note the format is a list of 2 elements, not 2 numbers).
 	Output:
-	A function that transform (ra, dec) to (x, y), centered at (ra0, dec0).
+	A function that transform (ra, dec) to (x, y), centered at (ra0, dec0), in unite of radians.
 	Example:
 	>> center = (45,60)
 	>> f = gnom_fun(center)
@@ -126,7 +126,7 @@ def gnom_fun(center):
 	ra0 = ra0*pi/180
 	dec0 = dec0*pi/180
 	def gnom(radec):
-		ra,dec = radec
+		ra,dec = radec[0].copy(), radec[1].copy()
 		ra -= 180
 		ra = ra*pi/180
 		dec = dec*pi/180
