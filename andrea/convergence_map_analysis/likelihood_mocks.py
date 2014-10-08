@@ -191,7 +191,7 @@ def main():
 		#Maybe save the likelihood cube?
 		if cmd_args.likelihood:
 			likelihood_filename = os.path.join(feature_loader.options.get("analysis","save_path"),"troubleshoot","likelihood{0}_{1}.npy".format(nreal+1,output_string(feature_loader.feature_string)))
-			logging.info("Saving likelihood cube to {0}...".format(best_fit_filename))
+			logging.info("Saving likelihood cube to {0}...".format(likelihood_filename))
 			np.save(likelihood_filename,likelihood_cube)
 
 		#Find the maximum of the likelihood using ContourPlot functionality
