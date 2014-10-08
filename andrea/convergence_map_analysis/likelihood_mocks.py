@@ -249,7 +249,7 @@ def main():
 
 		#Display the new best fit before exiting
 		best_fit_parameters = np.array([ parameters_maximum[par_key] for par_key in parameter_keys ])
-		best_fit_chi2 = analysis.chi2(best_fit_parameters,features_covariance=features_covariance,observed_feature=observed_feature[nreal])[0]
+		best_fit_chi2 = analysis.chi2(best_fit_parameters,features_covariance=features_covariance,observed_feature=observed_feature)[0]
 		logging.info("Best fit for observation is [ {0[0]:.2f} {0[1]:.2f} {0[2]:.2f} ], chi2={1:.3f}({2} dof)".format(best_fit_parameters,best_fit_chi2,analysis.training_set.shape[1]))
 
 		#Update global array with best fit parameters and corresponding chi2
