@@ -61,6 +61,7 @@ def main():
 	parser.add_argument("-ss","--save_debug",dest="save_debug",action="store_true",default=False,help="save a bunch of debugging info for the analysis")
 	parser.add_argument("-p","--prefix",dest="prefix",action="store",default="",help="prefix of the emulator to pickle")
 	parser.add_argument("-l","--likelihood",dest="likelihood",action="store_true",default=False,help="save the likelihood cubes for the mocks")
+	parser.add_argument("-o","--observation",dest="observation",action="store_true",default=False,help="append the actual observation results to the mock results for direct comparison")
 
 	cmd_args = parser.parse_args()
 
@@ -172,8 +173,13 @@ def main():
 	#Allocate array for best fit
 	first_realization = feature_loader.options.getint("mocks","first_realization")
 	last_realization = feature_loader.options.getint("mocks","last_realization")
-	best_fit_all = np.zeros((last_realization-first_realization+1,analysis.parameter_set.shape[1]))
-	chi2_all = np.zeros(last_realization-first_realization+1)
+
+	if cmd_args.observation:
+		best_fit_all = np.zeros((last_realization-first_realization+1 + 1,analysis.parameter_set.shape[1]))
+		chi2_all = np.zeros(last_realization-first_realization+1 + 1)
+	else:
+		best_fit_all = np.zeros((last_realization-first_realization+1,analysis.parameter_set.shape[1]))
+		chi2_all = np.zeros(last_realization-first_realization+1)
 
 	#Cycle through the realizations and obtain a best fit for each one of them
 	
@@ -210,6 +216,45 @@ def main():
 		#Update global array with best fit parameters and corresponding chi2
 		best_fit_all[nreal-first_realization+1,:] = best_fit_parameters.copy()
 		chi2_all[nreal-first_realization+1] = best_fit_chi2 
+
+	#######################################################################################################################################################################
+
+	#If option was selected, append the observation results to the mock ones, for comparison
+	if cmd_args.observation:
+
+		observed_feature = feature_loader.load_features(CFHTLens(root_path=feature_loader.options.get("observations","root_path")))[0]
+
+		chi_squared = analysis.chi2(points,observed_feature=observed_feature,features_covariance=features_covariance,pool=pool,split_chunks=split_chunks)
+
+		now = time.time()
+		logging.info("actual observation, chi2 calculations completed in {0:.1f}s".format(now-last_timestamp))
+		last_timestamp = now
+
+		#After chi2, compute the likelihood
+		likelihood_cube = analysis.likelihood(chi_squared.reshape(Om.shape + w.shape + si8.shape))
+
+		#Maybe save the likelihood cube?
+		if cmd_args.likelihood:
+			likelihood_filename = os.path.join(feature_loader.options.get("analysis","save_path"),"troubleshoot","likelihood_obs_{0}.npy".format(output_string(feature_loader.feature_string)))
+			logging.info("Saving likelihood cube to {0}...".format(likelihood_filename))
+			np.save(likelihood_filename,likelihood_cube)
+
+		#Find the maximum of the likelihood using ContourPlot functionality
+		contour = ContourPlot()
+		contour.getLikelihood(likelihood_cube)
+		contour.getUnitsFromOptions(feature_loader.options)
+		parameters_maximum = contour.getMaximum()
+		parameter_keys = parameters_maximum.keys()
+		parameter_keys.sort(key=contour.parameter_axes.get)
+
+		#Display the new best fit before exiting
+		best_fit_parameters = np.array([ parameters_maximum[par_key] for par_key in parameter_keys ])
+		best_fit_chi2 = analysis.chi2(best_fit_parameters,features_covariance=features_covariance,observed_feature=observed_feature[nreal])[0]
+		logging.info("Best fit for observation is [ {0[0]:.2f} {0[1]:.2f} {0[2]:.2f} ], chi2={1:.3f}({2} dof)".format(best_fit_parameters,best_fit_chi2,analysis.training_set.shape[1]))
+
+		#Update global array with best fit parameters and corresponding chi2
+		best_fit_all[-1,:] = best_fit_parameters.copy()
+		chi2_all[-1] = best_fit_chi2
 
 	#######################################################################################################################################################################
 	
