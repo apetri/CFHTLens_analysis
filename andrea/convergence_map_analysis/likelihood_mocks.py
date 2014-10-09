@@ -215,7 +215,7 @@ def main():
 		best_fit_chi2 = analysis.chi2(best_fit_parameters,features_covariance=features_covariance,observed_feature=observed_feature[nreal])[0]
 		chi2_from_expected = analysis.chi2(np.array([0.26,-1.0,0.800]),features_covariance=features_covariance,observed_feature=observed_feature[nreal])[0]
 
-		logging.info("Best fit for realization {4} is [ {0[0]:.2f} {0[1]:.2f} {0[2]:.2f} ], chi2_best={1:.3f}({2} dof), chi2_expected={3:.3f}({2} dof))".format(best_fit_parameters,best_fit_chi2,analysis.training_set.shape[1],chi2_expected,nreal+1))
+		logging.info("Best fit for realization {4} is [ {0[0]:.2f} {0[1]:.2f} {0[2]:.2f} ], chi2_best={1:.3f}({2} dof), chi2_expected={3:.3f}({2} dof)".format(best_fit_parameters,best_fit_chi2,analysis.training_set.shape[1],chi2_from_expected,nreal+1))
 
 		#Update global array with best fit parameters and corresponding chi2
 		best_fit_all[nreal-first_realization+1,:] = best_fit_parameters.copy()
@@ -257,7 +257,7 @@ def main():
 		best_fit_chi2 = analysis.chi2(best_fit_parameters,features_covariance=features_covariance,observed_feature=observed_feature)[0]
 		chi2_from_expected = analysis.chi2(np.array([0.26,-1.0,0.800]),features_covariance=features_covariance,observed_feature=observed_feature)[0]
 		
-		logging.info("Best fit for observation is [ {0[0]:.2f} {0[1]:.2f} {0[2]:.2f} ], chi2_best={1:.3f}({2} dof), chi2_expected={3:.3f}({2} dof))".format(best_fit_parameters,best_fit_chi2,analysis.training_set.shape[1],chi2_expected))
+		logging.info("Best fit for observation is [ {0[0]:.2f} {0[1]:.2f} {0[2]:.2f} ], chi2_best={1:.3f}({2} dof), chi2_expected={3:.3f}({2} dof)".format(best_fit_parameters,best_fit_chi2,analysis.training_set.shape[1],chi2_from_expected))
 
 		#Update global array with best fit parameters and corresponding chi2
 		best_fit_all[-1,:] = best_fit_parameters.copy()
