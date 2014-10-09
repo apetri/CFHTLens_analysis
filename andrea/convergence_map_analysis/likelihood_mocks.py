@@ -58,7 +58,7 @@ def main():
 	parser.add_argument("-c","--cut_convergence",dest="cut_convergence",action="store",default=None,help="select convergence values in (min,max) to compute the likelihood. Safe for single descriptor only!!")
 	parser.add_argument("-g","--group_subfields",dest="group_subfields",action="store_true",default=False,help="group feature realizations by taking the mean over subfields, this makes a big difference in the covariance matrix")
 	parser.add_argument("-s","--save_points",dest="save_points",action="store",default=None,help="save points in parameter space to external npy file")
-	parser.add_argument("-ss","--save_debug",dest="save_debug",action="store_true",default=False,help="save a bunch of debugging info for the analysis")
+	parser.add_argument("-ss","--save",dest="save",action="store_true",default=False,help="save the best fits and corresponding chi2")
 	parser.add_argument("-p","--prefix",dest="prefix",action="store",default="",help="prefix of the emulator to pickle")
 	parser.add_argument("-l","--likelihood",dest="likelihood",action="store_true",default=False,help="save the likelihood cubes for the mocks")
 	parser.add_argument("-o","--observation",dest="observation",action="store_true",default=False,help="append the actual observation results to the mock results for direct comparison")
@@ -271,20 +271,22 @@ def main():
 		pool.close()
 		logging.info("Closed MPI Pool.")
 
-	#Save the best fit parameters for all realizations
-	best_fit_filename = os.path.join(feature_loader.options.get("analysis","save_path"),"troubleshoot","best_fit_all_{0}.npy".format(output_string(feature_loader.feature_string)))
-	logging.info("Saving best fit to {0}...".format(best_fit_filename))
-	np.save(best_fit_filename,best_fit_all)
+	if cmd_args.save:
 
-	#Save the best fit chi2 for all realizations
-	chi2_filename = os.path.join(feature_loader.options.get("analysis","save_path"),"troubleshoot","chi2_all_{0}.npy".format(output_string(feature_loader.feature_string)))
-	logging.info("Saving best fit chi2 to {0}...".format(chi2_filename))
-	np.save(chi2_filename,chi2_all)
+		#Save the best fit parameters for all realizations
+		best_fit_filename = os.path.join(feature_loader.options.get("analysis","save_path"),"troubleshoot","best_fit_all_{0}.npy".format(output_string(feature_loader.feature_string)))
+		logging.info("Saving best fit to {0}...".format(best_fit_filename))
+		np.save(best_fit_filename,best_fit_all)
 
-	#Save also the chi2 for the expected best fit
-	chi2_filename = os.path.join(feature_loader.options.get("analysis","save_path"),"troubleshoot","chi2_all_expected_{0}.npy".format(output_string(feature_loader.feature_string)))
-	logging.info("Saving expected chi2 to {0}...".format(chi2_filename))
-	np.save(chi2_filename,chi2_from_expected_all)
+		#Save the best fit chi2 for all realizations
+		chi2_filename = os.path.join(feature_loader.options.get("analysis","save_path"),"troubleshoot","chi2_all_{0}.npy".format(output_string(feature_loader.feature_string)))
+		logging.info("Saving best fit chi2 to {0}...".format(chi2_filename))
+		np.save(chi2_filename,chi2_all)
+
+		#Save also the chi2 for the expected best fit
+		chi2_filename = os.path.join(feature_loader.options.get("analysis","save_path"),"troubleshoot","chi2_all_expected_{0}.npy".format(output_string(feature_loader.feature_string)))
+		logging.info("Saving expected chi2 to {0}...".format(chi2_filename))
+		np.save(chi2_filename,chi2_from_expected_all)
 
 	end = time.time()
 
