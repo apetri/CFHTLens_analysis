@@ -177,9 +177,11 @@ def main():
 	if cmd_args.observation:
 		best_fit_all = np.zeros((last_realization-first_realization+1 + 1,analysis.parameter_set.shape[1]))
 		chi2_all = np.zeros(last_realization-first_realization+1 + 1)
+		chi2_from_expected_all = np.zeros(last_realization-first_realization+1 + 1)
 	else:
 		best_fit_all = np.zeros((last_realization-first_realization+1,analysis.parameter_set.shape[1]))
 		chi2_all = np.zeros(last_realization-first_realization+1)
+		chi2_from_expected_all = np.zeros(last_realization-first_realization+1)
 
 	#Cycle through the realizations and obtain a best fit for each one of them
 	
@@ -211,11 +213,14 @@ def main():
 		#Display the new best fit before exiting
 		best_fit_parameters = np.array([ parameters_maximum[par_key] for par_key in parameter_keys ])
 		best_fit_chi2 = analysis.chi2(best_fit_parameters,features_covariance=features_covariance,observed_feature=observed_feature[nreal])[0]
-		logging.info("Best fit for realization {3} is [ {0[0]:.2f} {0[1]:.2f} {0[2]:.2f} ], chi2={1:.3f}({2} dof)".format(best_fit_parameters,best_fit_chi2,analysis.training_set.shape[1],nreal+1))
+		chi2_from_expected = analysis.chi2(np.array([0.26,-1.0,0.800]),features_covariance=features_covariance,observed_feature=observed_feature[nreal])[0]
+
+		logging.info("Best fit for realization {4} is [ {0[0]:.2f} {0[1]:.2f} {0[2]:.2f} ], chi2_best={1:.3f}({2} dof), chi2_expected={3:.3f}({2} dof))".format(best_fit_parameters,best_fit_chi2,analysis.training_set.shape[1],chi2_expected,nreal+1))
 
 		#Update global array with best fit parameters and corresponding chi2
 		best_fit_all[nreal-first_realization+1,:] = best_fit_parameters.copy()
 		chi2_all[nreal-first_realization+1] = best_fit_chi2 
+		chi2_from_expected_all[nreal-first_realization+1] = chi2_from_expected
 
 	#######################################################################################################################################################################
 
@@ -250,11 +255,14 @@ def main():
 		#Display the new best fit before exiting
 		best_fit_parameters = np.array([ parameters_maximum[par_key] for par_key in parameter_keys ])
 		best_fit_chi2 = analysis.chi2(best_fit_parameters,features_covariance=features_covariance,observed_feature=observed_feature)[0]
-		logging.info("Best fit for observation is [ {0[0]:.2f} {0[1]:.2f} {0[2]:.2f} ], chi2={1:.3f}({2} dof)".format(best_fit_parameters,best_fit_chi2,analysis.training_set.shape[1]))
+		chi2_from_expected = analysis.chi2(np.array([0.26,-1.0,0.800]),features_covariance=features_covariance,observed_feature=observed_feature)[0]
+		
+		logging.info("Best fit for observation is [ {0[0]:.2f} {0[1]:.2f} {0[2]:.2f} ], chi2_best={1:.3f}({2} dof), chi2_expected={3:.3f}({2} dof))".format(best_fit_parameters,best_fit_chi2,analysis.training_set.shape[1],chi2_expected))
 
 		#Update global array with best fit parameters and corresponding chi2
 		best_fit_all[-1,:] = best_fit_parameters.copy()
 		chi2_all[-1] = best_fit_chi2
+		chi2_from_expected_all[-1] = chi2_from_expected
 
 	#######################################################################################################################################################################
 	
@@ -272,6 +280,11 @@ def main():
 	chi2_filename = os.path.join(feature_loader.options.get("analysis","save_path"),"troubleshoot","chi2_all_{0}.npy".format(output_string(feature_loader.feature_string)))
 	logging.info("Saving best fit chi2 to {0}...".format(chi2_filename))
 	np.save(chi2_filename,chi2_all)
+
+	#Save also the chi2 for the expected best fit
+	chi2_filename = os.path.join(feature_loader.options.get("analysis","save_path"),"troubleshoot","chi2_all_expected_{0}.npy".format(output_string(feature_loader.feature_string)))
+	logging.info("Saving expected chi2 to {0}...".format(chi2_filename))
+	np.save(chi2_filename,chi2_from_expected_all)
 
 	end = time.time()
 
