@@ -178,28 +178,29 @@ def maskGen (Wx, sigma_pix=10):
 	#print 'W%i, fsky=%.6f, fsky2=%.6f'%(Wx, fsky, fsky2) 
 	#############################################
 	return mask_smooth
-map(maskGen,range(1,5))
+#map(maskGen,range(1,5))
 
 def KSxkSZ (Wx, method='nearest', sigma_pix=10):
 	print 'KSxkSZ',Wx
 	KS = kmapGen(Wx)
 	Bmode = bmodeGen(Wx)
 	kSZ = kSZmapGen (Wx, method=method)
+	noise = noiseGen (Wx)
+	offset = offsetGen (Wx)
+	nosqkSZ = nosqkSZGen (Wx)
 	###adhoc fix 2014-09-05####
 	#noise = zeros(shape=kSZ.shape)
 	#offset = zeros(shape=kSZ.shape)
 	###########################
-	noise = noiseGen (Wx)
-	offset = offsetGen (Wx)
-	nosqkSZ = nosqkSZGen (Wx)
-
+	
 	## masking
 	mask_smooth = maskGen(Wx, sigma_pix=sigma_pix)
 	KS *= mask_smooth
-	noise *= mask_smooth
 	kSZ *= mask_smooth
+	noise *= mask_smooth
 	offset *= mask_smooth
 	Bmode *= mask_smooth
+	nosqkSZ *= mask_smooth
 	
 	sizedeg = (sizes[Wx-1]/512.0)**2*12.0
 	fmask = sum(mask_smooth**2)/sizes[Wx-1]**2
@@ -221,11 +222,13 @@ def KSxkSZ (Wx, method='nearest', sigma_pix=10):
 	ell_arr, CCB = WLanalysis.CrossCorrelate (KS,noise,edges=edges)
 	ell_arr, CCO = WLanalysis.CrossCorrelate (KS,offset,edges=edges)
 	ell_arr, CCBMODE = WLanalysis.CrossCorrelate (Bmode, kSZ, edges=edges)
+	ell_arr, CCNSQ = WLanalysis.CrossCorrelate (KS, nosqkSZ, edges=edges)
 	
 	CCK /= fmask2
 	CCB /= fmask2
 	CCO /= fmask2
 	CCBMODE /= fmask2
+	CCNSQ /= fmask2
 
 	# error
 	autoK = WLanalysis.PowerSpectrum(KS, sizedeg = sizedeg, edges=edges)[-1]/fmask2
@@ -233,6 +236,7 @@ def KSxkSZ (Wx, method='nearest', sigma_pix=10):
 	autoB = WLanalysis.PowerSpectrum(noise, sizedeg = sizedeg, edges=edges)[-1]/fmask2
 	autoO = WLanalysis.PowerSpectrum(offset, sizedeg = sizedeg, edges=edges)[-1]/fmask2
 	autoBMODE = WLanalysis.PowerSpectrum(Bmode, sizedeg = sizedeg, edges=edges)[-1]/fmask2
+	autoNSQ = WLanalysis.PowerSpectrum(nosqkSZ, sizedeg = sizedeg, edges=edges)[-1]/fmask2
 
 	d_ell = ell_arr[1]-ell_arr[0]
 	##################### junk ############
@@ -245,7 +249,8 @@ def KSxkSZ (Wx, method='nearest', sigma_pix=10):
 	errB = sqrt(autoK*autoB/fsky/(2*ell_arr+1)/d_ell)
 	errO = sqrt(autoK*autoO/fsky/(2*ell_arr+1)/d_ell)
 	errBMODE = sqrt(autoBMODE*autokSZ/fsky/(2*ell_arr+1)/d_ell)
-	return ell_arr, CCK, CCB, errK, errB, CCO, errO, CCBMODE, errBMODE
+	errNSQ = sqrt(autoNSQ*autoNSQ/fsky/(2*ell_arr+1)/d_ell)
+	return ell_arr, CCK, CCB, errK, errB, CCO, errO, CCBMODE, errBMODE, CCNSQ, errNSQ
 
 def CrossPower(CCK, CCB, errK, errB, method='nearest', sigma_pix=10, noise='noise'):
 	
@@ -275,70 +280,76 @@ def CrossPower(CCK, CCB, errK, errB, method='nearest', sigma_pix=10, noise='nois
 	
 if plot_crosscorrelate_all:
 	CC_fn = lambda Wx: kSZ_dir+'Noise_convxkSZ_W%s.fit'%(Wx)
-	for method in ('nearest',):#'linear','cubic'):
-		CC_arr = array([KSxkSZ(Wx, method=method) for Wx in range(1,5)])
-		#CC_arr rows: 0 ell_arr, 1 CCK, 2 CCB, 3 errK, 4 errB, 5 CCO, 6 errO, 7 CCBMODE, 8 errBMODE
+	method = 'nearest'
+	#for method in ('nearest',):#'linear','cubic'):
+	CC_arr = array([KSxkSZ(Wx, method=method) for Wx in range(1,5)])
+	## CC_arr rows: 0 ell_arr, 1 CCK, 2 CCB, 3 errK, 4 errB
+	## 5 CCO, 6 errO, 7 CCBMODE, 8 errBMODE, 9 CCNSQ, 10 errNSQ
 
-		errK_arr = CC_arr[:,3]
-		errB_arr = CC_arr[:,4]#pure instrumentation noise
-		errO_arr = CC_arr[:,6]#using offset map
-		errBMODE_arr = CC_arr[:,8]
-		
-		weightK = 1/errK_arr/sum(1/errK_arr, axis=0)
-		weightB = 1/errB_arr/sum(1/errB_arr, axis=0)
-		weightO = 1/errO_arr/sum(1/errO_arr, axis=0)
-		weightBMODE = 1/errBMODE_arr/sum(1/errBMODE_arr, axis=0)
-		
-		errK = 1/sum(1/errK_arr, axis=0)
-		errB = 1/sum(1/errB_arr, axis=0)
-		errO = 1/sum(1/errO_arr, axis=0)
-		errBMODE = 1/sum(1/errBMODE_arr, axis=0)
-		
-		ell_arr = CC_arr[0,0]
-		CCBMODE = sum(CC_arr[:,7]*weightBMODE,axis=0)
-		CCK = sum(CC_arr[:,1]*weightK,axis=0)
-		CCB = sum(CC_arr[:,2]*weightB,axis=0)#pure instrumentation noise
-		CCO = sum(CC_arr[:,5]*weightO,axis=0)#using offset map
-		
-		####### err from the noise convergence maps ##########
-		CCN = array([[WLanalysis.readFits(CC_fn(Wx))/fmask2_arr[Wx-1]] for Wx in range(1,5)]).squeeze()
-		errN_arr = std(CCN, axis=1)
-		avgN_arr = mean(CCN, axis=1)
-		weightN = 1/errN_arr/sum(1/errN_arr,axis=0)
-		errN = 1/sum(1/errN_arr, axis=0)
-		avgN = sum(avgN_arr*weightN,axis=0)
-		
-		CrossPower(CCK, avgN, errK, errN, method=method, noise='KappaNoise')
-		text_arr = array([ell_arr, CCK, avgN, errK, errN]).T
-		savetxt(kSZ_dir+'CrossCorrelate_%s_sigmaG10.txt'%(method), text_arr, header='ell\tkSZxkappa\tkSZxkappa_noise\terr(kSZxkappa)\terr(kSZxkappa_noise)')
-		
-		#CrossPower(CCK, CCB, errK, errB, method=method, sigmaG=sigmaG, noise='noise')
-		#CrossPower(CCK, CCO, errK, errO, method=method, sigmaG=sigmaG, noise='offset')
-		#CrossPower(CCK, CCBMODE, errK, errBMODE, method=method, sigmaG=sigmaG, noise='Bmode')
-		
-		#text_arr = array([ell_arr, CCK, CCO, CCB, CCBMODE, errK, errO, errB, errBMODE]).T
-		#savetxt(kSZ_dir+'CrossCorrelate_%s_sigmaG%02d.txt'%(method, sigmaG*10), text_arr, header='ell\tkSZxkappa\toffsetxkappa\tnoisexkappa\tkSZxBmode\terr(kSZxkappa)\terr(offsetxkappa)\terr(noisexkappa)\terr(kSZxBmode)')
-		
-		
-		#####################################################
-		##test 7/28/2014 plot out each power spectrum:
-		#f=figure(figsize=(8,6))
-		#ax=f.add_subplot(111)
-		#colors=['r','b','g','m']
-		#for i in range(4):
-			#plot (ell_arr, CC_arr[i,1], colors[i]+'-', label='k x kSZ W%i'%(i+1))
-			#plot (ell_arr, CC_arr[i,2], colors[i]+'.', label='k x noise W%i'%(i+1))
-			#plot (ell_arr, CC_arr[i,5], colors[i]+'--', label='k x offset W%i'%(i+1))
-		#leg=ax.legend(ncol=1, labelspacing=0.3, prop={'size':12},loc=0)
-		#leg.get_frame().set_visible(False)
-		##ax.set_xscale('log')
-		#ax.set_xlabel(r'$\ell$', fontsize=16)
-		#ax.set_ylabel(r'$\ell(\ell+1)P_{n\kappa}(\ell)/2\pi$', fontsize=16)
-		#ax.set_title('%s, %s arcmin'%(method, sigmaG))
-		#ax.ticklabel_format(axis='y', style='sci', scilimits=(-2,2))
-		##show()
-		#savefig(plot_dir+'kSZxCFHT_byWx_%s_sigmaG%s_Bmode.jpg'%(method,sigmaG))
-		#close()
+	errK_arr = CC_arr[:,3]
+	errB_arr = CC_arr[:,4]#pure instrumentation noise
+	errO_arr = CC_arr[:,6]#using offset map
+	errBMODE_arr = CC_arr[:,8]
+	errNSQ_arr = CC_arr[:,10]
+	
+	weightK = 1/errK_arr/sum(1/errK_arr, axis=0)
+	weightB = 1/errB_arr/sum(1/errB_arr, axis=0)
+	weightO = 1/errO_arr/sum(1/errO_arr, axis=0)
+	weightBMODE = 1/errBMODE_arr/sum(1/errBMODE_arr, axis=0)
+	weightNSQ = 1/errNSQ_arr/sum(1/errNSQ_arr, axis=0)
+	
+	errK = 1/sum(1/errK_arr, axis=0)
+	errB = 1/sum(1/errB_arr, axis=0)
+	errO = 1/sum(1/errO_arr, axis=0)
+	errBMODE = 1/sum(1/errBMODE_arr, axis=0)
+	errO = 1/sum(1/errNSQ_arr, axis=0)
+	
+	ell_arr = CC_arr[0,0]
+	CCBMODE = sum(CC_arr[:,7]*weightBMODE,axis=0)
+	CCK = sum(CC_arr[:,1]*weightK,axis=0)
+	CCB = sum(CC_arr[:,2]*weightB,axis=0)#pure instrumentation noise
+	CCO = sum(CC_arr[:,5]*weightO,axis=0)#using offset map
+	CCNSQ = sum(CC_arr[:,9]*weightO,axis=0)
+	
+	####### err from the 500 simulated noise convergence maps (random rotation) ##########
+	CCN = array([[WLanalysis.readFits(CC_fn(Wx))/fmask2_arr[Wx-1]] for Wx in range(1,5)]).squeeze()
+	errN_arr = std(CCN, axis=1)
+	avgN_arr = mean(CCN, axis=1)
+	weightN = 1/errN_arr/sum(1/errN_arr,axis=0)
+	errN = 1/sum(1/errN_arr, axis=0)
+	avgN = sum(avgN_arr*weightN,axis=0)
+	
+	CrossPower(CCK, avgN, errK, errN, method=method, noise='KappaNoise')
+	text_arr = array([ell_arr, CCK, avgN, errK, errN]).T
+	savetxt(kSZ_dir+'CrossCorrelate_%s_sigmaG10.txt'%(method), text_arr, header='ell\tkSZxkappa\tkSZxkappa_noise\terr(kSZxkappa)\terr(kSZxkappa_noise)')
+	
+	#CrossPower(CCK, CCB, errK, errB, method=method, sigmaG=sigmaG, noise='noise')
+	#CrossPower(CCK, CCO, errK, errO, method=method, sigmaG=sigmaG, noise='offset')
+	#CrossPower(CCK, CCBMODE, errK, errBMODE, method=method, sigmaG=sigmaG, noise='Bmode')
+	
+	#text_arr = array([ell_arr, CCK, CCO, CCB, CCBMODE, errK, errO, errB, errBMODE]).T
+	#savetxt(kSZ_dir+'CrossCorrelate_%s_sigmaG%02d.txt'%(method, sigmaG*10), text_arr, header='ell\tkSZxkappa\toffsetxkappa\tnoisexkappa\tkSZxBmode\terr(kSZxkappa)\terr(offsetxkappa)\terr(noisexkappa)\terr(kSZxBmode)')
+	
+	
+	#####################################################
+	##test 7/28/2014 plot out each power spectrum:
+	#f=figure(figsize=(8,6))
+	#ax=f.add_subplot(111)
+	#colors=['r','b','g','m']
+	#for i in range(4):
+		#plot (ell_arr, CC_arr[i,1], colors[i]+'-', label='k x kSZ W%i'%(i+1))
+		#plot (ell_arr, CC_arr[i,2], colors[i]+'.', label='k x noise W%i'%(i+1))
+		#plot (ell_arr, CC_arr[i,5], colors[i]+'--', label='k x offset W%i'%(i+1))
+	#leg=ax.legend(ncol=1, labelspacing=0.3, prop={'size':12},loc=0)
+	#leg.get_frame().set_visible(False)
+	##ax.set_xscale('log')
+	#ax.set_xlabel(r'$\ell$', fontsize=16)
+	#ax.set_ylabel(r'$\ell(\ell+1)P_{n\kappa}(\ell)/2\pi$', fontsize=16)
+	#ax.set_title('%s, %s arcmin'%(method, sigmaG))
+	#ax.ticklabel_format(axis='y', style='sci', scilimits=(-2,2))
+	##show()
+	#savefig(plot_dir+'kSZxCFHT_byWx_%s_sigmaG%s_Bmode.jpg'%(method,sigmaG))
+	#close()
 
 if cross_cov_mat:
 	CCN = array([[WLanalysis.readFits(CC_fn(Wx))/fmask_arr[Wx-1]**2] for Wx in range(1,5)]).squeeze()
