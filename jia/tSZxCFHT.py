@@ -13,13 +13,12 @@ from scipy import interpolate
 
 
 ###################### knobs###########################
-plot_crosscorrelate_all = 1
+plot_crosscorrelate_all = 0
 testCC = 0
 test_powspec = 0
 create_noise_KS = 0
 cross_cov_mat = 0
 #######################################################
-
 
 kSZ_dir = '/Users/jia/CFHTLenS/kSZ/newfil/'
 #kSZ_dir = '/Users/jia/CFHTLenS/kSZ/ellmax3000/'
@@ -32,6 +31,13 @@ kSZCoordsGen = lambda i: WLanalysis.readFits(kSZ_dir+'LGMCA_W%i_flipper8192_kSZf
 kmapGen = lambda i: WLanalysis.readFits('/Users/jia/CFHTLenS/obsPK/W%i_KS_1.3_lo_sigmaG10.fit'%(i))
 bmodeGen = lambda i: WLanalysis.readFits('/Users/jia/CFHTLenS/obsPK/W%i_Bmode_1.3_lo_sigmaG05.fit'%(i))
 galnGen = lambda i: WLanalysis.readFits('/Users/jia/CFHTLenS/obsPK/W%i_galn_1.3_lo_sigmaG10.fit'%(i))
+
+kSZmapGen = lambda i: WLanalysis.readFits(kSZ_dir+'kSZmap_W%i_nearest.fit'%(i))
+ptsrcGen = lambda i: np.load(kSZ_dir + 'null/'+'PSmaskRING_100-143-217-353-545_857_5sigma_Nside8192_BOOL_W%s_toJia.npy'%(i))
+offsetGen = lambda i: np.load(kSZ_dir + 'null/'+'LGMCA_W%soffset_flipper8192_kSZfilt_squared_toJia.npy'%(i))
+noiseGen = lambda i: np.load(kSZ_dir + 'null/'+'LGMCA_noise_W%s_flipper8192_kSZfilt_squared_toJia.npy'%(i))
+nosqkSZGen= lambda i: np.load(kSZ_dir + 'null/'+'LGMCA_W%s_flipper8192_kSZfilt_NOTsquared_toJia.npy'%(i))
+
 centers = array([[34.5, -7.5], [134.5, -3.25],[214.5, 54.5],[ 332.75, 1.9]])
 sizes = (1330, 800, 1120, 950)
 PPR512=8468.416479647716
@@ -48,12 +54,12 @@ fmask2_arr = [0.68441507160425807, 0.53272247188649302, 0.59883023828975701, 0.4
 #######################################################
 ###### convert from txt to fits #######################
 #######################################################
-#for i in range(1,5):
-	#print 'txt2fits',i
-	#fn = kSZ_dir+'LGMCA_W%i_flipper8192_kSZfilt_squared_toJia'%(i)
-	#data = genfromtxt(fn+'.txt')
-	#WLanalysis.writeFits(data, fn+'.fit')
-	
+#for fn in os.listdir(kSZ_dir+'null/'):
+	#print fn
+	#full_fn = kSZ_dir+'null/'+fn
+	#data = genfromtxt(full_fn)
+	#np.save(full_fn[:-3],data)
+
 #kSZCoordsGen = lambda i: genfromtxt(kSZ_dir+'kSZ2_W%i_ellmax3000.txt'%(i))
 #noiseCoordsGen = lambda i: genfromtxt(kSZ_dir+'kSZ2_noise_W%i_ellmax3000.txt'%(i))
 #offsetCoordsGen = lambda i: genfromtxt(kSZ_dir+'kSZ2_W%i_ellmax3000_offset.txt'%(i))
@@ -98,40 +104,64 @@ def plotimshow(img,ititle,vmin=0, vmax=0.05):
 	savefig(plot_dir+'%s.jpg'%(ititle))
 	close()	
 
-def kSZmapGen (Wx, noise=False, offset=False, method='nearest'):
-	#print Wx
-	size=sizes[Wx-1]
-	if noise:
+#def kSZmapGen (Wx, noise=False, offset=False, method='nearest'):
+	##print Wx
+	#size=sizes[Wx-1]
+	#if noise:
 		
-		kSZmap_fn = kSZ_dir+'kSZmap_noise_W%i_%s.fit'%(Wx,method)
-	elif offset:
-		kSZmap_fn = kSZ_dir+'kSZmap_offset_W%i_%s.fit'%(Wx,method)
-	else:	
-		kSZmap_fn = kSZ_dir+'kSZmap_W%i_%s.fit'%(Wx,method)
-	isfile_kmap, kSZmap = WLanalysis.TestFitsComplete(kSZmap_fn, return_file = True)
-	if isfile_kmap == False:
-		if noise:
-			kSZCoord = noiseCoordsGen(Wx)
-		elif offset:
-			kSZCoord = offsetCoordsGen(Wx)
-		else:
-			kSZCoord = kSZCoordsGen(Wx)
-		radeclist = kSZCoord[:,:-1]
-		values = kSZCoord.T[-1]
-		xy = list2coords(radeclist, Wx, offset=offset)
-		X,Y=meshgrid(range(size),range(size))
-		X=X.ravel()
-		Y=Y.ravel()
-		newxy=array([X,Y]).T
-		newvalues = interpGridpoints (xy, values, newxy,method=method)
-		kSZmap = zeros(shape=(size,size))
-		kSZmap[Y,X]=newvalues
-		WLanalysis.writeFits(kSZmap, kSZmap_fn)
-	#plotimshow(kSZmap, 'kSZmap_W%i_%s_Noise%s'%(Wx,method,noise))
+		#kSZmap_fn = kSZ_dir+'kSZmap_noise_W%i_%s.fit'%(Wx,method)
+	#elif offset:
+		#kSZmap_fn = kSZ_dir+'kSZmap_offset_W%i_%s.fit'%(Wx,method)
+	#else:	
+		#kSZmap_fn = kSZ_dir+'kSZmap_W%i_%s.fit'%(Wx,method)
+	#isfile_kmap, kSZmap = WLanalysis.TestFitsComplete(kSZmap_fn, return_file = True)
+	#if isfile_kmap == False:
+		#if noise:
+			#kSZCoord = noiseCoordsGen(Wx)
+		#elif offset:
+			#kSZCoord = offsetCoordsGen(Wx)
+		#else:
+			#kSZCoord = kSZCoordsGen(Wx)
+		#radeclist = kSZCoord[:,:-1]
+		#values = kSZCoord.T[-1]
+		#xy = list2coords(radeclist, Wx, offset=offset)
+		#X,Y=meshgrid(range(size),range(size))
+		#X=X.ravel()
+		#Y=Y.ravel()
+		#newxy=array([X,Y]).T
+		#newvalues = interpGridpoints (xy, values, newxy,method=method)
+		#kSZmap = zeros(shape=(size,size))
+		#kSZmap[Y,X]=newvalues
+		#WLanalysis.writeFits(kSZmap, kSZmap_fn)
+	##plotimshow(kSZmap, 'kSZmap_W%i_%s_Noise%s'%(Wx,method,noise))
+	#kSZmap[isnan(kSZmap)]=0.0
+	#if offset:
+		#kSZmap = kSZmap.T
+	#return kSZmap
+
+def kSZmapGen_fn (fn, offset=False, method='nearest'):
+	'''put values to grid, similar to kSZmapGen, except take in the file name.
+	'''
+	
+	Wx = int(fn[fn.index('W')+1])
+	print 'Wx, fn:', Wx, fn
+	size=sizes[Wx-1]
+	kSZCoord = genfromtxt(fn)
+	radeclist = kSZCoord[:,:-1]
+	values = kSZCoord.T[-1]
+	xy = list2coords(radeclist, Wx, offset=offset)
+	X,Y=meshgrid(range(size),range(size))
+	X=X.ravel()
+	Y=Y.ravel()
+	newxy=array([X,Y]).T
+	newvalues = interpGridpoints (xy, values, newxy,method=method)
+	kSZmap = zeros(shape=(size,size))
+	kSZmap[Y,X]=newvalues	
 	kSZmap[isnan(kSZmap)]=0.0
 	if offset:
 		kSZmap = kSZmap.T
-	return kSZmap
+	np.save(fn[:-4], kSZmap)	
+	#return kSZmap
 
 def maskGen (Wx, sigma_pix=10):
 	galn = galnGen(Wx)
@@ -223,6 +253,13 @@ def CrossPower(CCK, CCB, errK, errB, method='nearest', sigma_pix=10, noise='nois
 	savefig(plot_dir+'test_kSZxCFHT_%s_sigmapix%s_%s.jpg'%(method,sigma_pix, noise))
 	close()
 
+#########################################
+### operations ##########################
+for fn in os.listdir(kSZ_dir+'null/'):
+	print fn
+	full_fn = kSZ_dir+'null/'+fn
+	kSZmapGen_fn(full_fn)
+	
 if plot_crosscorrelate_all:
 	CC_fn = lambda Wx: kSZ_dir+'Noise_convxkSZ_W%s.fit'%(Wx)
 	for method in ('nearest',):#'linear','cubic'):

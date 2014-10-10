@@ -14,9 +14,10 @@ from pylab import *
 import os
 import WLanalysis
 from scipy import interpolate
+from scipy.integrate import quad
 
 plot_galn_vs_kappa_hist = 0
-
+list_peaks_cat = 0
 ########### constants ######################
 plot_dir = '/Users/jia/weaklensing/CFHTLenS/plot/obsPK/'
 kmapGen = lambda i, z: WLanalysis.readFits('/Users/jia/CFHTLenS/obsPK/maps/W%i_KS_%s_sigmaG10.fit'%(i, z))
@@ -30,7 +31,18 @@ centers = array([[34.5, -7.5], [134.5, -3.25],[214.5, 54.5],[ 332.75, 1.9]])
 PPR512=8468.416479647716
 PPA512=2.4633625
 
+H0 = 70.0
+OmegaM = 0.3
+OmegaV = 1.0-OmegaM
+
 ############ functions #####################
+# growth factor
+H_inv = lambda z: 1.0/(H0*sqrt(OmegaM*(1+z)**3+OmegaV))
+# luminosity distance Mpc
+DL = lambda z: (1+z)*c*quad(H_inv, 0, z, args=(H0, OmegaM, OmegaV))[0]
+# find the rest magnitude at the galaxy, from observed magnitude cut
+M_rest_fcn = lambda M_obs, z: M_obs - 5.0*log10(DL(z)) - 25.0
+
 cat_gen = lambda Wx: np.load('/Users/jia/CFHTLenS/obsPK/W%s_cat_z0213_ra_dec_magy_zpeak.npy'%(Wx))
 
 def maskGen (Wx, sigma_pix=0, z=0.4):
@@ -188,25 +200,32 @@ def cat_galn_mag(Wx, z_lo=0.85, z_hi='1.3_lo', R=2.0, noise=False, Bmode=False):
 	return concatenate(all_peaks_mag_z,axis=1)
 
 def hist_cat(z_lo, z_hi, mag_cut, R, noise=False):
-	icat = np.load('/Users/jia/CFHTLenS/obsPK/peaks_mag_%s_lo_%s_R%s_noise%s.npy'%(z_lo, z_hi, R, noise))
-	icat = icat[where(icat[:,2]<mag_cut)]
-
+	icat = np.load('/Users/jia/CFHTLenS/obsPK/peaks_mag_%s_lo_%s_R%s_noise%s.npy'%(z_lo, z_hi, R, noise))#colums 0) identifier, 1) kappa, 2) mag_i, 3) z_peak
+	icat_cut = icat[:,where(icat[2]<mag_cut)].squeeze()
+	sort_idx = argsort(icat_cut[0])
+	unique_idx = nonzero(icat_cut[0,sort_idx[1:]]-icat_cut[0,sort_idx[:-1]])
+	unique_idx = concatenate([[0],unique_idx[0]+1])#include 0 into index
+	galn_arr = concatenate([unique_idx[1:]-unique_idx[:-1],[len(icat_cut[0])-unique_idx[-1]]])
+	kappa_arr = icat_cut[1,sort_idx[unique_idx]]
+	return galn_arr, kappa_arr
 ################ operations ####################
 
 ####### get a list of peaks, with colums 0) identifier, 1) kappa, 2) mag_i, 3) z_peak
-for z_lo in (0.5, 0.6, 0.7):
-	z_hi = '%s_hi'%(z_lo)
-	for noise in (True, False):
-		for R in (1.0, 2.0, 3.0):
-			print 'z_lo, noise, R:',',', z_lo,',', noise,',', R
-			fn = '/Users/jia/CFHTLenS/obsPK/peaks_mag_%s_lo_%s_R%s_noise%s.npy'%(z_lo, z_hi, R, noise)
-			if os.path.isfile(fn):
-				print 'skip'
-				continue
-			seed(int(z_lo*10+R*100))	
-			a=concatenate([cat_galn_mag(Wx, z_lo=z_lo, z_hi=z_hi, R=R, noise=noise) for Wx in range(1,5)],axis=1)
-			np.save(fn,a)
-
+if list_peaks_cat:
+	for z_lo in (0.5, 0.6, 0.7):
+		z_hi = '%s_hi'%(z_lo)
+		for noise in (True, False):
+			for R in (1.0, 2.0, 3.0):
+				print 'z_lo, noise, R:',',', z_lo,',', noise,',', R
+				fn = '/Users/jia/CFHTLenS/obsPK/peaks_mag_%s_lo_%s_R%s_noise%s.npy'%(z_lo, z_hi, R, noise)
+				if os.path.isfile(fn):
+					print 'skip'
+					continue
+				seed(int(z_lo*10+R*100))	
+				a=concatenate([cat_galn_mag(Wx, z_lo=z_lo, z_hi=z_hi, R=R, noise=noise) for Wx in range(1,5)],axis=1)
+				np.save(fn,a)
+if hist_galn_magcut:
+	
 
 ## 10/06/2014, replace Mag_i = -99 items with Mag_y values
 update_mag_i = 0
