@@ -13,7 +13,7 @@ from scipy import interpolate
 
 
 ###################### knobs###########################
-plot_crosscorrelate_all = 0
+plot_crosscorrelate_all = 1
 testCC = 0
 test_powspec = 0
 create_noise_KS = 0
@@ -312,23 +312,25 @@ if plot_crosscorrelate_all:
 	CCNSQ = sum(CC_arr[:,9]*weightO,axis=0)
 	
 	####### err from the 500 simulated noise convergence maps (random rotation) ##########
-	CCN = array([[WLanalysis.readFits(CC_fn(Wx))/fmask2_arr[Wx-1]] for Wx in range(1,5)]).squeeze()
-	errN_arr = std(CCN, axis=1)
-	avgN_arr = mean(CCN, axis=1)
-	weightN = 1/errN_arr/sum(1/errN_arr,axis=0)
-	errN = 1/sum(1/errN_arr, axis=0)
-	avgN = sum(avgN_arr*weightN,axis=0)
+	#CCN = array([[WLanalysis.readFits(CC_fn(Wx))/fmask2_arr[Wx-1]] for Wx in range(1,5)]).squeeze()
+	#errN_arr = std(CCN, axis=1)
+	#avgN_arr = mean(CCN, axis=1)
+	#weightN = 1/errN_arr/sum(1/errN_arr,axis=0)
+	#errN = 1/sum(1/errN_arr, axis=0)
+	#avgN = sum(avgN_arr*weightN,axis=0)
 	
-	CrossPower(CCK, avgN, errK, errN, method=method, noise='KappaNoise')
-	text_arr = array([ell_arr, CCK, avgN, errK, errN]).T
-	savetxt(kSZ_dir+'CrossCorrelate_%s_sigmaG10.txt'%(method), text_arr, header='ell\tkSZxkappa\tkSZxkappa_noise\terr(kSZxkappa)\terr(kSZxkappa_noise)')
+	#CrossPower(CCK, avgN, errK, errN, method=method, noise='KappaNoise')
+	#text_arr = array([ell_arr, CCK, avgN, errK, errN]).T
+	#savetxt(kSZ_dir+'CrossCorrelate_%s_sigmaG10.txt'%(method), text_arr, header='ell\tkSZxkappa\tkSZxkappa_noise\terr(kSZxkappa)\terr(kSZxkappa_noise)')
+	#######################################################################################
 	
-	#CrossPower(CCK, CCB, errK, errB, method=method, sigmaG=sigmaG, noise='noise')
-	#CrossPower(CCK, CCO, errK, errO, method=method, sigmaG=sigmaG, noise='offset')
-	#CrossPower(CCK, CCBMODE, errK, errBMODE, method=method, sigmaG=sigmaG, noise='Bmode')
+	CrossPower(CCK, CCB, errK, errB, method=method, sigmaG=sigmaG, noise='noise')
+	CrossPower(CCK, CCO, errK, errO, method=method, sigmaG=sigmaG, noise='offset')
+	CrossPower(CCK, CCBMODE, errK, errBMODE, method=method, sigmaG=sigmaG, noise='Bmode')
+	CrossPower(CCK, CCNSQ, errK, errNSQ, method=method, sigmaG=sigmaG, noise='kSZ_no_sq')
 	
-	#text_arr = array([ell_arr, CCK, CCO, CCB, CCBMODE, errK, errO, errB, errBMODE]).T
-	#savetxt(kSZ_dir+'CrossCorrelate_%s_sigmaG%02d.txt'%(method, sigmaG*10), text_arr, header='ell\tkSZxkappa\toffsetxkappa\tnoisexkappa\tkSZxBmode\terr(kSZxkappa)\terr(offsetxkappa)\terr(noisexkappa)\terr(kSZxBmode)')
+	text_arr = array([ell_arr, CCK, CCO, CCB, CCBMODE, CCNSQ, errK, errO, errB, errBMODE, errNSQ]).T
+	savetxt(kSZ_dir+'CrossCorrelate_%s_sigmaG%02d_ptsMask.txt'%(method, sigmaG*10), text_arr, header='ell\tkSZ-kappa\toffset-kappa\tnoise-kappa\tkSZ-Bmode\tkSZ_not_sq-kappa\terr(kSZ-kappa)\terr(offset-kappa)\terr(noise-kappa)\terr(kSZ-Bmode)\terr(kSZ_not_sq-kappa)')
 	
 	
 	#####################################################
