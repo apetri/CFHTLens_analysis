@@ -28,9 +28,9 @@ kSZCoordsGen = lambda i: WLanalysis.readFits(kSZ_dir+'LGMCA_W%i_flipper8192_kSZf
 #noiseCoordsGen = lambda i: WLanalysis.readFits(kSZ_dir+'kSZ2_noise_W%i_ellmax3000.fit'%(i))
 #offsetCoordsGen = lambda i: WLanalysis.readFits(kSZ_dir+'kSZ2_W%i_ellmax3000_offset.fit'%(i))
 
-kmapGen = lambda i: WLanalysis.readFits('/Users/jia/CFHTLenS/obsPK/W%i_KS_1.3_lo_sigmaG10.fit'%(i))
-bmodeGen = lambda i: WLanalysis.readFits('/Users/jia/CFHTLenS/obsPK/W%i_Bmode_1.3_lo_sigmaG05.fit'%(i))
-galnGen = lambda i: WLanalysis.readFits('/Users/jia/CFHTLenS/obsPK/W%i_galn_1.3_lo_sigmaG10.fit'%(i))
+kmapGen = lambda i: WLanalysis.readFits('/Users/jia/CFHTLenS/obsPK/maps/W%i_KS_1.3_lo_sigmaG10.fit'%(i))
+bmodeGen = lambda i: WLanalysis.readFits('/Users/jia/CFHTLenS/obsPK/maps/W%i_Bmode_1.3_lo_sigmaG05.fit'%(i))
+galnGen = lambda i: WLanalysis.readFits('/Users/jia/CFHTLenS/obsPK/maps/W%i_galn_1.3_lo_sigmaG10.fit'%(i))
 
 kSZmapGen = lambda i: WLanalysis.readFits(kSZ_dir+'kSZmap_W%i_nearest.fit'%(i))
 ptsrcGen = lambda i: np.load(kSZ_dir + 'null/'+'PSmaskRING_100-143-217-353-545_857_5sigma_Nside8192_BOOL_W%s_toJia.npy'%(i))
@@ -42,7 +42,7 @@ centers = array([[34.5, -7.5], [134.5, -3.25],[214.5, 54.5],[ 332.75, 1.9]])
 sizes = (1330, 800, 1120, 950)
 PPR512=8468.416479647716
 PPA512=2.4633625
-edgesGen = lambda Wx: linspace(5,80,11)*sizes[Wx-1]/1330.0
+edgesGen = lambda Wx: linspace(5,75,11)*sizes[Wx-1]/1330.0#linspace(5,80,11)
 rad2pix=lambda x, size: around(size/2.0-0.5 + x*PPR512).astype(int)
 sigmaG_arr = [0.0, 1.0, 2.0, 5.0]
 
@@ -165,24 +165,33 @@ def kSZmapGen_fn (fn, offset=False, method='nearest'):
 
 def maskGen (Wx, sigma_pix=10):
 	galn = galnGen(Wx)
+	galn *= ptsrcGen (Wx)## add point source mask for kSZ
 	mask = zeros(shape=galn.shape)
-	mask[25:-25,25:-25] = 1
+	mask[25:-25,25:-25] = 1 ## remove edge 25 pixels
 	idx = where(galn<0.5)
 	mask[idx] = 0
-	mask_smooth = WLanalysis.smooth(mask, sigma_pix)
+	mask_smooth = WLanalysis.smooth(mask, sigma_pix)	
+	######## print out fksy and fsky 2 ##########
+	#sizedeg = (sizes[Wx-1]/512.0)**2*12.0
+	#fsky = sum(mask_smooth)/sizes[Wx-1]**2*sizedeg/41253.0
+	#fsky2 = sum(mask_smooth**2)/sizes[Wx-1]**2*sizedeg/41253.0
+	#print 'W%i, fsky=%.6f, fsky2=%.6f'%(Wx, fsky, fsky2) 
+	#############################################
 	return mask_smooth
-
+map(maskGen,range(1,5))
 
 def KSxkSZ (Wx, method='nearest', sigma_pix=10):
 	print 'KSxkSZ',Wx
 	KS = kmapGen(Wx)
 	Bmode = bmodeGen(Wx)
 	kSZ = kSZmapGen (Wx, method=method)
-	noise = zeros(shape=kSZ.shape)
-	offset = zeros(shape=kSZ.shape)
-	###adhoc fix 2014-09-05
-	#noise = kSZmapGen (Wx, method=method, noise=True)
-	#offset = kSZmapGen (Wx, method=method, offset=True)
+	###adhoc fix 2014-09-05####
+	#noise = zeros(shape=kSZ.shape)
+	#offset = zeros(shape=kSZ.shape)
+	###########################
+	noise = noiseGen (Wx)
+	offset = offsetGen (Wx)
+	nosqkSZ = nosqkSZGen (Wx)
 
 	## masking
 	mask_smooth = maskGen(Wx, sigma_pix=sigma_pix)
@@ -193,20 +202,26 @@ def KSxkSZ (Wx, method='nearest', sigma_pix=10):
 	Bmode *= mask_smooth
 	
 	sizedeg = (sizes[Wx-1]/512.0)**2*12.0
-	fmask2 = fmask2_arr[Wx-1]
-	fmask = fmask_arr[Wx-1]
+	fmask = sum(mask_smooth**2)/sizes[Wx-1]**2
+	fmask2 = sum(mask_smooth)/sizes[Wx-1]**2	
 	fsky = fmask*sizedeg/41253.0# 41253.0 deg is the full sky in degrees
-
+	fsky2 = fmask2*sizedeg/41253.0
+	
+	#################### temporary fix #########
+	#CCB = zeros(shape=CCK.shape)
+	#CCO = zeros(shape=CCK.shape)
+	#CCBMODE = zeros(shape=CCK.shape)
+	#autoB = autoK
+	#autoO = autoK
+	#autoBMODE = autoK
+	############################################
+	
 	edges = edgesGen(Wx)
-	ell_arr, CCK = WLanalysis.CrossCorrelate (KS,kSZ,edges=edges)
-	####################temporary for next 3 lines
-	CCB = zeros(shape=CCK.shape)
-	CCO = zeros(shape=CCK.shape)
-	CCBMODE = zeros(shape=CCK.shape)
-	#ell_arr, CCB = WLanalysis.CrossCorrelate (KS,noise,edges=edges)
-	#ell_arr, CCO = WLanalysis.CrossCorrelate (KS,offset,edges=edges)
-	#ell_arr, CCBMODE = WLanalysis.CrossCorrelate (Bmode, kSZ, edges=edges)
-	#################################
+	ell_arr, CCK = WLanalysis.CrossCorrelate (KS,kSZ,edges=edges)	
+	ell_arr, CCB = WLanalysis.CrossCorrelate (KS,noise,edges=edges)
+	ell_arr, CCO = WLanalysis.CrossCorrelate (KS,offset,edges=edges)
+	ell_arr, CCBMODE = WLanalysis.CrossCorrelate (Bmode, kSZ, edges=edges)
+	
 	CCK /= fmask2
 	CCB /= fmask2
 	CCO /= fmask2
@@ -215,19 +230,17 @@ def KSxkSZ (Wx, method='nearest', sigma_pix=10):
 	# error
 	autoK = WLanalysis.PowerSpectrum(KS, sizedeg = sizedeg, edges=edges)[-1]/fmask2
 	autokSZ = WLanalysis.PowerSpectrum(kSZ, sizedeg = sizedeg, edges=edges)[-1]/fmask2
-	#############temporary for next 3 lines ############
-	autoB = autoK
-	autoO = autoK
-	autoBMODE = autoK
-	#autoB = WLanalysis.PowerSpectrum(noise, sizedeg = sizedeg, edges=edges)[-1]/fmask2
-	#autoO = WLanalysis.PowerSpectrum(offset, sizedeg = sizedeg, edges=edges)[-1]/fmask2
-	#autoBMODE = WLanalysis.PowerSpectrum(Bmode, sizedeg = sizedeg, edges=edges)[-1]/fmask2
+	autoB = WLanalysis.PowerSpectrum(noise, sizedeg = sizedeg, edges=edges)[-1]/fmask2
+	autoO = WLanalysis.PowerSpectrum(offset, sizedeg = sizedeg, edges=edges)[-1]/fmask2
+	autoBMODE = WLanalysis.PowerSpectrum(Bmode, sizedeg = sizedeg, edges=edges)[-1]/fmask2
 
 	d_ell = ell_arr[1]-ell_arr[0]
+	##################### junk ############
 	#errK = sqrt(autoK*autokSZ/fsky/d_ell)
 	#errB = sqrt(autoK*autoB/fsky/d_ell)
 	#errO = sqrt(autoK*autoO/fsky/d_ell)
 	#errBMODE = sqrt(autoBMODE*autokSZ/fsky/d_ell)
+	#######################################
 	errK = sqrt(autoK*autokSZ/fsky/(2*ell_arr+1)/d_ell)
 	errB = sqrt(autoK*autoB/fsky/(2*ell_arr+1)/d_ell)
 	errO = sqrt(autoK*autoO/fsky/(2*ell_arr+1)/d_ell)
@@ -253,12 +266,12 @@ def CrossPower(CCK, CCB, errK, errB, method='nearest', sigma_pix=10, noise='nois
 	savefig(plot_dir+'test_kSZxCFHT_%s_sigmapix%s_%s.jpg'%(method,sigma_pix, noise))
 	close()
 
-#########################################
-### operations ##########################
-for fn in os.listdir(kSZ_dir+'null/'):
-	print fn
-	full_fn = kSZ_dir+'null/'+fn
-	kSZmapGen_fn(full_fn)
+##############################################################
+######################## operations ##########################
+#for fn in os.listdir(kSZ_dir+'null/'):
+	#print fn
+	#full_fn = kSZ_dir+'null/'+fn
+	#kSZmapGen_fn(full_fn)
 	
 if plot_crosscorrelate_all:
 	CC_fn = lambda Wx: kSZ_dir+'Noise_convxkSZ_W%s.fit'%(Wx)
