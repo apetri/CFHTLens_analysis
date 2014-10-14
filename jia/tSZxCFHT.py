@@ -13,7 +13,7 @@ from scipy import interpolate
 
 
 ###################### knobs###########################
-plot_crosscorrelate_all = 0
+plot_crosscorrelate_all = 1
 testCC = 0
 test_powspec = 0
 create_noise_KS = 0
@@ -34,7 +34,18 @@ galnGen = lambda i: WLanalysis.readFits('/Users/jia/CFHTLenS/obsPK/maps/W%i_galn
 
 kSZmapGen = lambda i: WLanalysis.readFits(kSZ_dir+'kSZmap_W%i_nearest.fit'%(i))
 ptsrcGen = lambda i: np.load(kSZ_dir + 'null/'+'PSmaskRING_100-143-217-353-545_857_5sigma_Nside8192_BOOL_W%s_toJia.npy'%(i))
-offsetGen = lambda i: np.load(kSZ_dir + 'null/'+'LGMCA_W%soffset_flipper8192_kSZfilt_squared_toJia.npy'%(i))
+
+#offsetGen = lambda i: np.load(kSZ_dir + 'null/'+'LGMCA_W%soffset_flipper8192_kSZfilt_squared_toJia.npy'%(i))
+
+offsetGen = lambda i: np.load(kSZ_dir + 'null/'+'LGMCA_W1offset_flipper8192_kSZfilt_squared_toJia.npy')[:sizes[i-1],:sizes[i-1]]
+
+#def offsetGen(i):
+	#if i==1:
+		#offset = np.load(kSZ_dir + 'null/'+'LGMCA_W1offset_flipper8192_kSZfilt_squared_toJia.npy')[:sizes[i-1],:sizes[i-1]]
+	#else:
+		#offset = kSZmapGen(1)[:sizes[i-1],:sizes[i-1]]
+	#return offset
+
 noiseGen = lambda i: np.load(kSZ_dir + 'null/'+'LGMCA_noise_W%s_flipper8192_kSZfilt_squared_toJia.npy'%(i))
 nosqkSZGen= lambda i: np.load(kSZ_dir + 'null/'+'LGMCA_W%s_flipper8192_kSZfilt_NOTsquared_toJia.npy'%(i))
 
@@ -42,7 +53,8 @@ centers = array([[34.5, -7.5], [134.5, -3.25],[214.5, 54.5],[ 332.75, 1.9]])
 sizes = (1330, 800, 1120, 950)
 PPR512=8468.416479647716
 PPA512=2.4633625
-edgesGen = lambda Wx: linspace(5,75,11)*sizes[Wx-1]/1330.0#linspace(5,80,11)
+#edgesGen = lambda Wx: linspace(5,75,11)*sizes[Wx-1]/1330.0#linspace(5,80,11)
+edgesGen = lambda Wx: linspace(5,75,7)*sizes[Wx-1]/1330.0#linspace(5,80,11)
 rad2pix=lambda x, size: around(size/2.0-0.5 + x*PPR512).astype(int)
 sigmaG_arr = [0.0, 1.0, 2.0, 5.0]
 
@@ -177,8 +189,8 @@ def maskGen (Wx, sigma_pix=10):
 	fsky2 = sum(mask_smooth**2)/sizes[Wx-1]**2*sizedeg/41253.0
 	print 'W%i, fsky=%.8f, fsky2=%.8f'%(Wx, fsky, fsky2) 
 	#############################################
-	return fsky, fsky2#mask_smooth
-a=array(map(maskGen,range(1,5)))
+	return mask_smooth#fsky, fsky2#
+#a=array(map(maskGen,range(1,5)))
 
 def KSxkSZ (Wx, method='nearest', sigma_pix=10):
 	print 'KSxkSZ',Wx
@@ -237,6 +249,8 @@ def KSxkSZ (Wx, method='nearest', sigma_pix=10):
 	autoO = WLanalysis.PowerSpectrum(offset, sizedeg = sizedeg, edges=edges)[-1]/fmask2
 	autoBMODE = WLanalysis.PowerSpectrum(Bmode, sizedeg = sizedeg, edges=edges)[-1]/fmask2
 	autoNSQ = WLanalysis.PowerSpectrum(nosqkSZ, sizedeg = sizedeg, edges=edges)[-1]/fmask2
+	### get rid of one ell 10/14/2014
+	#autoNSQ/=ell_arr
 
 	d_ell = ell_arr[1]-ell_arr[0]
 	##################### junk ############
@@ -332,29 +346,30 @@ if plot_crosscorrelate_all:
 	#CrossPower(CCK, CCNSQ, errK, errNSQ, method=method, noise='kSZ\,no\,sq')
 	
 	######## plotting
-f=figure(figsize=(8,6))
-ax=f.add_subplot(111)
+	f=figure(figsize=(8,6))
+	ax=f.add_subplot(111)
 
-ax.errorbar(ell_arr, CCK, errK, fmt='o',color='b', label=r'$\kappa\times\,kSZ$  ')
-ax.errorbar(ell_arr, CCB, errB, fmt='o',color='r',label=r'$\kappa\times\,noise$')
-ax.errorbar(ell_arr, CCO, errO, fmt='o',color='k',label=r'$\kappa\times\,Offset$')
-ax.errorbar(ell_arr, CCBMODE, errBMODE, fmt='o',color='g',label=r'$Bmode\times\,kSZ$')	
-ax.errorbar(ell_arr, CCNSQ, errNSQ, fmt='o',color='m',label=r'$\kappa\times\,kSZ(no\,sq.)$')
-ax.errorbar(ell_arr, avgN, errN, fmt='o',color='y',label=r'$\kappa_{noise}\times\,kSZ$')
+	ax.errorbar(ell_arr, CCK, errK, fmt='o',color='b', label=r'$\kappa\times\,kSZ$  ')
+	#ax.errorbar(ell_arr, CCB, errB, fmt='o',color='r',label=r'$\kappa\times\,noise$')
+	#ax.errorbar(ell_arr, CCO, errO, fmt='o',color='k',label=r'$\kappa\times\,Offset$')
+	ax.errorbar(ell_arr, CCBMODE, errBMODE, fmt='o',color='g',label=r'$Bmode\times\,kSZ$')	
+	#ax.errorbar(ell_arr, CCNSQ/ell_arr, errNSQ/ell_arr**2, fmt='o',color='m',label=r'$\kappa\times\,kSZ(no\,sq.)$')
+	#ax.errorbar(ell_arr, avgN, errN, fmt='o',color='y',label=r'$\kappa_{noise}\times\,kSZ$')
 
-leg=ax.legend(ncol=1, labelspacing=0.3, prop={'size':16},loc=0)
-leg.get_frame().set_visible(False)
-#ax.set_xscale('log')
-ax.set_xlim(0,3000)
-ax.set_xlabel(r'$\ell$', fontsize=16)
-ax.set_ylabel(r'$\ell(\ell+1)P_{n\kappa}(\ell)/2\pi$', fontsize=16)
-ax.set_title('%s, %s pix mask, 1 arcmin smooth conv. map'%(method, 10.0))
-ax.ticklabel_format(axis='y', style='sci', scilimits=(-2,2))
-savefig(plot_dir+'CrossCorrelate_%s_pointMask2.jpg'%(method))
-close()
+	leg=ax.legend(ncol=1, labelspacing=0.3, prop={'size':16},loc=0)
+	leg.get_frame().set_visible(False)
+	#ax.set_xscale('log')
+	ax.set_xlim(0,3000)
+	ax.set_xlabel(r'$\ell$', fontsize=16)
+	ax.set_ylabel(r'$\ell(\ell+1)P_{n\kappa}(\ell)/2\pi$', fontsize=16)
+	ax.set_title('%s, %s pix mask, 1 arcmin smooth conv. map'%(method, 10.0))
+	ax.ticklabel_format(axis='y', style='sci', scilimits=(-2,2))
+	#ax.set_ylim(-0.00001,0.00001)
+	savefig(plot_dir+'CrossCorrelate_%s_pointMask2_Bmode.jpg'%(method))
+	close()
 	
-	text_arr = array([ell_arr, CCK, CCO, CCB, CCBMODE, CCNSQ, avgN, errK, errO, errB, errBMODE, errNSQ, errN]).T
-	savetxt(kSZ_dir+'CrossCorrelate_%s_ptsMask.txt'%(method), text_arr, header='ell\tkSZ-kappa\toffset-kappa\tnoise-kappa\tkSZ-Bmode\tkSZ_not_sq-kappa\tkSZ-kappa_noise\terr(kSZ-kappa)\terr(offset-kappa)\terr(noise-kappa)\terr(kSZ-Bmode)\terr(kSZ_not_sq-kappa\terr(kSZ-kappa_noise))')
+	#text_arr = array([ell_arr, CCK, CCO, CCB, CCBMODE, CCNSQ, avgN, errK, errO, errB, errBMODE, errNSQ, errN]).T
+	#savetxt(kSZ_dir+'CrossCorrelate_%s_ptsMask.txt'%(method), text_arr, header='ell\tkSZ-kappa\toffset-kappa\tnoise-kappa\tkSZ-Bmode\tkSZ_not_sq-kappa\tkSZ-kappa_noise\terr(kSZ-kappa)\terr(offset-kappa)\terr(noise-kappa)\terr(kSZ-Bmode)\terr(kSZ_not_sq-kappa\terr(kSZ-kappa_noise))')
 	
 	
 	#####################################################

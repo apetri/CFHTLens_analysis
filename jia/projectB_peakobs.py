@@ -18,6 +18,8 @@ from scipy.integrate import quad
 
 plot_galn_vs_kappa_hist = 0
 list_peaks_cat = 0
+update_mag_i = 0
+
 ########### constants ######################
 plot_dir = '/Users/jia/weaklensing/CFHTLenS/plot/obsPK/'
 kmapGen = lambda i, z: WLanalysis.readFits('/Users/jia/CFHTLenS/obsPK/maps/W%i_KS_%s_sigmaG10.fit'%(i, z))
@@ -30,7 +32,7 @@ sizes = (1330, 800, 1120, 950)
 centers = array([[34.5, -7.5], [134.5, -3.25],[214.5, 54.5],[ 332.75, 1.9]])
 PPR512=8468.416479647716
 PPA512=2.4633625
-
+c = 299792.458
 H0 = 70.0
 OmegaM = 0.3
 OmegaV = 1.0-OmegaM
@@ -39,9 +41,13 @@ OmegaV = 1.0-OmegaM
 # growth factor
 H_inv = lambda z: 1.0/(H0*sqrt(OmegaM*(1+z)**3+OmegaV))
 # luminosity distance Mpc
-DL = lambda z: (1+z)*c*quad(H_inv, 0, z, args=(H0, OmegaM, OmegaV))[0]
+DL = lambda z: (1+z)*c*quad(H_inv, 0, z)[0]
+# use interpolation instead of actual calculation, so we can operate on an array
+z_arr = linspace(0.1, 1.4, 1000)
+DL_arr = array([DL(z) for z in z_arr])
+DL_interp = interpolate.interp1d(z_arr, DL_arr)
 # find the rest magnitude at the galaxy, from observed magnitude cut
-M_rest_fcn = lambda M_obs, z: M_obs - 5.0*log10(DL(z)) - 25.0
+M_rest_fcn = lambda M_obs, z: M_obs - 5.0*log10(DL_interp(z)) - 25.0
 
 cat_gen = lambda Wx: np.load('/Users/jia/CFHTLenS/obsPK/W%s_cat_z0213_ra_dec_magy_zpeak.npy'%(Wx))
 
@@ -115,6 +121,7 @@ def PeakGaln (Wx, z_lo=0.85, z_hi='1.3_lo', arcmin=2.0, noise=False, Bmode=False
 
 def PeakPos (Wx, z_lo=0.85, z_hi='1.3_lo', arcmin=2.0, noise=False, Bmode=False):
 	'''For a map(kappa or bmode), find peaks, and its(RA, DEC)
+	return 3 columns: [kappa, RA, DEC]
 	'''
 	#print 'noise', noise, Wx
 	if Bmode:
@@ -200,14 +207,22 @@ def cat_galn_mag(Wx, z_lo=0.85, z_hi='1.3_lo', R=2.0, noise=False, Bmode=False):
 	return concatenate(all_peaks_mag_z,axis=1)
 
 def hist_cat(z_lo, z_hi, mag_cut, R, noise=False):
+	'''This requires that the icat files exist already.
+	This function reads the file, then cut out galaxies by magnitude, then count #galn for each peak.
+	'''
 	icat = np.load('/Users/jia/CFHTLenS/obsPK/peaks_mag_%s_lo_%s_R%s_noise%s.npy'%(z_lo, z_hi, R, noise))#colums 0) identifier, 1) kappa, 2) mag_i, 3) z_peak
-	icat_cut = icat[:,where(icat[2]<mag_cut)].squeeze()
+	# exclude or include the -99, 99 galaxies?, or get those from other bands?
+	mag_i, z_peak = icat[2:]
+	mag_rest = M_rest_fcn(mag_i, z_peak)
+	icat_cut = icat[:,where(mag_rest<mag_cut)].squeeze()
 	sort_idx = argsort(icat_cut[0])
 	unique_idx = nonzero(icat_cut[0,sort_idx[1:]]-icat_cut[0,sort_idx[:-1]])
 	unique_idx = concatenate([[0],unique_idx[0]+1])#include 0 into index
 	galn_arr = concatenate([unique_idx[1:]-unique_idx[:-1],[len(icat_cut[0])-unique_idx[-1]]])
 	kappa_arr = icat_cut[1,sort_idx[unique_idx]]
 	return galn_arr, kappa_arr
+
+################################################
 ################ operations ####################
 
 ####### get a list of peaks, with colums 0) identifier, 1) kappa, 2) mag_i, 3) z_peak
@@ -219,18 +234,23 @@ if list_peaks_cat:
 				print 'z_lo, noise, R:',',', z_lo,',', noise,',', R
 				fn = '/Users/jia/CFHTLenS/obsPK/peaks_mag_%s_lo_%s_R%s_noise%s.npy'%(z_lo, z_hi, R, noise)
 				if os.path.isfile(fn):
+					######################################
+					## 10/11/2014, process M_obs -> M_rest
+					#icat = np.load('/Users/jia/CFHTLenS/obsPK/peaks_mag_%s_lo_%s_R%s_noise%s.npy'%(z_lo, z_hi, R, noise))
+					#mag_i, z_peak = icat[-2:]
+					#mag_rest = M_rest_fcn(mag_i, z_peak)
+					######################################
 					print 'skip'
 					continue
 				seed(int(z_lo*10+R*100))	
 				a=concatenate([cat_galn_mag(Wx, z_lo=z_lo, z_hi=z_hi, R=R, noise=noise) for Wx in range(1,5)],axis=1)
 				np.save(fn,a)
-if hist_galn_magcut:
+#if hist_galn_magcut:
 	
 
 ## 10/06/2014, replace Mag_i = -99 items with Mag_y values
-update_mag_i = 0
 if update_mag_i:
-	# very messy, one time use only
+	# very messy, one time use only, because of CFHT failed i filter
 	ra_arr, dec_arr, Mag_y_arr = np.load('/Users/jia/CFHTLenS/catalogue/Mag_y.npy').T
 	radecy = np.load('/Users/jia/CFHTLenS/catalogue/Mag_y.npy')[:,:2]
 	radecy0 = radecy[:,0]**radecy[:,1]#trick to make use of in1d for 2d
