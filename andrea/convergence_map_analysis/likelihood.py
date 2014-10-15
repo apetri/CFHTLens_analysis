@@ -60,6 +60,7 @@ def main():
 	parser.add_argument("-s","--save_points",dest="save_points",action="store",default=None,help="save points in parameter space to external npy file")
 	parser.add_argument("-ss","--save_debug",dest="save_debug",action="store_true",default=False,help="save a bunch of debugging info for the analysis")
 	parser.add_argument("-p","--prefix",dest="prefix",action="store",default="",help="prefix of the emulator to pickle")
+	parser.add_argument("-r","--realizations",dest="realizations",type=int,default=None,help="use only the first N realizations to estimate the covariance matrix")
 
 	cmd_args = parser.parse_args()
 
@@ -107,6 +108,14 @@ def main():
 	
 	#Load in the covariance matrix
 	fiducial_feature_ensemble = feature_loader.load_features(covariance_model)
+
+	#If options is enabled, use only the first N realizations to estimate the covariance matrix
+	if cmd_args.realizations is not None:
+
+		logging.info("Using only the first {0} realizations to estimate the covariance matrix".format(cmd_args.realizations))
+		fiducial_feature_ensemble = fiducial_feature_ensemble.subset(range(cmd_args.realizations))
+		assert fiducial_feature_ensemble.num_realizations==cmd_args.realizations
+
 	fiducial_features = fiducial_feature_ensemble.mean()
 	features_covariance = fiducial_feature_ensemble.covariance()
 
@@ -183,8 +192,12 @@ def main():
 	if not os.path.isdir(likelihoods_dir):
 		os.mkdir(likelihoods_dir)
 	
-	chi2_file = os.path.join(likelihoods_dir,"chi2{0}_{1}.npy".format(cmd_args.prefix,output_string(feature_loader.feature_string)))
-	likelihood_file = os.path.join(likelihoods_dir,"likelihood{0}_{1}.npy".format(cmd_args.prefix,output_string(feature_loader.feature_string)))
+	if cmd_args.realizations is None:
+		chi2_file = os.path.join(likelihoods_dir,"chi2{0}_{1}.npy".format(cmd_args.prefix,output_string(feature_loader.feature_string)))
+		likelihood_file = os.path.join(likelihoods_dir,"likelihood{0}_{1}.npy".format(cmd_args.prefix,output_string(feature_loader.feature_string)))
+	else:
+		chi2_file = os.path.join(likelihoods_dir,"chi2{0}{1}real_{2}.npy".format(cmd_args.prefix,cmd_args.realizations,output_string(feature_loader.feature_string)))
+		likelihood_file = os.path.join(likelihoods_dir,"likelihood{0}{1}real_{2}.npy".format(cmd_args.prefix,cmd_args.realizations,output_string(feature_loader.feature_string)))
 
 	logging.info("Saving chi2 to {0}".format(chi2_file))
 	np.save(chi2_file,chi_squared.reshape(Om.shape + w.shape + si8.shape))
