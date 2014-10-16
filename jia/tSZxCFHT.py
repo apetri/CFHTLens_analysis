@@ -586,7 +586,9 @@ if powspec_without_ells_factor:
 	
 if clean_dust:
 	# purpose of this section is to clean out dust using dust maps at various frequencies
+	#!!!
 	# dustGen = lambda i, freq: np.load(kSZ_dir + 'dust/'+'***.npy'%(i))
+	dustGen = lambda i, freq: np.load(kSZ_dir + 'null/'+'LGMCA_noise_W%s_flipper8192_kSZfilt_squared_toJia.npy'%(i))
 	# (1) convert from coord to grid for all dust maps
 	for fn in os.listdir(kSZ_dir+'dust/'):
 		print fn
@@ -595,14 +597,59 @@ if clean_dust:
 		if not os.path.isfile(npy_fn):
 			data = genfromtxt(full_fn)
 			kSZmapGen_fn(full_fn, offset=True)
-	# (2) function that takes in one alpha, splits out cross power
+
+	# (2) function that takes in one alpha, splits out cross power	
 	mask_arr = map(maskGen, range(1,5))
+	sizedeg_arr = array([(sizes[Wx-1]/512.0)**2*12.0 for Wx in range(1,5)])
+	fmask_arr = array([sum(mask_arr[Wx-1]**2)/sizes[Wx-1]**2 for Wx in range(1,5)])
+	fsky_arr = fmask_arr*sizedeg_arr/41253.0
+	
 	kSZ_NSQ_arr = map(nosqkSZGen, range(1,5))
 	kmap_arr = map(kmapGen, range(1,5))
-	def minimize_dust (Wx, freq, alpha):
-		mask = mask_arr[Wx-1]#maskGen(Wx)
-		kSZ_NSQ = kSZ_NSQ_arr[Wx-1]#nosqkSZGen(Wx)
-		dust = dustGen(Wx, freq)
-		kSZ_NSQ_clean = (1+alpha)*kSZ_NSQ-alpha*dust
-		kSZ_NSQ_clean *= mask
-		ell_arr, ps = WLanalysis.CrossCorrelate(kSZ_NSQ_clean, )
+	edges_arr = map(edgesGen, range(1,5))
+	#fsky2_arr = [0.001291, 0.000395, 0.000780, 0.000403]
+	fmask2_arr = [sum(mask_arr[Wx-1])/sizes[Wx-1]**2 for Wx in range(1,5)]
+	ell_arr = WLanalysis.PowerSpectrum(ones(shape=(1330,1330)), sizedeg=sizedeg_arr[0], edges=edges_arr[Wx-1])[0]
+	d_ell = ell_arr[1]-ell_arr[0]
+	factor = (ell_arr+1)/2/pi
+	def theory_err(map1, map2, Wx):	
+		auto1 = WLanalysis.PowerSpectrum(map1, sizedeg = sizedeg_arr[Wx-1], edges=edges_arr[Wx-1])[-1]/fmask2_arr[Wx-1]/factor
+		auto2 = WLanalysis.PowerSpectrum(map2, sizedeg = sizedeg_arr[Wx-1], edges=edges_arr[Wx-1])[-1]/fmask2_arr[Wx-1]/factor	
+		errNSQ = sqrt(auto1*auto2/fsky_arr[Wx-1]/(2*ell_arr+1)/d_ell)
+		return errNSQ
+		
+	def crosspower_Wx (Wx, freq, alpha):
+		dust = dustGen(Wx, freq)#!!!
+		kSZ_NSQ_clean = (1+alpha)*kSZ_NSQ_arr[Wx-1]-alpha*dust
+		kSZ_NSQ_clean *= mask_arr[Wx-1]
+		ell_arr, ps = WLanalysis.CrossCorrelate(kSZ_NSQ_clean, kmap_arr[Wx-1], edges=edges_arr[Wx-1])
+		ps /= fmask2_arr[Wx-1]
+		errNSQ = theory_err(kmap_arr[Wx-1], kSZ_NSQ_clean, Wx)
+		return ps, errNSQ
+	
+	def inverse_sum (CC_arr, errK_arr):
+		'''both CC_arr, errK_arr should be (4 Wx x 6 bins)
+		'''
+		weightK = 1/errK_arr/sum(1/errK_arr, axis=0)
+		CCK = sum(CC_arr*weightK,axis=0)
+		errK = 1/sum(1/errK_arr, axis=0)
+		return CCK, errK
+	
+	def minimize_dust(alpha, freq):
+		a = array([crosspower_Wx(Wx, freq, alpha) for Wx in range(1,5)])
+		CC_arr, errK_arr = a[:,0,:], a[:,1,:]
+		CC, err = inverse_sum(CC_arr, errK_arr)
+		return CC, err
+	
+	alpha_arr = linspace(0.0001, 0.001, 5)
+	freq = 0
+	results = array([minimize_dust(alpha, freq) for alpha in alpha_arr])#alpha x 2 x 6
+	CCK_arr, errK_arr = results[:,0,:], results[:,1,:]
+	
+	for i in range(CCK_arr.shape[-1]):
+		errorbar(alpha_arr, CCK_arr[:,i], errK_arr[:,i], label='%ith bin'%(i+1))
+		legend(fontsize=10)
+		xlabel('alpha')
+		ylabel('ell x P(ell)')
+		savefig(plot_dir+'clean_dust_alpha_bin%i.jpg'%(i))
+		close()
