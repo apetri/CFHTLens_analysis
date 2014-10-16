@@ -34,7 +34,7 @@ sample_points = 0#for final fits wiht 3 random points
 good_bad_peaks = 0
 contour_ps_fieldselect = 0
 m_correction = 0
-SIGMA_contour = 0
+SIGMA_contour = 1
 ######## tests ##############
 bad_pointings = 1
 ps_replaced_with_pk = 0
@@ -2963,23 +2963,29 @@ if SIGMA_contour:
 	Pcomb_marg = sum(Pcomb, axis=1)/sum(Pcomb)
 	Pcomb_marg_after = Ppk_marg*Pps_marg/(sum(Ppk_marg*Pps_marg))
 	
-	plot(S_arr, Pps_marg, label='Power Spectrum')
-	plot(S_arr, Ppk_marg,label='Peaks')
-	plot(S_arr, Pcomb_marg, label='Power Spectrum + Peaks')
-	# fixed w=1
-	plot(S_arr, Pps[:,60]/sum(Pps[:,60]),'--',label='Power Spectrum(w=-1)')
-	plot(S_arr, Ppk[:,60]/sum(Ppk[:,60]),'--', label='Peaks (w=-1)')
-	#plot(S_arr, Pcomb_marg_after, label = 'comb after')
-	plot(S_arr, Pps[:,60]*Ppk[:,60]/sum(Pps[:,60]*Ppk[:,60]),'--', label='Power Spectrum + Peaks (w=-1)')
-	legend(fontsize=12)
-	xlim(0.2, 1.5)
-	xlabel('SIGMA=(si8*(om/0.27)^alpha)')
-	ylabel('Probability')
+	f = figure(figsize=(8,6))
+	ax=f.add_subplot(111)
+	ax.plot(S_arr, Pps_marg,'g--', label=r'$\rm{power\,spectrum}\,(\alpha=0.61)$',linewidth=2)
+	ax.plot(S_arr, Ppk_marg,'m-',label=r'$\rm{peaks}\,(\alpha=0.51)$',linewidth=1)
+	ax.plot(S_arr, Pcomb_marg, 'k-',label=r'$\rm{power\, spectrum + peaks}\,(\alpha=0.55)$',linewidth=2)
+	########## fixed w=-1 ################
+	#plot(S_arr, Pps[:,60]/sum(Pps[:,60]),'--',label='Power Spectrum(w=-1)')
+	#plot(S_arr, Ppk[:,60]/sum(Ppk[:,60]),'--', label='Peaks (w=-1)')
+	##plot(S_arr, Pcomb_marg_after, label = 'comb after')
+	#plot(S_arr, Pps[:,60]*Ppk[:,60]/sum(Pps[:,60]*Ppk[:,60]),'--', label='Power Spectrum + Peaks (w=-1)')
+	##########################################
+	leg=ax.legend(ncol=1, labelspacing=0.3, prop={'size':16},loc=0)
+	leg.get_frame().set_visible(False)
+	ax.set_xlim(0.2, 1.5)
+	ax.set_xlabel(r'$\rm{\Sigma_8=\sigma_8(\Omega_m/0.27)^\alpha}$',fontsize=20)
+	ax.set_ylabel(r'$\rm{Probability}$',fontsize=20)
 	#show()
-	savefig(plot_dir+'SIGMA_marg_prob_div027_alpha.jpg')
+	ax.set_xlim(0.5, 1.3)
+	ax.set_ylim(0.0, 0.09)
+	savefig('/Users/jia/weaklensing/CFHTLenS/plot/official/SIGMA_marg_prob.pdf')
 	close()
 	
-	findlevel1D(Pps_marg, S_arr)
-	findlevel1D(Ppk_marg, S_arr)
-	findlevel1D(Pcomb_marg, S_arr)
+	#findlevel1D(Pps_marg, S_arr)
+	#findlevel1D(Ppk_marg, S_arr)
+	#findlevel1D(Pcomb_marg, S_arr)
 		
