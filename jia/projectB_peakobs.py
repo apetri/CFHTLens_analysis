@@ -19,7 +19,9 @@ from scipy.integrate import quad
 plot_galn_vs_kappa_hist = 0
 list_peaks_cat = 0
 update_mag_i = 0
-
+do_hist_galn_magcut = 1
+z_lo = 0.6
+z_hi = z_hi = '%s_hi'%(z_lo)
 ########### constants ######################
 plot_dir = '/Users/jia/weaklensing/CFHTLenS/plot/obsPK/'
 kmapGen = lambda i, z: WLanalysis.readFits('/Users/jia/CFHTLenS/obsPK/maps/W%i_KS_%s_sigmaG10.fit'%(i, z))
@@ -206,12 +208,13 @@ def cat_galn_mag(Wx, z_lo=0.85, z_hi='1.3_lo', R=2.0, noise=False, Bmode=False):
 	all_peaks_mag_z = map(loop_thru_peaks, range(len(kappa_arr)))
 	return concatenate(all_peaks_mag_z,axis=1)
 
-def hist_cat(z_lo, z_hi, mag_cut, R, noise=False):
+def hist_galn_magcut(z_lo, z_hi, R=2.0, mag_cut=-19, noise=False):
 	'''This requires that the icat files exist already.
 	This function reads the file, then cut out galaxies by magnitude, then count #galn for each peak.
 	'''
-	icat = np.load('/Users/jia/CFHTLenS/obsPK/peaks_mag_%s_lo_%s_R%s_noise%s.npy'%(z_lo, z_hi, R, noise))#colums 0) identifier, 1) kappa, 2) mag_i, 3) z_peak
+	icat0 = np.load('/Users/jia/CFHTLenS/obsPK/peaks_mag_%s_lo_%s_R%s_noise%s.npy'%(z_lo, z_hi, R, noise))#colums 0) identifier, 1) kappa, 2) mag_i, 3) z_peak
 	# exclude or include the -99, 99 galaxies?, or get those from other bands?
+	icat = icat0[:,where((icat0[2]>-99)&(icat0[2]<99))].squeeze()
 	mag_i, z_peak = icat[2:]
 	mag_rest = M_rest_fcn(mag_i, z_peak)
 	icat_cut = icat[:,where(mag_rest<mag_cut)].squeeze()
@@ -245,7 +248,48 @@ if list_peaks_cat:
 				seed(int(z_lo*10+R*100))	
 				a=concatenate([cat_galn_mag(Wx, z_lo=z_lo, z_hi=z_hi, R=R, noise=noise) for Wx in range(1,5)],axis=1)
 				np.save(fn,a)
-#if hist_galn_magcut:
+if do_hist_galn_magcut:
+	print 'hi'
+	mag_cut = -19
+	height_arr = ['high', 'med', 'low']
+	def idx_height (galn_arr, kappa_arr, height='med'):
+		if height == 'low':
+			idx = where(kappa_arr<0.03)[0]
+		if height == 'med':
+			idx = where((kappa_arr>0.03)&(kappa_arr<0.06))[0]
+		if height == 'high':
+			idx = where(kappa_arr>0.06)[0]
+		return galn_arr[idx].squeeze()
+	
+	for height in height_arr:
+		f=figure(figsize=(12, 8))
+		i = 1
+		for z_lo in (0.5, 0.6, 0.7):
+			for R in (1.0, 2.0, 3.0):
+				z_hi = '%s_hi'%(z_lo)
+				galn_arr, kappa_arr = hist_galn_magcut(z_lo, z_hi, mag_cut = mag_cut,noise=False, R=R)
+				galn_noise_arr, kappa_noise_arr = hist_galn_magcut(z_lo, z_hi, mag_cut = mag_cut, noise=True, R=R)
+				ax=f.add_subplot(3,3,i)
+				
+				galn_peaks = idx_height (galn_arr, kappa_arr, height=height)
+				galn_noise = idx_height (galn_noise_arr, kappa_noise_arr, height=height)
+				ax.hist(galn_peaks, histtype='step', bins=20, label='peaks, %s'%(height))
+				ax.hist(galn_noise, histtype='step', ls='dashed', bins=20, label='noise, %s'%(height))
+				if i >6:
+					ax.set_xlabel('# gal')
+				if i in (1, 4, 7):
+					ax.set_ylabel('# peaks')
+				
+				if i == 1:
+					ax.set_title('%s peaks, M<%s'%(height, mag_cut))
+				leg=ax.legend(ncol=1, labelspacing=0.3, prop={'size':10},loc=0, title='z=%s, R=%sarcmin'%(z_lo, R))
+				leg.get_frame().set_visible(False)
+					
+				i+=1
+		savefig(plot_dir+'hist_galn_magcut%s_%s.jpg'%(mag_cut, height))
+		close()
+			
+			
 	
 
 ## 10/06/2014, replace Mag_i = -99 items with Mag_y values
