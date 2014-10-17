@@ -442,8 +442,22 @@ def main():
 
 				contour = ContourPlot(fig=fig,ax=ax[i,j])
 				contour.getLikelihood(os.path.join(likelihood_dir,likelihood_files[2*i + j]),parameter_axes=parameter_axes,parameter_labels=cosmo_labels)
+				
+
 				contour.getUnitsFromOptions(options)
-				contour.marginalize(options.get("contours","marginalize_over"))
+				
+				#Marginalize over one of the parameters
+				if options.get("contours","marginalize_over")!="none" and options.get("contours","slice_over")!="none":
+					raise ValueError("marginalize_over and slice_over cannot be both not none!")
+
+				if options.get("contours","marginalize_over")!="none":
+					contour.marginalize(options.get("contours","marginalize_over"))
+					print("{0} marginalized likelihood is maximum at {1}".format(options.get("contours","marginalize_over"),contour.getMaximum(which="reduced")))
+
+				if options.get("contours","slice_over")!="none":
+					contour.slice(options.get("contours","slice_over"),options.getfloat("contours","slice_value"))
+					print("{0}={1} likelihood slice is maximum at {2}".format(options.get("contours","slice_over"),options.getfloat("contours","slice_value"),contour.getMaximum(which="reduced")))
+				
 				contour.show()
 				contour.getLikelihoodValues(levels=levels)
 				contour.plotContours(colors=colors,fill=False,display_percentages=True)
@@ -473,9 +487,20 @@ def main():
 		contour.getUnitsFromOptions(options)
 		#Find the maximum value of the likelihood
 		print("Full likelihood is maximum at {0}".format(contour.getMaximum(which="full")))
+		
 		#Marginalize over one of the parameters
-		contour.marginalize(options.get("contours","marginalize_over"))
-		print("Marginalized likelihood is maximum at {0}".format(contour.getMaximum(which="reduced")))
+		if options.get("contours","marginalize_over")!="none" and options.get("contours","slice_over")!="none":
+			raise ValueError("marginalize_over and slice_over cannot be both not none!")
+
+		if options.get("contours","marginalize_over")!="none":
+			contour.marginalize(options.get("contours","marginalize_over"))
+			print("{0} marginalized likelihood is maximum at {1}".format(options.get("contours","marginalize_over"),contour.getMaximum(which="reduced")))
+
+		if options.get("contours","slice_over")!="none":
+			contour.slice(options.get("contours","slice_over"),options.getfloat("contours","slice_value"))
+			print("{0}={1} likelihood slice is maximum at {2}".format(options.get("contours","slice_over"),options.getfloat("contours","slice_value"),contour.getMaximum(which="reduced")))
+		
+
 		#Show the full likelihood
 		contour.show()
 		#Compute the likelihood levels
