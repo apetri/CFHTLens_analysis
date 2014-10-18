@@ -311,17 +311,49 @@ def sum_matrix (cosmosigmaG):
 
 		WLanalysis.writeFits(peaks_mat, pkfn)
 
+def KSmap_KSonly(iiRcosmo):
+	'''similar to KSmap function, except for only create KSmap, doens't care ps, pk
+	this is to fix scratch crash on 2014/10/15
+	'''
+	i, R, cosmo = iiRcosmo
+	#commented out 2014/08/13 for bad pointing ps pk
+	create_kmap = 0
+	for sigmaG in sigmaG_arr:
+		KS_fn = KSfn(i, cosmo, R, sigmaG)
+		if not WLanalysis.TestFitsComplete(KS_fn):
+			create_kmap = 1
+			break
+	if create_kmap:
+		print 'need to create KS for:', i, R, cosmo
+		Me1, Me2 = fileGen(i, R, cosmo)
+		Mw = Mw_arr[i-1]
+		for sigmaG in sigmaG_arr:
+			KS_fn = KSfn(i, cosmo, R, sigmaG)
+			if not WLanalysis.TestFitsComplete(KS_fn):
+			
+				Me1_smooth = WLanalysis.weighted_smooth(Me1, Mw, PPA=PPA512, sigmaG=sigmaG)
+				Me2_smooth = WLanalysis.weighted_smooth(Me2, Mw, PPA=PPA512, sigmaG=sigmaG)
+				kmap = WLanalysis.KSvw(Me1_smooth, Me2_smooth)
+				try:
+					WLanalysis.writeFits(kmap, KS_fn)
+				except Exception: #prob don't need try here.
+					os.remove(KS_fn)
+					WLanalysis.writeFits(kmap, KS_fn)
+					pass
+
 ###############################################################
 ### (1)create KS map, uncomment next 4 lines
 ###############################################################
 
 pool = MPIPool()
-### (cov 1) next 2 lines are for covariance cosmology 
+### (cov 1) this block is for covariance cosmology 
 cosmo='WL-only_cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800'
 iRcosmo = [[i, R, cosmo] for i in range(1,14)[::-1] for R in R_arr]# for cosmo in cosmo_arr]
 #iRcosmo = [[i, R, cosmo] for R in R_arr for cosmo in cosmo_arr]
+pool.map(KSmap_KSonly, iRcosmo)
+####################################################
 
-pool.map(KSmap, iRcosmo)
+#pool.map(KSmap, iRcosmo)
 pool.close()
 print 'DONE DONE DONE'
 
