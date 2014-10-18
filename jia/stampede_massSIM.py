@@ -86,7 +86,9 @@ i_arr = range(1,14)
 ######### (cov 1) 08/17/2014 next 2 lines are for cov matrix simulations #####
 SIMfn = lambda i, cosmo, R: '/home1/02977/jialiu/cov_cat/emulator_subfield%i_WL-only_cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800_4096xy_%04dr.fit'%(i, R)
 
-KSfn = lambda i, cosmo, R, sigmaG: '/home1/02977/jialiu/KSsim/cfhtcov/subfield%i/sigma%02d/SIM_KS_sigma%02d_subfield%i_WL-only_cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800_4096xy_%04dr.fit'%(i, sigmaG*10, sigmaG*10, i, R)
+#KSfn = lambda i, cosmo, R, sigmaG: '/home1/02977/jialiu/KSsim/cfhtcov/subfield%i/sigma%02d/SIM_KS_sigma%02d_subfield%i_WL-only_cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800_4096xy_%04dr.fit'%(i, sigmaG*10, sigmaG*10, i, R)
+KSfn = lambda i, cosmo, R, sigmaG: '/home1/02977/jialiu/KSsim/cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800/subfield%i/sigma%02d/SIM_KS_sigma%02d_subfield%i_WL-only_cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800_4096xy_%04dr.fit'%(i, sigmaG*10, sigmaG*10, i, R)
+
 ########################################################################
 
 ########################################################################
