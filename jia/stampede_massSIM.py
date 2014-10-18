@@ -115,8 +115,8 @@ yxewm_arr = map(yxewm_fcn, i_arr)
 ###############################################################
 ## this is customized to one subfield at a time, 
 ## uncomment next 2 lines to use for 1 subfield
-Mw = Mw_fcn(i)
-y, x, e1, e2, w, m = yxewm_fcn(i).T
+#Mw = Mw_fcn(i)
+#y, x, e1, e2, w, m = yxewm_fcn(i).T
 ###############################################################
 
 
