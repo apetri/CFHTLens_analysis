@@ -32,9 +32,9 @@ KSbad_dir = '/home1/02977/jialiu/KSsim/GoodOnly/'
 #########################################################################
 #######(cov 1) next 2 lines are for cov mat KS creation 09/17/2014 #############
 #########################################################################
-peaks_fn = lambda i, cosmo, sigmaG, bins, R: '/home1/02977/jialiu/KSsim/cfhtcov/pk/SIM_peaks_sigma%02d_subfield%i_%s_%03dbins_%04dr.fit'%(sigmaG*10, i, cosmo, bins, R)
+peaks_fn = lambda i, cosmo, sigmaG, bins, R: '/home1/02977/jialiu/KSsim/cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800/pk/SIM_peaks_sigma%02d_subfield%i_%s_%03dbins_%04dr.fit'%(sigmaG*10, i, cosmo, bins, R)
 
-powspec_fn = lambda i, cosmo, sigmaG, R: '/home1/02977/jialiu/KSsim/cfhtcov/ps/SIM_powspec_sigma%02d_subfield%i_%s_%04dr.fit'%(sigmaG*10, i, cosmo, R)
+powspec_fn = lambda i, cosmo, sigmaG, R: '/home1/02977/jialiu/KSsim/cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800/ps/SIM_powspec_sigma%02d_subfield%i_%s_%04dr.fit'%(sigmaG*10, i, cosmo, R)
 ########################################################################
 
 peaks_sum_fn = lambda cosmo, sigmaG, bins: KSbad_dir+'peaks_sum/SIM_peaks_sigma%02d_%s_%03dbins.fit'%(sigmaG*10, cosmo, bins)
