@@ -77,7 +77,7 @@ CFHT_ps_full_vs_good_sky = 0
 correlation_matrix = 0
 ps_from_2pcf = 0
 std_converge = 0
-theory_powspec_err = 0
+theory_powspec_err = 1
 
 cosmo_labels = [r'${\rm\Omega_m}$',r'$\rm{w}$',r'${\rm\sigma_8}$']
 
@@ -2792,8 +2792,7 @@ if theory_powspec_err:
 	del_ell = ell_edges[1:]-ell_edges[:-1]
 	del_ell = del_ell[11:]
 	
-	N_sim = array([   12,     8,    16,    20,    24,    28,    24,    44,    48,
-          76,    76,   116,   124,   164,   200,   252,   296,   408,
+	N_sim = array([   12,     8,    16,    20,    24,    28,    24,    44,    48, 76,    76,   116,   124,   164,   200,   252,   296,   408,
          472,   608,   756,   936,  1184,  1460,  1840,  2284,  2860,
         3588,  4444,  5580,  6928,  8680, 10816, 13500, 16864, 21056,
        26276, 32812, 40980]).astype(float)
@@ -2831,7 +2830,7 @@ if theory_powspec_err:
 	leg.get_frame().set_visible(False)
 	ax.set_ylabel(r'$\rm{{\Delta}P/P}$',fontsize=16)
 	ax.set_xlabel(r'$\ell$',fontsize=16)
-	savefig(plot_dir+'official/variance_sim_theory.jpg')
+	savefig(plot_dir+'official/variance_sim_theory_correction.jpg')
 	close()
 	
 def findlevel1D (prob, xvalues):

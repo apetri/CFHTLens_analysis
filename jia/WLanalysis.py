@@ -72,10 +72,15 @@ def TestFitsComplete (fn, return_file = False):
 	Option (impletement in the future): if return_file = True, 
 	then return True/False, file/False
 	'''
-	if not os.path.isfile(fn):
+	if not os.path.isfile(fn): # if this file doesn't exist, return false
 		isfile = False
 		ifile = False
-	else:
+		try: 
+			os.remove(fn)
+		except IOError: # to correct for scratch failure in Oct/15/2014
+			os.remove(fn)
+			
+	else: # if file exist, test if can open (sometimes it's empty file), delete if empty
 		try:
 			ifile = readFits(fn)
 			isfile = True

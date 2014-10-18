@@ -250,7 +250,7 @@ if list_peaks_cat:
 				np.save(fn,a)
 if do_hist_galn_magcut:
 	print 'hi'
-	mag_cut = -19
+	mag_cut = -21
 	height_arr = ['high', 'med', 'low']
 	def idx_height (galn_arr, kappa_arr, height='med'):
 		if height == 'low':
@@ -258,7 +258,8 @@ if do_hist_galn_magcut:
 		if height == 'med':
 			idx = where((kappa_arr>0.03)&(kappa_arr<0.06))[0]
 		if height == 'high':
-			idx = where(kappa_arr>0.06)[0]
+			#idx = where(kappa_arr>0.06)[0]
+			idx = where(kappa_arr<100)[0]
 		return galn_arr[idx].squeeze()
 	
 	for height in height_arr:
@@ -286,7 +287,7 @@ if do_hist_galn_magcut:
 				leg.get_frame().set_visible(False)
 					
 				i+=1
-		savefig(plot_dir+'hist_galn_magcut%s_%s.jpg'%(mag_cut, height))
+		savefig(plot_dir+'hist_galn_magcut%s_%s_rand.jpg'%(mag_cut, height))
 		close()
 			
 			

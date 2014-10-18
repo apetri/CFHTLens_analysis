@@ -18,15 +18,18 @@ Mask_fn = lambda i, sigmaG: KS_dir+'mask/BAD_CFHT_mask_ngal5_sigma%02d_subfield%
 
 KSbad_dir = '/home1/02977/jialiu/KSsim/GoodOnly/'
 
-####### next 2 line commented out for cov mat KS creation 09/17/2014
-#peaks_fn = lambda i, cosmo, sigmaG, bins, R: KSbad_dir+'peaks/%s/subfield%i/sigma%02d/SIM_peaks_sigma%02d_subfield%i_%s_%03dbins_%04dr.fit'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo, bins, R)
 
-#powspec_fn = lambda i, cosmo, sigmaG, R: KSbad_dir+'powspec/%s/subfield%i/sigma%02d/SIM_powspec_sigma%02d_subfield%i_%s_%04dr.fit'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo, R)
+####### comment out next 2 lines for cov mat KS creation 09/17/2014###
+peaks_fn = lambda i, cosmo, sigmaG, bins, R: KSbad_dir+'peaks/%s/subfield%i/sigma%02d/SIM_peaks_sigma%02d_subfield%i_%s_%03dbins_%04dr.fit'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo, bins, R)
 
-peaks_fn = lambda i, cosmo, sigmaG, bins, R: '/home1/02977/jialiu/KSsim/cfhtcov/pk/SIM_peaks_sigma%02d_subfield%i_%s_%03dbins_%04dr.fit'%(sigmaG*10, i, cosmo, bins, R)
+powspec_fn = lambda i, cosmo, sigmaG, R: KSbad_dir+'powspec/%s/subfield%i/sigma%02d/SIM_powspec_sigma%02d_subfield%i_%s_%04dr.fit'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo, R)
+########################################################################
 
-powspec_fn = lambda i, cosmo, sigmaG, R: '/home1/02977/jialiu/KSsim/cfhtcov/ps/SIM_powspec_sigma%02d_subfield%i_%s_%04dr.fit'%(sigmaG*10, i, cosmo, R)
+####### next 2 lines are for cov mat KS creation 09/17/2014#############
+#peaks_fn = lambda i, cosmo, sigmaG, bins, R: '/home1/02977/jialiu/KSsim/cfhtcov/pk/SIM_peaks_sigma%02d_subfield%i_%s_%03dbins_%04dr.fit'%(sigmaG*10, i, cosmo, bins, R)
 
+#powspec_fn = lambda i, cosmo, sigmaG, R: '/home1/02977/jialiu/KSsim/cfhtcov/ps/SIM_powspec_sigma%02d_subfield%i_%s_%04dr.fit'%(sigmaG*10, i, cosmo, R)
+########################################################################
 
 peaks_sum_fn = lambda cosmo, sigmaG, bins: KSbad_dir+'peaks_sum/SIM_peaks_sigma%02d_%s_%03dbins.fit'%(sigmaG*10, cosmo, bins)
 
@@ -68,14 +71,17 @@ i_arr = range(1,14)
 #rad2pix = lambda x: around(512/2.0-0.5 + x*PPR512).astype(int) #from radians to pixel location
 ###############################################################
 
-#SIMfn = lambda i, cosmo, R: sim_dir+'%s/emulator_subfield%i_WL-only_%s_4096xy_%04dr.fit'%(cosmo, i, cosmo, R)
+######### comment out next 2 lines for cov matrix simulations #####
+SIMfn = lambda i, cosmo, R: sim_dir+'%s/emulator_subfield%i_WL-only_%s_4096xy_%04dr.fit'%(cosmo, i, cosmo, R)
 
-#KSfn = lambda i, cosmo, R, sigmaG: KS_dir+'%s/subfield%i/sigma%02d/SIM_KS_sigma%02d_subfield%i_%s_%04dr.fit'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo,R)
+KSfn = lambda i, cosmo, R, sigmaG: KS_dir+'%s/subfield%i/sigma%02d/SIM_KS_sigma%02d_subfield%i_%s_%04dr.fit'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo,R)
+####################################################################
 
 ########## 08/17/2014 next 2 lines are for cov matrix simulations #####
-SIMfn = lambda i, cosmo, R: '/home1/02977/jialiu/cov_cat/emulator_subfield%i_WL-only_cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800_4096xy_%04dr.fit'%(i, R)
+#SIMfn = lambda i, cosmo, R: '/home1/02977/jialiu/cov_cat/emulator_subfield%i_WL-only_cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800_4096xy_%04dr.fit'%(i, R)
 
-KSfn = lambda i, cosmo, R, sigmaG: '/home1/02977/jialiu/KSsim/cfhtcov/subfield%i/sigma%02d/SIM_KS_sigma%02d_subfield%i_WL-only_cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800_4096xy_%04dr.fit'%(i, sigmaG*10, sigmaG*10, i, R)
+#KSfn = lambda i, cosmo, R, sigmaG: '/home1/02977/jialiu/KSsim/cfhtcov/subfield%i/sigma%02d/SIM_KS_sigma%02d_subfield%i_WL-only_cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800_4096xy_%04dr.fit'%(i, sigmaG*10, sigmaG*10, i, R)
+########################################################################
 
 #Mask_fn = lambda i, sigmaG: KS_dir+'mask/CFHT_mask_ngal5_sigma%02d_subfield%02d.fits'%(sigmaG*10, i)
 
@@ -96,11 +102,12 @@ yxewm_fcn = lambda i: WLanalysis.readFits(KS_dir+'yxewm_subfield%i_zcut0213.fit'
 yxewm_arr = map(yxewm_fcn, i_arr)
 
 ###############################################################
-## this is customized to one subfield at a time, uncomment to use for 1 subfield
+## this is customized to one subfield at a time, 
+## uncomment next 2 lines to use for 1 subfield
+Mw = Mw_fcn(i)
+y, x, e1, e2, w, m = yxewm_fcn(i).T
 ###############################################################
 
-#Mw = Mw_fcn(i)
-#y, x, e1, e2, w, m = yxewm_fcn(i).T
 
 print 'got yxewm_arr'
 def fileGen(i, R, cosmo):
@@ -217,6 +224,7 @@ def KSmap(iiRcosmo):
 ### !!!will only work if the previous step is done!!!
 ###############################################################
 
+################### next block is for normal dir #############
 #peaks_sum_fn = lambda cosmo, sigmaG, bins: KS_dir+'peaks_sum/SIM_peaks_sigma%02d_%s_%03dbins.fit'%(sigmaG*10, cosmo, bins)
 
 #powspec_sum_fn = lambda cosmo, sigmaG: KS_dir+'powspec_sum/SIM_powspec_sigma%02d_%s.fit'%(sigmaG*10, cosmo)
@@ -229,6 +237,8 @@ def KSmap(iiRcosmo):
 		  #263748,317088,344887,309647,
 		  #333731,310101,273951,291234,
 		  #308864]).astype(float) # galaxy counts for subfields, prepare for weighte sum powspec
+##############################################################
+
 galcount /= sum(galcount)
 
 #p = Pool(1000)
@@ -295,8 +305,11 @@ def sum_matrix (cosmosigmaG):
 ###############################################################
 
 pool = MPIPool()
-cosmo='WL-only_cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800'
-iRcosmo = [[i, R, cosmo] for i in range(1,14)[::-1] for R in R_arr]# for cosmo in cosmo_arr]
+### next 2 lines are for covariance cosmology 
+#cosmo='WL-only_cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800'
+#iRcosmo = [[i, R, cosmo] for i in range(1,14)[::-1] for R in R_arr]# for cosmo in cosmo_arr]
+iRcosmo = [[i, R, cosmo] for R in R_arr for cosmo in cosmo_arr]
+
 pool.map(KSmap, iRcosmo)
 pool.close()
 print 'DONE DONE DONE'
