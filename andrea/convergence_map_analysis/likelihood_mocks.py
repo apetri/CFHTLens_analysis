@@ -57,7 +57,7 @@ def main():
 	parser.add_argument("-m","--mask_scale",dest="mask_scale",action="store_true",default=False,help="scale peaks and power spectrum to unmasked area")
 	parser.add_argument("-c","--cut_convergence",dest="cut_convergence",action="store",default=None,help="select convergence values in (min,max) to compute the likelihood. Safe for single descriptor only!!")
 	parser.add_argument("-g","--group_subfields",dest="group_subfields",action="store_true",default=False,help="group feature realizations by taking the mean over subfields, this makes a big difference in the covariance matrix")
-	parser.add_argument("-s","--save_points",dest="save_points",action="store",default=None,help="save points in parameter space to external npy file")
+	parser.add_argument("-s","--save_features",dest="save_features",action="store_true",default=False,help="save features profiles")
 	parser.add_argument("-ss","--save",dest="save",action="store_true",default=False,help="save the best fits and corresponding chi2")
 	parser.add_argument("-p","--prefix",dest="prefix",action="store",default="",help="prefix of the emulator to pickle")
 	parser.add_argument("-l","--likelihood",dest="likelihood",action="store_true",default=False,help="save the likelihood cubes for the mocks")
@@ -202,6 +202,12 @@ def main():
 			logging.info("Saving likelihood cube to {0}...".format(likelihood_filename))
 			np.save(likelihood_filename,likelihood_cube)
 
+		#Maybe save the feature profiles?
+		if cmd_args.save_features:
+			features_filename = os.path.join(feature_loader.options.get("analysis","save_path"),"troubleshoot","features{0}_{1}.npy".format(nreal+1,output_string(feature_loader.feature_string)))
+			logging.info("Saving features for realization {0} to {1}...".format(nreal+1,features_filename))
+			np.save(features_filename,observed_feature[nreal])
+
 		#Find the maximum of the likelihood using ContourPlot functionality
 		contour = ContourPlot()
 		contour.getLikelihood(likelihood_cube)
@@ -243,6 +249,12 @@ def main():
 			likelihood_filename = os.path.join(feature_loader.options.get("analysis","save_path"),"troubleshoot","likelihood_obs_{0}.npy".format(output_string(feature_loader.feature_string)))
 			logging.info("Saving likelihood cube to {0}...".format(likelihood_filename))
 			np.save(likelihood_filename,likelihood_cube)
+
+		#Maybe save the feature profiles?
+		if cmd_args.save_features:
+			features_filename = os.path.join(feature_loader.options.get("analysis","save_path"),"troubleshoot","features_obs_{0}.npy".format(output_string(feature_loader.feature_string)))
+			logging.info("Saving observed features to {0}...".format(features_filename))
+			np.save(features_filename,observed_feature)
 
 		#Find the maximum of the likelihood using ContourPlot functionality
 		contour = ContourPlot()
