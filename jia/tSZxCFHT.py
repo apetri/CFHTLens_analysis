@@ -587,8 +587,8 @@ if powspec_without_ells_factor:
 if clean_dust:
 	# purpose of this section is to clean out dust using dust maps at various frequencies
 	#!!!
-	# dustGen = lambda i, freq: np.load(kSZ_dir + 'dust/'+'***.npy'%(i))
-	dustGen = lambda i, freq: np.load(kSZ_dir + 'null/'+'LGMCA_noise_W%s_flipper8192_kSZfilt_squared_toJia.npy'%(i))
+	dustGen = lambda i, freq: np.load(kSZ_dir + 'dust/'+'map%sGHzclean_LGMCAfilt_uK_W%i_flipper8192_toJia.npy'%(freq, i))
+	#dustGen = lambda i, freq: np.load(kSZ_dir + 'null/'+'LGMCA_noise_W%s_flipper8192_kSZfilt_squared_toJia.npy'%(i))
 	# (1) convert from coord to grid for all dust maps
 	for fn in os.listdir(kSZ_dir+'dust/'):
 		print fn
@@ -597,7 +597,7 @@ if clean_dust:
 		if not os.path.isfile(npy_fn):
 			data = genfromtxt(full_fn)
 			kSZmapGen_fn(full_fn, offset=True)
-
+	print 'done creating grid map'
 	# (2) function that takes in one alpha, splits out cross power	
 	mask_arr = map(maskGen, range(1,5))
 	sizedeg_arr = array([(sizes[Wx-1]/512.0)**2*12.0 for Wx in range(1,5)])
@@ -641,8 +641,8 @@ if clean_dust:
 		CC, err = inverse_sum(CC_arr, errK_arr)
 		return CC, err
 	
-	alpha_arr = linspace(0.0001, 0.001, 5)
-	freq = 0
+	alpha_arr = linspace(-0.0001, 0.0001, 5)
+	freq = 545217#857
 	results = array([minimize_dust(alpha, freq) for alpha in alpha_arr])#alpha x 2 x 6
 	CCK_arr, errK_arr = results[:,0,:], results[:,1,:]
 	
