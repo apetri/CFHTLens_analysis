@@ -34,7 +34,7 @@ sample_points = 0#for final fits wiht 3 random points
 good_bad_peaks = 0
 contour_ps_fieldselect = 0
 m_correction = 0
-SIGMA_contour = 1
+SIGMA_contour = 0
 ######## tests ##############
 bad_pointings = 1
 ps_replaced_with_pk = 0
@@ -77,7 +77,8 @@ CFHT_ps_full_vs_good_sky = 0
 correlation_matrix = 0
 ps_from_2pcf = 0
 std_converge = 0
-theory_powspec_err = 1
+theory_powspec_err = 0
+theory_powspec_err_brute = 1
 
 cosmo_labels = [r'${\rm\Omega_m}$',r'$\rm{w}$',r'${\rm\sigma_8}$']
 
@@ -2987,4 +2988,78 @@ if SIGMA_contour:
 	#findlevel1D(Pps_marg, S_arr)
 	#findlevel1D(Ppk_marg, S_arr)
 	#findlevel1D(Pcomb_marg, S_arr)
-		
+
+def rndN(iseed=0):
+	seed(iseed*100)
+	a=np.random.normal(loc=10.0,scale=5.0,size=512**2).reshape(512,512)
+	#a[512/2:,:]=a[:512/2,:][::-1]
+	return a
+
+if theory_powspec_err_brute:
+	
+	def randmapGen(iseed):
+	seed(iseed)
+	kmap = np.random.normal(loc=0, scale=0.3, size=1330**2).reshape(1330,1330)
+	ps = WLanalysis.PowerSpectrum(kmap)[-1]
+	return ps
+
+	N_sim = array([   12,     8,    16,    20,    24,    28,    24,    44,    48, 76,    76,   116,   124,   164,   200,   252,   296,   408,
+         472,   608,   756,   936,  1184,  1460,  1840,  2284,  2860,
+        3588,  4444,  5580,  6928,  8680, 10816, 13500, 16864, 21056,
+       26276, 32812, 40980]).astype(float)
+	# N modes, count 
+	def aa(iseed):#using random pixels to get azimuthalAveraged number, pretending to be the power spectrum
+		print iseed
+		radial_prof = WLanalysis.azimuthalAverage(rndN(iseed))[1]
+		return radial_prof
+	all_aa = array(map(aa,range(100)))
+	avg_aa = mean(all_aa, axis=0)[11:]
+	std_aa = std(all_aa, axis=0)[11:]
+
+	plot(sqrt(1/N_sim),label='1/sqrt(N)')	
+	plot(std_aa/5.0,label='delta(P)/sigma(P)')
+	legend()
+	show()
+	
+	#stdN = lambda N: std(np.random.normal(loc=10.0,scale=5.0,size=N))
+	#N_arr = range(5,200,5)
+	#std_arr = array([stdN(N_arr[i]) for i in range(len(N_arr))])
+	#plot(std_arr/10.0, label='sim')
+	#plot(1/sqrt(N_arr), label='1/sqrt(N)')
+	#show()
+
+
+############ next block count unique numbers in the fourier space
+#F = fftshift(fftpack.fft2(rand(512,512)))
+#psd2D = np.abs(F)**2
+
+#y, x = np.indices(image.shape)
+#if not center:
+	#center = np.array([(x.max()-x.min())/2.0, (x.max()-x.min())/2.0])
+#r = np.hypot(x - center[0], y - center[1])#distance to center pixel, for each pixel
+
+## Get sorted radii
+#ind = np.argsort(r.flat)
+#r_sorted = r.flat[ind] # the index to sort by r
+#i_sorted = image.flat[ind] # the index of the images sorted by r
+
+## find index that's corresponding to the lower edge of each bin
+#kmin=1.0
+#kmax=image.shape[0]/2.0
+#if edges == None:
+	#if logbins:
+		#edges = logspace(log10(kmin),log10(kmax),bins+1)
+	#else:
+		##edges = linspace(kmin,kmax+0.001,bins+1)	
+		#edges = linspace(kmin,kmax,bins+1)
+#if edges[0] > 0:
+	#edges = append([0],edges)
+	
+#hist_ind = np.histogram(r_sorted,bins = edges)[0] # hist_ind: the number in each ell bins, sum them up is the index of lower edge of each bin, first bin spans from 0 to left of first bin edge.	
+#hist_sum = np.cumsum(hist_ind)
+#csim = np.cumsum(i_sorted, dtype=float)
+#tbin = csim[hist_sum[1:]] - csim[hist_sum[:-1]]
+#print [len(unique(i_sorted[hist_sum[i]:hist_sum[i+1]])) for i in range(len(hist_sum)-1)]
+#radial_prof = tbin/hist_ind[1:]
+##############################################
+N_unique = array([0, 0, 0, 0, 8, 0, 4, 0, 8, 8, 0, 12, 8, 16, 20, 24, 27, 24, 44, 48, 76, 75, 114, 123, 164, 200, 248, 295, 402, 468, 598, 749, 925, 1168, 1433, 1815, 2249, 2826, 3542, 4377, 5503, 6833, 8564, 10641, 13307, 16588, 20743, 25858, 32280, 40367])[11:]

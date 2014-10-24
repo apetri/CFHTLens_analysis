@@ -11,15 +11,15 @@ import os
 import WLanalysis
 from scipy import interpolate
 
-
+freq = '545217GHzclean'#'857GHz'#
 ###################### knobs###########################
-plot_crosscorrelate_all = 0
+plot_crosscorrelate_all = 1
 testCC = 0
 test_powspec = 0
 create_noise_KS = 0
 cross_cov_mat = 0
 powspec_without_ells_factor = 0
-clean_dust = 1
+clean_dust = 0
 #######################################################
 
 kSZ_dir = '/Users/jia/CFHTLenS/kSZ/newfil/'
@@ -34,7 +34,7 @@ kmapGen = lambda i: WLanalysis.readFits('/Users/jia/CFHTLenS/obsPK/maps/W%i_KS_1
 bmodeGen = lambda i: WLanalysis.readFits('/Users/jia/CFHTLenS/obsPK/maps/W%i_Bmode_1.3_lo_sigmaG05.fit'%(i))
 galnGen = lambda i: WLanalysis.readFits('/Users/jia/CFHTLenS/obsPK/maps/W%i_galn_1.3_lo_sigmaG10.fit'%(i))
 
-kSZmapGen = lambda i: WLanalysis.readFits(kSZ_dir+'kSZmap_W%i_nearest.fit'%(i))
+#kSZmapGen = lambda i: WLanalysis.readFits(kSZ_dir+'kSZmap_W%i_nearest.fit'%(i))
 ptsrcGen = lambda i: np.load(kSZ_dir + 'null/'+'PSmaskRING_100-143-217-353-545_857_5sigma_Nside8192_BOOL_W%s_toJia.npy'%(i))
 
 #offsetGen = lambda i: np.load(kSZ_dir + 'null/'+'LGMCA_W%soffset_flipper8192_kSZfilt_squared_toJia.npy'%(i))
@@ -49,7 +49,24 @@ offsetGen = lambda i: np.load(kSZ_dir + 'null/'+'LGMCA_W1offset_flipper8192_kSZf
 	#return offset
 
 noiseGen = lambda i: np.load(kSZ_dir + 'null/'+'LGMCA_noise_W%s_flipper8192_kSZfilt_squared_toJia.npy'%(i))
-nosqkSZGen= lambda i: np.load(kSZ_dir + 'null/'+'LGMCA_W%s_flipper8192_kSZfilt_NOTsquared_toJia.npy'%(i))
+nosqkSZGen_dusty= lambda i: np.load(kSZ_dir + 'null/'+'LGMCA_W%s_flipper8192_kSZfilt_NOTsquared_toJia.npy'%(i))
+dustGen = lambda i, freq: np.load(kSZ_dir + 'dust/'+'map%s_LGMCAfilt_uK_W%i_flipper8192_toJia.npy'%(freq, i))
+
+def nosqkSZGen(Wx):#'857GHz'#
+	'''This routine cleans the kSZ map by applying some alpha value
+	'''
+	kSZ_NSQ = nosqkSZGen_dusty(Wx)
+	dust = dustGen(Wx, freq)
+	if freq == '545217GHzclean':
+		alpha = -0.0024832214765100613#4bins -0.056124161073825493#6bins: -0.035928411633109614
+	elif freq == '857GHz':
+		alpha = -0.00012080536912751662#4bins -0.00056963087248322131# 6bins: -0.00035011185682326599
+	kSZ_NSQ_clean = (1+alpha)*kSZ_NSQ[Wx-1]-alpha*dust
+	return kSZ_NSQ_clean
+
+def kSZmapGen(Wx):
+	kSZ_NSQ_clean = nosqkSZGen(Wx)
+	return kSZ_NSQ_clean**2
 
 centers = array([[34.5, -7.5], [134.5, -3.25],[214.5, 54.5],[ 332.75, 1.9]])
 sizes = (1330, 800, 1120, 950)
@@ -352,37 +369,37 @@ if plot_crosscorrelate_all:
 	#CrossPower(CCK, CCNSQ, errK, errNSQ, method=method, noise='kSZ\,no\,sq')
 	
 	######## plotting
-	f=figure(figsize=(8,6))
-	ax=f.add_subplot(111)
+f=figure(figsize=(8,6))
+ax=f.add_subplot(111)
 
-	ax.errorbar(ell_arr, CCK, errK, fmt='o',color='b', label=r'$\kappa\times\,kSZ$  ')
-	ax.errorbar(ell_arr, CCB, errB, fmt='o',color='r',label=r'$\kappa\times\,noise$')
-	ax.errorbar(ell_arr, CCO, errO, fmt='o',color='k',label=r'$\kappa\times\,Offset$')
-	ax.errorbar(ell_arr, CCBMODE, errBMODE, fmt='o',color='g',label=r'$Bmode\times\,kSZ$')	
-	#ax.errorbar(ell_arr, avgN, errN, fmt='o',color='y',label=r'$\kappa\,noise\times\,kSZ$')
-	ax.errorbar(ell_arr, CCNSQ, errNSQ, fmt='o',color='m',label=r'$\kappa\times\,kSZ(no\,sq.)$')
+ax.errorbar(ell_arr, CCK, errK, fmt='o',color='b', label=r'$\kappa\times\,kSZ$  ')
+#ax.errorbar(ell_arr, CCB, errB, fmt='o',color='r',label=r'$\kappa\times\,noise$')
+#ax.errorbar(ell_arr, CCO, errO, fmt='o',color='k',label=r'$\kappa\times\,Offset$')
+ax.errorbar(ell_arr, CCBMODE, errBMODE, fmt='o',color='g',label=r'$Bmode\times\,kSZ$')	
+#ax.errorbar(ell_arr, avgN, errN, fmt='o',color='y',label=r'$\kappa\,noise\times\,kSZ$')
+#ax.errorbar(ell_arr, CCNSQ, errNSQ, fmt='o',color='m',label=r'$\kappa\times\,kSZ(no\,sq.)$')
 
-	#ax.errorbar(ell_arr, avgN, errN, fmt='o',color='y',label=r'$\kappa\,noise\times\,kSZ$')
+#ax.errorbar(ell_arr, avgN, errN, fmt='o',color='y',label=r'$\kappa\,noise\times\,kSZ$')
 
-	leg=ax.legend(ncol=1, labelspacing=0.3, prop={'size':16},loc=0)
-	leg.get_frame().set_visible(False)
-	#ax.set_xscale('log')
-	ax.set_xlim(0,3000)
-	ax.set_xlabel(r'$\ell$', fontsize=16)
-	ax.set_ylabel(r'$\ell(\ell+1)P_{n\kappa}(\ell)/2\pi$', fontsize=16)
-	#ax.set_ylabel(r'$\ell\times P(\ell)$', fontsize=16)
-	ax.set_title('%s, %s pix mask, 1 arcmin smooth conv. map'%(method, 10.0))
-	ax.ticklabel_format(axis='y', style='sci', scilimits=(-2,2))
-	#ax.set_ylim(-0.00001,0.00001)
-	savefig(plot_dir+'CrossCorrelate_%s_pointMask_6bins.jpg'%(method))
-	close()
+leg=ax.legend(ncol=1, labelspacing=0.3, prop={'size':16},loc=0)
+leg.get_frame().set_visible(False)
+#ax.set_xscale('log')
+ax.set_xlim(0,3000)
+ax.set_xlabel(r'$\ell$', fontsize=16)
+ax.set_ylabel(r'$\ell(\ell+1)P_{n\kappa}(\ell)/2\pi$', fontsize=16)
+#ax.set_ylabel(r'$\ell\times P(\ell)$', fontsize=16)
+ax.set_title('%s, %s, 1 arcmin smooth conv. map'%(method, freq))
+ax.ticklabel_format(axis='y', style='sci', scilimits=(-2,2))
+#ax.set_ylim(-0.00001,0.00001)
+savefig(plot_dir+'CrossCorrelate_%s_clean_%s_SNRalpha.jpg'%(method,freq))
+close()
 	
 	#text_arr = array([ell_arr, CCK, CCO, CCB, CCBMODE, CCNSQ, avgN, errK, errO, errB, errBMODE, errNSQ, errN]).T
 	#savetxt(kSZ_dir+'CrossCorrelate_%s_ptsMask_kSZNSQ.txt'%(method), text_arr, header='ell\tkSZ-kappa\toffset-kappa\tnoise-kappa\tkSZ-Bmode\tkSZ_not_sq-kappa\tkSZ-kappa_noise\terr(kSZ-kappa)\terr(offset-kappa)\terr(noise-kappa)\terr(kSZ-Bmode)\terr(kSZ_not_sq-kappa\terr(kSZ-kappa_noise))')
 	
 	# for 6 bins
 	text_arr = array([ell_arr, CCK, CCO, CCB, CCBMODE, CCNSQ, errK, errO, errB, errBMODE, errNSQ]).T
-	savetxt(kSZ_dir+'CrossCorrelate_%s_ptsMask_kSZNSQ.txt'%(method), text_arr, header='ell\tkSZ-kappa\toffset-kappa\tnoise-kappa\tkSZ-Bmode\tkSZ_not_sq-kappa\terr(kSZ-kappa)\terr(offset-kappa)\terr(noise-kappa)\terr(kSZ-Bmode)\terr(kSZ_not_sq-kappa)')
+	savetxt(kSZ_dir+'CrossCorrelate_%s_clean_%s.txt'%(method,freq), text_arr, header='ell\tkSZ-kappa\toffset-kappa\tnoise-kappa\tkSZ-Bmode\tkSZ_not_sq-kappa\terr(kSZ-kappa)\terr(offset-kappa)\terr(noise-kappa)\terr(kSZ-Bmode)\terr(kSZ_not_sq-kappa)')
 	
 	
 	#####################################################
@@ -587,17 +604,18 @@ if powspec_without_ells_factor:
 if clean_dust:
 	# purpose of this section is to clean out dust using dust maps at various frequencies
 	#!!!
-	dustGen = lambda i, freq: np.load(kSZ_dir + 'dust/'+'map%sGHzclean_LGMCAfilt_uK_W%i_flipper8192_toJia.npy'%(freq, i))
+	dustGen = lambda i, freq: np.load(kSZ_dir + 'dust/'+'map%s_LGMCAfilt_uK_W%i_flipper8192_toJia.npy'%(freq, i))
 	#dustGen = lambda i, freq: np.load(kSZ_dir + 'null/'+'LGMCA_noise_W%s_flipper8192_kSZfilt_squared_toJia.npy'%(i))
-	# (1) convert from coord to grid for all dust maps
-	for fn in os.listdir(kSZ_dir+'dust/'):
-		print fn
-		full_fn = kSZ_dir+'null/'+fn
-		npy_fn = full_fn[:-4]+'npy'
-		if not os.path.isfile(npy_fn):
-			data = genfromtxt(full_fn)
-			kSZmapGen_fn(full_fn, offset=True)
-	print 'done creating grid map'
+	######## (1) convert from coord to grid for all dust maps
+	#for fn in os.listdir(kSZ_dir+'dust/'):
+		#print fn
+		#full_fn = kSZ_dir+'dust/'+fn
+		#npy_fn = full_fn[:-4]+'npy'
+		#if not os.path.isfile(npy_fn):
+			#data = genfromtxt(full_fn)
+			#kSZmapGen_fn(full_fn, offset=False)
+	#print 'done creating grid map'
+	############################################################
 	# (2) function that takes in one alpha, splits out cross power	
 	mask_arr = map(maskGen, range(1,5))
 	sizedeg_arr = array([(sizes[Wx-1]/512.0)**2*12.0 for Wx in range(1,5)])
@@ -636,20 +654,40 @@ if clean_dust:
 		return CCK, errK
 	
 	def minimize_dust(alpha, freq):
+		print alpha
 		a = array([crosspower_Wx(Wx, freq, alpha) for Wx in range(1,5)])
 		CC_arr, errK_arr = a[:,0,:], a[:,1,:]
 		CC, err = inverse_sum(CC_arr, errK_arr)
 		return CC, err
 	
-	alpha_arr = linspace(-0.0001, 0.0001, 5)
-	freq = 545217#857
-	results = array([minimize_dust(alpha, freq) for alpha in alpha_arr])#alpha x 2 x 6
-	CCK_arr, errK_arr = results[:,0,:], results[:,1,:]
+	freq = '545217GHzclean'#'857GHz'#
+	#alpha_arr = linspace(-0.18, 0.05, 150)#linspace(-0.002, 0.0005, 150)#	
+	#results = array([minimize_dust(alpha, freq) for alpha in alpha_arr])#alpha x 2 x 6
+	#CCK_arr, errK_arr = results[:,0,:], results[:,1,:]
 	
-	for i in range(CCK_arr.shape[-1]):
-		errorbar(alpha_arr, CCK_arr[:,i], errK_arr[:,i], label='%ith bin'%(i+1))
-		legend(fontsize=10)
-		xlabel('alpha')
-		ylabel('ell x P(ell)')
-		savefig(plot_dir+'clean_dust_alpha_bin%i.jpg'%(i))
-		close()
+	#f=figure()
+	#for i in range(CCK_arr.shape[-1]):
+		#ax=f.add_subplot(3,2,i+1)
+		#errorbar(alpha_arr, abs(CCK_arr[:,i]), errK_arr[:,i], label='%ith bin'%(i+1))
+		#legend(fontsize=10)
+		#if i > 3:
+			#xlabel('alpha')
+		#if i in (0, 2, 4):
+			#ylabel('abs[ell x P(ell)]')
+		#if i <2:
+			#title('%s GHz'%(freq))
+		#ax.locator_params(nbins=4)
+	#savefig(plot_dir+'clean_dust_%sGHz_alpha.jpg'%(freq))
+	#close()
+	
+	#np.save(kSZ_dir+'clean_dust_%sGHz_alpha'%(freq), concatenate([alpha_arr.reshape(-1,1), CCK_arr, errK_arr],axis=1))
+	
+alpha_arr = np.load(kSZ_dir+'clean_dust_%sGHz_alpha.npy'%(freq)).T[0]
+CCK_arr = np.load(kSZ_dir+'clean_dust_%sGHz_alpha.npy'%(freq)).T[1:7]
+errK_arr = np.load(kSZ_dir+'clean_dust_%sGHz_alpha.npy'%(freq)).T[7:]
+min_idx = argmin(abs(CCK_arr),axis=1)
+alpha_min_arr=array([alpha_arr[i] for i in min_idx])
+CCK_min_arr = array([CCK_arr[i, min_idx[i]] for i in range(len(min_idx))])
+#alpha_min = mean(alpha_min_arr)
+alpha_min = mean(alpha_min_arr[[0,1,2,5]])
+SNR = sqrt(sum((CCK_arr/errK_arr)**2,axis=0))
