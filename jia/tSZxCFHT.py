@@ -11,7 +11,15 @@ import os
 import WLanalysis
 from scipy import interpolate
 
-freq = '545217GHzclean'#'857GHz'#
+freq = '545217GHzclean'#'857	GHz'#
+if freq == '545217GHzclean':
+	alpha = -0.00093959731543624692
+	#SNR 6bins -0.0024832214765100613#4bins -0.056124161073825493#6bins: -0.035928411633109614
+elif freq == '857GHz':
+	alpha = -2.0134228187919292e-05
+	#SNR 6 bins-0.00012080536912751662
+	#4bins -0.00056963087248322131
+	#6bins: -0.00035011185682326599
 ###################### knobs###########################
 plot_crosscorrelate_all = 1
 testCC = 0
@@ -52,16 +60,30 @@ noiseGen = lambda i: np.load(kSZ_dir + 'null/'+'LGMCA_noise_W%s_flipper8192_kSZf
 nosqkSZGen_dusty= lambda i: np.load(kSZ_dir + 'null/'+'LGMCA_W%s_flipper8192_kSZfilt_NOTsquared_toJia.npy'%(i))
 dustGen = lambda i, freq: np.load(kSZ_dir + 'dust/'+'map%s_LGMCAfilt_uK_W%i_flipper8192_toJia.npy'%(freq, i))
 
-def nosqkSZGen(Wx):#'857GHz'#
+bothfreq = True
+def nosqkSZGen(Wx, bothfreq=bothfreq):#'857GHz'#
 	'''This routine cleans the kSZ map by applying some alpha value
 	'''
 	kSZ_NSQ = nosqkSZGen_dusty(Wx)
-	dust = dustGen(Wx, freq)
-	if freq == '545217GHzclean':
-		alpha = -0.0024832214765100613#4bins -0.056124161073825493#6bins: -0.035928411633109614
-	elif freq == '857GHz':
-		alpha = -0.00012080536912751662#4bins -0.00056963087248322131# 6bins: -0.00035011185682326599
-	kSZ_NSQ_clean = (1+alpha)*kSZ_NSQ[Wx-1]-alpha*dust
+	if bothfreq:
+		dust1 = dustGen(Wx, '545217GHzclean')
+		dust2 = dustGen(Wx, '857GHz')
+		alpha1 = -0.00093959731543624692
+		alpha2 = -2.0134228187919292e-05
+		kSZ_NSQ_clean1 = (1+alpha1)*kSZ_NSQ[Wx-1]-alpha1*dust1
+		kSZ_NSQ_clean2 = (1+alpha2)*kSZ_NSQ[Wx-1]-alpha2*dust2
+		kSZ_NSQ_clean = kSZ_NSQ_clean1*kSZ_NSQ_clean2
+	else:
+		dust = dustGen(Wx, freq)
+		if freq == '545217GHzclean':
+			alpha = -0.00093959731543624692
+			#SNR 6bins -0.0024832214765100613#4bins -0.056124161073825493#6bins: -0.035928411633109614
+		elif freq == '857GHz':
+			alpha = -2.0134228187919292e-05
+			#SNR 6 bins-0.00012080536912751662
+			#4bins -0.00056963087248322131
+			#6bins: -0.00035011185682326599
+		kSZ_NSQ_clean = (1+alpha)*kSZ_NSQ[Wx-1]-alpha*dust
 	return kSZ_NSQ_clean
 
 def kSZmapGen(Wx):
@@ -369,30 +391,30 @@ if plot_crosscorrelate_all:
 	#CrossPower(CCK, CCNSQ, errK, errNSQ, method=method, noise='kSZ\,no\,sq')
 	
 	######## plotting
-f=figure(figsize=(8,6))
-ax=f.add_subplot(111)
+	f=figure(figsize=(8,6))
+	ax=f.add_subplot(111)
 
-ax.errorbar(ell_arr, CCK, errK, fmt='o',color='b', label=r'$\kappa\times\,kSZ$  ')
-#ax.errorbar(ell_arr, CCB, errB, fmt='o',color='r',label=r'$\kappa\times\,noise$')
-#ax.errorbar(ell_arr, CCO, errO, fmt='o',color='k',label=r'$\kappa\times\,Offset$')
-ax.errorbar(ell_arr, CCBMODE, errBMODE, fmt='o',color='g',label=r'$Bmode\times\,kSZ$')	
-#ax.errorbar(ell_arr, avgN, errN, fmt='o',color='y',label=r'$\kappa\,noise\times\,kSZ$')
-#ax.errorbar(ell_arr, CCNSQ, errNSQ, fmt='o',color='m',label=r'$\kappa\times\,kSZ(no\,sq.)$')
+	#ax.errorbar(ell_arr, CCK, errK, fmt='o',color='b', label=r'$\kappa\times\,kSZ$  ')
+	#ax.errorbar(ell_arr, CCBMODE, errBMODE, fmt='o',color='g',label=r'$Bmode\times\,kSZ$')	
+	#ax.errorbar(ell_arr, CCB, errB, fmt='o',color='r',label=r'$\kappa\times\,noise$')
+	#ax.errorbar(ell_arr, CCO, errO, fmt='o',color='k',label=r'$\kappa\times\,Offset$')
+	#ax.errorbar(ell_arr, avgN, errN, fmt='o',color='y',label=r'$\kappa\,noise\times\,kSZ$')
+	#ax.errorbar(ell_arr, avgN, errN, fmt='o',color='y',label=r'$\kappa\,noise\times\,kSZ$')
+	ax.errorbar(ell_arr, CCNSQ, errNSQ, fmt='o',color='m',label=r'$\kappa\times\,kSZ(no\,sq.)$')
 
-#ax.errorbar(ell_arr, avgN, errN, fmt='o',color='y',label=r'$\kappa\,noise\times\,kSZ$')
-
-leg=ax.legend(ncol=1, labelspacing=0.3, prop={'size':16},loc=0)
-leg.get_frame().set_visible(False)
-#ax.set_xscale('log')
-ax.set_xlim(0,3000)
-ax.set_xlabel(r'$\ell$', fontsize=16)
-ax.set_ylabel(r'$\ell(\ell+1)P_{n\kappa}(\ell)/2\pi$', fontsize=16)
-#ax.set_ylabel(r'$\ell\times P(\ell)$', fontsize=16)
-ax.set_title('%s, %s, 1 arcmin smooth conv. map'%(method, freq))
-ax.ticklabel_format(axis='y', style='sci', scilimits=(-2,2))
-#ax.set_ylim(-0.00001,0.00001)
-savefig(plot_dir+'CrossCorrelate_%s_clean_%s_SNRalpha.jpg'%(method,freq))
-close()
+	leg=ax.legend(ncol=1, labelspacing=0.3, prop={'size':16},loc=0)
+	leg.get_frame().set_visible(False)
+	#ax.set_xscale('log')
+	ax.set_xlim(0,3000)
+	ax.set_xlabel(r'$\ell$', fontsize=16)
+	#ax.set_ylabel(r'$\ell(\ell+1)P_{n\kappa}(\ell)/2\pi$', fontsize=16)
+	ax.set_ylabel(r'$\ell\times P(\ell)$', fontsize=16)
+	#ax.set_title('%s, %s, alpha=%.5f'%(method, freq, alpha))
+	ax.set_title('<(T545_clean*T857_clean) x kappa>')
+	ax.ticklabel_format(axis='y', style='sci', scilimits=(-2,2))
+	#ax.set_ylim(-0.00001,0.00001)
+	savefig(plot_dir+'CrossCorrelate_%s_clean_%s_CminAlpha_2freqxkappa.jpg'%(method,freq))
+	close()
 	
 	#text_arr = array([ell_arr, CCK, CCO, CCB, CCBMODE, CCNSQ, avgN, errK, errO, errB, errBMODE, errNSQ, errN]).T
 	#savetxt(kSZ_dir+'CrossCorrelate_%s_ptsMask_kSZNSQ.txt'%(method), text_arr, header='ell\tkSZ-kappa\toffset-kappa\tnoise-kappa\tkSZ-Bmode\tkSZ_not_sq-kappa\tkSZ-kappa_noise\terr(kSZ-kappa)\terr(offset-kappa)\terr(noise-kappa)\terr(kSZ-Bmode)\terr(kSZ_not_sq-kappa\terr(kSZ-kappa_noise))')
@@ -682,12 +704,14 @@ if clean_dust:
 	
 	#np.save(kSZ_dir+'clean_dust_%sGHz_alpha'%(freq), concatenate([alpha_arr.reshape(-1,1), CCK_arr, errK_arr],axis=1))
 	
-alpha_arr = np.load(kSZ_dir+'clean_dust_%sGHz_alpha.npy'%(freq)).T[0]
-CCK_arr = np.load(kSZ_dir+'clean_dust_%sGHz_alpha.npy'%(freq)).T[1:7]
-errK_arr = np.load(kSZ_dir+'clean_dust_%sGHz_alpha.npy'%(freq)).T[7:]
-min_idx = argmin(abs(CCK_arr),axis=1)
-alpha_min_arr=array([alpha_arr[i] for i in min_idx])
-CCK_min_arr = array([CCK_arr[i, min_idx[i]] for i in range(len(min_idx))])
-#alpha_min = mean(alpha_min_arr)
-alpha_min = mean(alpha_min_arr[[0,1,2,5]])
-SNR = sqrt(sum((CCK_arr/errK_arr)**2,axis=0))
+#alpha_arr = np.load(kSZ_dir+'clean_dust_%sGHz_alpha.npy'%(freq)).T[0]
+#CCK_arr = np.load(kSZ_dir+'clean_dust_%sGHz_alpha.npy'%(freq)).T[1:7]
+#errK_arr = np.load(kSZ_dir+'clean_dust_%sGHz_alpha.npy'%(freq)).T[7:]
+#min_idx = argmin(abs(CCK_arr),axis=1)
+#alpha_min_arr=array([alpha_arr[i] for i in min_idx])
+#CCK_min_arr = array([CCK_arr[i, min_idx[i]] for i in range(len(min_idx))])
+##alpha_min = mean(alpha_min_arr)
+#alpha_min = mean(alpha_min_arr[[0,1,2,5]])
+#SNR = sqrt(sum((CCK_arr/errK_arr)**2,axis=0))
+#sumCCK = sqrt(sum(CCK_arr**2,axis=0))
+#argmin(sumCCK)

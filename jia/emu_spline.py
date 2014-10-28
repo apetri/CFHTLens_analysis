@@ -3030,7 +3030,8 @@ if theory_powspec_err_brute:
 
 
 ############ next block count unique numbers in the fourier space
-#F = fftshift(fftpack.fft2(rand(512,512)))
+#n = 509#512
+#F = fftshift(fftpack.fft2(rand(n,n)))
 #psd2D = np.abs(F)**2
 
 #y, x = np.indices(image.shape)
