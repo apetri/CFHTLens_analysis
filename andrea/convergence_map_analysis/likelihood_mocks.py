@@ -62,6 +62,7 @@ def main():
 	parser.add_argument("-p","--prefix",dest="prefix",action="store",default="",help="prefix of the emulator to pickle")
 	parser.add_argument("-l","--likelihood",dest="likelihood",action="store_true",default=False,help="save the likelihood cubes for the mocks")
 	parser.add_argument("-o","--observation",dest="observation",action="store_true",default=False,help="append the actual observation results to the mock results for direct comparison")
+	parser.add_argument("-d","--differentiate",dest="differentiate",action="store_true",default=False,help="differentiate the first minkowski functional to get the PDF")
 
 	cmd_args = parser.parse_args()
 

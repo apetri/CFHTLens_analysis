@@ -61,6 +61,7 @@ def main():
 	parser.add_argument("-ss","--save_debug",dest="save_debug",action="store_true",default=False,help="save a bunch of debugging info for the analysis")
 	parser.add_argument("-p","--prefix",dest="prefix",action="store",default="",help="prefix of the emulator to pickle")
 	parser.add_argument("-r","--realizations",dest="realizations",type=int,default=None,help="use only the first N realizations to estimate the covariance matrix")
+	parser.add_argument("-d","--differentiate",dest="differentiate",action="store_true",default=False,help="differentiate the first minkowski functional to get the PDF")
 
 	cmd_args = parser.parse_args()
 
