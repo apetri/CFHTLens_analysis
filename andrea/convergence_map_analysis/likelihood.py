@@ -233,7 +233,7 @@ def main():
 		np.save(os.path.join(troubleshoot_dir,"fiducial_{0}.npy".format(output_string(feature_loader.feature_string))),fiducial_features)
 		np.save(os.path.join(troubleshoot_dir,"best_fit_features_{0}.npy".format(output_string(feature_loader.feature_string))),analysis.predict(best_fit_parameters))
 		np.save(os.path.join(troubleshoot_dir,"fiducial_from_interpolator_{0}.npy".format(output_string(feature_loader.feature_string))),analysis.predict(np.array([0.26,-1.0,0.800])))
-		np.save(os.path.joib(troubleshoot_dir,"chi2_contributions_{0}.npy".format(output_string(feature_loader.feature_string))),analysis.chi2Contributions(best_fit_parameters,observed_feature=observed_feature,features_covariance=features_covariance))
+		np.save(os.path.join(troubleshoot_dir,"chi2_contributions_{0}.npy".format(output_string(feature_loader.feature_string))),analysis.chi2Contributions(best_fit_parameters,observed_feature=observed_feature,features_covariance=features_covariance))
 
 	end = time.time()
 
