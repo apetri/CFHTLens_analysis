@@ -158,9 +158,6 @@ def main():
 	num_points = len(Om) * len(w) * len(si8) 
 
 	points = np.array(np.meshgrid(Om,w,si8,indexing="ij")).reshape(3,num_points).transpose()
-	if cmd_args.save_points is not None:
-		logging.info("Saving points to {0}.npy".format(cmd_args.save_points.rstrip(".npy")))
-		np.save(cmd_args.save_points.rstrip(".npy")+".npy",points)
 
 	#Now compute the chi2 at each of these points
 	if pool:

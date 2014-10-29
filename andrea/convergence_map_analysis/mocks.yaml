@@ -1,4 +1,4 @@
-command: mpiexec -n 101 -hostfile %hostfile% python likelihood_mocks.py -f options_bnl.ini -vv --group_subfields --mask_scale --observation
+command: mpiexec -n 101 -hostfile %hostfile% python likelihood_mocks.py -f options_bnl.ini -vv --save_features --group_subfields --mask_scale 
 mode: bycore
 N: 101
 hostfile: auto

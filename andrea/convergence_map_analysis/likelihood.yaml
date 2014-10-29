@@ -1,4 +1,4 @@
-command: mpiexec -n 101 -hostfile %hostfile% python likelihood.py -f options_bnl.ini -vv -ss --group_subfields --mask_scale
+command: mpiexec -n 101 -hostfile %hostfile% python likelihood.py -f options_bnl.ini -vv --group_subfields --mask_scale --realizations 500
 mode: bycore
 N: 101
 hostfile: auto
