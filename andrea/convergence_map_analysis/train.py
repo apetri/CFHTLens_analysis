@@ -223,6 +223,11 @@ class FeatureLoader(object):
 						mink_to_measure = [ int(n_mf) for n_mf in list(num.group(1)) ]
 						ens_split = ens.split(self.mink_idx)
 
+						#Differentiate Minkowski 0 to find the PDF?
+						if self.cmd_args.differentiate:
+							logging.log(DEBUG_PLUS,"Differentiating Minkowski 0 to get the PDF")
+							ens_split[0] = ens_split[0].differentiate(step=self.kappa_minkowski[0]-self.kappa_minkowski[1])
+
 						#Perform the convergence cut if option is enabled
 						if self.cmd_args.cut_convergence:
 							new_thresholds = [ ens_split[n_mf].cut(self.kappa_min,self.kappa_max,feature_label=self.kappa_minkowski) for n_mf in mink_to_measure ]
@@ -273,6 +278,7 @@ def main():
 	parser.add_argument("-g","--group_subfields",dest="group_subfields",action="store_true",default=False,help="group feature realizations by taking the mean over subfields, this makes a big difference in the covariance matrix")
 	parser.add_argument("-s","--save_points",dest="save_points",action="store",default=None,help="save points in parameter space to external npy file")
 	parser.add_argument("-p","--prefix",dest="prefix",action="store",default="",help="give a prefix to the name of the pickled emulator")
+	parser.add_argument("-d","--differentiate",dest="differentiate",action="store_true",default=False,help="differentiate the first minkowski functional to get the PDF")
 
 	cmd_args = parser.parse_args()
 
