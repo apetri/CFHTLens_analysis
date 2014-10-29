@@ -225,6 +225,7 @@ class FeatureLoader(object):
 
 						#Differentiate Minkowski 0 to find the PDF?
 						if self.cmd_args.differentiate:
+							logging.log(DEBUG_PLUS,"Differentiating Minkowski 0 to get the PDF")
 							ens_split[0] = ens_split[0].differentiate(step=self.kappa_minkowski[0]-self.kappa_minkowski[1])
 
 						#Perform the convergence cut if option is enabled
