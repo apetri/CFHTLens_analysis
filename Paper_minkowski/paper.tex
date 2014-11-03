@@ -1,0 +1,154 @@
+%\documentclass[useAMS, usenatbib,usegraphicx,letter]{mn2e}
+%\documentclass[11pt]{article}
+\documentclass[reprint,aps,prd,superscriptaddress,showkeys]{revtex4-1}
+\usepackage{epsfig,amsmath,natbib}
+
+\usepackage{aas_macros}
+\usepackage{amssymb}
+ \usepackage{amsmath}
+ \usepackage{dsfont}
+ \usepackage{hyperref}
+ \usepackage{color}
+\hypersetup{
+	colorlinks=false,
+	citecolor=green
+}
+% \usepackage{graphicx}
+% \usepackage{epstopdf}
+% \usepackage{natbib}
+
+\begin{document}
+
+\title{CFHTLens Weak Lensing Emulator and Cosmological Constraints from the Minkowski Functionals and Moments}
+
+\author{Andrea Petri}
+\email{apetri@phys.columbia.edu}
+\affiliation{Department of Physics, Columbia University, New York, NY 10027, USA}
+\affiliation{Physics Department, Brookhaven National Laboratory, Upton, NY 11973, USA}
+
+\author{Jia Liu}
+\affiliation{Department of Astronomy, Columbia University, New York, NY 10027, USA}
+
+\author{Zolt\'an Haiman}
+\affiliation{Department of Astronomy, Columbia University, New York, NY 10027, USA}
+
+\author{Lam Hui}
+\affiliation{Department of Physics, Columbia University, New York, NY 10027, USA}
+
+\author{Jan M. Kratochvil}
+\affiliation{Astrophysics and Cosmology Research Unit, University of KwaZulu-Natal, Westville, Durban 4000, South Africa}
+
+\author{Morgan May}
+\affiliation{Physics Department, Brookhaven National Laboratory, Upton, NY 11973, USA}
+
+\date{\today}
+
+\label{firstpage}
+
+\begin{abstract}
+Weak lensing surveys have the potential... we consider CFHT \citep{CFHTFu}
+\end{abstract}
+
+\keywords{Weak Gravitational Lensing --- Data analysis --- Methods: analytical,numerical,statistical}
+
+\maketitle
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%% INTRO %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Introduction}
+In this work...
+
+%%%%%%%%%%%%%%%%%%%%%%%%%% DATA AND SIMULATIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Data and simulations}
+
+\subsection{CFHTLens data reduction}
+\subsection{Simulation design}
+\subsection{Ray Tracing Simulations}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%% METHODS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Statistical methods}
+The goal of this section is to describe the framework in which we combine the CFHT data and our simulations in order to derive the constraints on the cosmological parameters triplet $(\Omega_m,w,\sigma_8)$; we measure a set of statistical descriptors from the data and the simulations, which will then be compared in a bayesian fashion in order to compute parameter confidence intervals.
+
+\subsection{Descriptors}
+The statistical descriptors we consider on this work are the Minkowski Functionals (MFs) and the low order moments (LM) of the convergence field. The three MFs $(V_0,V_1,V_2)$ are topological descriptors of the convergence random field $\kappa(\pmb{\theta})$, which probe respectively the area, perimeter and genus characteristic of the $\kappa$ excursion sets $\Sigma_{\kappa_0}$, defined as $\Sigma_{\kappa_0}=\{\kappa>\kappa_0\}$. Following \citep{Petri2013,MinkJan} we use the following local estimators to measure the MFs from the $\kappa$ images
+%
+\begin{equation*}
+\label{v0meas}
+V_0(\kappa_0)=\frac{1}{A}\int_A\Theta(\kappa(\pmb{\theta})-\kappa_0)d\pmb{\theta},
+\end{equation*}
+\begin{equation}
+\label{v1meas}
+V_1(\kappa_0)=\frac{1}{4A}\int_A\delta(\kappa(\pmb{\theta})-\kappa_0)\sqrt{\kappa_x^2+\kappa_y^2}d\pmb{\theta},
+\end{equation}
+\begin{equation*}
+\label{v2meas}
+V_2(\kappa_0)=\frac{1}{2\pi A}\int_A\delta(\kappa(\pmb{\theta})-\kappa_0)\frac{2\kappa_x\kappa_y\kappa_{xy}-\kappa_x^2\kappa_{yy}-\kappa_y^2\kappa_{xx}}{\kappa_x^2+\kappa_y^2}d\pmb{\theta}.
+\end{equation*}
+%
+Where $A$ is the total area of the fields of view we have been using and the notation $\kappa_{x,y}$ indicates gradients of the $\kappa$ field, which we evaluate using finite differences. The first Minkowski functional, $V_0$, is equivalent to the cumulative one--point PDF of the $\kappa$ field, while $V_1,V_2$ are sensitive to the correlations between nearby pixels. In addition to these topological descriptors, we consider a set of low order moments (LM) of the convergence field (two quadratic, three cubic and four quartic), which are defined in the following way
+%
+\begin{equation}
+\begin{matrix}
+\mathrm{LM_2}: \sigma_{0,1}^2 = \langle\kappa^2\rangle,\langle\vert\nabla\kappa\vert^2\rangle, \\ \\
+\mathrm{LM_3}: S_{0,1,2} = \langle\kappa^3\rangle,\langle\kappa\vert\nabla\kappa\vert^2\rangle,\langle\kappa^2\nabla^2\kappa\rangle, \\ \\
+\mathrm{LM_4}: K_{0,1,2,3} = \langle\kappa^4\rangle,\langle\kappa^2\vert\nabla\kappa\vert^2\rangle,\langle\kappa^3\nabla^2\kappa\rangle,\langle\vert\nabla\kappa\vert^4\rangle.
+\end{matrix}
+\end{equation}
+%
+If the $\kappa$ field was Gaussian, one could express all the Minkowski Functionals in terms of the LM2 moments, as expected from the fact that, for a Gaussian field, the only meaningful statistics are the quadratic ones. In reality, weak lensing convergence fields, as the CFHTLens ones, are non--Gaussian and the MF and LM descriptors are in principle equivalent. \citep{Munshi12,Matsubara10} studied a perturbative expansion of the MF descriptors in powers of the field standard deviation $\sigma_0$, which, when truncated at order $O(\sigma_0^2)$, can be expressed completely in terms of the LM up to quartic order. Such perturbative series, however, have been shown not to converge in \citep{Petri2013} unless the weak lensing fields are smoothed with windows of size comparable to $\sim 15^\prime$. Because of this, throughout this work, we treat MF and LM as independent statistical descriptors. 
+
+\subsection{Cosmological parameter inferences}
+In this paragraph we give a brief outline of the statistical framework we adopted for computing the cosmological parameter confidence levels from the CFHTLens observations; we make use of the MF and LM statistical descriptors outlined in the previous paragraph. We refer to $M_i^r(\mathbf{p})$ as the measured descriptor from a realization $r$ of one of our simulations with a choice of cosmological parameters $\mathbf{p}$, and to $D_i$ as the measured descriptor from the CFHTLens data. In this notation, $i$ is an index that refers to the particular bin on which the descriptor is evaluated (for example $i$ can range from 0 to 9 for the LM statistic and from 0 to $N_b-1$ for a Minkowski Functional measured on $N_b$ different excursion sets). Once we make an assumption for the data likelihood $\mathcal{L}_d(D_i\vert \mathbf{p})$ and for the parameter priors $\Pi(\mathbf{p})$, we can use the Bayes theorem to compute the parameter likelihood $\mathcal{L}_p$ as follows
+
+\begin{equation}
+\label{parameterlikelihood}
+\mathcal{L}_p(\mathbf{p}\vert D_i) = \frac{\mathcal{L}_d(D_i\vert \mathbf{p})\Pi(\mathbf{p})}{N_{\mathcal{L}}}
+\end{equation}
+%
+where $N_{\mathcal{L}}$ is a $\mathbf{p}$--independent constant that ensures the proper normalization for $\mathcal{L}_p$; we make the usual assumption that the data likelihood $\mathcal{L}_d(D_i\vert \mathbf{p})$ is a Gaussian
+
+\begin{equation}
+\mathcal{L}_d(D_i\vert \mathbf{p}) \propto \exp{\left\{-\frac{1}{2}[\mathbf{D}-\mathbf{M(p)}]\mathbf{C}^{-1}[\mathbf{D}-\mathbf{M(p)}]\right\}}
+\end{equation} 
+%
+where the normalization constant $((2\pi)^{N_b}\det{\mathbf{C}})^{1/2}$ is parameter independent; the simulated descriptors $\mathbf{M(p)}$ are measured from an average over realizations
+\begin{equation}
+M_i(\mathbf{p}) = \frac{1}{R}\sum_{r=1}^R M_i^r 
+\end{equation}
+%
+and the covariance matrix 
+\begin{equation}
+C_{ij} = \frac{1}{R-1} \sum_{r=1}^R [M_i^r(\mathbf{p}_0)-M_i(\mathbf{p}_0)][M_j^r(\mathbf{p}_0)-M_j(\mathbf{p}_0)]
+\end{equation}
+%
+is measured from a simulation set based on 50 independent $N$--body simulations with parameters $\mathbf{p}_0=(0.26,-1.0,0.8)$ and is assumed to be model--independent. When computing parameter constraints from CFHTLens weak lensing data alone, we make a flat prior assumption for $\Pi(\mathbf{p})$. Parameter inferences are made estimating the location of the maximum of the parameter likelihood in (\ref{parameterlikelihood}), which we call $\mathbf{p}_{ML}(D_i)$ as well as its confidence contours. A $N\sigma$--confidence contour of $\mathcal{L}_p(\mathbf{p}\vert D_i)$ is defined to be the subset of points in parameter space on which the likelihood has a constant value $c_N$ and 
+\begin{equation}
+\int_{\mathcal{L}>c_N} \mathcal{L}_p(\mathbf{p}\vert D_i) d\mathbf{p} = \frac{1}{\sqrt{2\pi}}\int_{-N}^N dx e^{-x^2/2}
+\end{equation}
+%
+Given the low dimensionality of the parameter space we consider $(N_p=3)$ we are able to evaluate the parameter likelihood (\ref{parameterlikelihood}) on a finely spaced $100\times100\times100$ mesh within the prior window $\Pi(\mathbf{p})$, and hence we are able to evaluate the likelihood maximum $\mathbf{p}_{ML}(D_i)$ and the contour levels $c_N$ directly without the need to use more sophisticated MCMC methods.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%% RESULTS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Results}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%% DISCUSSION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Discussion}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%% CONCLUSIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Conclusions}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%% ACKNOWLEDGMENTS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ 
+
+\section*{Acknowledgements}
+We thank the Stampede cluster who saved our day
+
+\bibliography{ref}
+\label{lastpage}
+\end{document}
