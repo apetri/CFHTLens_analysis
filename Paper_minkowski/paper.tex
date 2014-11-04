@@ -82,7 +82,7 @@ This problem is mathematically equivalent to the minimization of the Coulomb pot
 \item We repeat steps 3 and 4 until the relative cost function change is less than a chosen accuracy parameter $\epsilon$ 
 \end{enumerate}
 %
-We found that for $N=91$ grid points, order of $10^5$ iterations are sufficient to reach an accuracy of $\epsilon\sim10^{-4}$; once the optimal design $\mathcal{D}_m$ has been found, we can invert the mapping $\Pi\rightarrow[0,1]^3$ to find our simulation parameter sampling $\mathbf{p}$, which we show in 
+We found that for $N=91$ grid points, order of $10^5$ iterations are sufficient to reach an accuracy of $\epsilon\sim10^{-4}$; once the optimal design $\mathcal{D}_m$ has been found, we can invert the mapping $\Pi\rightarrow[0,1]^3$ to find our simulation parameter sampling $\mathbf{p}_s$, which we show in 
 Figure \ref{designfig}.
 %
 \begin{figure*}
@@ -93,7 +93,7 @@ Figure \ref{designfig}.
 \end{center}
 \end{figure*}
 %
-For each parameter point on the grid $\mathbf{p}$ we run one $N$--body simulation and perform ray tracing through it, as described in \S~\ref{raysim}, to simulate CFHTLens shear catalogs; this set of simulations will be called CFHTemu1 throughout the rest of this work. Additionally, we run 50 independent $N$--body simulations with a \textit{fiducial} parameter choice $\mathbf{p}_0=(0.26,-1.0,0.8)$ for the purpose of measuring accurately the covariance matrices which will serve the parameter inferences as in \S-\ref{cosmostats}; this set of simulations will be called CFHTcov throughout the rest of this work.    
+For each parameter point on the grid $\mathbf{p}_s$ we run one $N$--body simulation and perform ray tracing through it, as described in \S~\ref{raysim}, to simulate CFHTLens shear catalogs; this set of simulations will be called CFHTemu1 throughout the rest of this work. Additionally, we run 50 independent $N$--body simulations with a \textit{fiducial} parameter choice $\mathbf{p}_0=(0.26,-1.0,0.8)$ for the purpose of measuring accurately the covariance matrices which will serve the parameter inferences as in \S-\ref{cosmostats}; this set of simulations will be called CFHTcov throughout the rest of this work.    
 \subsection{Ray Tracing Simulations}
 \label{raysim}
 
@@ -164,7 +164,12 @@ is measured from a simulation set based on 50 independent $N$--body simulations 
 \int_{\mathcal{L}>c_N} \mathcal{L}_p(\mathbf{p}\vert D_i) d\mathbf{p} = \frac{1}{\sqrt{2\pi}}\int_{-N}^N dx e^{-x^2/2}
 \end{equation}
 %
-Given the low dimensionality of the parameter space we consider $(N_p=3)$ we are able to evaluate the parameter likelihood (\ref{parameterlikelihood}) on a finely spaced $100\times100\times100$ mesh within the prior window $\Pi(\mathbf{p})$, and hence we are able to evaluate the likelihood maximum $\mathbf{p}_{ML}(D_i)$ and the contour levels $c_N$ directly without the need to use more sophisticated MCMC methods.
+Given the low dimensionality of the parameter space we consider $(N_p=3)$ we are able to evaluate the parameter likelihood (\ref{parameterlikelihood}) on a finely spaced $100\times100\times100$ mesh within the prior window $\Pi(\mathbf{p})$, and hence we are able to evaluate the likelihood maximum $\mathbf{p}_{ML}(D_i)$ and the contour levels $c_N$ directly without the need to use more sophisticated MCMC methods. We know how to evaluate the data likelihood (\ref{datalikelihood}) on the simulation grid $\mathbf{p}_s$, but more work needs to be done to interpolate $M_(\mathbf{p})$ at an arbitrary intermediate point; we decided to use a Radial Basis Function (RBF) interpolation scheme. We approximate the model descriptor as
+\begin{equation}
+M(\mathbf{p}) = \sum_{s=1}^N \lambda_s\phi(\vert\mathbf{p}-\mathbf{p}_s\vert)
+\end{equation}
+%
+where $\phi$ has been chosen as a multiquadric function $\phi(r)=\sqrt{1+(r/r_0)^2}$ with $r_0$ chosen as the mean euclidean distance between the points in the simulated grid $\mathbf{p}_s$. The constant coefficients $\lambda_s$ can be determined imposing the $N$ constraints $M(\mathbf{p}=\mathbf{p}_s)=M(\mathbf{p_s})$, which enforce the fact that the interpolation should be exact at the simulated points. The interpolation computations are conveniently performed using the Scipy library \citep{scipy} 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%% RESULTS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
