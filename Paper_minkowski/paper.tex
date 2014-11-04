@@ -46,7 +46,7 @@
 \label{firstpage}
 
 \begin{abstract}
-Weak lensing surveys have the potential... we consider CFHT \citep{CFHTFu}
+Weak lensing surveys have the potential... we consider CFHTLens \citep{CFHTFu}
 \end{abstract}
 
 \keywords{Weak Gravitational Lensing --- Data analysis --- Methods: analytical,numerical,statistical}
@@ -64,8 +64,38 @@ In this work...
 \section{Data and simulations}
 
 \subsection{CFHTLens data reduction}
+
 \subsection{Simulation design}
+In this paragraph we give a description of the method we used to sample the parameter space in our simulation effort. We wish to investigate the non--linear dependency of cosmological probes (in this work Minkowski Functionals and Moments of the $\kappa$ field) on the parameter triplet $\mathbf{p}=(\Omega_m,w,\sigma_8)$: in order to do this we sampled the $D$--dimensional ($D=3$ in this case) parameter space using an irregularly spaced grid, designed with a method similar to \citep{coyote2}. We limit the parameter sampling in a box of corners $\Omega_m\in[0.07,1],\,w\in[-3.0,0],\,\sigma_8\in[0.1,1.5]$ and we map this sampling box $\Pi$ into an hypercube of unit side; we want to contruct an irregularly spaced grid consisting of $N$ points $\mathbf{x}_i\in[0,1]^D$. Let a \textit{design} $\mathcal{D}$ be the set of this irregularly spaced $N$ points: we wish to find an optimal design, in which the points are spread as uniformly as possible inside the box. Following \citep{coyote2}, we choose our optimal design as the minimum of the cost function
+
+\begin{equation}
+\label{costfunction}
+d(\mathcal{D}) = \frac{2D^{1/2}}{N(N-1)}\sum_{i<j}^N\frac{1}{\vert\mathbf{x}_i-\mathbf{x}_j\vert}
+\end{equation} 
+%
+This problem is mathematically equivalent to the minimization of the Coulomb potential energy of $N$ unit charges in a unit box, which will make sure that the charges are as evenly spread as possible throughout the confining volume. Finding the optimal design $\mathcal{D}_m$ that minimized (\ref{costfunction}) can be computationally very demanding, and hence we decided to use a simplified approach that, although approximate, serves our purposes for the grid design. We use an iterative procedure:
+\begin{enumerate}
+\item We start from the diagonal design $\mathcal{D}_0$: $x_i^d\equiv i/(N-1)$
+\item We shuffle the coordinates of the particles in each dimension independently $x_i^d = \mathcal{P}_d\left(\frac{1}{N-1},\frac{2}{N-1},...,1\right)$ where $\mathcal{P}_1,...,\mathcal{P}_D$ are random independent permutations of $(1,2,...,N)$
+\item We pick a random particle pair $(i,j)$ and a random coordinate $d\in\{1,...,D\}$ and swap $x_i^d\leftrightarrow x_j^d$
+\item We compute the new cost function, if this is less than the previous step, we keep the exchange, otherwise we revert the coordinate swap
+\item We repeat steps 3 and 4 until the relative cost function change is less than a chosen accuracy parameter $\epsilon$ 
+\end{enumerate}
+%
+We found that for $N=91$ grid points, order of $10^5$ iterations are sufficient to reach an accuracy of $\epsilon\sim10^{-4}$; once the optimal design $\mathcal{D}_m$ has been found, we can invert the mapping $\Pi\rightarrow[0,1]^3$ to find our simulation parameter sampling $\mathbf{p}$, which we show in 
+Figure \ref{designfig}.
+%
+\begin{figure*}
+\begin{center}
+\includegraphics[scale=0.4]{Figures/design.eps}
+\caption{$(\Omega_m,w)$ and $(w,\sigma_8)$ projections of our the simulation design; the blue points correspond to the CFHTemu1 simulation set, which consists of one $N$--body simulation per point, while the red point corresponds to the CFHTcov simulation set, which is based on 50 independent $N$--body simulations}
+\label{designfig}
+\end{center}
+\end{figure*}
+%
+For each parameter point on the grid $\mathbf{p}$ we run one $N$--body simulation and perform ray tracing through it, as described in \S~\ref{raysim}, to simulate CFHTLens shear catalogs; this set of simulations will be called CFHTemu1 throughout the rest of this work. Additionally, we run 50 independent $N$--body simulations with a \textit{fiducial} parameter choice $\mathbf{p}_0=(0.26,-1.0,0.8)$ for the purpose of measuring accurately the covariance matrices which will serve the parameter inferences as in \S-\ref{cosmostats}; this set of simulations will be called CFHTcov throughout the rest of this work.    
 \subsection{Ray Tracing Simulations}
+\label{raysim}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%% METHODS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -101,6 +131,7 @@ Where $A$ is the total area of the fields of view we have been using and the not
 If the $\kappa$ field was Gaussian, one could express all the Minkowski Functionals in terms of the LM2 moments, as expected from the fact that, for a Gaussian field, the only meaningful statistics are the quadratic ones. In reality, weak lensing convergence fields, as the CFHTLens ones, are non--Gaussian and the MF and LM descriptors are in principle equivalent. \citep{Munshi12,Matsubara10} studied a perturbative expansion of the MF descriptors in powers of the field standard deviation $\sigma_0$, which, when truncated at order $O(\sigma_0^2)$, can be expressed completely in terms of the LM up to quartic order. Such perturbative series, however, have been shown not to converge in \citep{Petri2013} unless the weak lensing fields are smoothed with windows of size comparable to $\sim 15^\prime$. Because of this, throughout this work, we treat MF and LM as independent statistical descriptors. 
 
 \subsection{Cosmological parameter inferences}
+\label{cosmostats}
 In this paragraph we give a brief outline of the statistical framework we adopted for computing the cosmological parameter confidence levels from the CFHTLens observations; we make use of the MF and LM statistical descriptors outlined in the previous paragraph. We refer to $M_i^r(\mathbf{p})$ as the measured descriptor from a realization $r$ of one of our simulations with a choice of cosmological parameters $\mathbf{p}$, and to $D_i$ as the measured descriptor from the CFHTLens data. In this notation, $i$ is an index that refers to the particular bin on which the descriptor is evaluated (for example $i$ can range from 0 to 9 for the LM statistic and from 0 to $N_b-1$ for a Minkowski Functional measured on $N_b$ different excursion sets). Once we make an assumption for the data likelihood $\mathcal{L}_d(D_i\vert \mathbf{p})$ and for the parameter priors $\Pi(\mathbf{p})$, we can use the Bayes theorem to compute the parameter likelihood $\mathcal{L}_p$ as follows
 
 \begin{equation}
@@ -111,10 +142,14 @@ In this paragraph we give a brief outline of the statistical framework we adopte
 where $N_{\mathcal{L}}$ is a $\mathbf{p}$--independent constant that ensures the proper normalization for $\mathcal{L}_p$; we make the usual assumption that the data likelihood $\mathcal{L}_d(D_i\vert \mathbf{p})$ is a Gaussian
 
 \begin{equation}
-\mathcal{L}_d(D_i\vert \mathbf{p}) \propto \exp{\left\{-\frac{1}{2}[\mathbf{D}-\mathbf{M(p)}]\mathbf{C}^{-1}[\mathbf{D}-\mathbf{M(p)}]\right\}}
+\label{datalikelihood}
+\begin{matrix}
+\mathcal{L}_d(D_i\vert \mathbf{p}) = ((2\pi)^{N_b}\det{\mathbf{C}})^{-1/2} e^{-\frac{1}{2}\chi^2(D_i\vert \mathbf{p})} \\ \\
+\chi^2(D_i\vert \mathbf{p}) = \mathbf{(D - M(p))C^{-1}(D-M(p))}
+\end{matrix}
 \end{equation} 
 %
-where the normalization constant $((2\pi)^{N_b}\det{\mathbf{C}})^{1/2}$ is parameter independent; the simulated descriptors $\mathbf{M(p)}$ are measured from an average over realizations
+The simulated descriptors $\mathbf{M(p)}$ are measured from an average over realizations
 \begin{equation}
 M_i(\mathbf{p}) = \frac{1}{R}\sum_{r=1}^R M_i^r 
 \end{equation}
@@ -124,7 +159,7 @@ and the covariance matrix
 C_{ij} = \frac{1}{R-1} \sum_{r=1}^R [M_i^r(\mathbf{p}_0)-M_i(\mathbf{p}_0)][M_j^r(\mathbf{p}_0)-M_j(\mathbf{p}_0)]
 \end{equation}
 %
-is measured from a simulation set based on 50 independent $N$--body simulations with parameters $\mathbf{p}_0=(0.26,-1.0,0.8)$ and is assumed to be model--independent. When computing parameter constraints from CFHTLens weak lensing data alone, we make a flat prior assumption for $\Pi(\mathbf{p})$. Parameter inferences are made estimating the location of the maximum of the parameter likelihood in (\ref{parameterlikelihood}), which we call $\mathbf{p}_{ML}(D_i)$ as well as its confidence contours. A $N\sigma$--confidence contour of $\mathcal{L}_p(\mathbf{p}\vert D_i)$ is defined to be the subset of points in parameter space on which the likelihood has a constant value $c_N$ and 
+is measured from a simulation set based on 50 independent $N$--body simulations with parameters $\mathbf{p}_0=(0.26,-1.0,0.8)$ and is assumed to be model--independent; because of this the normalization constant in (\ref{datalikelihood}) is also model--independent. When computing parameter constraints from CFHTLens weak lensing data alone, we make a flat prior assumption for $\Pi(\mathbf{p})$. Parameter inferences are made estimating the location of the maximum of the parameter likelihood in (\ref{parameterlikelihood}), which we call $\mathbf{p}_{ML}(D_i)$ as well as its confidence contours. A $N\sigma$--confidence contour of $\mathcal{L}_p(\mathbf{p}\vert D_i)$ is defined to be the subset of points in parameter space on which the likelihood has a constant value $c_N$ and 
 \begin{equation}
 \int_{\mathcal{L}>c_N} \mathcal{L}_p(\mathbf{p}\vert D_i) d\mathbf{p} = \frac{1}{\sqrt{2\pi}}\int_{-N}^N dx e^{-x^2/2}
 \end{equation}
