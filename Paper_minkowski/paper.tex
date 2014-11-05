@@ -94,8 +94,22 @@ Figure \ref{designfig}.
 \end{figure*}
 %
 For each parameter point on the grid $\mathbf{p}_s$ we run one $N$--body simulation and perform ray tracing through it, as described in \S~\ref{raysim}, to simulate CFHTLens shear catalogs; this set of simulations will be called CFHTemu1 throughout the rest of this work. Additionally, we run 50 independent $N$--body simulations with a \textit{fiducial} parameter choice $\mathbf{p}_0=(0.26,-1.0,0.8)$ for the purpose of measuring accurately the covariance matrices which will serve the parameter inferences as in \S-\ref{cosmostats}; this set of simulations will be called CFHTcov throughout the rest of this work.    
+
 \subsection{Ray Tracing Simulations}
 \label{raysim}
+The goal of this paragraph is to give an outline of our simulation pipeline; the fluctuations in the dark matter density field between a source at redshift $z$ and an observer located on Earth will cause small deflections to the trajectories of light rays travelling from the source to the observer. The fluctuations in the dark matter field are described by their gravitational potential $\Phi(\mathbf{x},z)=\Phi(\mathbf{x}_\perp,w(z))$, where we can trade the physical coordinates $\mathrm{x}$ with the comoving distance from the observer $w$ and two transverse coordinates $\mathbf{x}_\perp=w\pmb{\beta}$ using the flat sky approximation. Here $\pmb{\beta}$ refers to the angular coordinate on the sky of a physical point $\mathbf{x}$, as seen from the observer. We estimate the dark matter gravitational potential running $N$--body simulations (with $N=512^3$) with the public code Gadget2 \citep{Gadget2}, using a comoving box size of $240h^{-1}$Mpc. Using a similar procedure as in \citep{RayTracingJain,RayTracingHartlap}, the equation that governs the light ray deflections can be written in the form
+\begin{equation}
+\label{raytrajectory}
+\frac{d^2\mathbf{x}(w)}{dw^2} = -\frac{2}{c^2}\nabla_{\mathbf{x}_\perp}\Phi(\mathbf{x}_\perp(w),w)
+\end{equation}
+%
+where $\mathbf{x}(w)$ is the trajectory of a single light ray. Suppose that a light ray reaches the observer at an angular position $\pmb{\theta}$ on the sky: we want to know where this light ray originated, knowing it comes from a redshift $z_s$. To answer this question we need to integrate equation (\ref{raytrajectory}) with the initial conditions $\pmb{\beta}(0;\pmb{\theta})=\pmb{\theta}$, $\dot{\pmb{\beta}}(0;\pmb{\theta})=0$ up to a distance $w_s=w(z_s)$ to obtain the source angular position $\pmb{\beta}(w_s;\pmb{\theta})$; for the light ray trajectory solver, based on equation (\ref{raytrajectory}), we use our proprietary implementation Inspector Gadget. Once we know the details of the light ray trajectories, we can easily infer the weak lensing interesting quantities by taking the angular derivatives of the ray deflections $A(w_s;\pmb{\theta}) = \partial \pmb{\beta}(w_s;\pmb{\theta})/\partial\pmb{\theta}$ and performing the usual spin decomposition to infer the convergence $\kappa$ and the shear components $(\gamma_1,\gamma_2)$
+%
+\begin{equation}
+A(w_s;\pmb{\theta}) = (1-\kappa(w_s;\pmb{\theta}))\pmb{I} - \gamma_1(w_s;\pmb{\theta})\sigma_3 - \gamma_2(w_s;\pmb{\theta})\sigma_1
+\end{equation}  
+%
+where $\pmb{I}$ is the $2\times2$ identity and $\sigma_{1,3}$ are the first and third Pauli matrices. $\kappa$ is related to the source apparent magnification, while $(\gamma_1,\gamma_2)$ are related to the source apparent ellipticity, as seen from the observer. 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%% METHODS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
