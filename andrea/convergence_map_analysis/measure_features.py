@@ -91,12 +91,12 @@ def cfht_convergence_measure_all(filename,index,mask_filename):
 	logging.debug("Processing {0}".format(filename))
 
 	#Load the map
-	conv_map = ConvergenceMap.fromfilename(filename,loader=cfht_fits_loader)
+	conv_map = ConvergenceMap.load(filename,format=cfht_fits_loader)
 
 	if mask_filename is not None:
 		
 		#Load the mask
-		mask_profile = ConvergenceMap.fromfilename(mask_filename,loader=cfht_fits_loader)
+		mask_profile = ConvergenceMap.load(mask_filename,format=cfht_fits_loader)
 		logging.debug("Loading mask from {0}".format(mask_filename))
 		#Mask the map
 		masked_conv_map = conv_map.mask(mask_profile)
@@ -197,7 +197,7 @@ class Measurement(object):
 	def maskedFraction(self):
 
 		if "mask_filename" in self.kwargs.keys():
-			mask_profile = Mask.fromfilename(self.kwargs["mask_filename"],loader=cfht_fits_loader)
+			mask_profile = Mask.load(self.kwargs["mask_filename"],format=cfht_fits_loader)
 			return mask_profile.maskedFraction
 		else:
 			return 0.0
