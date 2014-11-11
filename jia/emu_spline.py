@@ -3030,37 +3030,21 @@ if theory_powspec_err_brute:
 
 
 ############ next block count unique numbers in the fourier space
-#n = 509#512
-#F = fftshift(fftpack.fft2(rand(n,n)))
-#psd2D = np.abs(F)**2
 
-#y, x = np.indices(image.shape)
-#if not center:
-	#center = np.array([(x.max()-x.min())/2.0, (x.max()-x.min())/2.0])
-#r = np.hypot(x - center[0], y - center[1])#distance to center pixel, for each pixel
-
-## Get sorted radii
-#ind = np.argsort(r.flat)
-#r_sorted = r.flat[ind] # the index to sort by r
-#i_sorted = image.flat[ind] # the index of the images sorted by r
-
-## find index that's corresponding to the lower edge of each bin
-#kmin=1.0
-#kmax=image.shape[0]/2.0
-#if edges == None:
-	#if logbins:
-		#edges = logspace(log10(kmin),log10(kmax),bins+1)
-	#else:
-		##edges = linspace(kmin,kmax+0.001,bins+1)	
-		#edges = linspace(kmin,kmax,bins+1)
-#if edges[0] > 0:
-	#edges = append([0],edges)
+def find_unique_N (n):
+	y, x = np.indices((n,n))
+	center = np.array([(x.max()-x.min())/2.0, (x.max()-x.min())/2.0])
+	if n%2 == 0:
+		center+=0.5
+	r = np.hypot(x - center[0], y - center[1])#distance to center pixel, for each pixel
+	r_sorted = r.flat[ind] # the index to sort by r
 	
-#hist_ind = np.histogram(r_sorted,bins = edges)[0] # hist_ind: the number in each ell bins, sum them up is the index of lower edge of each bin, first bin spans from 0 to left of first bin edge.	
-#hist_sum = np.cumsum(hist_ind)
-#csim = np.cumsum(i_sorted, dtype=float)
-#tbin = csim[hist_sum[1:]] - csim[hist_sum[:-1]]
-#print [len(unique(i_sorted[hist_sum[i]:hist_sum[i+1]])) for i in range(len(hist_sum)-1)]
-#radial_prof = tbin/hist_ind[1:]
+	# find index that's corresponding to the lower edge of each bin
+	kmin=1.0
+	kmax=image.shape[0]/2.0
+	edges = logspace(log10(kmin),log10(kmax),bins+1)
+	edges = append([0],edges)		
+	hist_ind = np.histogram(r_sorted,bins = edges)[0]
+	return hist_ind[1:]
 ##############################################
 N_unique = array([0, 0, 0, 0, 8, 0, 4, 0, 8, 8, 0, 12, 8, 16, 20, 24, 27, 24, 44, 48, 76, 75, 114, 123, 164, 200, 248, 295, 402, 468, 598, 749, 925, 1168, 1433, 1815, 2249, 2826, 3542, 4377, 5503, 6833, 8564, 10641, 13307, 16588, 20743, 25858, 32280, 40367])[11:]
