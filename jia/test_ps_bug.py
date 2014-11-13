@@ -88,7 +88,7 @@ cat_fcn = lambda r: (WLanalysis.readFits('/home1/02977/jialiu/cov_cat/emulator_s
 
 y, x, e1, e2, w, m = WLanalysis.readFits('/scratch/02977/jialiu/KSsim/yxewm_subfield1_zcut0213.fit').T
 
-mask = '/scratch/02977/jialiu/KSsim/mask/CFHT_mask_ngal5_sigma05_subfield01.fits'
+mask = WLanalysis.readFits('/scratch/02977/jialiu/KSsim/mask/CFHT_mask_ngal5_sigma05_subfield01.fits')
 
 def createKS (r=None, sigmaG = 0.5*PPA512):
 	if r == None:
