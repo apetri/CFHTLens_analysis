@@ -97,7 +97,7 @@ def createKS (r=None, sigmaG = 0.5*PPA512):
 		k, s1, s2 = cat_fcn(r)
 		eint1, eint2 = s1, s2
 	A, galn = WLanalysis.coords2grid(x, y, array([eint1, eint2]))
-	Ms1, Ms2 = A
+	Me1, Me2 = A
 	Me1_smooth = WLanalysis.smooth(Me1, sigmaG=sigmaG)
 	Me2_smooth = WLanalysis.smooth(Me2, sigmaG=sigmaG)
 	kmap = WLanalysis.KSvw(Me1_smooth, Me2_smooth)
