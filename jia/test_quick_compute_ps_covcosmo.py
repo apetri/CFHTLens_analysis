@@ -19,7 +19,8 @@ Mask_fcn = lambda i: WLanalysis.readFits('/scratch/02977/jialiu/KSsim/mask/BAD_C
 
 mask_arr = map(Mask_fcn, range(1,14))
 
-kmap_fcn = lambda i, r: WLanalysis.readFits('/home1/02977/jialiu/KSsim/cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800/subfield%i/sigma05/SIM_KS_sigma05_subfield1_WL-only_cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800_4096xy_%04dr.fit'%(i,r))*mask_arr[i-1]
+kmap_fcn = lambda i, r: WLanalysis.readFits('/home1/02977/jialiu/KSsim/cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800/subfield%i/sigma05/SIM_KS_sigma05_subfield%i_WL-only_cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800_4096xy_%04dr.fit'%(i,i,r))*mask_arr[i-1]
+
 
 ps_gen = lambda i, r: WLanalysis.PowerSpectrum(kmap_fcn(i, r), sizedeg=12.0)[-1]
 ##ps_allfield_gen = lambda r: sum(array([[ps_gen(i, r)] for i in range(1,14)]).squeeze(),axis=0)/fsky_sum
