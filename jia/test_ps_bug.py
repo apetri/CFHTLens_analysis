@@ -92,8 +92,10 @@ y, x, e1, e2, w, m = WLanalysis.readFits('/scratch/02977/jialiu/KSsim/yxewm_subf
 
 mask = WLanalysis.readFits('/scratch/02977/jialiu/KSsim/mask/CFHT_mask_ngal5_sigma05_subfield01.fits')
 
-def createKS (r=None, sigmaG = 0.5*PPA512):
-	if r == None:
+def createKS (r, sigmaG = 0.5*PPA512):
+	print r
+	if r >1000:
+		np.random.seed(r)
 		eint1, eint2 = WLanalysis.rndrot(e1, e2)
 	else:
 		k, s1, s2 = cat_fcn(r)
@@ -109,6 +111,9 @@ def createKS (r=None, sigmaG = 0.5*PPA512):
 	return ps_bug, ps_correct
 	
 pool = MPIPool()
-#noise_ps = pool.map(createKS, [None,]*1000)
-#signal_ps = pool.map(createKS, range(1,1001))
+noise_ps = array(pool.map(createKS, range(2001,3001)))
+np.save('/home1/02977/jialiu/tests/noise_ps',noise_ps)
+
+signal_ps = array(pool.map(createKS, range(1,1001)))
+np.save('/home1/02977/jialiu/tests/signal_ps',signal_ps)
 
