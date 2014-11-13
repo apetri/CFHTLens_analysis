@@ -14,6 +14,7 @@ import WLanalysis
 import matplotlib.gridspec as gridspec 
 import scipy.ndimage as snd
 from emcee.utils import MPIPool
+from scipy.fftpack import fftfreq, fftshift
 
 def azimuthalAverage(image, center = None, edges = None, logbins = True, bins = 50, bug = False):
 	"""
@@ -73,7 +74,7 @@ def PowerSpectrum(img, sizedeg = 12.0, edges = None, logbins = True, bug = False
 	img = img.astype(float)
 	size = img.shape[0]
 	#F = fftpack.fftshift(fftpack.fft2(img))
-	F = np.fft.fftshift(fftpack.fft2(img))
+	F = fftshift(fftpack.fft2(img))
 	psd2D = np.abs(F)**2
 	ell_arr, psd1D = azimuthalAverage(psd2D, center=None, edges = edges,logbins = logbins, bug = bug)
 	ell_arr = edge2center(ell_arr)
