@@ -98,8 +98,8 @@ def createKS (r=None, sigmaG = 0.5*PPA512):
 		eint1, eint2 = s1, s2
 	A, galn = WLanalysis.coords2grid(x, y, array([eint1, eint2]))
 	Me1, Me2 = A
-	Me1_smooth = WLanalysis.smooth(Me1, sigmaG=sigmaG)
-	Me2_smooth = WLanalysis.smooth(Me2, sigmaG=sigmaG)
+	Me1_smooth = WLanalysis.smooth(Me1, sigmaG)
+	Me2_smooth = WLanalysis.smooth(Me2, sigmaG)
 	kmap = WLanalysis.KSvw(Me1_smooth, Me2_smooth)
 	kmap *= mask
 	ps_bug = PowerSpectrum(kmap, bug = True)[-1]
