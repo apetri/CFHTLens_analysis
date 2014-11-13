@@ -78,7 +78,7 @@ correlation_matrix = 0
 ps_from_2pcf = 0
 std_converge = 0
 theory_powspec_err = 0
-theory_powspec_err_brute = 1
+theory_powspec_err_brute = 0
 
 cosmo_labels = [r'${\rm\Omega_m}$',r'$\rm{w}$',r'${\rm\sigma_8}$']
 
