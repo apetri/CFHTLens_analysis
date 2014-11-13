@@ -15,6 +15,7 @@ import matplotlib.gridspec as gridspec
 import scipy.ndimage as snd
 from emcee.utils import MPIPool
 from scipy.fftpack import fftfreq, fftshift
+from scipy import interpolate, stats, fftpack
 
 def azimuthalAverage(image, center = None, edges = None, logbins = True, bins = 50, bug = False):
 	"""
