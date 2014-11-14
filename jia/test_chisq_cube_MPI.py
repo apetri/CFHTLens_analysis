@@ -63,8 +63,10 @@ def plot_heat_map_w (w):
 			heatmap[i,j] = chisq
 	return heatmap
 pool = MPIPool()
-chisq_cube = array(pool.map(plot_heat_map_w, w_arr))
+chisq_cube = pool.map(plot_heat_map_w, w_arr)
 if cut7000 <39:
-	np.save(test_dir+'%s_chisqcube_ps_ell7000.npy'%(BG))
+	np.save(test_dir+'%s_chisqcube_ps_ell7000'%(BG), array(chisq_cube).reshape(-1))
 else:
-	np.save(test_dir+'%s_chisqcube_ps.npy'%(BG))
+	np.save(test_dir+'%s_chisqcube_ps'%(BG), array(chisq_cube).reshape(-1))
+
+print 'done'
