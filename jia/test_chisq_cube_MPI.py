@@ -3,7 +3,9 @@
 # compute chisq cube
 # run with:
 # ibrun python test_chisq_cube_MPI.py ALL 100
+# ibrun python test_chisq_cube_MPI.py ALL 27
 # ibrun python test_chisq_cube_MPI.py BAD 27
+# ibrun python test_chisq_cube_MPI.py BAD 100
 
 import numpy as np
 from scipy import *
@@ -21,11 +23,13 @@ test_dir = '/home1/02977/jialiu/ps_chisq_compute/'
 cosmo_params = genfromtxt(test_dir+'cosmo_params.txt')
 m, w, s = cosmo_params.T
 
-#w_arr = linspace(0,-3,3)
-l,ll = 100,102
+w_arr = linspace(0,-3,3)
+l,ll=5,5
+#w_arr = linspace(0,-3,101)
+#l,ll = 100,102
 om_arr = linspace(0,1.2,l)
 si8_arr = linspace(0,1.6,ll)
-w_arr = linspace(0,-3,101)
+
 
 	
 ps_CFHT = np.load(test_dir+'%s_ps_CFHT.npy'%(BG))[:cut7000]
