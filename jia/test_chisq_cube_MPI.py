@@ -11,6 +11,7 @@ from scipy import interpolate
 import os
 import WLanalysis
 from emcee.utils import MPIPool
+import sys
 
 #ell_7000 = ell_arr[:27]
 BG = str(sys.argv[1])
