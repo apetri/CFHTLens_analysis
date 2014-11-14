@@ -15,7 +15,8 @@ fsky = array([0.800968170166,0.639133453369,0.686164855957,0.553855895996,
 #ratio /= fsky/sum(fsky)
 fsky_sum = sum(fsky)
 
-Mask_fcn = lambda i: WLanalysis.readFits('/scratch/02977/jialiu/KSsim/mask/BAD_CFHT_mask_ngal5_sigma05_subfield%02d.fits'%(i))
+#Mask_fcn = lambda i: WLanalysis.readFits('/scratch/02977/jialiu/KSsim/mask/BAD_CFHT_mask_ngal5_sigma05_subfield%02d.fits'%(i))
+Mask_fcn = lambda i: WLanalysis.readFits('/scratch/02977/jialiu/KSsim/mask/CFHT_mask_ngal5_sigma05_subfield%02d.fits'%(i))
 
 mask_arr = map(Mask_fcn, range(1,14))
 
@@ -30,4 +31,4 @@ def ps_allfield_gen(r):
 
 pool = MPIPool()
 all_ps = pool.map(ps_allfield_gen, range(1,1001))
-np.save('/home1/02977/jialiu/KSsim/cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800/ps_sum',all_ps)
+np.save('/home1/02977/jialiu/KSsim/cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800/BAD_ps_sum',all_ps)

@@ -80,6 +80,8 @@ std_converge = 0
 theory_powspec_err = 0
 theory_powspec_err_brute = 0
 
+####################################################
+
 cosmo_labels = [r'${\rm\Omega_m}$',r'$\rm{w}$',r'${\rm\sigma_8}$']
 
 kmin = -0.04 # lower bound of kappa bin = -2 SNR
@@ -1372,6 +1374,11 @@ if single_interpolation_fidu99:
 
 if chisq_heat_map:
 	print 'sigmaG',sigmaG
+	
+	### 11/13/2014 use new covariance after ps bug fixed
+	cov_mat = np.load('/Users/jia/Documents/weaklensing/CFHTLenS/emulator/test_ps_bug/cov_ps_bugfix.npy')
+	cov_inv = mat(cov_mat).I
+	
 	#from multiprocessing import Pool
 	#p = Pool(101)
 	obs = ps_CFHT
@@ -1454,7 +1461,9 @@ if chisq_heat_map:
 		cube_fn = emu_dir+'chisq_cube_CFHT_ps.fit'
 	if ps_remove_4bins:
 		cube_fn = cube_fn[:-4]+'ellcut%i_%i.fit'%(i0,i1)
-	WLanalysis.writeFits(chisq_cube.reshape(-1), cube_fn)
+	#WLanalysis.writeFits(chisq_cube.reshape(-1), cube_fn)
+	### 11/13/2014 use new covariance after ps bug fixed
+	np.save('/Users/jia/Documents/weaklensing/CFHTLenS/emulator/test_ps_bug/chisq_cube_CFHT_ps',chisq_cube.reshape(-1))
 
 def findmodes(image, logbins = True, bins = 50):
 	"""
@@ -2998,10 +3007,10 @@ def rndN(iseed=0):
 if theory_powspec_err_brute:
 	
 	def randmapGen(iseed):
-	seed(iseed)
-	kmap = np.random.normal(loc=0, scale=0.3, size=1330**2).reshape(1330,1330)
-	ps = WLanalysis.PowerSpectrum(kmap)[-1]
-	return ps
+		seed(iseed)
+		kmap = np.random.normal(loc=0, scale=0.3, size=1330**2).reshape(1330,1330)
+		ps = WLanalysis.PowerSpectrum(kmap)[-1]
+		return ps
 
 	N_sim = array([   12,     8,    16,    20,    24,    28,    24,    44,    48, 76,    76,   116,   124,   164,   200,   252,   296,   408,
          472,   608,   756,   936,  1184,  1460,  1840,  2284,  2860,
@@ -3047,6 +3056,6 @@ def find_unique_N (n):
 	hist_ind = np.histogram(r_sorted,bins = edges)[0]
 	if n%2 == 0:
 		N_indep = hist_ind[1:] + (edges[2:]-edges[1:-1])
-	return 
+	return N_indep/2
 ##############################################
 N_unique = array([0, 0, 0, 0, 8, 0, 4, 0, 8, 8, 0, 12, 8, 16, 20, 24, 27, 24, 44, 48, 76, 75, 114, 123, 164, 200, 248, 295, 402, 468, 598, 749, 925, 1168, 1433, 1815, 2249, 2826, 3542, 4377, 5503, 6833, 8564, 10641, 13307, 16588, 20743, 25858, 32280, 40367])[11:]
