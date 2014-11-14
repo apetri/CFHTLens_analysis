@@ -34,7 +34,8 @@ si8_arr = linspace(0,1.6,ll)
 	
 ps_CFHT = np.load(test_dir+'%s_ps_CFHT.npy'%(BG))[:cut7000]
 ps_fidu_mat = np.load(test_dir+'%s_ps_fidu39.npy'%(BG))[:,:cut7000]
-ps_avg = np.load(test_dir+'%s_avg_ps.npy'%(BG))
+ps_avg = np.load(test_dir+'%s_avg_ps.npy'%(BG))[:,:cut7000]
+
 cov_mat = cov(ps_fidu_mat,rowvar=0)
 cov_inv = mat(cov_mat).I
 obs = ps_CFHT
