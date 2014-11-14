@@ -11,8 +11,8 @@ from emcee.utils import MPIPool
 
 #ell_7000 = ell_arr[:27]
 
-#test_dir = '/home1/02977/jialiu/ps_chisq_compute/'
-test_dir = '/Users/jia/Documents/weaklensing/CFHTLenS/emulator/test_ps_bug/'
+test_dir = '/home1/02977/jialiu/ps_chisq_compute/'
+#test_dir = '/Users/jia/Documents/weaklensing/CFHTLenS/emulator/test_ps_bug/'
 cosmo_params = genfromtxt(test_dir+'cosmo_params.txt')
 m, w, s = cosmo_params.T
 
