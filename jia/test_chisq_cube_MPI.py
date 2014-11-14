@@ -24,8 +24,8 @@ m, w, s = cosmo_params.T
 l,ll = 100,102
 om_arr = linspace(0,1.2,l)
 si8_arr = linspace(0,1.6,ll)
-w_arr = linspace(0,-3,101)
-
+#w_arr = linspace(0,-3,101)
+w_arr = linspace(0,-3,3)
 	
 ps_CFHT = np.load(test_dir+'%s_ps_CFHT.npy'%(BG))[:cut7000]
 ps_fidu_mat = np.load(test_dir+'%s_ps_fidu39.npy'%(BG))[:,:cut7000]
