@@ -46,7 +46,7 @@
 \label{firstpage}
 
 \begin{abstract}
-Weak lensing surveys have the potential... we consider CFHTLens \citep{CFHTFu}
+Weak lensing surveys have the potential... we consider CFHTLens \citep{CFHTKilbinger,CFHTFu}
 \end{abstract}
 
 \keywords{Weak Gravitational Lensing --- Data analysis --- Methods: analytical,numerical,statistical}
@@ -64,9 +64,32 @@ In this work...
 \section{Data and simulations}
 
 \subsection{CFHTLens data reduction}
+\label{cfhtdatareduction}
+%
+The CFHTLens survey covers four sky patches of 64,23,44 and 23 deg$^2$ area, for a total of 154 deg$^2$; the publicly released data roughly consist of the creation of a galaxy catalogue using SExtractor \citep{SExtractor}, a photometric redshift estimation with a Bayesian photometric redshift code \citep{PhotoCode} and galaxy shape measurements with \textit{lensfit} \citep{cfht1,cfht2}. The cosmological parameter inferences have been obtained in \citep{CFHTKilbinger} using the two point correlation function (2PCF). We apply the following cuts to the galaxy catalogue: mask$<1$, redshift $0.2 < z < 1.3$, fitclass = 0 (which requires the object to be a galaxy) and weight $w>0$ (with larger $w$ indicating smaller shear measurement uncertainty). Applying these cuts leaves us 4.2$\times10^6$ galaxies, 124.7 deg$^2$ residual sky coverage, and average number density $n_{gal} \approx 9.3\,\mathrm{arcmin}^{-2}$. The CFHTLens galaxy catalogue provides us with the sky position $\pmb{\theta}$, the redshift $z(\pmb{\theta})$ and ellipticity $\mathbf{e}(\pmb{\theta})$ of eack galaxy, as well as the individual weight factors $w(\pmb{\theta})$ and additive and multiplicative ellipticity corrections $c(\pmb{\theta}),m(\pmb{\theta})$. Because the CFHTLenS fields are irregularly shaped, we first divide them into 13 squares (subfields) to match the shape and $\approx12$ deg$^2$ size of our simulated maps; these square subfield maps are pixelized according to a Gaussian gridding procedure
+\begin{equation}
+\bar{\mathbf{e}}(\pmb{\theta}) = \frac{\sum_{i=1}^{N_s} W(\vert\pmb{\theta}-\pmb{\theta}_i\vert)w(\pmb{\theta}_i)[\mathbf{e}^{obs}(\pmb{\theta}_i)-c(\pmb{\theta}_i)]}{\sum_{i=1}^{N_s}W(\vert\pmb{\theta}-\pmb{\theta}_i\vert)w(\pmb{\theta}_i)[1+m(\pmb{\theta})]}
+\end{equation} 
+\begin{equation}
+\label{gausskernel}
+W_{\theta_G}(\pmb{\theta}) = \frac{1}{2\pi\theta_G^2}\exp{\left(-\frac{\pmb{\theta}^2}{2\theta_G^2}\right)}
+\end{equation}
+%
+where the smoothing kernel $W_{\theta_G}$ has been varied choosing from the set $(0.5,1.0,1.8,3.5,5.3,8.9)\,$arcmin; the multiplicative and additive corrections $m,c$ related the observed and true ellipticities of the galaxies in the catalogue
+\begin{equation}
+\mathbf{e}^{obs} = (1+m)\mathbf{e}^{true} + c
+\end{equation}
+%
+Using the ellipticity grid $\bar{\mathbf{e}}(\pmb{\theta})$ as an estimator for the cosmic shear $\gamma^{1,2}(\pmb{\theta})$, we can perform a non--local Kaiser--Squires inversion to recover the convergence $\kappa(\pmb{\theta})$ from the $E$--mode of the shear field
+%
+\begin{equation}
+\kappa(\mathbf{l}) = \left(\frac{l_1^2-l_2^2}{l_1^2+l_2^2}\right)\gamma^1(\mathbf{l}) + 2\frac{l_1l_2}{l_1^2+l_2^2}\gamma^2(\mathbf{l})
+\end{equation}
+%
+The CFHTLens catalogues contain masked regions (mainly due to bright stars and incorrect PSF subtraction); these regions with low galaxy number density can induce large errors in the cosmological parameter inferences, hence they need to be masked out. We first create grided maps of the same size and resolution as the $\kappa$ maps, but with each pixel containing the number of galaxies ($n_{gal}$) falling within its window. We then smooth this galaxy surface density map with the same Gaussian window function as equation (\ref{gausskernel}) and we remove regions where $n_{gal} < 5 \,\mathrm{arcmin}^{−2}$ (see \citep{CFHTMasato}); for a more throughout description of our data reduction procedure, we refer the reader to our companion paper \citep{Companion}. 
 
 \subsection{Simulation design}
-In this paragraph we give a description of the method we used to sample the parameter space in our simulation effort. We wish to investigate the non--linear dependency of cosmological probes (in this work Minkowski Functionals and Moments of the $\kappa$ field) on the parameter triplet $\mathbf{p}=(\Omega_m,w,\sigma_8)$: in order to do this we sampled the $D$--dimensional ($D=3$ in this case) parameter space using an irregularly spaced grid, designed with a method similar to \citep{coyote2}. We limit the parameter sampling in a box of corners $\Omega_m\in[0.07,1],\,w\in[-3.0,0],\,\sigma_8\in[0.1,1.5]$ and we map this sampling box $\Pi$ into an hypercube of unit side; we want to contruct an irregularly spaced grid consisting of $N$ points $\mathbf{x}_i\in[0,1]^D$. Let a \textit{design} $\mathcal{D}$ be the set of this irregularly spaced $N$ points: we wish to find an optimal design, in which the points are spread as uniformly as possible inside the box. Following \citep{coyote2}, we choose our optimal design as the minimum of the cost function
+In this paragraph we give a description of the method we used to sample the parameter space in our simulation effort. We wish to investigate the non--linear dependency of cosmological probes (in this work Minkowski Functionals and Moments of the $\kappa$ field) on the parameter triplet $\mathbf{p}=(\Omega_m,w,\sigma_8)$, while keeping fixed the other relevant parameters to $(h,\Omega_b,n_s)$ to their fiducial values (0.7,0.046,0.96). We sampled the $D$--dimensional ($D=3$ in this case) parameter space using an irregularly spaced grid, designed with a method similar to \citep{coyote2}. We limit the parameter sampling in a box of corners $\Omega_m\in[0.07,1],\,w\in[-3.0,0],\,\sigma_8\in[0.1,1.5]$ and we map this sampling box $\Pi$ into an hypercube of unit side; we want to contruct an irregularly spaced grid consisting of $N$ points $\mathbf{x}_i\in[0,1]^D$. Let a \textit{design} $\mathcal{D}$ be the set of this irregularly spaced $N$ points: we wish to find an optimal design, in which the points are spread as uniformly as possible inside the box. Following \citep{coyote2}, we choose our optimal design as the minimum of the cost function
 
 \begin{equation}
 \label{costfunction}
@@ -129,27 +152,47 @@ For each parameter point on the grid $\mathbf{p}_s$ we run one $N$--body simulat
 
 \subsection{Ray Tracing Simulations}
 \label{raysim}
-The goal of this paragraph is to give an outline of our simulation pipeline; the fluctuations in the dark matter density field between a source at redshift $z$ and an observer located on Earth will cause small deflections to the trajectories of light rays travelling from the source to the observer. The fluctuations in the dark matter field are described by their gravitational potential $\Phi(\mathbf{x},z)=\Phi(\mathbf{x}_\perp,w(z))$, where we can trade the physical coordinates $\mathrm{x}$ with the comoving distance from the observer $w$ and two transverse coordinates $\mathbf{x}_\perp=w\pmb{\beta}$ using the flat sky approximation. Here $\pmb{\beta}$ refers to the angular coordinate on the sky of a physical point $\mathbf{x}$, as seen from the observer. We estimate the dark matter gravitational potential running $N$--body simulations (with $N=512^3$) with the public code Gadget2 \citep{Gadget2}, using a comoving box size of $240h^{-1}$Mpc. Using a similar procedure as in \citep{RayTracingJain,RayTracingHartlap}, the equation that governs the light ray deflections can be written in the form
+The goal of this paragraph is to give an outline of our simulation pipeline; the fluctuations in the dark matter density field between a source at redshift $z$ and an observer located on Earth will cause small deflections to the trajectories of light rays travelling from the source to the observer. The fluctuations in the dark matter field are described by their gravitational potential $\Phi(\mathbf{x},z)=\Phi(\mathbf{x}_\perp,w(z))$, where we can trade the physical coordinates $\mathrm{x}$ with the comoving distance from the observer $w$ (not to be confused with the weight factor in \S\ref{cfhtdatareduction}) and two transverse coordinates $\mathbf{x}_\perp=w\pmb{\beta}$ using the flat sky approximation. Here $\pmb{\beta}$ refers to the angular coordinate on the sky of a physical point $\mathbf{x}$, as seen from the observer. We estimate the dark matter gravitational potential running $N$--body simulations (with $N=512^3$) with the public code Gadget2 \citep{Gadget2}, using a comoving box size of $240h^{-1}$Mpc. Using a similar procedure as in \citep{RayTracingJain,RayTracingHartlap}, the equation that governs the light ray deflections can be written in the form
 \begin{equation}
 \label{raytrajectory}
 \frac{d^2\mathbf{x}(w)}{dw^2} = -\frac{2}{c^2}\nabla_{\mathbf{x}_\perp}\Phi(\mathbf{x}_\perp(w),w)
 \end{equation}
 %
-where $\mathbf{x}(w)$ is the trajectory of a single light ray. Suppose that a light ray reaches the observer at an angular position $\pmb{\theta}$ on the sky: we want to know where this light ray originated, knowing it comes from a redshift $z_s$. To answer this question we need to integrate equation (\ref{raytrajectory}) with the initial conditions $\pmb{\beta}(0;\pmb{\theta})=\pmb{\theta}$, $\dot{\pmb{\beta}}(0;\pmb{\theta})=0$ up to a distance $w_s=w(z_s)$ to obtain the source angular position $\pmb{\beta}(w_s;\pmb{\theta})$; for the light ray trajectory solver, based on equation (\ref{raytrajectory}), we use our proprietary implementation Inspector Gadget. Once we know the details of the light ray trajectories, we can easily infer the weak lensing interesting quantities by taking the angular derivatives of the ray deflections $A(w_s;\pmb{\theta}) = \partial \pmb{\beta}(w_s;\pmb{\theta})/\partial\pmb{\theta}$ and performing the usual spin decomposition to infer the convergence $\kappa$ and the shear components $(\gamma_1,\gamma_2)$
+where $\mathbf{x}(w)$ is the trajectory of a single light ray, which we visualize schematically in Figure \ref{rayscheme}. 
+%
+\begin{figure*}
+\begin{center}
+\includegraphics[scale=0.4]{Figures/rayscheme.eps}
+\end{center}
+\caption{Schematics of ray tracing with the lensing potential boosted by a factor of 50 for visualization purposes}
+\label{rayscheme}
+\end{figure*}
+%
+Suppose that a light ray reaches the observer at an angular position $\pmb{\theta}$ on the sky: we want to know where this light ray originated, knowing it comes from a redshift $z_s$. To answer this question we need to integrate equation (\ref{raytrajectory}) with the initial conditions $\pmb{\beta}(0;\pmb{\theta})=\pmb{\theta}$, $\dot{\pmb{\beta}}(0;\pmb{\theta})=0$ up to a distance $w_s=w(z_s)$ to obtain the source angular position $\pmb{\beta}(w_s;\pmb{\theta})$; for the light ray trajectory solver, based on equation (\ref{raytrajectory}), we use our proprietary implementation Inspector Gadget. Once we know the details of the light ray trajectories, we can easily infer the weak lensing interesting quantities by taking the angular derivatives of the ray deflections $A(w_s;\pmb{\theta}) = \partial \pmb{\beta}(w_s;\pmb{\theta})/\partial\pmb{\theta}$ and performing the usual spin decomposition to infer the convergence $\kappa$ and the shear components $(\gamma^1,\gamma^2)$
 %
 \begin{equation}
-A(w_s;\pmb{\theta}) = (1-\kappa(w_s;\pmb{\theta}))\pmb{I} - \gamma_1(w_s;\pmb{\theta})\sigma_3 - \gamma_2(w_s;\pmb{\theta})\sigma_1
+A(w_s;\pmb{\theta}) = (1-\kappa(w_s;\pmb{\theta}))\pmb{I} - \gamma^1(w_s;\pmb{\theta})\sigma^3 - \gamma^2(w_s;\pmb{\theta})\sigma^1
 \end{equation}  
 %
-where $\pmb{I}$ is the $2\times2$ identity and $\sigma_{1,3}$ are the first and third Pauli matrices. $\kappa$ is related to the source apparent magnification, while $(\gamma_1,\gamma_2)$ are related to the source apparent ellipticity, as seen from the observer. 
+where $\pmb{I}$ is the $2\times2$ identity and $\sigma^{1,3}$ are the first and third Pauli matrices. $\kappa$ is related to the source apparent magnification, while $(\gamma^1,\gamma^2)$ are related to the source apparent ellipticity, as seen from the observer. Given a source with intrinsic ellipticity $\mathbf{e}_s=e^1_s + ie^2_s$, its observed ellipticity as seen from an observer will be modified by the cosmic shear $\pmb{\gamma}=\gamma^1 + i\gamma^2$ following
+%
+\begin{equation}
+\mathbf{e} = 
+\begin{cases}
+\frac{\mathbf{e}_s+\mathbf{g}}{1+\mathbf{g}^*\mathbf{e}_s} \,\,\,\,\,\,\,\, \vert \mathbf{g}\vert \leq 1 \\ \\
+\frac{1+\mathbf{ge}_s^*}{\mathbf{e}_s^* + \mathbf{g}^*} \,\,\,\,\,\,\,\, \vert \mathbf{g}\vert > 1
+\end{cases}
+\end{equation}
+%
+where $\mathbf{g} = \pmb{\gamma}/1-\kappa$ is the reduced shear. For each simulated galaxy, we assign an intrinsic elliptic- ity by rotating the observed ellipticity for that galaxy by a random angle on the sky, while conserving its magnitude $\vert\mathbf{e}\vert$. To be consistent with the CFHTLenS analysis, we adopt the weak lensing limit ($\vert\pmb{\gamma}\vert\ll1,\kappa\ll1$),hence $\mathbf{g}\approx\pmb{\gamma}$ and $\mathbf{e}\approx \mathbf{e}_s+\pmb{\gamma}$. We also add the multiplicative shear corrections by replacing $\pmb{\gamma}$ with $(1+m)\pmb{\gamma}$; like for the CFHTLens data, we proceed in constructing the simulated $\kappa$ maps as explained in \S\ref{cfhtdatareduction}. These final simulation products are then processed together with the $\kappa$ maps obtained from the data to calculate the confidence intervals on the parameter triplet $(\Omega_m,w,\sigma_8)$.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%% METHODS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Statistical methods}
-The goal of this section is to describe the framework in which we combine the CFHT data and our simulations in order to derive the constraints on the cosmological parameters triplet $(\Omega_m,w,\sigma_8)$; we measure a set of statistical descriptors from the data and the simulations, which will then be compared in a bayesian fashion in order to compute parameter confidence intervals.
+The goal of this section is to describe the framework in which we combine the CFHT data and our simulations in order to derive the constraints on the cosmological parameter triplet $(\Omega_m,w,\sigma_8)$; we measure a set of statistical descriptors from the data and the simulations, which will then be compared in a bayesian fashion in order to compute parameter confidence intervals.
 
 \subsection{Descriptors}
-The statistical descriptors we consider on this work are the Minkowski Functionals (MFs) and the low order moments (LM) of the convergence field. The three MFs $(V_0,V_1,V_2)$ are topological descriptors of the convergence random field $\kappa(\pmb{\theta})$, which probe respectively the area, perimeter and genus characteristic of the $\kappa$ excursion sets $\Sigma_{\kappa_0}$, defined as $\Sigma_{\kappa_0}=\{\kappa>\kappa_0\}$. Following \citep{Petri2013,MinkJan} we use the following local estimators to measure the MFs from the $\kappa$ images
+The statistical descriptors we consider on this work are the Minkowski Functionals (MFs) and the low order moments (LM) of the convergence field. The three MFs $(V_0,V_1,V_2)$ are topological descriptors of the convergence random field $\kappa(\pmb{\theta})$, which probe respectively the area, perimeter and genus characteristic of the $\kappa$ excursion sets $\Sigma_{\kappa_0}$, defined as $\Sigma_{\kappa_0}=\{\kappa>\kappa_0\}$. Following \citep{Petri2013,MinkJan} we use the following local estimators to measure the MFs from the $\kappa$ images. 
 %
 \begin{equation*}
 \label{v0meas}
