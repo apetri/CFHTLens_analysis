@@ -44,37 +44,7 @@ from train import DEBUG_PLUS
 ###################Main execution#####################################
 ######################################################################
 
-def main(n_components,pool):
-
-	#################################################
-	############Option parsing#######################
-	#################################################
-
-	#Parse command line options
-	parser = argparse.ArgumentParser()
-	parser.add_argument("-f","--file",dest="options_file",action="store",type=str,help="analysis options file")
-	parser.add_argument("-v","--verbose",dest="verbose",action="store_true",default=False,help="turn on verbosity")
-	parser.add_argument("-vv","--verbose_plus",dest="verbose_plus",action="store_true",default=False,help="turn on additional verbosity")
-	parser.add_argument("-m","--mask_scale",dest="mask_scale",action="store_true",default=False,help="scale peaks and power spectrum to unmasked area")
-	parser.add_argument("-c","--cut_convergence",dest="cut_convergence",action="store",default=None,help="select convergence values in (min,max) to compute the likelihood. Safe for single descriptor only!!")
-	parser.add_argument("-g","--group_subfields",dest="group_subfields",action="store_true",default=False,help="group feature realizations by taking the mean over subfields, this makes a big difference in the covariance matrix")
-	parser.add_argument("-p","--prefix",dest="prefix",action="store",default="",help="prefix of the emulator to pickle")
-	parser.add_argument("-r","--realizations",dest="realizations",type=int,default=None,help="use only the first N realizations to estimate the covariance matrix")
-	parser.add_argument("-d","--differentiate",dest="differentiate",action="store_true",default=False,help="differentiate the first minkowski functional to get the PDF")
-
-	cmd_args = parser.parse_args()
-
-	if cmd_args.options_file is None:
-		parser.print_help()
-		sys.exit(0)
-
-	#Set verbosity level
-	if cmd_args.verbose_plus:
-		logging.basicConfig(level=DEBUG_PLUS)
-	elif cmd_args.verbose:
-		logging.basicConfig(level=logging.DEBUG)
-	else:
-		logging.basicConfig(level=logging.INFO)
+def main(n_components,cmd_args,pool):
 
 	#################################################################################################################
 	#################Info gathering: covariance matrix, observation and emulator#####################################
@@ -228,6 +198,36 @@ def main(n_components,pool):
 
 if __name__=="__main__":
 
+	#################################################
+	############Option parsing#######################
+	#################################################
+
+	#Parse command line options
+	parser = argparse.ArgumentParser()
+	parser.add_argument("-f","--file",dest="options_file",action="store",type=str,help="analysis options file")
+	parser.add_argument("-v","--verbose",dest="verbose",action="store_true",default=False,help="turn on verbosity")
+	parser.add_argument("-vv","--verbose_plus",dest="verbose_plus",action="store_true",default=False,help="turn on additional verbosity")
+	parser.add_argument("-m","--mask_scale",dest="mask_scale",action="store_true",default=False,help="scale peaks and power spectrum to unmasked area")
+	parser.add_argument("-c","--cut_convergence",dest="cut_convergence",action="store",default=None,help="select convergence values in (min,max) to compute the likelihood. Safe for single descriptor only!!")
+	parser.add_argument("-g","--group_subfields",dest="group_subfields",action="store_true",default=False,help="group feature realizations by taking the mean over subfields, this makes a big difference in the covariance matrix")
+	parser.add_argument("-p","--prefix",dest="prefix",action="store",default="",help="prefix of the emulator to pickle")
+	parser.add_argument("-r","--realizations",dest="realizations",type=int,default=None,help="use only the first N realizations to estimate the covariance matrix")
+	parser.add_argument("-d","--differentiate",dest="differentiate",action="store_true",default=False,help="differentiate the first minkowski functional to get the PDF")
+
+	cmd_args = parser.parse_args()
+
+	if cmd_args.options_file is None:
+		parser.print_help()
+		sys.exit(0)
+
+	#Set verbosity level
+	if cmd_args.verbose_plus:
+		logging.basicConfig(level=DEBUG_PLUS)
+	elif cmd_args.verbose:
+		logging.basicConfig(level=logging.DEBUG)
+	else:
+		logging.basicConfig(level=logging.INFO)
+
 	#Initialize MPI Pool
 	try:
 		pool = MPIPool()
@@ -243,7 +243,7 @@ if __name__=="__main__":
 
 	test_components = [3,5,6,8,10,20,30,40,50]
 	for n_components in test_components:
-		main(n_components,pool)
+		main(n_components,cmd_args,pool)
 
 
 	#Close MPI Pool
