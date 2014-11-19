@@ -241,7 +241,7 @@ if __name__=="__main__":
 	if pool is not None:
 		logging.info("Started MPI Pool.")
 
-	test_components = [3,5,6,8,10,20,30,40,50]
+	test_components = [3,4,5,6,8,10,20,30,40,50]
 	for n_components in test_components:
 		main(n_components,cmd_args,pool)
 
