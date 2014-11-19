@@ -2,10 +2,10 @@
 # after found bug in power spectrum computation, this code is to 
 # compute chisq cube
 # run with:
-# ibrun python test_chisq_cube_MPI.py ALL 100
+# ibrun python test_chisq_cube_MPI.py ALL 100 x
 # ibrun python test_chisq_cube_MPI.py ALL 27
-# ibrun python test_chisq_cube_MPI.py BAD 27
-# ibrun python test_chisq_cube_MPI.py BAD 100
+# ibrun python test_chisq_cube_MPI.py BAD 27 x
+# ibrun python test_chisq_cube_MPI.py BAD 100 x
 
 import numpy as np
 from scipy import *
@@ -15,11 +15,10 @@ import WLanalysis
 from emcee.utils import MPIPool
 import sys
 
-#ell_7000 = ell_arr[:27]
 BG = str(sys.argv[1])
 cut7000 = int(sys.argv[2])
-test_dir = '/home1/02977/jialiu/ps_chisq_compute/'
-#test_dir = '/Users/jia/Documents/weaklensing/CFHTLenS/emulator/test_ps_bug/'
+#test_dir = '/home1/02977/jialiu/ps_chisq_compute/'
+test_dir = '/Users/jia/Documents/weaklensing/CFHTLenS/emulator/test_ps_bug/'
 cosmo_params = genfromtxt(test_dir+'cosmo_params.txt')
 m, w, s = cosmo_params.T
 
@@ -68,8 +67,8 @@ def plot_heat_map_w (w):
 			chisq = float(del_N*cov_inv*del_N.T)
 			heatmap[i,j] = chisq
 	return heatmap
-pool = MPIPool()
-chisq_cube = pool.map(plot_heat_map_w, w_arr)
+#pool = MPIPool()
+chisq_cube = map(plot_heat_map_w, w_arr)
 if cut7000 <39:
 	np.save(test_dir+'%s_chisqcube_ps_ell7000'%(BG), array(chisq_cube).reshape(-1))
 else:

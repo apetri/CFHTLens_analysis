@@ -19,22 +19,23 @@ from scipy.spatial import cKDTree
 import scipy.ndimage as snd
 
 ######## knobs ##############
-
+ps_fixbug_dir = '/Users/jia/CFHTLenS/emulator/test_ps_bug/'
 ######## official plots #####
 CFHT_fields_and_masks = 0#plot out the whole 4 fields
 contour_peaks_smoothing = 0
 contour_peaks_fieldselect = 0
+interp_2D_plane = 0
+good_bad_peaks = 0
+m_correction = 0
+sample_interpolation = 1#remember need to delete cosmo #48 to work
+sample_points = 0#for final fits wiht 3 random points
+good_bad_powspec = 0
 contour_peaks_powspec = 0
 include_w = 0
 contour_including_w = 0
-sample_interpolation = 0
-interp_2D_plane = 0
-good_bad_powspec = 0
-sample_points = 0#for final fits wiht 3 random points
-good_bad_peaks = 0
-contour_ps_fieldselect = 0
-m_correction = 0
 SIGMA_contour = 0
+contour_ps_fieldselect = 0
+
 ######## tests ##############
 bad_pointings = 1
 ps_replaced_with_pk = 0
@@ -92,7 +93,7 @@ if bad_pointings:
 else:
 	emu_dir = '/Users/jia/CFHTLenS/emulator/'
 	plot_dir = '/Users/jia/weaklensing/CFHTLenS/plot/'
-
+plot_dir = ps_fixbug_dir+'plot/'
 sigmaG=1.0#1.0#1.0
 sigmaG_arr = (0.5, 1, 1.8, 3.5, 5.3, 8.9)
 bins=25#50
@@ -406,7 +407,8 @@ if ps_replaced_by_nicaea:
 cov_mat = cov(ps_fidu,rowvar=0)
 cov_inv = mat(cov_mat).I	
 fidu_avg = mean(ps_fidu,axis=0)
-fidu_std = std(ps_fidu,axis=0)
+#fidu_std = std(ps_fidu,axis=0)
+fidu_std = std( np.load('/Users/jia/Documents/weaklensing/CFHTLenS/emulator/test_ps_bug/BAD_ps_fidu39.npy'),axis=0)
 
 if CFHT_ps_full_vs_good_sky:
 	for i in range(1,14):
@@ -1982,7 +1984,10 @@ ll=102
 
 om0,om1 = 0, 67#0, 67#
 si80,si81 = 20,85#-10#18, 85#0,-10#
-w0,w1 = 10,70#int(sys.argv[1]), int(sys.argv[2])#15,70#10,70#4, 70#10,70#4, 70#85
+w0,w1 = 10,70
+#10, 70 is used in final plot
+#4, 85#15,70
+##int(sys.argv[1]), int(sys.argv[2])#10,70#4, 70#10,70#4, 70#85
 
 om_arr = linspace(0,1.2,l)[om0:om1]
 si8_arr = linspace(0,1.6,ll)[si80:si81]
@@ -2100,15 +2105,20 @@ if contour_peaks_powspec:
 		axis = 2
 		ix,iy = 1, 0#0, 1
 		X, Y = np.meshgrid(w_arr, om_arr)
-		fn='/Users/jia/weaklensing/CFHTLenS/plot/official/contour_peaks_powspec_w.pdf'
+		#fn='/Users/jia/weaklensing/CFHTLenS/plot/official/contour_peaks_powspec_w.pdf'
+		fn=plot_dir+'contour_peaks_powspec_w.pdf'
 	else:
 		axis = 0
 		ix,iy = 0,2
 		X, Y = np.meshgrid(om_arr, si8_arr)
-		fn='/Users/jia/weaklensing/CFHTLenS/plot/official/contour_peaks_powspec.pdf'
+		#fn='/Users/jia/weaklensing/CFHTLenS/plot/official/contour_peaks_powspec.pdf'
+		fn=plot_dir+'contour_peaks_powspec.pdf'
 	Ppk2 = cube2P(WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/chisq_cube_CFHT_pk_sigmaG1018.fit').reshape(-1,l,ll),axis=axis)
 	
-	Pps = cube2P(WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/GoodOnly/chisq_cube_CFHT_psellcut0_26.fit').reshape(-1,l,ll),axis=axis)
+	
+	Pps = cube2P(np.load('/Users/jia/CFHTLenS/emulator/test_ps_bug/BAD_chisqcube_ps_ell7000.npy').reshape(-1,l,ll),axis=axis)
+	
+	#Pps = cube2P(WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/GoodOnly/chisq_cube_CFHT_psellcut0_26.fit').reshape(-1,l,ll),axis=axis)
 	
 	# combined analysis
 	#chisq_cube_comb = WLanalysis.readFits( '/Users/jia/CFHTLenS/emulator/GoodOnly/chisq_cube_CFHT_combined_sigmaG1018.fit').reshape(-1,l,ll)
@@ -2133,13 +2143,17 @@ if contour_peaks_powspec:
 			CS = ax.contour(X, Y, P.T, levels=[V[0],], origin='lower', extent=(om_arr[0], om_arr[-1], si8_arr[0], si8_arr[-1]), colors=colors[-3+i], linewidths=lws[i*2], linestyles=lss2[-3+i])
 			CS2 = ax.contour(X, Y, P.T, levels=[V[1],], alpha=0.7, origin='lower', extent=(om_arr[0], om_arr[-1], si8_arr[0], si8_arr[-1]), colors=colors[-3+i], linewidths=lws[i*2], linestyles=lss2[-3+i])
 		else:
-			CS = ax.contourf(X, Y, P.T, levels=V[:-1], origin='lower', extent=(om_arr[0], om_arr[-1], si8_arr[0], si8_arr[-1]), colors=colors[-3+i], linewidths=lws[i*2], linestyles=lss2[-3+i], alpha=0.85)
+			# this is for w!
+			#CS = ax.contourf(X, Y, P.T, levels=V[:-1], origin='lower', extent=(om_arr[0], om_arr[-1], si8_arr[0], si8_arr[-1]), colors=colors[-3+i], linewidths=lws[i*2], linestyles=lss2[-3+i], alpha=0.85)
+			
+			CS = ax.contour(X, Y, P.T, levels=V[:-1], origin='lower', extent=(om_arr[0], om_arr[-1], si8_arr[0], si8_arr[-1]), colors=colors[-3+i], linewidths=lws[i*2], linestyles=lss2[-3+i], alpha=0.85)
+			
 			CS2 = ax.contour(X, Y, P.T, levels=[V[1],], alpha=0.7, origin='lower', extent=(om_arr[0], om_arr[-1], si8_arr[0], si8_arr[-1]), colors=colors[-3+i], linewidths=lws[i*2], linestyles=lss2[-3+i])
 		
-		#lines.append(CS.collections[0])
+		lines.append(CS.collections[0])
 
-	#leg=ax.legend(lines, labels, ncol=1, labelspacing=0.3, prop={'size':20},loc=0)
-	#leg.get_frame().set_visible(False)
+	leg=ax.legend(lines, labels, ncol=1, labelspacing=0.3, prop={'size':20},loc=0)
+	leg.get_frame().set_visible(False)
 	ax.tick_params(labelsize=16)
 	ax.set_xlabel(cosmo_labels[ix],fontsize=20)
 	ax.set_ylabel(cosmo_labels[iy],fontsize=20)
@@ -2189,7 +2203,7 @@ if sample_interpolation:
 		ax.set_yscale('log')
 		ax.set_ylim(1e-5, 1e-2)
 		#show()
-		savefig(plot_dir+'sample_interpolation_ps_sigmaG%02d_%i.jpg'%(sigmaG*10,icosmo))
+		savefig(plot_dir+'sample_interpolation_ps_sigmaG05.pdf')
 		#savefig(plot_dir+'official/sample_interpolation_ps_sigmaG%02d.pdf'%(sigmaG*10))
 		
 	else:
@@ -2272,7 +2286,7 @@ if interp_2D_plane:
 
 if good_bad_powspec:
 	#need to turn on bad_pointings for this to plot
-	
+	ps_CFHT_all = load(ps_fixbug_dir+'ALL_ps_CFHT.npy')
 	if sample_points:
 		if ps_replaced_with_pk:
 			# need to turn on ps_remove_4bins
@@ -2296,7 +2310,7 @@ if good_bad_powspec:
 		#ps_mat_all = WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/powspec_sum/ps_mat_sigma05.fit').reshape(91,1000,-1)
 		#ps_CFHT = ps_avg[ii]#fidu_avg
 		#ps_CFHT_all = mean(ps_mat_all[ii],axis=0)
-		#ps_CFHT_all = ps_CFHT_all/ps_CFHT_all[20]*ps_CFHT[20]
+		ps_CFHT_all = ps_CFHT_all/ps_CFHT_all[20]*ps_CFHT[20]
 	###################################
 	lw=4
 	
@@ -2355,7 +2369,9 @@ if good_bad_powspec:
 		else:
 			ax2.set_ylim(-0.1, 0.1)
 			ax2.set_yticks(linspace(-0.05,0.05,3))
-			fn='/Users/jia/weaklensing/CFHTLenS/plot/official/powspec_fit.pdf'
+			
+			fn = plot_dir+'powspec_fit.pdf'
+			#fn='/Users/jia/weaklensing/CFHTLenS/plot/official/powspec_fit.pdf'
 			ax.set_ylabel(r'$\ell(\ell+1)\rm{P(\ell)/2\pi}$',fontsize=20)
 			ax.set_xscale('log')
 			ax2.set_xscale('log')
@@ -2369,9 +2385,13 @@ if good_bad_powspec:
 		
 		
 	else:
+		ax.set_title(r'$\rm{CFHTLenS}$',fontsize=24)
+		#ax.set_title(r'$\rm{Simulation}$',fontsize=24)
 		ax2.set_ylim(-0.1, 0.1)
 		ax2.set_yticks(linspace(-0.05,0.05,3))
-		fn='/Users/jia/weaklensing/CFHTLenS/plot/official/good_bad_powspec_CFHT.pdf'
+		
+		fn=plot_dir+'good_bad_powspec_CFHT.pdf'
+		#fn='/Users/jia/weaklensing/CFHTLenS/plot/official/good_bad_powspec_CFHT.pdf'
 		ax.set_ylabel(r'$\ell(\ell+1)\rm{P(\ell)/2\pi}$',fontsize=20)
 		ax.set_xscale('log')
 		ax2.set_xscale('log')
@@ -2383,21 +2403,32 @@ if good_bad_powspec:
 	close()
 
 if contour_ps_fieldselect:
-	Pps_all = cube2P(39*WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/chisq_cube_ps_x39.fit').reshape(-1,l,ll))
-	
-	Pps_good = cube2P(WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/GoodOnly/chisq_cube_CFHT_ps.fit').reshape(-1,l,ll))
-	
+	colors=['g', 'r', 'c', 'b']
 	Pps_all_cut10 = cube2P(39*WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/chisq_cube_ellcut15.fit').reshape(-1,l,ll))
 	
 	Pps_all_cut7 = cube2P(39*WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/chisq_cube_ellcut18.fit').reshape(-1,l,ll))
+######################this are from buggy code #################	
+	Pps_all = cube2P(39*WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/chisq_cube_ps_x39.fit').reshape(-1,l,ll))
 	
+	Pps_good = cube2P(WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/GoodOnly/chisq_cube_CFHT_ps.fit').reshape(-1,l,ll))
+		
 	Pps_all_cuttil26 = cube2P(WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/chisq_cube_CFHT_psellcut0_26.fit').reshape(-1,l,ll))
 	
 	Pps_good_cuttil26 = cube2P(WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/GoodOnly/chisq_cube_CFHT_psellcut0_26.fit').reshape(-1,l,ll))
+#################################################################
 
+################### these are from after bug fix ################
+	Pps_all = cube2P(np.load('/Users/jia/CFHTLenS/emulator/test_ps_bug/ALL_chisqcube_ps.npy').reshape(-1,l,ll),axis=0)
 	
-	P_arr = (Pps_good, Pps_all, Pps_good_cuttil26, Pps_all_cuttil26)#, Pps_all_cut7))
+	Pps_good = cube2P(np.load('/Users/jia/CFHTLenS/emulator/test_ps_bug/BAD_chisqcube_ps.npy').reshape(-1,l,ll),axis=0)
+		
+	Pps_all_cuttil26 = cube2P(np.load('/Users/jia/CFHTLenS/emulator/test_ps_bug/ALL_chisqcube_ps_ell7000.npy').reshape(-1,l,ll),axis=0)
+	
+	Pps_good_cuttil26 = cube2P(np.load('/Users/jia/CFHTLenS/emulator/test_ps_bug/BAD_chisqcube_ps_ell7000.npy').reshape(-1,l,ll),axis=0)
+	
+#################################################################
 
+	P_arr = (Pps_good, Pps_all, Pps_good_cuttil26, Pps_all_cuttil26)#, Pps_all_cut7))
 	f = figure(figsize=(8,8))
 	
 	ax=f.add_subplot(111)
@@ -2411,7 +2442,7 @@ if contour_ps_fieldselect:
 		CS = ax.contour(X, Y, P.T, levels=[V[0],], origin='lower', extent=(om_arr[0], om_arr[-1], si8_arr[0], si8_arr[-1]), colors=colors[i], linewidths=lws[i], linestyles=lss[i])
 		lines.append(CS.collections[0])
 	labels = [r'$\rm{pass\, fields}$', r'$\rm{all\, fields}$', r'$\rm{pass\, fields(\ell<7,000)}$', r'$\rm{all\, fields(\ell<7,000)}$']#, r'$\rm{all\, fields(\ell>3,000)}$']
-
+	
 	########## add comb
 	##i=0
 	##Ppk_10, Ppk_18 = map(ProbPlan, [1.0,1.8])
@@ -2430,7 +2461,8 @@ if contour_ps_fieldselect:
 	ax.set_ylabel(r'$\rm{\sigma_8}$',fontsize=20)
 	leg.get_frame().set_visible(False)
 	#show()
-	savefig('/Users/jia/weaklensing/CFHTLenS/plot/official/contour_powespec_fieldselection.pdf')#_w_%s_%s.pdf'%(w0,w1))
+	#savefig('/Users/jia/weaklensing/CFHTLenS/plot/official/contour_powespec_fieldselection.pdf')#_w_%s_%s.pdf'%(w0,w1))
+	savefig(plot_dir+'contour_powespec_fieldselection.pdf')
 	close()
 
 if good_bad_peaks:
