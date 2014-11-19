@@ -44,7 +44,7 @@ from train import DEBUG_PLUS
 ###################Main execution#####################################
 ######################################################################
 
-def main(n_components):
+def main(n_components,pool):
 
 	#################################################
 	############Option parsing#######################
@@ -75,19 +75,6 @@ def main(n_components):
 		logging.basicConfig(level=logging.DEBUG)
 	else:
 		logging.basicConfig(level=logging.INFO)
-
-	#Initialize MPI Pool
-	try:
-		pool = MPIPool()
-	except:
-		pool = None
-
-	if (pool is not None) and (not pool.is_master()):
-		pool.wait()
-		sys.exit(0)
-
-	if pool is not None:
-		logging.info("Started MPI Pool.")
 
 	#################################################################################################################
 	#################Info gathering: covariance matrix, observation and emulator#####################################
@@ -215,11 +202,6 @@ def main(n_components):
 	
 	chi_squared = analysis.chi2(points,observed_feature=observed_feature,features_covariance=features_covariance,pool=pool,split_chunks=split_chunks)
 
-	#Close MPI Pool
-	if pool is not None:
-		pool.close()
-		logging.info("Closed MPI Pool.")
-
 	now = time.time()
 	logging.info("chi2 calculations completed in {0:.1f}s".format(now-last_timestamp))
 	last_timestamp = now
@@ -245,6 +227,26 @@ def main(n_components):
 
 
 if __name__=="__main__":
+
+	#Initialize MPI Pool
+	try:
+		pool = MPIPool()
+	except:
+		pool = None
+
+	if (pool is not None) and (not pool.is_master()):
+		pool.wait()
+		sys.exit(0)
+
+	if pool is not None:
+		logging.info("Started MPI Pool.")
+
 	test_components = [3,5,6,8,10,20,30,40,50]
 	for n_components in test_components:
-		main(n_components)
+		main(n_components,pool)
+
+
+	#Close MPI Pool
+	if pool is not None:
+		pool.close()
+		logging.info("Closed MPI Pool.")
