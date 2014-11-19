@@ -453,8 +453,13 @@ def azimuthalAverage(image, center = None, edges = None, logbins = True, bins = 
 	y, x = np.indices(image.shape)
 	if not center:
 		center = np.array([(x.max()-x.min())/2.0, (x.max()-x.min())/2.0])
-	if image.shape[0]%2 == 0:## added oct/31/2014, since nyquist freqnecy is not centered for even # mapsize
+	
+	## added below on oct/31/2014, 
+	## since nyquist freqnecy is not centered for even # mapsize
+
+	if image.shape[0]%2 == 0:
 		center+=0.5
+	
 	r = np.hypot(x - center[0], y - center[1])#distance to center pixel, for each pixel
 
 	# Get sorted radii
