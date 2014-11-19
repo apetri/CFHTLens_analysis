@@ -60,6 +60,7 @@ def main(n_components):
 	parser.add_argument("-g","--group_subfields",dest="group_subfields",action="store_true",default=False,help="group feature realizations by taking the mean over subfields, this makes a big difference in the covariance matrix")
 	parser.add_argument("-p","--prefix",dest="prefix",action="store",default="",help="prefix of the emulator to pickle")
 	parser.add_argument("-r","--realizations",dest="realizations",type=int,default=None,help="use only the first N realizations to estimate the covariance matrix")
+	parser.add_argument("-d","--differentiate",dest="differentiate",action="store_true",default=False,help="differentiate the first minkowski functional to get the PDF")
 
 	cmd_args = parser.parse_args()
 
@@ -96,6 +97,9 @@ def main(n_components):
 	start = time.time()
 	last_timestamp = start
 
+	#Instantiate a FeatureLoader object that will take care of the data loading
+	feature_loader = FeatureLoader(cmd_args)
+
 	#Create a LikelihoodAnalysis instance by unpickling one of the emulators
 	emulators_dir = os.path.join(feature_loader.options.get("analysis","save_path"),"emulators")
 	emulator_file = os.path.join(emulators_dir,"emulator{0}_{1}.p".format(cmd_args.prefix,output_string(feature_loader.feature_string)))
@@ -118,7 +122,7 @@ def main(n_components):
 	analysis = analysis.transform(pca_transform,pca=pca,n_components=n_components)
 
 	now = time.time()
-	logging.info("Projection on first {1} principal components completed in {0:.1f}s".format(now-last_timestamp,analysis.training_set.shape[0]))
+	logging.info("Projection on first {1} principal components completed in {0:.1f}s".format(now-last_timestamp,analysis.training_set.shape[1]))
 	last_timestamp = now
 
 	####################Retrain emulator######################################################################
@@ -130,9 +134,6 @@ def main(n_components):
 
 	###########################################################################################################################################
 	###########################################################################################################################################
-
-	#Instantiate a FeatureLoader object that will take care of the data loading
-	feature_loader = FeatureLoader(cmd_args)
 
 	#Use this model for the covariance matrix (from the new set of 50 N body simulations)
 	covariance_model = CFHTcov.getModels(root_path=feature_loader.options.get("simulations","root_path"))
@@ -153,7 +154,7 @@ def main(n_components):
 	fiducial_feature_ensemble = fiducial_feature_ensemble.transform(pca_transform,pca=pca,n_components=n_components)
 
 	now = time.time()
-	logging.info("Projection on first {1} principal components for covariance ensemble completed in {0:.1f}s".format(now-last_timestamp,analysis.training_set.shape[0]))
+	logging.info("Projection on first {1} principal components for covariance ensemble completed in {0:.1f}s".format(now-last_timestamp,analysis.training_set.shape[1]))
 	last_timestamp = now
 
 	fiducial_features = fiducial_feature_ensemble.mean()
@@ -177,7 +178,7 @@ def main(n_components):
 	observed_feature_ensemble = observed_feature_ensemble.transform(pca_transform,pca=pca,n_components=n_components)
 
 	now = time.time()
-	logging.info("Projection on first {1} principal components for observation completed in {0:.1f}s".format(now-last_timestamp,analysis.training_set.shape[0]))
+	logging.info("Projection on first {1} principal components for observation completed in {0:.1f}s".format(now-last_timestamp,analysis.training_set.shape[1]))
 	last_timestamp = now
 
 	observed_feature = observed_feature_ensemble.mean()
@@ -244,4 +245,6 @@ def main(n_components):
 
 
 if __name__=="__main__":
-	main(50)
+	test_components = [3,5,6,8,10,20,30,40,50]
+	for n_components in test_components:
+		main(n_components)
