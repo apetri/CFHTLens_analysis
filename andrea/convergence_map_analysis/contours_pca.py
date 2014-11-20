@@ -78,15 +78,9 @@ def main():
 		#Display the contours
 		contour.plotContours(colors=[colors[n]],fill=False,display_percentages=False,display_maximum=False)
 
-		#Legend for the contours
-		proxy.append(plt.Rectangle((0,0),1,1,fc=colors[n]))
 
 	contour.title_label="PCA test (68%)"
-	contour.labels()
-
-	#Legend
-	ax.legend(proxy,[r"$N_c={0}$".format(n) for n in test_components])
-
+	contour.labels(contour_label=[r"$N_c={0}$".format(n) for n in test_components])
 
 	#Save the result
 	figure_name = options.get("contours","figure_name")
