@@ -132,7 +132,12 @@ def main(n_components,cmd_args,pool):
 	if cmd_args.observations_mock:
 
 		logging.info("Using fiducial ensemble as mock observations")
-		observed_feature=fiducial_feature
+		
+		if cmd_args.realization_pick is not None:
+			logging.info("Using realization {0} as data".format(cmd_args.realization_pick))
+			observed_feature = fiducial_feature_ensemble[cmd_args.realization_pick]
+		else:
+			observed_feature=fiducial_feature
 
 	else:
 		observation = CFHTLens(root_path=feature_loader.options.get("observations","root_path"))
@@ -227,6 +232,7 @@ if __name__=="__main__":
 	parser.add_argument("-g","--group_subfields",dest="group_subfields",action="store_true",default=False,help="group feature realizations by taking the mean over subfields, this makes a big difference in the covariance matrix")
 	parser.add_argument("-p","--prefix",dest="prefix",action="store",default="",help="prefix of the emulator to pickle")
 	parser.add_argument("-r","--realizations",dest="realizations",action="store_true",default=False,help="use only a realization subset to build the fiducial ensemble (read from options file)")
+	parser.add_argument("-rr","--realization_pick",dest="realization_pick",action="store",type=int,default=None,help="use this particular realization as data")
 	parser.add_argument("-d","--differentiate",dest="differentiate",action="store_true",default=False,help="differentiate the first minkowski functional to get the PDF")
 	parser.add_argument("-o","--observations_mock",dest="observations_mock",action="store_true",default=False,help="use the fiducial simulations as mock observations")
 
