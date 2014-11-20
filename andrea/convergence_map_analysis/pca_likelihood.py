@@ -100,11 +100,14 @@ def main(n_components,cmd_args,pool):
 	fiducial_feature_ensemble = feature_loader.load_features(covariance_model)
 
 	#If options is enabled, use only the first N realizations to estimate the covariance matrix
-	if cmd_args.realizations is not None:
+	if cmd_args.realizations:
 
-		logging.info("Using only the first {0} realizations to estimate the covariance matrix".format(cmd_args.realizations))
-		fiducial_feature_ensemble = fiducial_feature_ensemble.subset(range(cmd_args.realizations))
-		assert fiducial_feature_ensemble.num_realizations==cmd_args.realizations
+		first_realization = feature_loader.options.getint("mocks","first_realization")
+		last_realization = feature_loader.options.getint("mocks","last_realization")
+
+		logging.info("Using only the realizations {0}-{1} to build the fiducial ensemble".format(first_realization,last_realization))
+		fiducial_feature_ensemble = fiducial_feature_ensemble.subset(range(first_realization-1,last_realization))
+		assert fiducial_feature_ensemble.num_realizations==last_realization-first_realization+1
 
 
 	###############Insert PCA transform here##############################
@@ -114,7 +117,7 @@ def main(n_components,cmd_args,pool):
 	logging.info("Projection on first {1} principal components for covariance ensemble completed in {0:.1f}s".format(now-last_timestamp,analysis.training_set.shape[1]))
 	last_timestamp = now
 
-	fiducial_features = fiducial_feature_ensemble.mean()
+	fiducial_feature = fiducial_feature_ensemble.mean()
 	features_covariance = fiducial_feature_ensemble.covariance()
 
 	#timestamp
@@ -125,20 +128,27 @@ def main(n_components,cmd_args,pool):
 	################################################################################################################################################
 
 	#Get also the observation instance
-	observation = CFHTLens(root_path=feature_loader.options.get("observations","root_path"))
-	logging.info("Measuring the observations from {0}".format(observation))
 
-	#And load the observations
-	observed_feature_ensemble = feature_loader.load_features(observation)
+	if cmd_args.observations_mock:
 
-	###############Insert PCA transform here##############################
-	observed_feature_ensemble = observed_feature_ensemble.transform(pca_transform,pca=pca,n_components=n_components)
+		logging.info("Using fiducial ensemble as mock observations")
+		observed_feature=fiducial_feature
 
-	now = time.time()
-	logging.info("Projection on first {1} principal components for observation completed in {0:.1f}s".format(now-last_timestamp,analysis.training_set.shape[1]))
-	last_timestamp = now
+	else:
+		observation = CFHTLens(root_path=feature_loader.options.get("observations","root_path"))
+		logging.info("Measuring the observations from {0}".format(observation))
 
-	observed_feature = observed_feature_ensemble.mean()
+		#And load the observations
+		observed_feature_ensemble = feature_loader.load_features(observation)
+
+		###############Insert PCA transform here##############################
+		observed_feature_ensemble = observed_feature_ensemble.transform(pca_transform,pca=pca,n_components=n_components)
+
+		now = time.time()
+		logging.info("Projection on first {1} principal components for observation completed in {0:.1f}s".format(now-last_timestamp,analysis.training_set.shape[1]))
+		last_timestamp = now
+
+		observed_feature = observed_feature_ensemble.mean()
 
 	#timestamp
 	now = time.time()
@@ -180,13 +190,22 @@ def main(n_components,cmd_args,pool):
 	likelihoods_dir = os.path.join(feature_loader.options.get("analysis","save_path"),"likelihoods")
 	if not os.path.isdir(likelihoods_dir):
 		os.mkdir(likelihoods_dir)
+
+	#Filename formatting
+	output_prefix=cmd_args.prefix
+	
+	if cmd_args.observations_mock:
+		output_prefix+="mock"
+	
+	if cmd_args.realizations:
+		output_prefix+="{0}-{1}".format(first_realization,last_realization)
 	
 	if cmd_args.realizations is None:
-		chi2_file = os.path.join(likelihoods_dir,"chi2{0}_{1}_ncomp{2}.npy".format(cmd_args.prefix,output_string(feature_loader.feature_string),n_components))
-		likelihood_file = os.path.join(likelihoods_dir,"likelihood{0}_{1}_ncomp{2}.npy".format(cmd_args.prefix,output_string(feature_loader.feature_string),n_components))
+		chi2_file = os.path.join(likelihoods_dir,"chi2{0}_{1}_ncomp{2}.npy".format(output_prefix,output_string(feature_loader.feature_string),n_components))
+		likelihood_file = os.path.join(likelihoods_dir,"likelihood{0}_{1}_ncomp{2}.npy".format(output_prefix,output_string(feature_loader.feature_string),n_components))
 	else:
-		chi2_file = os.path.join(likelihoods_dir,"chi2{0}{1}real_{2}_ncomp{3}.npy".format(cmd_args.prefix,cmd_args.realizations,output_string(feature_loader.feature_string),n_components))
-		likelihood_file = os.path.join(likelihoods_dir,"likelihood{0}{1}real_{2}_ncomp{3}.npy".format(cmd_args.prefix,cmd_args.realizations,output_string(feature_loader.feature_string),n_components))
+		chi2_file = os.path.join(likelihoods_dir,"chi2{0}{1}real_{2}_ncomp{3}.npy".format(output_prefix,cmd_args.realizations,output_string(feature_loader.feature_string),n_components))
+		likelihood_file = os.path.join(likelihoods_dir,"likelihood{0}{1}real_{2}_ncomp{3}.npy".format(output_prefix,cmd_args.realizations,output_string(feature_loader.feature_string),n_components))
 
 	logging.info("Saving chi2 to {0}".format(chi2_file))
 	np.save(chi2_file,chi_squared.reshape(Om.shape + w.shape + si8.shape))
@@ -211,8 +230,9 @@ if __name__=="__main__":
 	parser.add_argument("-c","--cut_convergence",dest="cut_convergence",action="store",default=None,help="select convergence values in (min,max) to compute the likelihood. Safe for single descriptor only!!")
 	parser.add_argument("-g","--group_subfields",dest="group_subfields",action="store_true",default=False,help="group feature realizations by taking the mean over subfields, this makes a big difference in the covariance matrix")
 	parser.add_argument("-p","--prefix",dest="prefix",action="store",default="",help="prefix of the emulator to pickle")
-	parser.add_argument("-r","--realizations",dest="realizations",type=int,default=None,help="use only the first N realizations to estimate the covariance matrix")
+	parser.add_argument("-r","--realizations",dest="realizations",type=bool,default=False,help="use only a realization subset to build the fiducial ensemble (read from options file)")
 	parser.add_argument("-d","--differentiate",dest="differentiate",action="store_true",default=False,help="differentiate the first minkowski functional to get the PDF")
+	parser.add_argument("-o","--observations_mock",dest="observations_mock",action="store_true",default=False,help="use the fiducial simulations as mock observations")
 
 	cmd_args = parser.parse_args()
 
