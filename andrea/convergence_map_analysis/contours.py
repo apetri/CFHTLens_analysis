@@ -251,13 +251,12 @@ class ContourPlot(object):
 
 		"""
 
-		if contour_label is None:
-			contour_label = range(len(self.ax.proxy))
-
 		self.ax.set_xlabel(self.parameter_labels[self.remaining_parameters[0]])
 		self.ax.set_ylabel(self.parameter_labels[self.remaining_parameters[1]])
 		self.ax.set_title(self.title_label)
-		self.ax.legend(self.ax.proxy,contour_label)
+
+		if contour_label is not None:
+			self.ax.legend(self.ax.proxy,contour_label)
 
 	def point(self,coordinate_x,coordinate_y,color="green",marker="o"):
 
