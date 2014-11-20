@@ -201,6 +201,9 @@ def main(n_components,cmd_args,pool):
 	
 	if cmd_args.observations_mock:
 		output_prefix+="mock"
+
+	if cmd_args.realization_pick is not None:
+		output_prefix+="real{0}-".format(cmd_args.realization_pick)
 	
 	if cmd_args.realizations:
 		output_prefix+="{0}-{1}".format(first_realization,last_realization)
