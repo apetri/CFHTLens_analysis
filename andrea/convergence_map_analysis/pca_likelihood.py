@@ -191,7 +191,7 @@ def main(n_components,cmd_args,pool):
 	if not os.path.isdir(likelihoods_dir):
 		os.mkdir(likelihoods_dir)
 
-	#Filename formatting
+	#Output filename formatting
 	output_prefix=cmd_args.prefix
 	
 	if cmd_args.observations_mock:
@@ -200,12 +200,8 @@ def main(n_components,cmd_args,pool):
 	if cmd_args.realizations:
 		output_prefix+="{0}-{1}".format(first_realization,last_realization)
 	
-	if cmd_args.realizations is None:
-		chi2_file = os.path.join(likelihoods_dir,"chi2{0}_{1}_ncomp{2}.npy".format(output_prefix,output_string(feature_loader.feature_string),n_components))
-		likelihood_file = os.path.join(likelihoods_dir,"likelihood{0}_{1}_ncomp{2}.npy".format(output_prefix,output_string(feature_loader.feature_string),n_components))
-	else:
-		chi2_file = os.path.join(likelihoods_dir,"chi2{0}{1}real_{2}_ncomp{3}.npy".format(output_prefix,cmd_args.realizations,output_string(feature_loader.feature_string),n_components))
-		likelihood_file = os.path.join(likelihoods_dir,"likelihood{0}{1}real_{2}_ncomp{3}.npy".format(output_prefix,cmd_args.realizations,output_string(feature_loader.feature_string),n_components))
+	chi2_file = os.path.join(likelihoods_dir,"chi2{0}_{1}_ncomp{2}.npy".format(output_prefix,output_string(feature_loader.feature_string),n_components))
+	likelihood_file = os.path.join(likelihoods_dir,"likelihood{0}_{1}_ncomp{2}.npy".format(output_prefix,output_string(feature_loader.feature_string),n_components))
 
 	logging.info("Saving chi2 to {0}".format(chi2_file))
 	np.save(chi2_file,chi_squared.reshape(Om.shape + w.shape + si8.shape))
@@ -230,7 +226,7 @@ if __name__=="__main__":
 	parser.add_argument("-c","--cut_convergence",dest="cut_convergence",action="store",default=None,help="select convergence values in (min,max) to compute the likelihood. Safe for single descriptor only!!")
 	parser.add_argument("-g","--group_subfields",dest="group_subfields",action="store_true",default=False,help="group feature realizations by taking the mean over subfields, this makes a big difference in the covariance matrix")
 	parser.add_argument("-p","--prefix",dest="prefix",action="store",default="",help="prefix of the emulator to pickle")
-	parser.add_argument("-r","--realizations",dest="realizations",type=bool,default=False,help="use only a realization subset to build the fiducial ensemble (read from options file)")
+	parser.add_argument("-r","--realizations",dest="realizations",action="store_true",default=False,help="use only a realization subset to build the fiducial ensemble (read from options file)")
 	parser.add_argument("-d","--differentiate",dest="differentiate",action="store_true",default=False,help="differentiate the first minkowski functional to get the PDF")
 	parser.add_argument("-o","--observations_mock",dest="observations_mock",action="store_true",default=False,help="use the fiducial simulations as mock observations")
 
