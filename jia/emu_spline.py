@@ -27,7 +27,7 @@ contour_peaks_fieldselect = 0
 interp_2D_plane = 0
 good_bad_peaks = 0
 m_correction = 0
-sample_interpolation = 1#remember need to delete cosmo #48 to work
+sample_interpolation = 0#remember need to delete cosmo #48 to work
 sample_points = 0#for final fits wiht 3 random points
 good_bad_powspec = 0
 contour_peaks_powspec = 0
@@ -38,7 +38,7 @@ contour_ps_fieldselect = 0
 
 ######## tests ##############
 bad_pointings = 1
-ps_replaced_with_pk = 0
+ps_replaced_with_pk = 1
 combined_smoothing_scale = 1
 
 compare_pk_contour_andrea = 0
@@ -2112,7 +2112,8 @@ if contour_peaks_powspec:
 		ix,iy = 0,2
 		X, Y = np.meshgrid(om_arr, si8_arr)
 		#fn='/Users/jia/weaklensing/CFHTLenS/plot/official/contour_peaks_powspec.pdf'
-		fn=plot_dir+'contour_peaks_powspec.pdf'
+		#fn=plot_dir+'contour_peaks_powspec.pdf'
+		fn=plot_dir+'contour_peaks_powspec_covariancd_onesmoothing.pdf'
 	Ppk2 = cube2P(WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/chisq_cube_CFHT_pk_sigmaG1018.fit').reshape(-1,l,ll),axis=axis)
 	
 	
@@ -2122,9 +2123,12 @@ if contour_peaks_powspec:
 	
 	# combined analysis
 	#chisq_cube_comb = WLanalysis.readFits( '/Users/jia/CFHTLenS/emulator/GoodOnly/chisq_cube_CFHT_combined_sigmaG1018.fit').reshape(-1,l,ll)
+	chisq_cube_comb = WLanalysis.readFits( '/Users/jia/CFHTLenS/emulator/GoodOnly/chisq_cube_CFHT_combined_sigmaG10.fit').reshape(-1,l,ll)
+	
+	Pc = cube2P(chisq_cube_comb-amin(chisq_cube_comb)+2)
 	#Pc = cube2P(chisq_cube_comb-amin(chisq_cube_comb)+2)
 	
-	P_arr=[Pps, Ppk2, Pps*Ppk2]#, Pc]#, Ppk]#
+	P_arr=[Pps, Ppk2, Pc]#Pps*Ppk2]#, , Ppk]#
 	labels = [r'$\rm{power\, spectrum}$', r'$\rm{peaks\, (1.0 + 1.8\,arcmin)}$', r'$\rm{power\, spectrum + peaks}$']#,'actual comb']#, 'Ppk_10 * Ppk_18']#,'actual comb','peaks comb']
 	
 	f = figure(figsize=(8,8))
@@ -2755,7 +2759,7 @@ if correlation_matrix:
 	std_fidu = std(ps_fidu,axis=0)
 	X, Y = np.meshgrid(std_fidu, std_fidu)
 	corr_mat = cov_mat / (X*Y)
-	plotimshow(corr_mat, 'corr_matrix_combined_01',vmin=0,vmax=0.1)
+	plotimshow(corr_mat, 'corr_matrix_combined_05',vmin=-0.5,vmax=0.5)
 	
 	
 if ps_from_2pcf:
