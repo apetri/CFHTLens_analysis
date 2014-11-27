@@ -243,7 +243,6 @@ def KSmap(iiRcosmo):
 		  #308864]).astype(float) # galaxy counts for subfields, prepare for weighte sum powspec
 ##############################################################
 
-galcount /= sum(galcount)
 
 #p = Pool(1000)
 def gen_mat (i, cosmo, sigmaG, ispk = True):
