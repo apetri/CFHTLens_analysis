@@ -166,7 +166,7 @@ def create_ps (iiRcosmoSigma):
 	'''
 	i, R, cosmo, sigmaG = iiRcosmoSigma
 	kmap = KSmap_single(i, R, cosmo, sigmaG)
-	idx = where(sigmaG_arr==sigmaG)[0]
+	idx = int(where(sigmaG_arr==sigmaG)[0])
 	mask_all = mask_all_arr[idx]
 	mask_bad = mask_bad_arr[idx]
 	pspk_all = WLanalysis.PowerSpectrum(kmap*mask_all, sizedeg=12.0)[-1]
