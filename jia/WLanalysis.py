@@ -363,9 +363,10 @@ def KSvw(shear1, shear2):
 	n0, n1=shear1.shape
 	#freq0 = array([arange(0.5,n0/2),-arange(0.5,n0/2)[::-1]]).flatten()
 	#freq1 = array([arange(0.5,n1/2),-arange(0.5,n1/2)[::-1]]).flatten()
-	freq0 = fftfreq(n0,d=1.0/n0)+0.5
-	freq1 = fftfreq(n1,d=1.0/n1)+0.5
-	k1,k2 = meshgrid(freq1,freq0)
+	#freq0 = fftfreq(n0,d=1.0/n0)+0.5
+	#freq1 = fftfreq(n1,d=1.0/n1)+0.5#bug, comment out 11/27/2014
+	freq0 = fftfreq(n0,d=1.0/n0)
+	k1,k2 = meshgrid(freq0,freq0)
 	kappa_fft = (k1**2-k2**2)/(k1**2+k2**2)*shear1_fft+2*k1*k2/(k1**2+k2**2)*shear2_fft
 	kappa = fftpack.ifft2(kappa_fft)
 	return real(kappa)
