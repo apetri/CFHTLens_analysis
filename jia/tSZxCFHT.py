@@ -22,7 +22,7 @@ print 'frequency:', freq
 dusty = 0
 plot_crosscorrelate_all = 1
 create_noise_KS = 0
-cross_cov_mat = 1
+cross_cov_mat = 0
 powspec_without_ells_factor = 0
 clean_dust = 0
 testCC = 0
@@ -354,18 +354,19 @@ if plot_crosscorrelate_all:
 	#ax.set_xscale('log')
 	#ax.set_ylabel(r'$\ell\times P(\ell)$', fontsize=16)
 	########################################################
-	savefig(plot_dir+'test_CrossCorrelate_%s.jpg'%(freq))
+	#savefig(plot_dir+'test_CrossCorrelate_%s.jpg'%(freq))
 	close()
 	
 	########################################################
 	######### save to txt ##################################
 	########################################################
+	#junk
 	#text_arr = array([ell_arr, CCK, CCO, CCB, CCBMODE, CCNSQ, avgN, errK, errO, errB, errBMODE, errNSQ, errN]).T
 	#savetxt(kSZ_dir+'CrossCorrelate_%s_ptsMask_kSZNSQ.txt'%(method), text_arr, header='ell\tkSZ-kappa\toffset-kappa\tnoise-kappa\tkSZ-Bmode\tkSZ_not_sq-kappa\tkSZ-kappa_noise\terr(kSZ-kappa)\terr(offset-kappa)\terr(noise-kappa)\terr(kSZ-Bmode)\terr(kSZ_not_sq-kappa\terr(kSZ-kappa_noise))')
 	
 	# for 6 bins
-	text_arr = array([ell_arr, CCK, CCO, CCB, CCBMODE, CCNSQ, errK, errO, errB, errBMODE, errNSQ]).T
-	savetxt(kSZ_dir+'CrossCorrelate_%s_clean_%s.txt'%(method,freq), text_arr, header='ell\tkSZ-kappa\toffset-kappa\tnoise-kappa\tkSZ-Bmode\tkSZ_not_sq-kappa\terr(kSZ-kappa)\terr(offset-kappa)\terr(noise-kappa)\terr(kSZ-Bmode)\terr(kSZ_not_sq-kappa)')
+	#text_arr = array([ell_arr, CCK, CCO, CCB, CCBMODE, CCNSQ, errK, errO, errB, errBMODE, errNSQ]).T
+	#savetxt(kSZ_dir+'CrossCorrelate_%s_clean_%s.txt'%(method,freq), text_arr, header='ell\tkSZ-kappa\toffset-kappa\tnoise-kappa\tkSZ-Bmode\tkSZ_not_sq-kappa\terr(kSZ-kappa)\terr(offset-kappa)\terr(noise-kappa)\terr(kSZ-Bmode)\terr(kSZ_not_sq-kappa)')
 	
 	########################################################
 	
