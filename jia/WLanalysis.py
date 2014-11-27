@@ -361,16 +361,13 @@ def KSvw(shear1, shear2):
 	shear1_fft = fftpack.fft2(shear1.astype(float))
 	shear2_fft = fftpack.fft2(shear2.astype(float))
 	n0, n1=shear1.shape
-	#freq0 = array([arange(0.5,n0/2),-arange(0.5,n0/2)[::-1]]).flatten()
-	#freq1 = array([arange(0.5,n1/2),-arange(0.5,n1/2)[::-1]]).flatten()
-	#freq0 = fftfreq(n0,d=1.0/n0)+0.5
-	#freq1 = fftfreq(n1,d=1.0/n1)+0.5#bug, comment out 11/27/2014
-	freq0 = fftfreq(n0,d=1.0/n0)
+	freq0 = fftfreq(n0,d=1.0/n0)+0.5
+	#freq0 = fftfreq(n0,d=1.0/n0)#correct one, but induce nan
 	k1,k2 = meshgrid(freq0,freq0)
 	kappa_fft = (k1**2-k2**2)/(k1**2+k2**2)*shear1_fft+2*k1*k2/(k1**2+k2**2)*shear2_fft
+	#kappa_fft[isnan(kappa_fft)]=0
 	kappa = fftpack.ifft2(kappa_fft)
 	return real(kappa)
-
 
 ####### method 3: Aperture mass (Bard 2013 eq. 1)##############
 Q = lambda x: 1.0/(1+exp(6.0-160*x)+exp(-47.0+50.0*x))*tanh(x/0.15)/(x/0.15) 
