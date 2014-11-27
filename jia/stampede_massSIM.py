@@ -194,8 +194,8 @@ pool = MPIPool()
 ######################################################
 ### (1)create KS map, uncomment next 4 lines #########
 ######################################################
-iRcosmo = [[i, R, cosmo_arr[0]] for R in R_arr]#test
-#iRcosmo = [[i, R, cosmo] for R in R_arr for cosmo in cosmo_arr]
+#iRcosmo = [[i, R, cosmo_arr[0]] for R in R_arr]#test
+iRcosmo = [[i, R, cosmo] for R in R_arr for cosmo in cosmo_arr]
 pool.map(KSmap_massproduce, iRcosmo)
 ### (cov 1) this block is for covariance cosmology 
 ###cosmo='WL-only_cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800'
