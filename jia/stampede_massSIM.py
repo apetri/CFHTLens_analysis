@@ -75,8 +75,8 @@ yxewm_fcn = lambda i: WLanalysis.readFits(KS_dir+'yxewm_subfield%i_zcut0213.fit'
 ######### next 4 lines for 1 subfield only
 Mw = Mw_fcn(i)
 y, x, e1, e2, w, m = yxewm_fcn(i).T
-mask_bad_arr = array([Mask_bad_fn[i, sigmaG] for sigmaG in sigmaG_arr])
-mask_all_arr = array([Mask_all_fn[i, sigmaG] for sigmaG in sigmaG_arr])
+mask_bad_arr = array([Mask_bad_fn(i, sigmaG) for sigmaG in sigmaG_arr])
+mask_all_arr = array([Mask_all_fn(i, sigmaG) for sigmaG in sigmaG_arr])
 ######### next 2 lines are for 13 fields, also need to change lines inside the code
 #Mw_arr = map(Mw_fcn, i_arr) # Mw = w (1+m) in a grid
 #yxewm_arr = map(yxewm_fcn, i_arr)
