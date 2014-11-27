@@ -28,7 +28,6 @@ kmin = -0.04 # lower bound of kappa bin = -2 SNR
 kmax = 0.12 # higher bound of kappa bin = 6 SNR
 bins = 25#600 # for peak counts
 sigmaG_arr = array([0.5, 1, 1.8, 3.5, 5.3, 8.9])
-#i_arr = arange(1,14)
 R_arr = arange(1,1001)
 PPA512 = 2.4633625
 i_arr = range(1,14)
@@ -52,11 +51,11 @@ i_arr = range(1,14)
 ########## (cov 1) comment this block for cov matrix simulations #####
 ########################################################################
 
-peask_sum_sf_fn = lambda cosmo, sigmaG, bins, i, BG: KS_dir+'peaks_sum/SIM_peaks_sigma%02d_%s_%03dbins_subfield%02d_%s.npy'%(sigmaG*10, cosmo, bins, i, BG)
+peask_sum_sf_fn = lambda cosmo, sigmaG, i, BG: KS_dir+'peaks_sum/SIM_peaks_sigma%02d_%s_%03dbins_subfield%02d_%s.npy'%(sigmaG*10, cosmo, bins, i, BG)
 
 powspec_sum_sf_fn = lambda cosmo, sigmaG, i, BG: KS_dir+'powspec_sum/SIM_powspec_sigma%02d_%s_subfield%02d_%s.npy'%(sigmaG*10, cosmo, i, BG)
 
-peaks_sum_fn = lambda cosmo, sigmaG, bins, BG: KS_dir+'peaks_sum/SIM_peaks_sigma%02d_%s_%03dbins_%s.npy'%(sigmaG*10, cosmo, bins, BG)
+peaks_sum_fn = lambda cosmo, sigmaG, BG: KS_dir+'peaks_sum/SIM_peaks_sigma%02d_%s_%03dbins_%s.npy'%(sigmaG*10, cosmo, bins, BG)
 
 powspec_sum_fn = lambda cosmo, sigmaG, BG: KS_dir+'powspec_sum/SIM_powspec_sigma%02d_%s_%s.npy'%(sigmaG*10, cosmo, BG)
 
@@ -194,9 +193,9 @@ pool = MPIPool()
 ######################################################
 ### (1)create KS map, uncomment next 4 lines #########
 ######################################################
-#iRcosmo = [[i, R, cosmo_arr[0]] for R in R_arr]#test
-iRcosmo = [[i, R, cosmo] for R in R_arr for cosmo in cosmo_arr]
-pool.map(KSmap_massproduce, iRcosmo)
+#iRcosmo = [[i, R, cosmo] for R in R_arr for cosmo in cosmo_arr]
+#pool.map(KSmap_massproduce, iRcosmo)
+
 ### (cov 1) this block is for covariance cosmology 
 ###cosmo='WL-only_cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800'
 ###iRcosmo = [[i, R, cosmo] for i in range(1,14)[::-1] for R in R_arr]# for cosmo in cosmo_arr]
@@ -204,39 +203,50 @@ pool.map(KSmap_massproduce, iRcosmo)
 ######################################################
 ### (2) power spectrum for 0.5 smoothing scale only###
 ######################################################
-#for cosmo in cosmo_arr:
-	#print 'ps',cosmo
-	#iRcosmoSigma = [[i, R, cosmo, 0.5] for R in R_arr]
-	#ps_arr = array(pool.map(create_ps, iRcosmoSigma))
-	##ps_arr.shape = [1000, 2, 39]
-	#save(powspec_sum_sf_fn(cosmo, sigmaG, 'ALL'), ps_arr[:,0,:])
-	#save(powspec_sum_sf_fn(cosmo, sigmaG, 'PASS'), ps_arr[:,1,:])
+for cosmo in cosmo_arr:
+	print 'ps',cosmo
+	iRcosmoSigma = [[i, R, cosmo, 0.5] for R in R_arr]
+	ps_arr = array(pool.map(create_ps, iRcosmoSigma))
+	#ps_arr.shape = [1000, 2, 39]
+	save(powspec_sum_sf_fn(cosmo, 0.5, i, 'ALL'), ps_arr[:,0,:])
+	save(powspec_sum_sf_fn(cosmo, 0.5, i, 'PASS'), ps_arr[:,1,:])
 
-######################################################
-##### (3) peak counts for 4 smoothing ################
-######################################################
 
-#for cosmo in cosmo_arr:
-	#print 'pk',cosmo
-	#for sigmaG in sigmaG_arr[1:-1]:
-		#iRcosmoSigma = [[i, R, cosmo, sigmaG] for R in R_arr]
-		#pk_arr = array(pool.map(create_pk, iRcosmoSigma))
-		##pk_arr.shape = [1000, 2, 25]
-		#save(peaks_sum_sf_fn(cosmo, sigmaG, i, 'ALL'), ps_arr[:,0,:])
-		#save(peaks_sum_sf_fn(cosmo, sigmaG, i, 'PASS'), ps_arr[:,1,:])
+#######################################################
+###### (3) peak counts for 4 smoothing ################
+#######################################################
 
-pool.close()
-print 'DONE DONE DONE'
+for cosmo in cosmo_arr:
+	print 'pk',cosmo
+	for sigmaG in sigmaG_arr[1:-1]:
+		iRcosmoSigma = [[i, R, cosmo, sigmaG] for R in R_arr]
+		pk_arr = array(pool.map(create_pk, iRcosmoSigma))
+		#pk_arr.shape = [1000, 2, 25]
+		save(peaks_sum_sf_fn(cosmo, sigmaG, i, 'ALL'), ps_arr[:,0,:])
+		save(peaks_sum_sf_fn(cosmo, sigmaG, i, 'PASS'), ps_arr[:,1,:])
 
 ###############################################################
-### (2)sum over 13 sf for peaks and powspectrum, need to alter a little later, 
-### to save subfield info matrix as well
-### uncomment the rest of the next 5 lines to run this part
+### (4)sum over 13 sf for peaks and powspectrum
 ### !!!will only work if the previous step is done!!!
 ###############################################################
 
+#for cosmo in cosmo_arr:
+	#psAll_gen = lambda i: np.load(powspec_sum_sf_fn(cosmo, 0.5, i, 'ALL'))
+	#psPass_gen = lambda i: np.load(powspec_sum_sf_fn(cosmo, 0.5, i, 'PASS'))
+	#sum_ps_all = sum(array(map(psAll_gen, i_arr)), axis=0)
+	#sum_ps_pass = sum(array(map(psPass_gen, i_arr)), axis=0)
+	#save(powspec_sum_fn(cosmo, 0.5, 'ALL'), sum_ps_all)
+	#save(powspec_sum_fn(cosmo, 0.5, 'PASS'), sum_ps_pass)
+
+	#for sigmaG in sigmaG_arr[1:-1]:
+		
+		
+		#pkAll_gen = lambda i: peaks_sum_sf_fn(cosmo, sigmaG, i, 'ALL')
+		#pkPass_gen = lambda i: peaks_sum_sf_fn(cosmo, sigmaG, i, 'PASS')
+
 #cosmosigmaG_arr = [[cosmo, sigmaG] for cosmo in cosmo_arr for sigmaG in sigmaG_arr]
-#pool = MPIPool()
 #pool.map(sum_matrix, cosmosigmaG_arr)
-#pool.close()
-#print 'SUM-SUM-SUM'
+
+
+pool.close()
+print 'DONE DONE DONE'
