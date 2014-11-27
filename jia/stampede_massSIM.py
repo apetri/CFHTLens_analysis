@@ -149,7 +149,7 @@ def KSmap_single(i, R, cosmo, sigmaG):
 	KS inverted map
 	'''
 	KS_fn = KSfn(i, cosmo, R, sigmaG)
-	isfile, kmap = WLanalysis.TestFitsComplete(KS_fn, return_file = True):
+	isfile, kmap = WLanalysis.TestFitsComplete(KS_fn, return_file = True)
 	if isfile == False:
 		Me1, Me2 = fileGen(i, R, cosmo)
 		#Mw = Mw_fcn(i)
