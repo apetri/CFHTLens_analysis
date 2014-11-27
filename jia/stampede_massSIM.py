@@ -179,7 +179,7 @@ def create_pk (iiRcosmoSigma):
 	'''
 	i, R, cosmo, sigmaG = iiRcosmoSigma
 	kmap = KSmap_single(i, R, cosmo, sigmaG)
-	idx = where(sigmaG_arr==sigmaG)[0]
+	idx = int(where(sigmaG_arr==sigmaG)[0])
 	mask_all = mask_all_arr[idx]
 	mask_bad = mask_bad_arr[idx]
 	pspk_all = WLanalysis.peaks_mask_hist(kmap, mask_all, bins, kmin = kmin, kmax = kmax)
