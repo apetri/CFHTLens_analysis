@@ -60,7 +60,7 @@ peask_sum_sf_fn = lambda cosmo, sigmaG, bins, i, BG: KS_dir+'peaks_sum/SIM_peaks
 
 powspec_sum_sf_fn = lambda cosmo, sigmaG, i, BG: KS_dir+'powspec_sum/SIM_powspec_sigma%02d_%s_subfield%02d_%s'%(sigmaG*10, cosmo, i, BG)
 
-SIMfn = lambda i, cosmo, R: sim_dir+'%s/emulator_subfield%i_WL-only_%s_4096xy_%04dr'%(cosmo, i, cosmo, R)
+SIMfn = lambda i, cosmo, R: sim_dir+'%s/emulator_subfield%i_WL-only_%s_4096xy_%04dr.fit'%(cosmo, i, cosmo, R)
 
 KSfn = lambda i, cosmo, R, sigmaG: KS_dir+'%s/subfield%i/sigma%02d/SIM_KS_sigma%02d_subfield%i_%s_%04dr'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo,R)
 
