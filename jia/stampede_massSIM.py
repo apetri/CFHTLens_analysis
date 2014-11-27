@@ -52,13 +52,13 @@ i_arr = range(1,14)
 ########## (cov 1) comment this block for cov matrix simulations #####
 ########################################################################
 
-peaks_sum_fn = lambda cosmo, sigmaG, bins, BG: KS_dir+'peaks_sum/SIM_peaks_sigma%02d_%s_%03dbins_%s.npy'%(sigmaG*10, cosmo, bins, BG)
-
-powspec_sum_fn = lambda cosmo, sigmaG, BG: KS_dir+'powspec_sum/SIM_powspec_sigma%02d_%s_%s.npy'%(sigmaG*10, cosmo, BG)
-
 peask_sum_sf_fn = lambda cosmo, sigmaG, bins, i, BG: KS_dir+'peaks_sum/SIM_peaks_sigma%02d_%s_%03dbins_subfield%02d_%s.npy'%(sigmaG*10, cosmo, bins, i, BG)
 
 powspec_sum_sf_fn = lambda cosmo, sigmaG, i, BG: KS_dir+'powspec_sum/SIM_powspec_sigma%02d_%s_subfield%02d_%s.npy'%(sigmaG*10, cosmo, i, BG)
+
+peaks_sum_fn = lambda cosmo, sigmaG, bins, BG: KS_dir+'peaks_sum/SIM_peaks_sigma%02d_%s_%03dbins_%s.npy'%(sigmaG*10, cosmo, bins, BG)
+
+powspec_sum_fn = lambda cosmo, sigmaG, BG: KS_dir+'powspec_sum/SIM_powspec_sigma%02d_%s_%s.npy'%(sigmaG*10, cosmo, BG)
 
 ########## maps, fits file
 SIMfn = lambda i, cosmo, R: sim_dir+'%s/emulator_subfield%i_WL-only_%s_4096xy_%04dr.fit'%(cosmo, i, cosmo, R)
@@ -194,7 +194,8 @@ pool = MPIPool()
 ######################################################
 ### (1)create KS map, uncomment next 4 lines #########
 ######################################################
-iRcosmo = [[i, R, cosmo] for R in R_arr for cosmo in cosmo_arr]
+iRcosmo = [[i, R, cosmo_arr[0]] for R in R_arr]#test
+#iRcosmo = [[i, R, cosmo] for R in R_arr for cosmo in cosmo_arr]
 pool.map(KSmap_massproduce, iRcosmo)
 ### (cov 1) this block is for covariance cosmology 
 ###cosmo='WL-only_cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800'
