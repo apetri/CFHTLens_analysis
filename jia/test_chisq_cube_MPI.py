@@ -103,7 +103,7 @@ def plot_heat_map_w (values):
 			best_fit = (om_arr[i], w, si8_arr[j])
 			
 			ps_interp = interp_cosmo(best_fit)
-			print, 'idx, len(ps_interp), len(ps_CFHT)', idx, len(ps_interp), len(ps_CFHT)
+			print 'idx, len(ps_interp), len(ps_CFHT)', idx, len(ps_interp), len(ps_CFHT)
 			del_N = np.mat(ps_interp - ps_CFHT)
 			chisq = float(del_N*cov_inv*del_N.T)
 			heatmap[i,j] = chisq
