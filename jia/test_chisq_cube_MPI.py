@@ -65,7 +65,7 @@ idx_psPass7000 = arange(11,50-12)
 idx_psAll7000 = arange(161,200-12)
 
 idx_arr = [idx_full, idx_pk2, idx_pk10, idx_pk18, idx_pk35, idx_pk53, idx_psPass, idx_psAll, idx_psPass7000, idx_psAll7000]
-fn_arr = ['idx_psPass7000_pk2smoothing', 'pk2moothing', 'pk10', 'pk18', 'pk35', 'pk53', 'psPass', 'psAll', 'psPass7000', 'psAll7000']
+fn_arr = ['idx_psPass7000_pk2smoothing', 'pk2smoothing', 'pk10', 'pk18', 'pk35', 'pk53', 'psPass', 'psAll', 'psPass7000', 'psAll7000']
 
 def return_interp_cosmo_for_idx (idx):
 	ps_CFHT_test = ps_CFHT0[idx]

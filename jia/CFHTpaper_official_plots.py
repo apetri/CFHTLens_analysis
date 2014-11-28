@@ -45,7 +45,7 @@ om_arr = linspace(0,1.2,l)[om0:om1]
 si8_arr = linspace(0,1.6,ll)[si80:si81]
 w_arr = linspace(0,-3,101)[w0:w1]
 sigmaG_arr = [1.0, 1.8, 3.5, 5.3]
-fn_arr = ['idx_psPass7000_pk2smoothing', 'pk2moothing', 'pk10', 'pk18', 'pk35', 'pk53', 'psPass', 'psAll', 'psPass7000', 'psAll7000']
+fn_arr = ['idx_psPass7000_pk2smoothing', 'pk2smoothing', 'pk10', 'pk18', 'pk35', 'pk53', 'psPass', 'psAll', 'psPass7000', 'psAll7000']
 
 cube_arr = [load(test_dir+'chisqcube_%s.npy'%(fn)) for fn in fn_arr]
 
