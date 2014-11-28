@@ -63,14 +63,7 @@ powspec_sum_fn = lambda cosmo, sigmaG, BG: KS_dir+'powspec_sum/SIM_powspec_sigma
 SIMfn = lambda i, cosmo, R: sim_dir+'%s/emulator_subfield%i_WL-only_%s_4096xy_%04dr.fit'%(cosmo, i, cosmo, R)
 
 KSfn = lambda i, cosmo, R, sigmaG: KS_dir+'%s/subfield%i/sigma%02d/SIM_KS_sigma%02d_subfield%i_%s_%04dr.fit'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo,R)
-
-
-####### test corrupted SIM file ###########
-
-for cosmo in cosmo_arr:
-	for R in R_arr:
-		if WLanalysis.TestFitsComplete(SIMfn(i, cosmo, R))==False:
-			print SIMfn(i, cosmo, R)
+	
 
 
 ##########################################
@@ -203,6 +196,18 @@ def create_pk (iiRcosmoSigma):
 ######## operations ###########################################
 ###############################################################
 pool = MPIPool()
+
+####### test corrupted SIM file ###########
+def test_corrupte (iRcosmo):
+	cosmo, R = iRcosmo
+	if WLanalysis.TestFitsComplete(SIMfn(i, cosmo, R))==False:
+		print SIMfn(i, cosmo, R)
+		return 1
+	else:
+		return 0
+Rcosmo = [[ R, cosmo] for R in R_arr for cosmo in cosmo_arr]
+badfiles = array(pool.map(test_corrupte, Rcosmo))
+save(KS_dir+'badfiles.npy',badfiles)
 
 ######################################################
 ### (1)create KS map, uncomment next 4 lines #########
