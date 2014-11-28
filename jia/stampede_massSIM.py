@@ -205,7 +205,7 @@ def test_corrupte (iRcosmo):
 		return 1
 	else:
 		return 0
-Rcosmo = [[ R, cosmo] for R in R_arr for cosmo in cosmo_arr]
+Rcosmo = [[ cosmo, R] for R in R_arr for cosmo in cosmo_arr]
 badfiles = array(pool.map(test_corrupte, Rcosmo))
 save(KS_dir+'badfiles.npy',badfiles)
 
