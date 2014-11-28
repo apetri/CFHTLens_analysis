@@ -290,12 +290,12 @@ print 'DONE SUM SUM SUM'
 
 for BG in ('ALL', 'PASS'):
 	print BG
-	all_ps = array([[powspec_sum_fn(cosmo, 0.5, BG)] for cosmo in cosmo_arr])
+	all_ps = array([[powspec_sum_fn(cosmo, 0.5, BG)] for cosmo in cosmo_arr]).squeeze()
 	# array size (91, 1000, 50)
 	avg_ps = mean(all_ps, axis=1)
 	save(KS_dir+'%s_ps_avg.npy'%(BG), avg_ps)
 	for sigmaG in sigmaG_arr:
-		all_pk = array([[peaks_sum_fn(cosmo, sigmaG, BG)for cosmo in cosmo_arr])
+		all_pk = array([[peaks_sum_fn(cosmo, sigmaG, BG)] for cosmo in cosmo_arr]).squeeze()
 		avg_pk = mean(all_pk, axis=1)
 		save(KS_dir+'%s_pk_avg_sigmaG%02d.npy'%(BG, sigmaG*10), avg_ps)
 	
