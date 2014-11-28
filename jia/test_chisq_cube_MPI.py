@@ -18,7 +18,7 @@ fsky_pass= 7.6645622253410002
 #test_dir = '/Users/jia/Documents/weaklensing/CFHTLenS/emulator/test_ps_bug/'
 test_dir = '/home1/02977/jialiu/chisq_cube/'
 cosmo_params = genfromtxt(test_dir+'cosmo_params.txt')
-m, w, s = cosmo_params.T
+im, iw, s = cosmo_params.T
 
 w_arr = linspace(0,-3, 3)
 l, ll = 5, 5
@@ -81,7 +81,7 @@ def return_interp_cosmo_for_idx (idx):
 		ps_model = ps_avg[:,ibin]
 		print ps_model
 		print len(ps_model)
-		iinterp = interpolate.Rbf(m, w, s, ps_model)
+		iinterp = interpolate.Rbf(im, iw, s, ps_model)
 		spline_interps.append(iinterp)
 
 	def interp_cosmo (params, method = 'multiquadric'):
