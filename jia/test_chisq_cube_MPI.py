@@ -10,7 +10,8 @@ import WLanalysis
 from emcee.utils import MPIPool
 import sys
 
-cut7000 = 100 #int(sys.argv[2])
+nn = int(sys.argv[1])#range from 0 to 10 for idx_arr
+print nn
 
 fsky_all = 10.010646820070001
 fsky_pass= 7.6645622253410002
@@ -20,10 +21,10 @@ test_dir = '/home1/02977/jialiu/chisq_cube/'
 cosmo_params = genfromtxt(test_dir+'cosmo_params.txt')
 im, iw, s = cosmo_params.T
 
-w_arr = linspace(0,-3, 3)
-l, ll = 5, 5
-#w_arr = linspace(0,-3,101)
-#l,ll =  100,102
+#w_arr = linspace(0,-3, 3)
+#l, ll = 5, 5
+w_arr = linspace(0,-3,101)
+l,ll =  100,102
 om_arr = linspace(0,1.2,l)
 si8_arr = linspace(0,1.6,ll)
 
@@ -113,16 +114,13 @@ def plot_heat_map_w (values):
 ############ operation ####################################
 ###########################################################
 pool=MPIPool()
-i = 0
-for idx in idx_arr[:2]:
-	print fn_arr[i]
-	interp_cosmo, cov_mat, cov_inv, ps_CFHT = return_interp_cosmo_for_idx (idx)
-	values = [[w, idx, interp_cosmo, cov_inv, ps_CFHT] for w in w_arr]
-	cube = array(pool.map(plot_heat_map_w, values))
-	#cube = array(map(plot_heat_map_w, values))
-	save(test_dir+'test_chisqcube_%s.npy'%(fn_arr[i]), cube)
-	save(test_dir+'test_covmat_%s.npy'%(fn_arr[i]), cov_mat)
-	i+=1
+idx = idx_arr[nn]
+interp_cosmo, cov_mat, cov_inv, ps_CFHT = return_interp_cosmo_for_idx (idx)
+values = [[w, idx, interp_cosmo, cov_inv, ps_CFHT] for w in w_arr]
+cube = array(pool.map(plot_heat_map_w, values))
+save(test_dir+'chisqcube_%s.npy'%(fn_arr[i]), cube)
+save(test_dir+'covmat_%s.npy'%(fn_arr[i]), cov_mat)
+
 
 
 #def chisq2P(chisq_mat):#(idx=idx_full,w=-1):#aixs 0-w, 1-om, 2-si8
