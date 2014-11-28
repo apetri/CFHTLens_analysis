@@ -193,8 +193,8 @@ pool = MPIPool()
 ######################################################
 ### (1)create KS map, uncomment next 4 lines #########
 ######################################################
-iRcosmo = [[i, R, cosmo] for R in R_arr for cosmo in cosmo_arr]
-pool.map(KSmap_massproduce, iRcosmo)
+#iRcosmo = [[i, R, cosmo] for R in R_arr for cosmo in cosmo_arr]
+#pool.map(KSmap_massproduce, iRcosmo)
 
 ### (cov 1) this block is for covariance cosmology 
 ###cosmo='WL-only_cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800'
@@ -230,8 +230,8 @@ for cosmo in cosmo_arr:
 			iRcosmoSigma = [[i, R, cosmo, sigmaG] for R in R_arr]
 			pk_arr = array(pool.map(create_pk, iRcosmoSigma))
 			#pk_arr.shape = [1000, 2, 25]
-			save(pk_all_fn, ps_arr[:,0,:])
-			save(pk_pass_fn, ps_arr[:,1,:])
+			save(pk_all_fn, pk_arr[:,0,:])
+			save(pk_pass_fn, pk_arr[:,1,:])
 		else:
 			print 'already exist - pk',cosmo
 
@@ -257,6 +257,20 @@ for cosmo in cosmo_arr:
 		#save(peaks_sum_fn(cosmo, sigmaG, 'ALL'), sum_pk_all)
 		#save(peaks_sum_fn(cosmo, sigmaG, 'PASS'), sum_pk_pass)
 
+#################################################################
+### (5)average over 1000 realizations ###########################
+#################################################################
 
+#for BG in ('ALL', 'PASS'):
+	#print BG
+	#all_ps = array([[powspec_sum_fn(cosmo, 0.5, BG)] for cosmo in cosmo_arr])
+	## array size (91, 1000, 50)
+	#avg_ps = mean(all_ps, axis=1)
+	#save(KS_dir+'%s_ps_avg.npy'%(BG), avg_ps)
+	#for sigmaG in sigmaG_arr:
+		#all_pk = array([[peaks_sum_fn(cosmo, sigmaG, BG)for cosmo in cosmo_arr])
+		#avg_pk = mean(all_pk, axis=1)
+		#save(KS_dir+'%s_pk_avg_sigmaG%02d.npy'%(BG, sigmaG*10), avg_ps)
+	
 pool.close()
 print 'DONE DONE DONE'

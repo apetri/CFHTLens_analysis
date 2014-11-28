@@ -79,6 +79,13 @@ def TestFitsComplete (fn, return_file = False):
 			os.remove(fn)
 		except Exception: # to correct for scratch failure in Oct/15/2014
 			pass	
+	elif os.stat(fn)[6]<10: #added 2014/11/27, check if empty file
+		try: 
+			os.remove(fn)
+		except Exception: # to correct for scratch failure in Oct/15/2014
+			pass
+		isfile = False
+		ifile = False
 	else: # if file exist, test if can open (sometimes it's empty file), delete if empty
 		try:
 			ifile = readFits(fn)
