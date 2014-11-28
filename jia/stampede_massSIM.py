@@ -276,8 +276,8 @@ for cosmo in cosmo_arr:
 	save(powspec_sum_fn(cosmo, 0.5, 'PASS'), sum_ps_pass)
 
 	for sigmaG in sigmaG_arr[1:-1]:
-		pkAll_gen = lambda i: peaks_sum_sf_fn(cosmo, sigmaG, i, 'ALL')
-		pkPass_gen = lambda i: peaks_sum_sf_fn(cosmo, sigmaG, i, 'PASS')
+		pkAll_gen = lambda i: np.load(peaks_sum_sf_fn(cosmo, sigmaG, i, 'ALL'))
+		pkPass_gen = lambda i: np.load(peaks_sum_sf_fn(cosmo, sigmaG, i, 'PASS'))
 		sum_pk_all = sum(array(map(pkAll_gen, i_arr)), axis=0)
 		sum_pk_pass = sum(array(map(pkPass_gen, i_arr)), axis=0)
 		save(peaks_sum_fn(cosmo, sigmaG, 'ALL'), sum_pk_all)
