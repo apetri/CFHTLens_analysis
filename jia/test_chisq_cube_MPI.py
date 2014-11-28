@@ -79,7 +79,8 @@ def return_interp_cosmo_for_idx (idx):
 	spline_interps = list()
 	for ibin in range(ps_avg.shape[-1]):
 		ps_model = ps_avg[:,ibin]
-		print 'len(m), len(w), len(s), len(ps_model)',len(m), len(w), len(s), len(ps_model)
+		print ps_model
+		print len(ps_model)
 		iinterp = interpolate.Rbf(m, w, s, ps_model)
 		spline_interps.append(iinterp)
 
