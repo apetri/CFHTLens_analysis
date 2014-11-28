@@ -206,7 +206,7 @@ pool = MPIPool()
 for cosmo in cosmo_arr:
 	ps_all_fn = powspec_sum_sf_fn(cosmo, 0.5, i, 'ALL')
 	ps_pass_fn = powspec_sum_sf_fn(cosmo, 0.5, i, 'PASS')
-	if WLanalysis.TestFitsComplete(ps_all_fn)==False or WLanalysis.TestFitsComplete(ps_pass_fn)==False:
+	if os.path.isfile(ps_all_fn)==False or os.path.isfile(ps_pass_fn)==False:
 		print 'ps',cosmo
 		iRcosmoSigma = [[i, R, cosmo, 0.5] for R in R_arr]
 		ps_arr = array(pool.map(create_ps, iRcosmoSigma))
@@ -225,7 +225,7 @@ for cosmo in cosmo_arr:
 	for sigmaG in sigmaG_arr[1:-1]:
 		pk_all_fn = peaks_sum_sf_fn(cosmo, sigmaG, i, 'ALL')
 		pk_pass_fn = peaks_sum_sf_fn(cosmo, sigmaG, i, 'PASS')
-		if WLanalysis.TestFitsComplete(pk_all_fn)==False or WLanalysis.TestFitsComplete(pk_pass_fn)==False:
+		if os.path.isfile(pk_all_fn)==False or os.path.isfile(pk_pass_fn)==False:
 			print 'pk',cosmo
 			iRcosmoSigma = [[i, R, cosmo, sigmaG] for R in R_arr]
 			pk_arr = array(pool.map(create_pk, iRcosmoSigma))
