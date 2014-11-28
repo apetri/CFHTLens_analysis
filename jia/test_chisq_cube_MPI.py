@@ -116,19 +116,11 @@ pool=MPIPool()
 idx = idx_arr[nn]
 interp_cosmo, cov_mat, cov_inv, ps_CFHT = return_interp_cosmo_for_idx (idx)
 values = [[w, idx, interp_cosmo, cov_inv, ps_CFHT] for w in w_arr]
-#cube = array(pool.map(plot_heat_map_w, values))
-#print cube.shape
-cube = pool.map(plot_heat_map_w, values)
-print cube
-#try:
-	#save(test_dir+'test/covmat_%s.npy'%(fn_arr[nn]), cov_mat)
-	#save(test_dir+'test/chisqcube_%s.npy'%(fn_arr[nn]), cube)
-	
-#except Exception:
-	#print 'error'
-	#WLanalysis.writeFits(cov_mat, test_dir+'covmat_%s.fit'%(fn_arr[nn]))
-	#WLanalysis.writeFits(array(cube).reshape(-1,1), test_dir+'chisqcube_%s.fit'%(fn_arr[nn]))
+pool.map(plot_heat_map_w, values)
+cube = array([load(test_dir+'test/chisqcube_%s_w%s.npy'%(fn_arr[nn], w)) for w in w_arr])
 
+save(test_dir+'test/covmat_%s.npy'%(fn_arr[nn]), cov_mat)
+save(test_dir+'test/chisqcube_%s.npy'%(fn_arr[nn]), cube)
 
 
 #def chisq2P(chisq_mat):#(idx=idx_full,w=-1):#aixs 0-w, 1-om, 2-si8
