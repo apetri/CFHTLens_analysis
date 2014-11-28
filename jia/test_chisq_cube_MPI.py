@@ -106,7 +106,8 @@ def plot_heat_map_w (values):
 			del_N = np.mat(ps_interp - ps_CFHT)
 			chisq = float(del_N*cov_inv*del_N.T)
 			heatmap[i,j] = chisq
-	return heatmap.astype(int)
+	save(test_dir+'test/chisqcube_%s_w%s.npy'%(fn_arr[nn], w), cube)
+	#return heatmap
 
 ###########################################################
 ############ operation ####################################
@@ -119,14 +120,14 @@ values = [[w, idx, interp_cosmo, cov_inv, ps_CFHT] for w in w_arr]
 #print cube.shape
 cube = pool.map(plot_heat_map_w, values)
 print cube
-try:
-	save(test_dir+'covmat_%s.npy'%(fn_arr[nn]), cov_mat)
-	save(test_dir+'chisqcube_%s.npy'%(fn_arr[nn]), cube)
+#try:
+	#save(test_dir+'test/covmat_%s.npy'%(fn_arr[nn]), cov_mat)
+	#save(test_dir+'test/chisqcube_%s.npy'%(fn_arr[nn]), cube)
 	
-except Exception:
-	print 'error'
-	WLanalysis.writeFits(cov_mat, test_dir+'covmat_%s.fit'%(fn_arr[nn]))
-	WLanalysis.writeFits(array(cube).reshape(-1,1), test_dir+'chisqcube_%s.fit'%(fn_arr[nn]))
+#except Exception:
+	#print 'error'
+	#WLanalysis.writeFits(cov_mat, test_dir+'covmat_%s.fit'%(fn_arr[nn]))
+	#WLanalysis.writeFits(array(cube).reshape(-1,1), test_dir+'chisqcube_%s.fit'%(fn_arr[nn]))
 
 
 
