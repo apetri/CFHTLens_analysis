@@ -64,6 +64,15 @@ SIMfn = lambda i, cosmo, R: sim_dir+'%s/emulator_subfield%i_WL-only_%s_4096xy_%0
 
 KSfn = lambda i, cosmo, R, sigmaG: KS_dir+'%s/subfield%i/sigma%02d/SIM_KS_sigma%02d_subfield%i_%s_%04dr.fit'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo,R)
 
+
+####### test corrupted SIM file ###########
+
+for cosmo in cosmo_arr:
+	for R in R_arr:
+		if WLanalysis.TestFitsComplete(SIMfn(i, cosmo, R))==False:
+			print SIMfn(i, cosmo, R)
+
+
 ##########################################
 ######### functions ######################
 ##########################################
@@ -208,18 +217,18 @@ pool = MPIPool()
 ######################################################
 ### (2) power spectrum for 0.5 smoothing scale only###
 ######################################################
-for cosmo in cosmo_arr:
-	ps_all_fn = powspec_sum_sf_fn(cosmo, 0.5, i, 'ALL')
-	ps_pass_fn = powspec_sum_sf_fn(cosmo, 0.5, i, 'PASS')
-	if os.path.isfile(ps_all_fn)==False or os.path.isfile(ps_pass_fn)==False:
-		print 'ps',cosmo
-		iRcosmoSigma = [[i, R, cosmo, 0.5] for R in R_arr]
-		ps_arr = array(pool.map(create_ps, iRcosmoSigma))
-		#ps_arr.shape = [1000, 2, 39]
-		save(ps_all_fn, ps_arr[:,0,:])
-		save(ps_pass_fn, ps_arr[:,1,:])
-	else:
-		print 'already exist - ps',cosmo
+#for cosmo in cosmo_arr:
+	#ps_all_fn = powspec_sum_sf_fn(cosmo, 0.5, i, 'ALL')
+	#ps_pass_fn = powspec_sum_sf_fn(cosmo, 0.5, i, 'PASS')
+	#if os.path.isfile(ps_all_fn)==False or os.path.isfile(ps_pass_fn)==False:
+		#print 'ps',cosmo
+		#iRcosmoSigma = [[i, R, cosmo, 0.5] for R in R_arr]
+		#ps_arr = array(pool.map(create_ps, iRcosmoSigma))
+		##ps_arr.shape = [1000, 2, 39]
+		#save(ps_all_fn, ps_arr[:,0,:])
+		#save(ps_pass_fn, ps_arr[:,1,:])
+	#else:
+		#print 'already exist - ps',cosmo
 
 
 #######################################################
