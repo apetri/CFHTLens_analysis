@@ -106,7 +106,7 @@ def plot_heat_map_w (values):
 			del_N = np.mat(ps_interp - ps_CFHT)
 			chisq = float(del_N*cov_inv*del_N.T)
 			heatmap[i,j] = chisq
-	save(test_dir+'test/chisqcube_%s_w%s.npy'%(fn_arr[nn], w), heatmap)
+	save(test_dir+'test/junk/chisqcube_%s_w%s.npy'%(fn_arr[nn], w), heatmap)
 	#return heatmap
 
 ###########################################################
@@ -117,10 +117,10 @@ idx = idx_arr[nn]
 interp_cosmo, cov_mat, cov_inv, ps_CFHT = return_interp_cosmo_for_idx (idx)
 values = [[w, idx, interp_cosmo, cov_inv, ps_CFHT] for w in w_arr]
 pool.map(plot_heat_map_w, values)
-cube = array([load(test_dir+'test/chisqcube_%s_w%s.npy'%(fn_arr[nn], w)) for w in w_arr])
+cube = array([load('/home1/02977/jialiu/chisq_cube/test/junk/chisqcube_%s_w%s.npy'%(fn_arr[nn], w)) for w in w_arr])
 
-save(test_dir+'test/covmat_%s.npy'%(fn_arr[nn]), cov_mat)
-save(test_dir+'test/chisqcube_%s.npy'%(fn_arr[nn]), cube)
+save(test_dir+'covmat_%s.npy'%(fn_arr[nn]), cov_mat)
+save(test_dir+'chisqcube_%s.npy'%(fn_arr[nn]), cube)
 
 
 #def chisq2P(chisq_mat):#(idx=idx_full,w=-1):#aixs 0-w, 1-om, 2-si8
