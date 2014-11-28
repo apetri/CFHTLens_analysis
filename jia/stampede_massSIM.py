@@ -51,9 +51,9 @@ i_arr = range(1,14)
 ########## (cov 1) comment this block for cov matrix simulations #####
 ########################################################################
 
-peask_sum_sf_fn = lambda cosmo, sigmaG, i, BG: KS_dir+'peaks_sum/SIM_peaks_sigma%02d_%s_%03dbins_subfield%02d_%s.npy'%(sigmaG*10, cosmo, bins, i, BG)
+peaks_sum_sf_fn = lambda cosmo, sigmaG, i, BG: KS_dir+'peaks_sf/SIM_peaks_sigma%02d_%s_%03dbins_subfield%02d_%s.npy'%(sigmaG*10, cosmo, bins, i, BG)
 
-powspec_sum_sf_fn = lambda cosmo, sigmaG, i, BG: KS_dir+'powspec_sum/SIM_powspec_sigma%02d_%s_subfield%02d_%s.npy'%(sigmaG*10, cosmo, i, BG)
+powspec_sum_sf_fn = lambda cosmo, sigmaG, i, BG: KS_dir+'powspec_sf/SIM_powspec_sigma%02d_%s_subfield%02d_%s.npy'%(sigmaG*10, cosmo, i, BG)
 
 peaks_sum_fn = lambda cosmo, sigmaG, BG: KS_dir+'peaks_sum/SIM_peaks_sigma%02d_%s_%03dbins_%s.npy'%(sigmaG*10, cosmo, bins, BG)
 
@@ -204,48 +204,58 @@ pool = MPIPool()
 ### (2) power spectrum for 0.5 smoothing scale only###
 ######################################################
 for cosmo in cosmo_arr:
-	print 'ps',cosmo
-	iRcosmoSigma = [[i, R, cosmo, 0.5] for R in R_arr]
-	ps_arr = array(pool.map(create_ps, iRcosmoSigma))
-	#ps_arr.shape = [1000, 2, 39]
-	save(powspec_sum_sf_fn(cosmo, 0.5, i, 'ALL'), ps_arr[:,0,:])
-	save(powspec_sum_sf_fn(cosmo, 0.5, i, 'PASS'), ps_arr[:,1,:])
+	ps_all_fn = powspec_sum_sf_fn(cosmo, 0.5, i, 'ALL')
+	ps_pass_fn = powspec_sum_sf_fn(cosmo, 0.5, i, 'PASS')
+	if WLanalysis.TestFitsComplete(ps_all_fn)==False or WLanalysis.TestFitsComplete(ps_pass_fn)==False:
+		print 'ps',cosmo
+		iRcosmoSigma = [[i, R, cosmo, 0.5] for R in R_arr]
+		ps_arr = array(pool.map(create_ps, iRcosmoSigma))
+		#ps_arr.shape = [1000, 2, 39]
+		save(ps_all_fn, ps_arr[:,0,:])
+		save(ps_pass_fn, ps_arr[:,1,:])
+	else:
+		print 'already exist - ps',cosmo
 
 
 #######################################################
 ###### (3) peak counts for 4 smoothing ################
 #######################################################
 
-for cosmo in cosmo_arr:
-	print 'pk',cosmo
+for cosmo in cosmo_arr:	
 	for sigmaG in sigmaG_arr[1:-1]:
-		iRcosmoSigma = [[i, R, cosmo, sigmaG] for R in R_arr]
-		pk_arr = array(pool.map(create_pk, iRcosmoSigma))
-		#pk_arr.shape = [1000, 2, 25]
-		save(peaks_sum_sf_fn(cosmo, sigmaG, i, 'ALL'), ps_arr[:,0,:])
-		save(peaks_sum_sf_fn(cosmo, sigmaG, i, 'PASS'), ps_arr[:,1,:])
-
+		pk_all_fn = peaks_sum_sf_fn(cosmo, sigmaG, i, 'ALL')
+		pk_pass_fn = peaks_sum_sf_fn(cosmo, sigmaG, i, 'PASS')
+		if WLanalysis.TestFitsComplete(pk_all_fn)==False or WLanalysis.TestFitsComplete(pk_pass_fn)==False:
+			print 'pk',cosmo
+			pk_pass_fn = 
+			iRcosmoSigma = [[i, R, cosmo, sigmaG] for R in R_arr]
+			pk_arr = array(pool.map(create_pk, iRcosmoSigma))
+			#pk_arr.shape = [1000, 2, 25]
+			save(pk_all_fn, ps_arr[:,0,:])
+			save(pk_pass_fn, ps_arr[:,1,:])
+		else:
+			print 'already exist - pk',cosmo
 ###############################################################
 ### (4)sum over 13 sf for peaks and powspectrum
 ### !!!will only work if the previous step is done!!!
 ###############################################################
 
-#for cosmo in cosmo_arr:
-	#psAll_gen = lambda i: np.load(powspec_sum_sf_fn(cosmo, 0.5, i, 'ALL'))
-	#psPass_gen = lambda i: np.load(powspec_sum_sf_fn(cosmo, 0.5, i, 'PASS'))
-	#sum_ps_all = sum(array(map(psAll_gen, i_arr)), axis=0)
-	#sum_ps_pass = sum(array(map(psPass_gen, i_arr)), axis=0)
-	#save(powspec_sum_fn(cosmo, 0.5, 'ALL'), sum_ps_all)
-	#save(powspec_sum_fn(cosmo, 0.5, 'PASS'), sum_ps_pass)
+for cosmo in cosmo_arr:
+	# power spectrum only has 0.5 arcmin
+	psAll_gen = lambda i: np.load(powspec_sum_sf_fn(cosmo, 0.5, i, 'ALL'))
+	psPass_gen = lambda i: np.load(powspec_sum_sf_fn(cosmo, 0.5, i, 'PASS'))
+	sum_ps_all = sum(array(map(psAll_gen, i_arr)), axis=0)
+	sum_ps_pass = sum(array(map(psPass_gen, i_arr)), axis=0)
+	save(powspec_sum_fn(cosmo, 0.5, 'ALL'), sum_ps_all)
+	save(powspec_sum_fn(cosmo, 0.5, 'PASS'), sum_ps_pass)
 
-	#for sigmaG in sigmaG_arr[1:-1]:
-		
-		
-		#pkAll_gen = lambda i: peaks_sum_sf_fn(cosmo, sigmaG, i, 'ALL')
-		#pkPass_gen = lambda i: peaks_sum_sf_fn(cosmo, sigmaG, i, 'PASS')
-
-#cosmosigmaG_arr = [[cosmo, sigmaG] for cosmo in cosmo_arr for sigmaG in sigmaG_arr]
-#pool.map(sum_matrix, cosmosigmaG_arr)
+	for sigmaG in sigmaG_arr[1:-1]:
+		pkAll_gen = lambda i: peaks_sum_sf_fn(cosmo, sigmaG, i, 'ALL')
+		pkPass_gen = lambda i: peaks_sum_sf_fn(cosmo, sigmaG, i, 'PASS')
+		sum_pk_all = sum(array(map(pkAll_gen, i_arr)), axis=0)
+		sum_pk_pass = sum(array(map(pkPass_gen, i_arr)), axis=0)
+		save(peaks_sum_fn(cosmo, sigmaG, 'ALL'), sum_pk_all)
+		save(peaks_sum_fn(cosmo, sigmaG, 'PASS'), sum_pk_pass)
 
 
 pool.close()
