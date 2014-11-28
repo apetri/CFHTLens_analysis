@@ -103,7 +103,7 @@ def plot_heat_map_w (values):
 			best_fit = (om_arr[i], w, si8_arr[j])
 			
 			ps_interp = interp_cosmo(best_fit)
-			print 'idx, len(ps_interp), len(ps_CFHT)', idx, len(ps_interp), len(ps_CFHT)
+			print 'idx, len(ps_interp), len(ps_CFHT)', len(ps_interp), len(ps_CFHT)
 			del_N = np.mat(ps_interp - ps_CFHT)
 			chisq = float(del_N*cov_inv*del_N.T)
 			heatmap[i,j] = chisq
@@ -112,14 +112,14 @@ def plot_heat_map_w (values):
 ###########################################################
 ############ operation ####################################
 ###########################################################
-pool=MPIPool()
+#pool=MPIPool()
 i = 0
 for idx in idx_arr[:2]:
 	print fn_arr[i]
 	interp_cosmo, cov_mat, cov_inv, ps_CFHT = return_interp_cosmo_for_idx (idx)
 	values = [[w, idx, interp_cosmo, cov_inv, ps_CFHT] for w in w_arr]
-	cube = array(pool.map(plot_heat_map_w, values))
-	#cube = array(map(plot_heat_map_w, values))
+	#cube = array(pool.map(plot_heat_map_w, values))
+	cube = array(map(plot_heat_map_w, values))
 	save(test_dir+'test_chisqcube_%s.npy'%(fn_arr[i]), cube)
 	save(test_dir+'test_covmat_%s.npy'%(fn_arr[i]), cov_mat)
 	i+=1
