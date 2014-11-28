@@ -266,24 +266,24 @@ def create_pk (iiRcosmoSigma):
 ### !!!will only work if the previous step is done!!!
 ###############################################################
 
-for cosmo in cosmo_arr:
-	# power spectrum only has 0.5 arcmin
-	psAll_gen = lambda i: np.load(powspec_sum_sf_fn(cosmo, 0.5, i, 'ALL'))
-	psPass_gen = lambda i: np.load(powspec_sum_sf_fn(cosmo, 0.5, i, 'PASS'))
-	sum_ps_all = sum(array(map(psAll_gen, i_arr)), axis=0)
-	sum_ps_pass = sum(array(map(psPass_gen, i_arr)), axis=0)
-	save(powspec_sum_fn(cosmo, 0.5, 'ALL'), sum_ps_all)
-	save(powspec_sum_fn(cosmo, 0.5, 'PASS'), sum_ps_pass)
+#for cosmo in cosmo_arr:
+	## power spectrum only has 0.5 arcmin
+	#psAll_gen = lambda i: np.load(powspec_sum_sf_fn(cosmo, 0.5, i, 'ALL'))
+	#psPass_gen = lambda i: np.load(powspec_sum_sf_fn(cosmo, 0.5, i, 'PASS'))
+	#sum_ps_all = sum(array(map(psAll_gen, i_arr)), axis=0)
+	#sum_ps_pass = sum(array(map(psPass_gen, i_arr)), axis=0)
+	#save(powspec_sum_fn(cosmo, 0.5, 'ALL'), sum_ps_all)
+	#save(powspec_sum_fn(cosmo, 0.5, 'PASS'), sum_ps_pass)
 
-	for sigmaG in sigmaG_arr[1:-1]:
-		pkAll_gen = lambda i: np.load(peaks_sum_sf_fn(cosmo, sigmaG, i, 'ALL'))
-		pkPass_gen = lambda i: np.load(peaks_sum_sf_fn(cosmo, sigmaG, i, 'PASS'))
-		sum_pk_all = sum(array(map(pkAll_gen, i_arr)), axis=0)
-		sum_pk_pass = sum(array(map(pkPass_gen, i_arr)), axis=0)
-		save(peaks_sum_fn(cosmo, sigmaG, 'ALL'), sum_pk_all)
-		save(peaks_sum_fn(cosmo, sigmaG, 'PASS'), sum_pk_pass)
+	#for sigmaG in sigmaG_arr[1:-1]:
+		#pkAll_gen = lambda i: np.load(peaks_sum_sf_fn(cosmo, sigmaG, i, 'ALL'))
+		#pkPass_gen = lambda i: np.load(peaks_sum_sf_fn(cosmo, sigmaG, i, 'PASS'))
+		#sum_pk_all = sum(array(map(pkAll_gen, i_arr)), axis=0)
+		#sum_pk_pass = sum(array(map(pkPass_gen, i_arr)), axis=0)
+		#save(peaks_sum_fn(cosmo, sigmaG, 'ALL'), sum_pk_all)
+		#save(peaks_sum_fn(cosmo, sigmaG, 'PASS'), sum_pk_pass)
 
-print 'DONE SUM SUM SUM'
+#print 'DONE SUM SUM SUM'
 ################################################################
 ## (5)average over 1000 realizations ###########################
 ################################################################
@@ -294,7 +294,7 @@ for BG in ('ALL', 'PASS'):
 	# array size (91, 1000, 50)
 	avg_ps = mean(all_ps, axis=1)
 	save(KS_dir+'%s_ps_avg.npy'%(BG), avg_ps)
-	for sigmaG in sigmaG_arr:
+	for sigmaG in sigmaG_arr[1:-1]:
 		all_pk = array([[np.load(peaks_sum_fn(cosmo, sigmaG, BG))] for cosmo in cosmo_arr]).squeeze()
 		avg_pk = mean(all_pk, axis=1)
 		save(KS_dir+'%s_pk_avg_sigmaG%02d.npy'%(BG, sigmaG*10), avg_ps)
