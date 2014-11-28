@@ -43,30 +43,33 @@ ps_avg0 = concatenate([np.load(test_dir+fn) for fn in ('PASS_ps_avg.npy','ALL_pk
 ####### 125:150 peak 53;
 ####### 150:200 all powspec
 #### 1) 2 smoothings + powspec
-idx_full = delete(range(11,100), range(50-12,50))
+idx_full = delete(arange(11,100), arange(50-12,50))
 #### 2) 2 smoothing
-idx_pk2 = range(50,100)
+idx_pk2 = arange(50,100)
 #### 3) 1.0 smoothing
-idx_pk10 = range(50,75)
+idx_pk10 = arange(50,75)
 #### 4) 1.8 smoothing
-idx_pk18 = range(75,100)
+idx_pk18 = arange(75,100)
 #### 5) 3.5 smoothing
-idx_pk35 = range(100,125)
+idx_pk35 = arange(100,125)
 #### 6) 5.3 smoothing
-idx_pk53 = range(125,150)
+idx_pk53 = arange(125,150)
 #### 7) ps pass
-idx_psPass = range(11,50)
+idx_psPass = arange(11,50)
 #### 8) ps all
-idx_psAll = range(161,200)
+idx_psAll = arange(161,200)
 #### 9) ps pass ell26
-idx_psPass7000 = range(11,50-12)
+idx_psPass7000 = arange(11,50-12)
 #### 10) ps all ell26
-idx_psAll7000 = range(161,200-12)
+idx_psAll7000 = arange(161,200-12)
 
 idx_arr = [idx_full, idx_pk2, idx_pk10, idx_pk18, idx_pk35, idx_pk53, idx_psPass, idx_psAll, idx_psPass7000, idx_psAll7000]
 fn_arr = ['idx_psPass7000_pk2smoothing', 'pk2moothing', 'pk10', 'pk18', 'pk35', 'pk53', 'psPass', 'psAll', 'psPass7000', 'psAll7000']
 
 def return_interp_cosmo_for_idx (idx):
+	ps_CFHT_test = ps_CFHT0[idx]
+	idx = idx[where(ps_CFHT_test>0)[0]]#rid of zero bins
+	
 	ps_CFHT = ps_CFHT0[idx]
 	ps_fidu_mat = ps_fidu_mat0[:,idx]
 	ps_avg = ps_avg0[:,idx]
