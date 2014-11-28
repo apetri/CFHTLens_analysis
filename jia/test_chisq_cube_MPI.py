@@ -106,7 +106,7 @@ def plot_heat_map_w (values):
 			del_N = np.mat(ps_interp - ps_CFHT)
 			chisq = float(del_N*cov_inv*del_N.T)
 			heatmap[i,j] = chisq
-	return heatmap
+	return heatmap.astype(int)
 
 ###########################################################
 ############ operation ####################################
