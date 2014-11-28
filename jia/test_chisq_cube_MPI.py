@@ -79,6 +79,7 @@ def return_interp_cosmo_for_idx (idx):
 	spline_interps = list()
 	for ibin in range(ps_avg.shape[-1]):
 		ps_model = ps_avg[:,ibin]
+		print 'len(m), len(w), len(s), len(ps_model)',len(m), len(w), len(s), len(ps_model)
 		iinterp = interpolate.Rbf(m, w, s, ps_model)
 		spline_interps.append(iinterp)
 
@@ -118,6 +119,7 @@ for idx in idx_arr[:2]:
 	interp_cosmo, cov_mat, cov_inv, ps_CFHT = return_interp_cosmo_for_idx (idx)
 	values = [[w, idx, interp_cosmo, cov_inv, ps_CFHT] for w in w_arr]
 	cube = array(pool.map(plot_heat_map_w, values))
+	#cube = array(map(plot_heat_map_w, values))
 	save(test_dir+'test_chisqcube_%s.npy'%(fn_arr[i]), cube)
 	save(test_dir+'test_covmat_%s.npy'%(fn_arr[i]), cov_mat)
 	i+=1
