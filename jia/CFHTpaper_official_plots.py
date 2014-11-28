@@ -21,9 +21,9 @@ import scipy.ndimage as snd
 test_dir = '/Users/jia/CFHTLenS/emulator/test_ps_bug/'
 plot_dir = test_dir+'plot/'
 
-contour_peaks_smoothing = 1
+contour_peaks_smoothing = 0
 contour_ps_fieldselect = 1
-contour_peaks_powspec = 1
+contour_peaks_powspec = 0
 contour_including_w = 0
 
 interp_2D_plane = 0
