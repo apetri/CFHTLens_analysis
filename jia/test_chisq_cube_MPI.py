@@ -118,8 +118,8 @@ for idx in idx_arr[:2]:
 	print fn_arr[i]
 	interp_cosmo, cov_mat, cov_inv, ps_CFHT = return_interp_cosmo_for_idx (idx)
 	values = [[w, idx, interp_cosmo, cov_inv, ps_CFHT] for w in w_arr]
-	#cube = array(pool.map(plot_heat_map_w, values))
-	cube = array(map(plot_heat_map_w, values))
+	cube = array(pool.map(plot_heat_map_w, values))
+	#cube = array(map(plot_heat_map_w, values))
 	save(test_dir+'test_chisqcube_%s.npy'%(fn_arr[i]), cube)
 	save(test_dir+'test_covmat_%s.npy'%(fn_arr[i]), cov_mat)
 	i+=1
