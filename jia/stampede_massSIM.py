@@ -97,10 +97,7 @@ def fileGen(i, R, cosmo):
 	
 	'''
 	#y, x, e1, e2, w, m = yxewm_arr[i-1].T
-	try:
-		s1, s2 = (WLanalysis.readFits(SIMfn(i,cosmo,R)).T)[[1,2]]
-	except Exception:
-		print SIMfn(i,cosmo,R)
+	s1, s2 = (WLanalysis.readFits(SIMfn(i,cosmo,R)).T)[[1,2]]
 	s1 *= (1+m)
 	s2 *= (1+m)
 	eint1, eint2 = WLanalysis.rndrot(e1, e2, iseed=R)#random rotation	
