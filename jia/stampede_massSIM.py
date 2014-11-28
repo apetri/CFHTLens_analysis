@@ -227,7 +227,6 @@ for cosmo in cosmo_arr:
 		pk_pass_fn = peaks_sum_sf_fn(cosmo, sigmaG, i, 'PASS')
 		if WLanalysis.TestFitsComplete(pk_all_fn)==False or WLanalysis.TestFitsComplete(pk_pass_fn)==False:
 			print 'pk',cosmo
-			pk_pass_fn = 
 			iRcosmoSigma = [[i, R, cosmo, sigmaG] for R in R_arr]
 			pk_arr = array(pool.map(create_pk, iRcosmoSigma))
 			#pk_arr.shape = [1000, 2, 25]
