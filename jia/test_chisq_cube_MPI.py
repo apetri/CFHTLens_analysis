@@ -106,7 +106,7 @@ def plot_heat_map_w (values):
 			del_N = np.mat(ps_interp - ps_CFHT)
 			chisq = float(del_N*cov_inv*del_N.T)
 			heatmap[i,j] = chisq
-	save(test_dir+'test/chisqcube_%s_w%s.npy'%(fn_arr[nn], w), cube)
+	save(test_dir+'test/chisqcube_%s_w%s.npy'%(fn_arr[nn], w), heatmap)
 	#return heatmap
 
 ###########################################################
