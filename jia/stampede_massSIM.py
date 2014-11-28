@@ -65,7 +65,7 @@ SIMfn0 = lambda i, cosmo, R: sim_dir+'%s/emulator_subfield%i_WL-only_%s_4096xy_%
 ############ this is to fix the corrupted files ##################
 def SIMfn (i, cosmo, R):
 	if cosmo == 'emu1-512b240_Om0.380_Ol0.620_w-2.424_ns0.960_si0.199' and R in (216, 285, 299, 294) and i == 7:
-		return '/home1/02977/jialiu/KSsim/corruptfiles/emulator_subfield%i_WL-only_%s_4096xy_%04dr.fit'%(cosmo, i, cosmo, R)
+		return '/home1/02977/jialiu/KSsim/corruptfiles/emulator_subfield%i_WL-only_%s_4096xy_%04dr.fit'%(i, cosmo, R)
 	else:
 		return SIMfn0(i, cosmo, R)
 ##################################################################
