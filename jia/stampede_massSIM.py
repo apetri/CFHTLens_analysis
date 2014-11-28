@@ -284,20 +284,21 @@ def create_pk (iiRcosmoSigma):
 		#save(peaks_sum_fn(cosmo, sigmaG, 'PASS'), sum_pk_pass)
 
 #print 'DONE SUM SUM SUM'
+
 ################################################################
 ## (5)average over 1000 realizations ###########################
 ################################################################
 
-for BG in ('ALL', 'PASS'):
-	print BG
-	all_ps = array([[np.load(powspec_sum_fn(cosmo, 0.5, BG))] for cosmo in cosmo_arr]).squeeze()
-	# array size (91, 1000, 50)
-	avg_ps = mean(all_ps, axis=1)
-	save(KS_dir+'%s_ps_avg.npy'%(BG), avg_ps)
-	for sigmaG in sigmaG_arr[1:-1]:
-		all_pk = array([[np.load(peaks_sum_fn(cosmo, sigmaG, BG))] for cosmo in cosmo_arr]).squeeze()
-		avg_pk = mean(all_pk, axis=1)
-		save(KS_dir+'%s_pk_avg_sigmaG%02d.npy'%(BG, sigmaG*10), avg_ps)
+#for BG in ('ALL', 'PASS'):
+	#print BG
+	#all_ps = array([[np.load(powspec_sum_fn(cosmo, 0.5, BG))] for cosmo in cosmo_arr]).squeeze()
+	## array size (91, 1000, 50)
+	#avg_ps = mean(all_ps, axis=1)
+	#save(KS_dir+'avg_ps_pk/%s_ps_avg.npy'%(BG), avg_ps)
+	#for sigmaG in sigmaG_arr[1:-1]:
+		#all_pk = array([[np.load(peaks_sum_fn(cosmo, sigmaG, BG))] for cosmo in cosmo_arr]).squeeze()
+		#avg_pk = mean(all_pk, axis=1)
+		#save(KS_dir+'avg_ps_pk/%s_pk_avg_sigmaG%02d.npy'%(BG, sigmaG*10), avg_pk)
 	
-pool.close()
+#pool.close()
 print 'DONE DONE DONE'
