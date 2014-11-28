@@ -79,8 +79,6 @@ def return_interp_cosmo_for_idx (idx):
 	spline_interps = list()
 	for ibin in range(ps_avg.shape[-1]):
 		ps_model = ps_avg[:,ibin]
-		print ps_model
-		print len(ps_model)
 		iinterp = interpolate.Rbf(im, iw, s, ps_model)
 		spline_interps.append(iinterp)
 
@@ -104,7 +102,8 @@ def plot_heat_map_w (values):
 		for j in range(ll):
 			best_fit = (om_arr[i], w, si8_arr[j])
 			
-			ps_interp = interp_cosmo(best_fit)	
+			ps_interp = interp_cosmo(best_fit)
+			print, 'idx, len(ps_interp), len(ps_CFHT)', idx, len(ps_interp), len(ps_CFHT)
 			del_N = np.mat(ps_interp - ps_CFHT)
 			chisq = float(del_N*cov_inv*del_N.T)
 			heatmap[i,j] = chisq
