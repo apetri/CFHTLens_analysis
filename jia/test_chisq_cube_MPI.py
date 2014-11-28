@@ -21,10 +21,10 @@ test_dir = '/home1/02977/jialiu/chisq_cube/'
 cosmo_params = genfromtxt(test_dir+'cosmo_params.txt')
 im, iw, s = cosmo_params.T
 
-#w_arr = linspace(0,-3, 3)
-#l, ll = 5, 5
-w_arr = linspace(0,-3,101)
-l,ll =  100,102
+w_arr = linspace(0,-3, 3)
+l, ll = 5, 5
+#w_arr = linspace(0,-3,101)
+#l,ll =  100,102
 om_arr = linspace(0,1.2,l)
 si8_arr = linspace(0,1.6,ll)
 
@@ -116,6 +116,7 @@ idx = idx_arr[nn]
 interp_cosmo, cov_mat, cov_inv, ps_CFHT = return_interp_cosmo_for_idx (idx)
 values = [[w, idx, interp_cosmo, cov_inv, ps_CFHT] for w in w_arr]
 cube = array(pool.map(plot_heat_map_w, values))
+#cube = pool.map(plot_heat_map_w, values)
 save(test_dir+'chisqcube_%s.npy'%(fn_arr[i]), cube)
 save(test_dir+'covmat_%s.npy'%(fn_arr[i]), cov_mat)
 
