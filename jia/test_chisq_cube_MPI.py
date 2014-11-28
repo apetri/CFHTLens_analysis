@@ -117,8 +117,8 @@ interp_cosmo, cov_mat, cov_inv, ps_CFHT = return_interp_cosmo_for_idx (idx)
 values = [[w, idx, interp_cosmo, cov_inv, ps_CFHT] for w in w_arr]
 cube = array(pool.map(plot_heat_map_w, values))
 #cube = pool.map(plot_heat_map_w, values)
-save(test_dir+'chisqcube_%s.npy'%(fn_arr[i]), cube)
-save(test_dir+'covmat_%s.npy'%(fn_arr[i]), cov_mat)
+save(test_dir+'chisqcube_%s.npy'%(fn_arr[nn]), cube)
+save(test_dir+'covmat_%s.npy'%(fn_arr[nn]), cov_mat)
 
 
 
