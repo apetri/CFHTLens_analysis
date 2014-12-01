@@ -25,9 +25,13 @@ class ContourPlot(object):
 			
 			if (fig is None) or (ax is None):
 				self.fig,self.ax = plt.subplots()
+				self.ax.proxy = list()
 			else:
 				self.fig = fig
 				self.ax = ax
+
+				if not hasattr(self.ax,"proxy"):
+					self.ax.proxy = list()
 
 		except:
 
@@ -240,7 +244,7 @@ class ContourPlot(object):
 		self.labels()
 		
 
-	def labels(self):
+	def labels(self,contour_label=None):
 
 		"""
 		Put the labels on the plot
@@ -250,6 +254,9 @@ class ContourPlot(object):
 		self.ax.set_xlabel(self.parameter_labels[self.remaining_parameters[0]])
 		self.ax.set_ylabel(self.parameter_labels[self.remaining_parameters[1]])
 		self.ax.set_title(self.title_label)
+
+		if contour_label is not None:
+			self.ax.legend(self.ax.proxy,contour_label)
 
 	def point(self,coordinate_x,coordinate_y,color="green",marker="o"):
 
@@ -377,6 +384,9 @@ class ContourPlot(object):
 			self.contour = self.ax.contourf(likelihood,values,colors=colors,origin="lower",extent=extent,aspect="auto")
 		else:
 			self.contour = self.ax.contour(likelihood,values,colors=colors,origin="lower",extent=extent,aspect="auto")
+
+		#Contour labels
+		self.ax.proxy += [ plt.Rectangle((0,0),1,1,fc=color) for color in colors ]
 		
 		if display_percentages:
 			plt.clabel(self.contour,fmt=fmt,inline=1,fontsize=9)
