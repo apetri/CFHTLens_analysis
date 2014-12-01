@@ -10,7 +10,7 @@ import WLanalysis
 from emcee.utils import MPIPool
 import sys
 
-nn = int(sys.argv[1])#range from 0 to 10 for idx_arr
+nn = 0#int(sys.argv[1])#range from 0 to 10 for idx_arr
 print nn
 
 fsky_all = 10.010646820070001
@@ -44,7 +44,8 @@ ps_avg0 = concatenate([np.load(test_dir+fn) for fn in ('PASS_ps_avg.npy','ALL_pk
 ####### 125:150 peak 53;
 ####### 150:200 all powspec
 #### 1) 2 smoothings + powspec
-idx_full = delete(arange(11,100), arange(50-12,50))
+#idx_full = arange(11,100)
+idx_full = delete(arange(11,100), arange(50-12,50)-11)
 #### 2) 2 smoothing
 idx_pk2 = arange(50,100)
 #### 3) 1.0 smoothing
@@ -67,7 +68,7 @@ idx_psAll7000 = arange(161,200-12)
 idx_arr = [idx_full, idx_pk2, idx_pk10, idx_pk18, idx_pk35, idx_pk53, idx_psPass, idx_psAll, idx_psPass7000, idx_psAll7000]
 fn_arr = ['idx_psPass7000_pk2smoothing', 'pk2smoothing', 'pk10', 'pk18', 'pk35', 'pk53', 'psPass', 'psAll', 'psPass7000', 'psAll7000']
 
-def return_interp_cosmo_for_idx (idx):
+def return_interp_cosmo_for_idx (idx, alpha = 0):
 	ps_CFHT_test = ps_CFHT0[idx]
 	idx = idx[where(ps_CFHT_test>0)[0]]#rid of zero bins
 	
@@ -80,16 +81,23 @@ def return_interp_cosmo_for_idx (idx):
 	spline_interps = list()
 	for ibin in range(ps_avg.shape[-1]):
 		ps_model = ps_avg[:,ibin]
-		iinterp = interpolate.Rbf(im, iw, s, ps_model)
+		if alpha:#for Sigma8 compute
+			iinterp = interpolate.Rbf((im/0.27)**alpha*s, iw, ps_model)
+		else:
+			iinterp = interpolate.Rbf(im, iw, s, ps_model)
 		spline_interps.append(iinterp)
 
-	def interp_cosmo (params, method = 'multiquadric'):
+	def interp_cosmo (params, method = 'multiquadric',alpha = alpha):
 		'''Interpolate the powspec for certain param.
 		Params: list of 3 parameters = (om, w, si8)
 		Method: "multiquadric" for spline (default), and "GP" for Gaussian process.
-		'''	
-		im, wm, sm = params
-		gen_ps = lambda ibin: spline_interps[ibin](im, wm, sm)
+		'''
+		if alpha:
+			ss, wm = params
+			gen_ps = lambda ibin: spline_interps[ibin](ss, wm)
+		else:
+			im, wm, sm = params
+			gen_ps = lambda ibin: spline_interps[ibin](im, wm, sm)
 		ps_interp = array(map(gen_ps, range(ps_avg.shape[-1])))
 		ps_interp = ps_interp.reshape(-1,1).squeeze()
 		return ps_interp
@@ -97,7 +105,7 @@ def return_interp_cosmo_for_idx (idx):
 
 def plot_heat_map_w (values):
 	w, idx, interp_cosmo, cov_inv, ps_CFHT = values
-	fn = test_dir+'test/junk/chisqcube_%s_w%s.npy'%(fn_arr[nn], w)
+	fn = test_dir+'test/chisqcube_%s_w%s.npy'%(fn_arr[nn], w)
 	if os.path.isfile(fn) == False:
 		print 'w=',w 
 		heatmap = zeros(shape=(l,ll))
@@ -115,18 +123,18 @@ def plot_heat_map_w (values):
 
 ###########################################################
 ############ operation ####################################
-###########################################################
+##########################################################
 pool=MPIPool()
 idx = idx_arr[nn]
 interp_cosmo, cov_mat, cov_inv, ps_CFHT = return_interp_cosmo_for_idx (idx)
 values = [[w, idx, interp_cosmo, cov_inv, ps_CFHT] for w in w_arr]
 pool.map(plot_heat_map_w, values)
-cube = array([load('/home1/02977/jialiu/chisq_cube/test/junk/chisqcube_%s_w%s.npy'%(fn_arr[nn], w)) for w in w_arr])
+cube = array([load('/home1/02977/jialiu/chisq_cube/test/chisqcube_%s_w%s.npy'%(fn_arr[nn], w)) for w in w_arr])
 
 save(test_dir+'covmat_%s.npy'%(fn_arr[nn]), cov_mat)
 save(test_dir+'chisqcube_%s.npy'%(fn_arr[nn]), cube)
 
-
+############### junk
 #def chisq2P(chisq_mat):#(idx=idx_full,w=-1):#aixs 0-w, 1-om, 2-si8
 	##chisq_mat = plot_heat_map_w (idx=idx_full,w=-1)
 	#P = exp(-(chisq_mat-amin(chisq_mat))/2)
