@@ -10,7 +10,7 @@ import WLanalysis
 from emcee.utils import MPIPool
 import sys
 
-nn = 0#int(sys.argv[1])#range from 0 to 10 for idx_arr
+nn = int(sys.argv[1])#range from 0 to 10 for idx_arr
 print nn
 
 fsky_all = 10.010646820070001
