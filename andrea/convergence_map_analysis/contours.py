@@ -355,7 +355,7 @@ class ContourPlot(object):
 	##############Plot the contours on top of the likelihood##############
 	######################################################################
 
-	def plotContours(self,colors=["red","green","blue"],display_percentages=True,display_maximum=True,fill=False):
+	def plotContours(self,colors=["red","green","blue"],display_percentages=True,display_maximum=True,fill=False,**kwargs):
 
 		"""
 		Display the confidence likelihood contours
@@ -381,12 +381,12 @@ class ContourPlot(object):
 			fmt[value] = "{0:.1f}%".format(self.computed_p_values[n]*100)
 
 		if fill:
-			self.contour = self.ax.contourf(likelihood,values,colors=colors,origin="lower",extent=extent,aspect="auto")
+			self.contour = self.ax.contourf(likelihood,values,colors=colors,origin="lower",extent=extent,aspect="auto",**kwargs)
 		else:
-			self.contour = self.ax.contour(likelihood,values,colors=colors,origin="lower",extent=extent,aspect="auto")
+			self.contour = self.ax.contour(likelihood,values,colors=colors,origin="lower",extent=extent,aspect="auto",**kwargs)
 
 		#Contour labels
-		self.ax.proxy += [ plt.Rectangle((0,0),1,1,fc=color) for color in colors ]
+		self.ax.proxy += [ plt.Rectangle((0,0),1,1,fc=color) for color in colors if color!="#eeeeee" ]
 		
 		if display_percentages:
 			plt.clabel(self.contour,fmt=fmt,inline=1,fontsize=9)
