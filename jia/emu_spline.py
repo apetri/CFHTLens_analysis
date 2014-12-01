@@ -27,18 +27,18 @@ contour_peaks_fieldselect = 0
 interp_2D_plane = 0
 good_bad_peaks = 0
 m_correction = 0
-sample_interpolation = 1#remember need to delete cosmo #48 to work
+sample_interpolation = 0#remember need to delete cosmo #48 to work
 sample_points = 0#for final fits wiht 3 random points
 good_bad_powspec = 0
 contour_peaks_powspec = 0
 include_w = 0
 contour_including_w = 0
 SIGMA_contour = 0
-contour_ps_fieldselect = 0
+contour_ps_fieldselect = 1
 
 ######## tests ##############
-bad_pointings = 1
-ps_replaced_with_pk = 0
+bad_pointings = 0
+ps_replaced_with_pk = 1
 combined_smoothing_scale = 1
 
 compare_pk_contour_andrea = 0
@@ -2112,19 +2112,32 @@ if contour_peaks_powspec:
 		ix,iy = 0,2
 		X, Y = np.meshgrid(om_arr, si8_arr)
 		#fn='/Users/jia/weaklensing/CFHTLenS/plot/official/contour_peaks_powspec.pdf'
-		fn=plot_dir+'contour_peaks_powspec.pdf'
+		#fn=plot_dir+'contour_peaks_powspec.pdf'
+		fn=plot_dir+'contour_peaks_powspec_covariance_fixbug.pdf'
 	Ppk2 = cube2P(WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/chisq_cube_CFHT_pk_sigmaG1018.fit').reshape(-1,l,ll),axis=axis)
 	
 	
 	Pps = cube2P(np.load('/Users/jia/CFHTLenS/emulator/test_ps_bug/BAD_chisqcube_ps_ell7000.npy').reshape(-1,l,ll),axis=axis)
-	
+
+###############junk ###################	
 	#Pps = cube2P(WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/GoodOnly/chisq_cube_CFHT_psellcut0_26.fit').reshape(-1,l,ll),axis=axis)
 	
 	# combined analysis
 	#chisq_cube_comb = WLanalysis.readFits( '/Users/jia/CFHTLenS/emulator/GoodOnly/chisq_cube_CFHT_combined_sigmaG1018.fit').reshape(-1,l,ll)
-	#Pc = cube2P(chisq_cube_comb-amin(chisq_cube_comb)+2)
-	
-	P_arr=[Pps, Ppk2, Pps*Ppk2]#, Pc]#, Ppk]#
+	#chisq_cube_comb = WLanalysis.readFits( '/Users/jia/CFHTLenS/emulator/GoodOnly/chisq_cube_CFHT_combined_sigmaG10.fit').reshape(-1,l,ll)
+	#chisq_cube_comb = 
+	#Pc = cube2P(np.load('/Users/jia/CFHTLenS/emulator/test_ps_bug/COMB_pk_chisqcube_ps.npy').reshape(-1,l,ll),axis=axis)
+	#chisq_cube_comb = np.load('/Users/jia/CFHTLenS/emulator/test_ps_bug/COMB_pk_chisqcube_ps.npy').reshape(-1,l,ll)
+	#Pc = cube2P(chisq_cube_comb-amin(chisq_cube_comb),axis=axis)
+	#Pc = cube2P(chisq_cube_comb,axis=axis)
+
+	#Ppk10 = ProbPlan(1.0)
+	#P_arr = [Pps, Ppk10, Pc, Pps*Ppk10]
+	#labels = ['power spectrum','peak','with covariance','no covariance']#,'actual comb']#, 'Ppk_10 * Ppk_18']#,'actual comb','peaks comb']
+#############################################
+
+	####### official
+	P_arr=[Pps, Ppk2, Pc]#Pps*Ppk2]#, , Ppk]#
 	labels = [r'$\rm{power\, spectrum}$', r'$\rm{peaks\, (1.0 + 1.8\,arcmin)}$', r'$\rm{power\, spectrum + peaks}$']#,'actual comb']#, 'Ppk_10 * Ppk_18']#,'actual comb','peaks comb']
 	
 	f = figure(figsize=(8,8))
@@ -2149,6 +2162,9 @@ if contour_peaks_powspec:
 			CS = ax.contour(X, Y, P.T, levels=V[:-1], origin='lower', extent=(om_arr[0], om_arr[-1], si8_arr[0], si8_arr[-1]), colors=colors[-3+i], linewidths=lws[i*2], linestyles=lss2[-3+i], alpha=0.85)
 			
 			CS2 = ax.contour(X, Y, P.T, levels=[V[1],], alpha=0.7, origin='lower', extent=(om_arr[0], om_arr[-1], si8_arr[0], si8_arr[-1]), colors=colors[-3+i], linewidths=lws[i*2], linestyles=lss2[-3+i])
+			
+			#junk
+			#CS = ax.contour(X, Y, P.T, levels=[V[0],], origin='lower', extent=(om_arr[0], om_arr[-1], si8_arr[0], si8_arr[-1]), colors=colors[-3+i], linewidths=lws[i*2], linestyles=lss2[-3+i], alpha=0.85)
 		
 		lines.append(CS.collections[0])
 
@@ -2158,8 +2174,9 @@ if contour_peaks_powspec:
 	ax.set_xlabel(cosmo_labels[ix],fontsize=20)
 	ax.set_ylabel(cosmo_labels[iy],fontsize=20)
 	
+	savefig(plot_dir+'contour_pkps_1arcmin.jpg')
 	#show()
-	savefig(fn)#_wcut%.1f_%.1f_combined.pdf'%(w_arr[0],w_arr[-1]))
+	#savefig(fn)#_wcut%.1f_%.1f_combined.pdf'%(w_arr[0],w_arr[-1]))
 	#savefig(plot_dir+'official/contour_peaks_powspec_wcut%.1f_%.1f.pdf'%(w_arr[0],w_arr[-1]))	##savefig(plot_dir+'official/contour_peaks_powspec_allsky_%iarcmin.pdf'%(360*60.0/ell_arr0[18]))
 	close()
 
@@ -2408,13 +2425,13 @@ if contour_ps_fieldselect:
 	
 	Pps_all_cut7 = cube2P(39*WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/chisq_cube_ellcut18.fit').reshape(-1,l,ll))
 ######################this are from buggy code #################	
-	Pps_all = cube2P(39*WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/chisq_cube_ps_x39.fit').reshape(-1,l,ll))
+	Pps_all_bug = cube2P(39*WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/chisq_cube_ps_x39.fit').reshape(-1,l,ll))
 	
-	Pps_good = cube2P(WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/GoodOnly/chisq_cube_CFHT_ps.fit').reshape(-1,l,ll))
+	Pps_good_bug = cube2P(WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/GoodOnly/chisq_cube_CFHT_ps.fit').reshape(-1,l,ll))
 		
-	Pps_all_cuttil26 = cube2P(WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/chisq_cube_CFHT_psellcut0_26.fit').reshape(-1,l,ll))
+	Pps_all_cuttil26_bug = cube2P(WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/chisq_cube_CFHT_psellcut0_26.fit').reshape(-1,l,ll))
 	
-	Pps_good_cuttil26 = cube2P(WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/GoodOnly/chisq_cube_CFHT_psellcut0_26.fit').reshape(-1,l,ll))
+	Pps_good_cuttil26_bug = cube2P(WLanalysis.readFits('/Users/jia/CFHTLenS/emulator/GoodOnly/chisq_cube_CFHT_psellcut0_26.fit').reshape(-1,l,ll))
 #################################################################
 
 ################### these are from after bug fix ################
@@ -2428,7 +2445,14 @@ if contour_ps_fieldselect:
 	
 #################################################################
 
+	#junk
+	##P_arr = (Pps_good, Pps_all, Pps_good_bug, Pps_all_bug)
+	#labels = ['Pps_good_cuttil26', 'Pps_all_cuttil26', 'Pps_good_cuttil26_bug', 'Pps_all_cuttil26_bug']
+	#P_arr = (Pps_good_cuttil26, Pps_all_cuttil26, Pps_good_cuttil26_bug, Pps_all_cuttil26_bug)
+	
 	P_arr = (Pps_good, Pps_all, Pps_good_cuttil26, Pps_all_cuttil26)#, Pps_all_cut7))
+	labels = [r'$\rm{pass\, fields}$', r'$\rm{all\, fields}$', r'$\rm{pass\, fields(\ell<7,000)}$', r'$\rm{all\, fields(\ell<7,000)}$']#, r'$\rm{all\, fields(\ell>3,000)}$']
+	
 	f = figure(figsize=(8,8))
 	
 	ax=f.add_subplot(111)
@@ -2437,11 +2461,16 @@ if contour_ps_fieldselect:
 	X, Y = np.meshgrid(om_arr, si8_arr)
 
 	for i in range(len(P_arr)):
+		
 		P=P_arr[i]
 		V=findlevel(P)
+		
+		A = float(P.shape[0]*P.shape[1])
+		print 'areas', i, len(where(P>V[0])[0])/A, len(where(P>V[1])[0])/A
+		
 		CS = ax.contour(X, Y, P.T, levels=[V[0],], origin='lower', extent=(om_arr[0], om_arr[-1], si8_arr[0], si8_arr[-1]), colors=colors[i], linewidths=lws[i], linestyles=lss[i])
 		lines.append(CS.collections[0])
-	labels = [r'$\rm{pass\, fields}$', r'$\rm{all\, fields}$', r'$\rm{pass\, fields(\ell<7,000)}$', r'$\rm{all\, fields(\ell<7,000)}$']#, r'$\rm{all\, fields(\ell>3,000)}$']
+	
 	
 	########## add comb
 	##i=0
@@ -2463,6 +2492,7 @@ if contour_ps_fieldselect:
 	#show()
 	#savefig('/Users/jia/weaklensing/CFHTLenS/plot/official/contour_powespec_fieldselection.pdf')#_w_%s_%s.pdf'%(w0,w1))
 	savefig(plot_dir+'contour_powespec_fieldselection.pdf')
+	#savefig(plot_dir+'test_bug_no_bug.jpg')
 	close()
 
 if good_bad_peaks:
@@ -2755,7 +2785,7 @@ if correlation_matrix:
 	std_fidu = std(ps_fidu,axis=0)
 	X, Y = np.meshgrid(std_fidu, std_fidu)
 	corr_mat = cov_mat / (X*Y)
-	plotimshow(corr_mat, 'corr_matrix_combined_01',vmin=0,vmax=0.1)
+	plotimshow(corr_mat, 'corr_matrix_combined_05',vmin=-0.5,vmax=0.5)
 	
 	
 if ps_from_2pcf:
