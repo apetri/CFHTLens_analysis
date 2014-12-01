@@ -5,10 +5,12 @@
 
 \usepackage{aas_macros}
 \usepackage{amssymb}
- \usepackage{amsmath}
- \usepackage{dsfont}
- \usepackage{hyperref}
- \usepackage{color}
+\usepackage{amsmath}
+\usepackage{dsfont}
+\usepackage{hyperref}
+\usepackage{color}
+\usepackage{pbox}
+
 \hypersetup{
 	colorlinks=false,
 	citecolor=green
@@ -217,8 +219,25 @@ Where $A$ is the total area of the fields of view we have been using and the not
 \end{matrix}
 \end{equation}
 %
-If the $\kappa$ field was Gaussian, one could express all the Minkowski Functionals in terms of the LM2 moments, as expected from the fact that, for a Gaussian field, the only meaningful statistics are the quadratic ones. In reality, weak lensing convergence fields, as the CFHTLens ones, are non--Gaussian and the MF and LM descriptors are in principle equivalent. \citep{Munshi12,Matsubara10} studied a perturbative expansion of the MF descriptors in powers of the field standard deviation $\sigma_0$, which, when truncated at order $O(\sigma_0^2)$, can be expressed completely in terms of the LM up to quartic order. Such perturbative series, however, have been shown not to converge in \citep{Petri2013} unless the weak lensing fields are smoothed with windows of size comparable to $\sim 15^\prime$. Because of this, throughout this work, we treat MF and LM as independent statistical descriptors. 
-
+If the $\kappa$ field was Gaussian, one could express all the Minkowski Functionals in terms of the LM2 moments, as expected from the fact that, for a Gaussian field, the only meaningful statistics are the quadratic ones. In reality, weak lensing convergence fields, as the CFHTLens ones, are non--Gaussian and the MF and LM descriptors are in principle equivalent. \citep{Munshi12,Matsubara10} studied a perturbative expansion of the MF descriptors in powers of the field standard deviation $\sigma_0$, which, when truncated at order $O(\sigma_0^2)$, can be expressed completely in terms of the LM up to quartic order. Such perturbative series, however, have been shown not to converge in \citep{Petri2013} unless the weak lensing fields are smoothed with windows of size comparable to $\sim 15^\prime$. Because of this, throughout this work, we treat MF and LM as independent statistical descriptors. In addition to these two descriptors, we consider the $\kappa$ angular power spectrum $P_l$ defined as
+\begin{equation}
+\label{powerspectrum}
+\langle\tilde{\kappa}(\mathbf{l})\tilde{\kappa}(\mathbf{l}')\rangle=(2\pi)^2\delta_D(\mathbf{l}+\mathbf{l}')P_l
+\end{equation}  
+%
+where $\tilde{\kappa}(\mathbf{l})$ is the Fourier transform of the $\kappa$ field and $\delta_D$ is the usual Dirac delta function; while the use of this statistic is not a novelty, we want indeed to compare the results we get using MF and LM to the ones already present in the literature. A summary of the statistical descriptors we used is presented in Table \ref{desctable}
+%
+\begin{table}
+\begin{tabular}{c|c|c} \hline
+Descriptor & Details & $N_b$ \\ \hline
+$V_0,V_1,V_2$ (MF) & $\kappa_0\in[-0.04,0.12]$ & 50 \\
+Power Spectrum (PS) & $l \in [300,5000]$ & 50 \\
+Moments (LM) & -- & 9 \\
+\end{tabular}
+\caption{Summary of the descriptors we used, along with the specifications and the number of bins $N_b$ used}
+\label{desctable}
+\end{table}
+%
 \subsection{Cosmological parameter inferences}
 \label{cosmostats}
 In this paragraph we give a brief outline of the statistical framework we adopted for computing the cosmological parameter confidence levels from the CFHTLens observations; we make use of the MF and LM statistical descriptors outlined in the previous paragraph. We refer to $M_i^r(\mathbf{p})$ as the measured descriptor from a realization $r$ of one of our simulations with a choice of cosmological parameters $\mathbf{p}$, and to $D_i$ as the measured descriptor from the CFHTLens data. In this notation, $i$ is an index that refers to the particular bin on which the descriptor is evaluated (for example $i$ can range from 0 to 9 for the LM statistic and from 0 to $N_b-1$ for a Minkowski Functional measured on $N_b$ different excursion sets). Once we make an assumption for the data likelihood $\mathcal{L}_d(D_i\vert \mathbf{p})$ and for the parameter priors $\Pi(\mathbf{p})$, we can use the Bayes theorem to compute the parameter likelihood $\mathcal{L}_p$ as follows
@@ -245,11 +264,13 @@ M_i(\mathbf{p}) = \frac{1}{R}\sum_{r=1}^R M_i^r
 %
 and the covariance matrix 
 \begin{equation}
+\label{datacov}
 C_{ij} = \frac{1}{R-1} \sum_{r=1}^R [M_i^r(\mathbf{p}_0)-M_i(\mathbf{p}_0)][M_j^r(\mathbf{p}_0)-M_j(\mathbf{p}_0)]
 \end{equation}
 %
 is measured from a simulation set based on 50 independent $N$--body simulations with parameters $\mathbf{p}_0=(0.26,-1.0,0.8)$ and is assumed to be model--independent; because of this the normalization constant in (\ref{datalikelihood}) is also model--independent. When computing parameter constraints from CFHTLens weak lensing data alone, we make a flat prior assumption for $\Pi(\mathbf{p})$. Parameter inferences are made estimating the location of the maximum of the parameter likelihood in (\ref{parameterlikelihood}), which we call $\mathbf{p}_{ML}(D_i)$ as well as its confidence contours. A $N\sigma$--confidence contour of $\mathcal{L}_p(\mathbf{p}\vert D_i)$ is defined to be the subset of points in parameter space on which the likelihood has a constant value $c_N$ and 
 \begin{equation}
+\label{ennesigma}
 \int_{\mathcal{L}>c_N} \mathcal{L}_p(\mathbf{p}\vert D_i) d\mathbf{p} = \frac{1}{\sqrt{2\pi}}\int_{-N}^N dx e^{-x^2/2}
 \end{equation}
 %
@@ -260,9 +281,65 @@ M(\mathbf{p}) = \sum_{s=1}^N \lambda_s\phi(\vert\mathbf{p}-\mathbf{p}_s\vert)
 %
 where $\phi$ has been chosen as a multiquadric function $\phi(r)=\sqrt{1+(r/r_0)^2}$ with $r_0$ chosen as the mean euclidean distance between the points in the simulated grid $\mathbf{p}_s$. The constant coefficients $\lambda_s$ can be determined imposing the $N$ constraints $M(\mathbf{p}=\mathbf{p}_s)=M(\mathbf{p_s})$, which enforce the fact that the interpolation should be exact at the simulated points. The interpolation computations are conveniently performed using the Scipy library \citep{scipy} 
 
+\subsection{Dimensionality reduction}
+\label{pcasection}
+%
+The main goal of this work is constraining the cosmological parameter triplet $(\Omega_m,w,\sigma_8)$ using the CFHTLens data; when the question on the accuracy of the $N\sigma$ contours is raised, particular attention should be given on the effect of binning choices on contour sizes computed with equations (\ref{parameterlikelihood})--(\ref{ennesigma}). It is known that the choice of the number of bins, $N_b$, can have a non--negligible effect on the contour sizes (see \citep{Petri2013} for an example with simulated datasets); in order for our results to be robust under this effect, we adopt a Principal Component Analysis (PCA) approach. Our main physical motivation for this approach is that, albeit we need to specify $N_b$ numbers in order to fully characterize a binned descriptor, we know that the effective dimensionality of the feature space should be close to the number of parameters that are effectively varied (see \citep{coyote2}), 3 in our case; because of this, we believe that dimensionality reduction techniques such as PCA can help in delivering constraints that are independent on the number of bins $N_b$ that we choose originally. In order to compute the Principal Components of our feature space, we consider the CFHTemu1 simulations, which sample the cosmological parameter space at the $N=91$ points outlined in Table \ref{designtable} and allow us to compute the $N\times N_b$ model matrix $M_{pi}=M_i(\mathbf{p})$. Following a standard procedure (see \citep{astroMLText} for example), we then derive the whitened model matrix $\tilde{M}_{pi}$ subtracting the mean in each bin, and normalizing it by its variance; next we proceed in a SVD decomposition of $\mathbf{\tilde{M}}$
+\begin{equation}
+\label{svd}
+\mathbf{U}\Sigma \mathbf{V}^T=\frac{\mathbf{\tilde{M}}}{\sqrt{N-1}}
+\end{equation}   
+%
+where $\Sigma_{ij}=\Sigma_i\delta_{ij}$ is a diagonal matrix and $V^T_{ij}$ is the $i$--th principal component of $\mathbf{\tilde{M}}$, with the index $j$ ranging from $0$ to $N_b-1$. To rank the Principal Components $V^T$ in order of importance, we note that the diagonal matrix $\Sigma^2$ is nothing more than the diagonalization of the model covariance (not to be confused with the feature covariance in (\ref{datacov}))
+\begin{equation}
+\frac{1}{N-1}\mathbf{\tilde{M}^T\tilde{M}} = \mathbf{V}\Sigma^2\mathbf{V}^T
+\end{equation} 
+%
+We follow the standard interpretation of PCA components, stating that the only meaningful components $V^T_i$ in the analysis (i.e. the ones that contain the relevant cosmological information) are the ones that correspond to the biggest eigenvalues $\Sigma^2_{i}$, with the smallest eigenvalues corresponding to noisy patterns in the model, due to numerical inaccuracies in the simulation pipeline. We expect the number of relevant components to be not too far from 3; using the fact that different Principal Components are orthogonal, we perform a PCA projection on our feature space by whitening the features and computing the dot product with the principal components, keeping only the first $n$ components
+\begin{equation}
+\label{pcaprojection}
+M(n)_{i}^r = V^T(n)_{ij}\tilde{M}_j^r \,\,\,\, ; \,\,\,\,  D(n)_i = V^T(n)_{ij}\tilde{D}_j
+\end{equation}
+%
+where we indicate with $V^T(n)$ the truncation of $V^T$ to the first $n$ rows. The dimensional reduction comes from the fact that physical arguments justify a choice of $n\approx 3\ll N_{b}$. We want to stress the fact that, because we vary only 3 parameters in the CFHTemu1 simulations, we expect our feature space to be a 3--dimensional manifold embedded in a $N_b$ dimensional space: the dimensionality reduction problem is equivalent to the accurate reconstruction of the coordinate chart of this feature manifold. As outlined in \citep{astroMLText}, the coordinate chart constructed with the PCA projection in (\ref{pcaprojection}) is accurate for reasonably flat feature manifolds: when curvature effects become important, more advanced projection techniques (such as Locally Linear Embedding) have to be employed. We are allowed some flexibility on this flatness assumption by allowing the number of principal components to be slightly bigger than 3. 
+
 %%%%%%%%%%%%%%%%%%%%%%%%%% RESULTS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Results}
+In this section we outline our main results
+
+\subsection{Number of principal components}
+%
+The results of the PCA analysis are outlined in Figure \ref{pcafig}
+\begin{figure*}
+\includegraphics[scale=0.4]{Figures/pca_components.eps}
+\caption{Principal Components of the $V_0$ (red), $V_1$ (blue), $V_2$ (green), LM (black) and Power Spectrum (orange) feature spaces; the left plot shows the magnitudes of the PCA eigenvalues $\Sigma_i^2$, the right plot shows their cumulative sum. A dashed black line has been drawn in correspondence of $n=3$ components}
+\label{pcafig}
+\end{figure*}
+
+\subsection{Cosmological constraints}
+
+\begin{figure*}
+\begin{center}
+\includegraphics[scale=0.55]{Figures/contours_3comp.png}
+\end{center}
+\caption{$1\sigma$ constraints on the $(\Omega_m,\sigma_8)$ parameter doublet using the $V_0$ (red), $V_1$ (blue), $V_2$ (green), LM (black) and Power Spectrum (orange) statistics; the two panels are obtained marginalizing the parameter likelihood (\ref{parameterlikelihood}) over $w$ (left panel) and conditioning it on the plane $w=-1.0$ (right panel)}
+\label{contours3comp}
+\end{figure*}
+
+\begin{table*}
+\begin{tabular}{c|c|c|c|c||c}
+Parameters & Descriptors & $\theta_G$ & Additional details & Short description & Relevant Figures/Tables \\ \hline \hline
+$(\Omega_m,w,\sigma_8)$ & $V_0,V_1,V_2$, LM, PS & $1^\prime$ & BAD mask & $1\sigma$ contours from CFHTLens data & Figure \ref{contours3comp} \\ \hline 
+$(\Omega_m,w,\sigma_8)$ & $V_0,V_1,V_2$, LM, PS & $1^\prime$ & BAD mask &\pbox{20cm}{$1\sigma$ contours from simulations \\ for robustness test}  & Figure \ref{contours3comp} \\
+\end{tabular}
+\caption{Summary table of our results}
+\label{summarytable}
+\end{table*}
+
+\subsection{Robustness}
+
+\subsection{Combining statistics}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%% DISCUSSION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
