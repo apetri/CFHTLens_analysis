@@ -337,7 +337,7 @@ class ContourPlot(object):
 
 		self.ax.set_xlabel(self.parameter_labels[self.remaining_parameters[0]])
 		self.ax.set_ylabel(self.parameter_labels[self.remaining_parameters[1]])
-		self.ax.set_title(self.title_label)
+		self.ax.set_title(self.title_label,fontsize=22)
 
 		if contour_label is not None:
 			self.ax.legend(self.ax.proxy,contour_label)
