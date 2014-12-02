@@ -9,6 +9,7 @@ axes_facecolor = rc.func_globals["rcParams"]["axes.facecolor"]
 
 root_dir = "/Users/andreapetri/Documents/Columbia/CFHTLens_analysis/andrea/convergence_map_analysis/cfht_masked_BAD_clipped"
 brew_colors = ["red","green","blue","black","orange"]
+brew_colors_11 = ["#a50026","#d73027","#f46d43","#fdae61","#fee08b","#ffffbf","#d9ef8b","#a6d96a","#66bd63","#1a9850","#006837"]
 
 #Descriptor list
 descriptors=dict()
@@ -21,6 +22,7 @@ descriptors["moments"]="Moments"
 keys = descriptors.keys()
 keys.sort()
 
+##############################################################################################################################################
 
 def pca():
 
@@ -137,11 +139,87 @@ def contours():
 	fig.savefig("contours_{0}comp.pdf".format(n_components))
 
 
+##################################################################################################################################################
 
+def robustness():
+
+	#Smoothing scales in arcmin
+	smoothing_scale=1.0
+
+	#Likelihood levels
+	levels = [0.684]
+
+	#Descriptors
+	#descriptors_robustness = ["minkowski_0--{0:.1f}","minkowski_1--{0:.1f}","minkowski_2--{0:.1f}","minkowski_0--{0:.1f}_minkowski_1--{0:.1f}_minkowski_2--{0:.1f}","power_spectrum--{0:.1f}","moments--{0:.1f}"]
+	descriptors_robustness = ["minkowski_0--{0:.1f}","minkowski_1--{0:.1f}","minkowski_2--{0:.1f}","minkowski_0--{0:.1f}","power_spectrum--{0:.1f}","moments--{0:.1f}"]
+	descriptors_robustness.sort()
+
+	#Number of principal components to display
+	principal_components = dict()
+	for descr in descriptors_robustness:
+		principal_components[descr] = [3,4,5,6,8,10,20,30,40,50]
+
+	principal_components["moments--{0:.1f}"] = [3,4,5,6,8,9]
+
+	#Parameters of which we want to compute the confidence estimates
+	parameter_axes = {"Omega_m":0,"w":1,"sigma8":2}
+	cosmo_labels = {"Omega_m":r"$\Omega_m$","w":r"$w$","sigma8":r"$\sigma_8$"}
+	
+	#Parse command line options
+	parser = argparse.ArgumentParser(prog=sys.argv[0])
+	parser.add_argument("-f","--file",dest="options_file",action="store",type=str,help="analysis options file")
+
+	cmd_args = parser.parse_args()
+
+	if cmd_args.options_file is None:
+		parser.print_help()
+		sys.exit(0)
+
+	#Parse options from configuration file
+	options = ConfigParser.ConfigParser()
+	with open(cmd_args.options_file,"r") as configfile:
+		options.readfp(configfile)
+
+
+	#Create figure
+	fig,ax = plt.subplots(3,2,figsize=(16,24))
+	ax_flat = ax.reshape(6)
+
+	#Cycle over descriptors
+	for d,descr in enumerate(descriptors_robustness):
+		for n,n_components in enumerate(principal_components[descr]):
+
+			#Instantiate contour plot
+			contour = ContourPlot(fig=fig,ax=ax_flat[d])
+
+			#Load the likelihood
+			likelihood_file = os.path.join(root_dir,"likelihoods","likelihoodmock_"+descr.format(smoothing_scale)+"_ncomp{0}.npy".format(n_components))
+			print(likelihood_file)
+			contour.getLikelihood(likelihood_file,parameter_axes=parameter_axes,parameter_labels=cosmo_labels)
+
+			#Set physical units
+			contour.getUnitsFromOptions(options)
+
+			#Marginalize
+			contour.marginalize("w")
+
+			#Get levels
+			contour.getLikelihoodValues(levels=levels)
+
+			#Plot the contour
+			contour.plotContours(colors=[brew_colors_11[n]],fill=False,display_percentages=False,display_maximum=False)
+
+		#Labels
+		contour.title_label=""
+		contour.labels(contour_label=[r"n={0}".format(n) for n in principal_components[descr]])
+
+
+	#Save the figure
+	fig.savefig("robustness_pca.png")
 
 
 
 if __name__=="__main__":
-	contours()
+	robustness()
 
 
