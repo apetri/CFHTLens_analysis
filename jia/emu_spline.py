@@ -27,18 +27,18 @@ contour_peaks_fieldselect = 0
 interp_2D_plane = 0
 good_bad_peaks = 0
 m_correction = 0
-sample_interpolation = 0#remember need to delete cosmo #48 to work
+sample_interpolation = 1#remember need to delete cosmo #48 to work
 sample_points = 0#for final fits wiht 3 random points
 good_bad_powspec = 0
 contour_peaks_powspec = 0
 include_w = 0
 contour_including_w = 0
 SIGMA_contour = 0
-contour_ps_fieldselect = 1
+contour_ps_fieldselect = 0
 
 ######## tests ##############
-bad_pointings = 0
-ps_replaced_with_pk = 1
+bad_pointings = 1
+ps_replaced_with_pk = 0
 combined_smoothing_scale = 1
 
 compare_pk_contour_andrea = 0
@@ -383,8 +383,8 @@ if len(rmidx[0])>0:
 ps_fidu = ps_mat[48]
 fidu_params = cosmo_params[48]
 
-#ps_mat = delete(ps_mat,48,axis=0)
-#cosmo_params = delete(cosmo_params,48,axis=0)
+ps_mat = delete(ps_mat,48,axis=0)
+cosmo_params = delete(cosmo_params,48,axis=0)
 
 ps_avg = mean(ps_mat,axis=1) # array [91, 50]
 ps_std = std(ps_mat, axis=1)# array [91, 50]
@@ -408,7 +408,7 @@ cov_mat = cov(ps_fidu,rowvar=0)
 cov_inv = mat(cov_mat).I	
 fidu_avg = mean(ps_fidu,axis=0)
 #fidu_std = std(ps_fidu,axis=0)
-fidu_std = std( np.load('/Users/jia/Documents/weaklensing/CFHTLenS/emulator/test_ps_bug/BAD_ps_fidu39.npy'),axis=0)
+fidu_std = std( np.load('/Users/jia/Documents/weaklensing/CFHTLenS/emulator/test_ps_bug/SIM_powspec_sigma05_emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765_PASS.npy')/7.6645622253410002,axis=0)[11:]
 
 if CFHT_ps_full_vs_good_sky:
 	for i in range(1,14):
