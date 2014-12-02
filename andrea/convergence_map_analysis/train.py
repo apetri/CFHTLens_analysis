@@ -174,7 +174,11 @@ class FeatureLoader(object):
 			#Construct one ensemble for each feature (with included smoothing scales) and load in the data
 			ensemble_subfield = list()
 			
-			for feature_type in self.features_to_measure.keys():
+			#Prevent randomness in dictionary keys
+			features_to_measure = self.features_to_measure.keys()
+			features_to_measure.sort()
+
+			for feature_type in features_to_measure:
 			
 				for smoothing_scale in self.features_to_measure[feature_type]:
 					
