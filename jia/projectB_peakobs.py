@@ -227,6 +227,7 @@ def hist_galn_magcut(z_lo, z_hi, R=2.0, mag_cut=-19, noise=False):
 
 ################################################
 ################ operations ####################
+################################################
 
 ####### get a list of peaks, with colums 0) identifier, 1) kappa, 2) mag_i, 3) z_peak
 if list_peaks_cat:
@@ -290,11 +291,9 @@ if do_hist_galn_magcut:
 		savefig(plot_dir+'hist_galn_magcut%s_%s_rand.jpg'%(mag_cut, height))
 		close()
 			
-			
-	
 
-## 10/06/2014, replace Mag_i = -99 items with Mag_y values
 if update_mag_i:
+	## 10/06/2014, replace Mag_i = -99 items with Mag_y values
 	# very messy, one time use only, because of CFHT failed i filter
 	ra_arr, dec_arr, Mag_y_arr = np.load('/Users/jia/CFHTLenS/catalogue/Mag_y.npy').T
 	radecy = np.load('/Users/jia/CFHTLenS/catalogue/Mag_y.npy')[:,:2]
