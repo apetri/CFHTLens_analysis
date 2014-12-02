@@ -6,8 +6,50 @@ import logging
 
 import numpy as np
 from scipy import stats
+from scipy import integrate
 import matplotlib.pyplot as plt
 from matplotlib import rc
+
+#############################################################
+############Find likelihood levels in 1D likelihood##########
+#############################################################
+
+def _1d_level_values(p,l,level=0.684,quantity=2):
+
+	"""
+	Find the parameter extremes that correspons to the likelihood Nsigma level
+
+	"""
+
+	#Find the maximum of the likelihood
+	maximum = np.where(l==l.max())[0][0]
+	parmax = p[maximum]
+
+	all_levels = np.zeros_like(l)
+	
+	for n in range(l.shape[0]):
+		all_levels[n] = l[l>=l[n]].sum() / l.sum()
+
+	#Find the closest level
+	closest = np.argmin(np.abs(all_levels - level))
+
+	#Find the n corresponding parameter values
+	ranks = stats.rankdata(np.abs(l-l[closest])).astype(np.int) - 1
+
+	par = list()
+	for n in range(quantity):
+		par.append(p[np.where(ranks==n)[0][0]])
+
+	#Sort parameters in order of closeness to the maximum
+	def _closest(x):
+		return np.abs(x-parmax)
+
+	par.sort(key=_closest)
+
+	return par
+
+	
+
 
 #############################################################
 ##################ContourPlot class##########################
@@ -192,7 +234,7 @@ class ContourPlot(object):
 		self.ax.set_ylim(self.extent[2],self.extent[3])
 
 
-	def marginal(self,parameter_name="w"):
+	def marginal(self,parameter_name="w",levels=None):
 
 		"""
 		Marginalize the likelihood over all parameters but one
@@ -207,10 +249,29 @@ class ContourPlot(object):
 		remaining_parameter_axes = [ self.parameter_axes[par] for par in remaining_parameters ]
 
 		#Marginalize the likelihood
+		parameter_range = np.linspace(self.min[parameter_name],self.max[parameter_name],self.npoints[parameter_name])
 		marginal_likelihood = self.likelihood.sum(axis=tuple(remaining_parameter_axes))
 
-		#Return the non-normalized single parameter likelihood
-		return np.linspace(self.min[parameter_name],self.max[parameter_name],self.npoints[parameter_name]),marginal_likelihood
+		#Compute the normalization
+		normalization = integrate.simps(marginal_likelihood,x=parameter_range)
+		marginal_likelihood /= normalization
+
+		#Compute also the contour extremes if levels 
+		if levels is not None:
+
+			par_extremes = list()
+			for level in levels:
+
+				pL = _1d_level_values(parameter_range,marginal_likelihood,level=level,quantity=3)
+				par_extremes.append((pL[0],pL[1]))
+
+			#Return the normalized single parameter likelihood, along with the contour extremes
+			return parameter_range,marginal_likelihood,par_extremes
+
+		else:
+			
+			#Return the normalized single parameter likelihood
+			return parameter_range,marginal_likelihood
 
 
 	def slice(self,parameter_name="w",parameter_value=-1.0):
