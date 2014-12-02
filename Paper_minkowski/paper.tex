@@ -1,6 +1,6 @@
 %\documentclass[useAMS, usenatbib,usegraphicx,letter]{mn2e}
 %\documentclass[11pt]{article}
-\documentclass[reprint,aps,prd,superscriptaddress,showkeys]{revtex4-1}
+\documentclass[reprint,aps,prd,superscriptaddress,showkeys,showpacs]{revtex4-1}
 \usepackage{epsfig,amsmath,natbib}
 
 \usepackage{aas_macros}
@@ -21,7 +21,7 @@
 
 \begin{document}
 
-\title{CFHTLens Weak Lensing Emulator and Cosmological Constraints from the Minkowski Functionals and Moments}
+\title{CFHTLenS Weak Lensing Emulator and Cosmological Constraints from the Minkowski Functionals and Moments}
 
 \author{Andrea Petri}
 \email{apetri@phys.columbia.edu}
@@ -48,10 +48,12 @@
 \label{firstpage}
 
 \begin{abstract}
-Weak lensing surveys have the potential... we consider CFHTLens \citep{CFHTKilbinger,CFHTFu}
+Weak gravitational lensing has been proposed as an interesting probe for cosmology, and in particular for the Dark Energy (DE) equation of state $w$; the fact that typical weak lensing fields are non--Gaussian in nature, quadratic statistics, such as angular power spectra, can miss some of the cosmological information contained in survey data. In this work we examine constraints on the parameter triplet $(\Omega_m,w,\sigma_8)$ from weak lensing Minkowski Functionals and Moments, using the publicly available data from the 154\,deg$^2$ CFHTLenS survey. We utilize a new suite of ray--tracing N-body simulations spanning 91 points in the $(\Omega_m,w,\sigma_8)$ parameter space, replicating the galaxy sky positions, redshift and shape noise read from the CFHTLenS catalogs. We then build an emulator that interpolates the feature space with an accuracy of $\sim5\%$, and use it to compute the parameter likelihood, from which we derive the data constraints. We find that...
+
 \end{abstract}
 
 \keywords{Weak Gravitational Lensing --- Data analysis --- Methods: analytical,numerical,statistical}
+\pacs{98.80.-k, 95.36.+x, 95.30.Sf, 98.62.Sb}
 
 \maketitle
 
@@ -59,16 +61,16 @@ Weak lensing surveys have the potential... we consider CFHTLens \citep{CFHTKilbi
 %%%%%%%%%%%%%%%%%%%%%%%%%% INTRO %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Introduction}
-In this work...
+In this work we use the publicly available CFHTLenS data, that consists of a catalog of $\approx$4.2 million galaxies, combined with a suite of ray-tracing simulations in 91 different cosmological models to constrain the cosmological parameters $\Omega_m$,$\sigma_8$ and the DE equation of state $w$. The paper is organized as follows; we first give an overview of the CFHTLenS catalogs we make use of, summarizing the data reduction techniques we adopted. Next, we give a description of our simulation pipeline, including the procedure to sample the parameter space and a broad description of the ray--tracing algorithm; after this we illustrate the statistical descriptors that we use to extract the cosmological information, complemented with a dimensional reduction and statistical inference framework. We then outline our results, with particular focus on the cosmological parameter constraints. To conclude, we discuss our findings and comment on possible future developments of this analysis.  
 
 %%%%%%%%%%%%%%%%%%%%%%%%%% DATA AND SIMULATIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Data and simulations}
 
-\subsection{CFHTLens data reduction}
+\subsection{CFHTLenS data reduction}
 \label{cfhtdatareduction}
 %
-The CFHTLens survey covers four sky patches of 64,23,44 and 23 deg$^2$ area, for a total of 154 deg$^2$; the publicly released data roughly consist of the creation of a galaxy catalogue using SExtractor \citep{SExtractor}, a photometric redshift estimation with a Bayesian photometric redshift code \citep{PhotoCode} and galaxy shape measurements with \textit{lensfit} \citep{cfht1,cfht2}. The cosmological parameter inferences have been obtained in \citep{CFHTKilbinger} using the two point correlation function (2PCF). We apply the following cuts to the galaxy catalogue: mask$<1$, redshift $0.2 < z < 1.3$, fitclass = 0 (which requires the object to be a galaxy) and weight $w>0$ (with larger $w$ indicating smaller shear measurement uncertainty). Applying these cuts leaves us 4.2$\times10^6$ galaxies, 124.7 deg$^2$ residual sky coverage, and average number density $n_{gal} \approx 9.3\,\mathrm{arcmin}^{-2}$. The CFHTLens galaxy catalogue provides us with the sky position $\pmb{\theta}$, the redshift $z(\pmb{\theta})$ and ellipticity $\mathbf{e}(\pmb{\theta})$ of eack galaxy, as well as the individual weight factors $w(\pmb{\theta})$ and additive and multiplicative ellipticity corrections $c(\pmb{\theta}),m(\pmb{\theta})$. Because the CFHTLenS fields are irregularly shaped, we first divide them into 13 squares (subfields) to match the shape and $\approx12$ deg$^2$ size of our simulated maps; these square subfield maps are pixelized according to a Gaussian gridding procedure
+The CFHTLenS survey covers four sky patches of 64,23,44 and 23 deg$^2$ area, for a total of 154 deg$^2$; the publicly released data roughly consist of the creation of a galaxy catalogue using SExtractor \citep{SExtractor}, a photometric redshift estimation with a Bayesian photometric redshift code \citep{PhotoCode} and galaxy shape measurements with \textit{lensfit} \citep{cfht1,cfht2}. The cosmological parameter inferences have been obtained in \citep{CFHTKilbinger} using the two point correlation function (2PCF). We apply the following cuts to the galaxy catalogue: mask$<1$, redshift $0.2 < z < 1.3$, fitclass = 0 (which requires the object to be a galaxy) and weight $w>0$ (with larger $w$ indicating smaller shear measurement uncertainty). Applying these cuts leaves us 4.2$\times10^6$ galaxies, 124.7 deg$^2$ residual sky coverage, and average number density $n_{gal} \approx 9.3\,\mathrm{arcmin}^{-2}$. The CFHTLenS galaxy catalogue provides us with the sky position $\pmb{\theta}$, the redshift $z(\pmb{\theta})$ and ellipticity $\mathbf{e}(\pmb{\theta})$ of eack galaxy, as well as the individual weight factors $w(\pmb{\theta})$ and additive and multiplicative ellipticity corrections $c(\pmb{\theta}),m(\pmb{\theta})$. Because the CFHTLenS fields are irregularly shaped, we first divide them into 13 squares (subfields) to match the shape and $\approx12$ deg$^2$ size of our simulated maps; these square subfield maps are pixelized according to a Gaussian gridding procedure
 \begin{equation}
 \bar{\mathbf{e}}(\pmb{\theta}) = \frac{\sum_{i=1}^{N_s} W(\vert\pmb{\theta}-\pmb{\theta}_i\vert)w(\pmb{\theta}_i)[\mathbf{e}^{obs}(\pmb{\theta}_i)-c(\pmb{\theta}_i)]}{\sum_{i=1}^{N_s}W(\vert\pmb{\theta}-\pmb{\theta}_i\vert)w(\pmb{\theta}_i)[1+m(\pmb{\theta})]}
 \end{equation} 
@@ -88,7 +90,7 @@ Using the ellipticity grid $\bar{\mathbf{e}}(\pmb{\theta})$ as an estimator for 
 \kappa(\mathbf{l}) = \left(\frac{l_1^2-l_2^2}{l_1^2+l_2^2}\right)\gamma^1(\mathbf{l}) + 2\frac{l_1l_2}{l_1^2+l_2^2}\gamma^2(\mathbf{l})
 \end{equation}
 %
-The CFHTLens catalogues contain masked regions (mainly due to bright stars and incorrect PSF subtraction); these regions with low galaxy number density can induce large errors in the cosmological parameter inferences, hence they need to be masked out. We first create grided maps of the same size and resolution as the $\kappa$ maps, but with each pixel containing the number of galaxies ($n_{gal}$) falling within its window. We then smooth this galaxy surface density map with the same Gaussian window function as equation (\ref{gausskernel}) and we remove regions where $n_{gal} < 5 \,\mathrm{arcmin}^{−2}$ (see \citep{CFHTMasato}); for a more throughout description of our data reduction procedure, we refer the reader to our companion paper \citep{Companion}. 
+The CFHTLenS catalogues contain masked regions (mainly due to bright stars and incorrect PSF subtraction); these regions with low galaxy number density can induce large errors in the cosmological parameter inferences, hence they need to be masked out. We first create grided maps of the same size and resolution as the $\kappa$ maps, but with each pixel containing the number of galaxies ($n_{gal}$) falling within its window. We then smooth this galaxy surface density map with the same Gaussian window function as equation (\ref{gausskernel}) and we remove regions where $n_{gal} < 5 \,\mathrm{arcmin}^{−2}$ (see \citep{CFHTMasato}); for a more throughout description of our data reduction procedure, we refer the reader to our companion paper \citep{Companion}. 
 
 \subsection{Simulation design}
 In this paragraph we give a description of the method we used to sample the parameter space in our simulation effort. We wish to investigate the non--linear dependency of cosmological probes (in this work Minkowski Functionals and Moments of the $\kappa$ field) on the parameter triplet $\mathbf{p}=(\Omega_m,w,\sigma_8)$, while keeping fixed the other relevant parameters to $(h,\Omega_b,n_s)$ to their fiducial values (0.7,0.046,0.96). We sampled the $D$--dimensional ($D=3$ in this case) parameter space using an irregularly spaced grid, designed with a method similar to \citep{coyote2}. We limit the parameter sampling in a box of corners $\Omega_m\in[0.07,1],\,w\in[-3.0,0],\,\sigma_8\in[0.1,1.5]$ and we map this sampling box $\Pi$ into an hypercube of unit side; we want to contruct an irregularly spaced grid consisting of $N$ points $\mathbf{x}_i\in[0,1]^D$. Let a \textit{design} $\mathcal{D}$ be the set of this irregularly spaced $N$ points: we wish to find an optimal design, in which the points are spread as uniformly as possible inside the box. Following \citep{coyote2}, we choose our optimal design as the minimum of the cost function
@@ -150,7 +152,7 @@ $N$ & $\Omega_m$ & $w$ & $\sigma_8$ & $N$ & $\Omega_m$ & $w$ & $\sigma_8$ & $N$ 
 \end{center}
 \end{figure*}
 %
-For each parameter point on the grid $\mathbf{p}_s$ we run one $N$--body simulation and perform ray tracing through it, as described in \S~\ref{raysim}, to simulate CFHTLens shear catalogs; this set of simulations will be called CFHTemu1 throughout the rest of this work. Additionally, we run 50 independent $N$--body simulations with a \textit{fiducial} parameter choice $\mathbf{p}_0=(0.26,-1.0,0.8)$ for the purpose of measuring accurately the covariance matrices which will serve the parameter inferences as in \S-\ref{cosmostats}; this set of simulations will be called CFHTcov throughout the rest of this work.    
+For each parameter point on the grid $\mathbf{p}_s$ we run one $N$--body simulation and perform ray tracing through it, as described in \S~\ref{raysim}, to simulate CFHTLenS shear catalogs; this set of simulations will be called CFHTemu1 throughout the rest of this work. Additionally, we run 50 independent $N$--body simulations with a \textit{fiducial} parameter choice $\mathbf{p}_0=(0.26,-1.0,0.8)$ for the purpose of measuring accurately the covariance matrices which will serve the parameter inferences as in \S-\ref{cosmostats}; this set of simulations will be called CFHTcov throughout the rest of this work.    
 
 \subsection{Ray Tracing Simulations}
 \label{raysim}
@@ -186,7 +188,7 @@ where $\pmb{I}$ is the $2\times2$ identity and $\sigma^{1,3}$ are the first and 
 \end{cases}
 \end{equation}
 %
-where $\mathbf{g} = \pmb{\gamma}/1-\kappa$ is the reduced shear. For each simulated galaxy, we assign an intrinsic elliptic- ity by rotating the observed ellipticity for that galaxy by a random angle on the sky, while conserving its magnitude $\vert\mathbf{e}\vert$. To be consistent with the CFHTLenS analysis, we adopt the weak lensing limit ($\vert\pmb{\gamma}\vert\ll1,\kappa\ll1$),hence $\mathbf{g}\approx\pmb{\gamma}$ and $\mathbf{e}\approx \mathbf{e}_s+\pmb{\gamma}$. We also add the multiplicative shear corrections by replacing $\pmb{\gamma}$ with $(1+m)\pmb{\gamma}$; like for the CFHTLens data, we proceed in constructing the simulated $\kappa$ maps as explained in \S\ref{cfhtdatareduction}. These final simulation products are then processed together with the $\kappa$ maps obtained from the data to calculate the confidence intervals on the parameter triplet $(\Omega_m,w,\sigma_8)$.
+where $\mathbf{g} = \pmb{\gamma}/1-\kappa$ is the reduced shear. For each simulated galaxy, we assign an intrinsic elliptic- ity by rotating the observed ellipticity for that galaxy by a random angle on the sky, while conserving its magnitude $\vert\mathbf{e}\vert$. To be consistent with the CFHTLenS analysis, we adopt the weak lensing limit ($\vert\pmb{\gamma}\vert\ll1,\kappa\ll1$),hence $\mathbf{g}\approx\pmb{\gamma}$ and $\mathbf{e}\approx \mathbf{e}_s+\pmb{\gamma}$. We also add the multiplicative shear corrections by replacing $\pmb{\gamma}$ with $(1+m)\pmb{\gamma}$; like for the CFHTLenS data, we proceed in constructing the simulated $\kappa$ maps as explained in \S\ref{cfhtdatareduction}. These final simulation products are then processed together with the $\kappa$ maps obtained from the data to calculate the confidence intervals on the parameter triplet $(\Omega_m,w,\sigma_8)$.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%% METHODS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -219,7 +221,7 @@ Where $A$ is the total area of the fields of view we have been using and the not
 \end{matrix}
 \end{equation}
 %
-If the $\kappa$ field was Gaussian, one could express all the Minkowski Functionals in terms of the LM2 moments, as expected from the fact that, for a Gaussian field, the only meaningful statistics are the quadratic ones. In reality, weak lensing convergence fields, as the CFHTLens ones, are non--Gaussian and the MF and LM descriptors are in principle equivalent. \citep{Munshi12,Matsubara10} studied a perturbative expansion of the MF descriptors in powers of the field standard deviation $\sigma_0$, which, when truncated at order $O(\sigma_0^2)$, can be expressed completely in terms of the LM up to quartic order. Such perturbative series, however, have been shown not to converge in \citep{Petri2013} unless the weak lensing fields are smoothed with windows of size comparable to $\sim 15^\prime$. Because of this, throughout this work, we treat MF and LM as independent statistical descriptors. In addition to these two descriptors, we consider the $\kappa$ angular power spectrum $P_l$ defined as
+If the $\kappa$ field was Gaussian, one could express all the Minkowski Functionals in terms of the LM2 moments, as expected from the fact that, for a Gaussian field, the only meaningful statistics are the quadratic ones. In reality, weak lensing convergence fields, as the CFHTLenS ones, are non--Gaussian and the MF and LM descriptors are in principle equivalent. \citep{Munshi12,Matsubara10} studied a perturbative expansion of the MF descriptors in powers of the field standard deviation $\sigma_0$, which, when truncated at order $O(\sigma_0^2)$, can be expressed completely in terms of the LM up to quartic order. Such perturbative series, however, have been shown not to converge in \citep{Petri2013} unless the weak lensing fields are smoothed with windows of size comparable to $\sim 15^\prime$. Because of this, throughout this work, we treat MF and LM as independent statistical descriptors. In addition to these two descriptors, we consider the $\kappa$ angular power spectrum $P_l$ defined as
 \begin{equation}
 \label{powerspectrum}
 \langle\tilde{\kappa}(\mathbf{l})\tilde{\kappa}(\mathbf{l}')\rangle=(2\pi)^2\delta_D(\mathbf{l}+\mathbf{l}')P_l
@@ -240,7 +242,7 @@ Moments (LM) & -- & 9 \\
 %
 \subsection{Cosmological parameter inferences}
 \label{cosmostats}
-In this paragraph we give a brief outline of the statistical framework we adopted for computing the cosmological parameter confidence levels from the CFHTLens observations; we make use of the MF and LM statistical descriptors outlined in the previous paragraph. We refer to $M_i^r(\mathbf{p})$ as the measured descriptor from a realization $r$ of one of our simulations with a choice of cosmological parameters $\mathbf{p}$, and to $D_i$ as the measured descriptor from the CFHTLens data. In this notation, $i$ is an index that refers to the particular bin on which the descriptor is evaluated (for example $i$ can range from 0 to 9 for the LM statistic and from 0 to $N_b-1$ for a Minkowski Functional measured on $N_b$ different excursion sets). Once we make an assumption for the data likelihood $\mathcal{L}_d(D_i\vert \mathbf{p})$ and for the parameter priors $\Pi(\mathbf{p})$, we can use the Bayes theorem to compute the parameter likelihood $\mathcal{L}_p$ as follows
+In this paragraph we give a brief outline of the statistical framework we adopted for computing the cosmological parameter confidence levels from the CFHTLenS observations; we make use of the MF and LM statistical descriptors outlined in the previous paragraph. We refer to $M_i^r(\mathbf{p})$ as the measured descriptor from a realization $r$ of one of our simulations with a choice of cosmological parameters $\mathbf{p}$, and to $D_i$ as the measured descriptor from the CFHTLenS data. In this notation, $i$ is an index that refers to the particular bin on which the descriptor is evaluated (for example $i$ can range from 0 to 9 for the LM statistic and from 0 to $N_b-1$ for a Minkowski Functional measured on $N_b$ different excursion sets). Once we make an assumption for the data likelihood $\mathcal{L}_d(D_i\vert \mathbf{p})$ and for the parameter priors $\Pi(\mathbf{p})$, we can use the Bayes theorem to compute the parameter likelihood $\mathcal{L}_p$ as follows
 
 \begin{equation}
 \label{parameterlikelihood}
@@ -268,7 +270,7 @@ and the covariance matrix
 C_{ij} = \frac{1}{R-1} \sum_{r=1}^R [M_i^r(\mathbf{p}_0)-M_i(\mathbf{p}_0)][M_j^r(\mathbf{p}_0)-M_j(\mathbf{p}_0)]
 \end{equation}
 %
-is measured from a simulation set based on 50 independent $N$--body simulations with parameters $\mathbf{p}_0=(0.26,-1.0,0.8)$ and is assumed to be model--independent; because of this the normalization constant in (\ref{datalikelihood}) is also model--independent. When computing parameter constraints from CFHTLens weak lensing data alone, we make a flat prior assumption for $\Pi(\mathbf{p})$. Parameter inferences are made estimating the location of the maximum of the parameter likelihood in (\ref{parameterlikelihood}), which we call $\mathbf{p}_{ML}(D_i)$ as well as its confidence contours. A $N\sigma$--confidence contour of $\mathcal{L}_p(\mathbf{p}\vert D_i)$ is defined to be the subset of points in parameter space on which the likelihood has a constant value $c_N$ and 
+is measured from a simulation set based on 50 independent $N$--body simulations with parameters $\mathbf{p}_0=(0.26,-1.0,0.8)$ and is assumed to be model--independent; because of this the normalization constant in (\ref{datalikelihood}) is also model--independent. When computing parameter constraints from CFHTLenS weak lensing data alone, we make a flat prior assumption for $\Pi(\mathbf{p})$. Parameter inferences are made estimating the location of the maximum of the parameter likelihood in (\ref{parameterlikelihood}), which we call $\mathbf{p}_{ML}(D_i)$ as well as its confidence contours. A $N\sigma$--confidence contour of $\mathcal{L}_p(\mathbf{p}\vert D_i)$ is defined to be the subset of points in parameter space on which the likelihood has a constant value $c_N$ and 
 \begin{equation}
 \label{ennesigma}
 \int_{\mathcal{L}>c_N} \mathcal{L}_p(\mathbf{p}\vert D_i) d\mathbf{p} = \frac{1}{\sqrt{2\pi}}\int_{-N}^N dx e^{-x^2/2}
@@ -284,7 +286,7 @@ where $\phi$ has been chosen as a multiquadric function $\phi(r)=\sqrt{1+(r/r_0)
 \subsection{Dimensionality reduction}
 \label{pcasection}
 %
-The main goal of this work is constraining the cosmological parameter triplet $(\Omega_m,w,\sigma_8)$ using the CFHTLens data; when the question on the accuracy of the $N\sigma$ contours is raised, particular attention should be given on the effect of binning choices on contour sizes computed with equations (\ref{parameterlikelihood})--(\ref{ennesigma}). It is known that the choice of the number of bins, $N_b$, can have a non--negligible effect on the contour sizes (see \citep{Petri2013} for an example with simulated datasets); in order for our results to be robust under this effect, we adopt a Principal Component Analysis (PCA) approach. Our main physical motivation for this approach is that, albeit we need to specify $N_b$ numbers in order to fully characterize a binned descriptor, we know that the effective dimensionality of the feature space should be close to the number of parameters that are effectively varied (see \citep{coyote2}), 3 in our case; because of this, we believe that dimensionality reduction techniques such as PCA can help in delivering constraints that are independent on the number of bins $N_b$ that we choose originally. In order to compute the Principal Components of our feature space, we consider the CFHTemu1 simulations, which sample the cosmological parameter space at the $N=91$ points outlined in Table \ref{designtable} and allow us to compute the $N\times N_b$ model matrix $M_{pi}=M_i(\mathbf{p})$. Following a standard procedure (see \citep{astroMLText} for example), we then derive the whitened model matrix $\tilde{M}_{pi}$ subtracting the mean in each bin, and normalizing it by its variance; next we proceed in a SVD decomposition of $\mathbf{\tilde{M}}$
+The main goal of this work is constraining the cosmological parameter triplet $(\Omega_m,w,\sigma_8)$ using the CFHTLenS data; when the question on the accuracy of the $N\sigma$ contours is raised, particular attention should be given on the effect of binning choices on contour sizes computed with equations (\ref{parameterlikelihood})--(\ref{ennesigma}). It is known that the choice of the number of bins, $N_b$, can have a non--negligible effect on the contour sizes (see \citep{Petri2013} for an example with simulated datasets); in order for our results to be robust under this effect, we adopt a Principal Component Analysis (PCA) approach. Our main physical motivation for this approach is that, albeit we need to specify $N_b$ numbers in order to fully characterize a binned descriptor, we know that the effective dimensionality of the feature space should be close to the number of parameters that are effectively varied (see \citep{coyote2}), 3 in our case; because of this, we believe that dimensionality reduction techniques such as PCA can help in delivering constraints that are independent on the number of bins $N_b$ that we choose originally. In order to compute the Principal Components of our feature space, we consider the CFHTemu1 simulations, which sample the cosmological parameter space at the $N=91$ points outlined in Table \ref{designtable} and allow us to compute the $N\times N_b$ model matrix $M_{pi}=M_i(\mathbf{p})$. Following a standard procedure (see \citep{astroMLText} for example), we then derive the whitened model matrix $\tilde{M}_{pi}$ subtracting the mean in each bin, and normalizing it by its variance; next we proceed in a SVD decomposition of $\mathbf{\tilde{M}}$
 \begin{equation}
 \label{svd}
 \mathbf{U}\Sigma \mathbf{V}^T=\frac{\mathbf{\tilde{M}}}{\sqrt{N-1}}
@@ -301,7 +303,7 @@ We follow the standard interpretation of PCA components, stating that the only m
 M(n)_{i}^r = V^T(n)_{ij}\tilde{M}_j^r \,\,\,\, ; \,\,\,\,  D(n)_i = V^T(n)_{ij}\tilde{D}_j
 \end{equation}
 %
-where we indicate with $V^T(n)$ the truncation of $V^T$ to the first $n$ rows. The dimensional reduction comes from the fact that physical arguments justify a choice of $n\approx 3\ll N_{b}$. We want to stress the fact that, because we vary only 3 parameters in the CFHTemu1 simulations, we expect our feature space to be a 3--dimensional manifold embedded in a $N_b$ dimensional space: the dimensionality reduction problem is equivalent to the accurate reconstruction of the coordinate chart of this feature manifold. As outlined in \citep{astroMLText}, the coordinate chart constructed with the PCA projection in (\ref{pcaprojection}) is accurate for reasonably flat feature manifolds: when curvature effects become important, more advanced projection techniques (such as Locally Linear Embedding) have to be employed. We are allowed some flexibility on this flatness assumption by allowing the number of principal components to be slightly bigger than 3. 
+where we indicate with $V^T(n)$ the truncation of $V^T$ to the first $n$ rows. The dimensional reduction comes from the fact that physical arguments justify a choice of $n\approx 3< N_{b}$. We want to stress the fact that, because we vary only 3 parameters in the CFHTemu1 simulations, we expect our feature space to be a 3--dimensional manifold embedded in a $N_b$ dimensional space: the dimensionality reduction problem is equivalent to the accurate reconstruction of the coordinate chart of this feature manifold. As outlined in \citep{astroMLText}, the coordinate chart constructed with the PCA projection in (\ref{pcaprojection}) is accurate for reasonably flat feature manifolds: when curvature effects become important, more advanced projection techniques (such as Locally Linear Embedding) have to be employed. We are allowed some flexibility on this flatness assumption by allowing the number of principal components to be bigger than 3. 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%% RESULTS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -340,7 +342,7 @@ The purpose of this paragraph is to convince the reader that the cosmological co
 \begin{table*}
 \begin{tabular}{c|c|c|c|c||c}
 Parameters & Descriptors & $\theta_G$ & Additional details & Short description & Relevant Figures/Tables \\ \hline \hline
-$(\Omega_m,w,\sigma_8)$ & $V_0,V_1,V_2$, LM, PS & $1^\prime$ & BAD mask & $1\sigma$ contours from CFHTLens data & Figure \ref{contours3comp} \\ \hline 
+$(\Omega_m,w,\sigma_8)$ & $V_0,V_1,V_2$, LM, PS & $1^\prime$ & BAD mask & $1\sigma$ contours from CFHTLenS data & Figure \ref{contours3comp} \\ \hline 
 $(\Omega_m,w,\sigma_8)$ & $V_0,V_1,V_2$, LM, PS & $1^\prime$ & BAD mask &\pbox{20cm}{$1\sigma$ contours from simulations \\ for robustness test}  & Figure \ref{robustnessfig} \\
 \end{tabular}
 \caption{Summary table of our results}

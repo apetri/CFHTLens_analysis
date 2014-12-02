@@ -8,7 +8,7 @@ from contours import ContourPlot
 axes_facecolor = rc.func_globals["rcParams"]["axes.facecolor"]
 
 root_dir = "/Users/andreapetri/Documents/Columbia/CFHTLens_analysis/andrea/convergence_map_analysis/cfht_masked_BAD_clipped"
-brew_colors = ["red","green","blue","black","orange"]
+brew_colors = ["red","green","blue","black","orange","magenta","cyan"]
 brew_colors_11 = ["#a50026","#d73027","#f46d43","#fdae61","#fee08b","#ffffbf","#d9ef8b","#a6d96a","#66bd63","#1a9850","#006837"]
 
 #Descriptor list
@@ -150,7 +150,8 @@ def robustness():
 	levels = [0.684]
 
 	#Descriptors
-	descriptors_robustness = ["minkowski_0--{0:.1f}","minkowski_1--{0:.1f}","minkowski_2--{0:.1f}","minkowski_0--{0:.1f}_minkowski_1--{0:.1f}_minkowski_2--{0:.1f}","power_spectrum--{0:.1f}","moments--{0:.1f}"]
+	#descriptors_robustness = ["minkowski_0--{0:.1f}","minkowski_1--{0:.1f}","minkowski_2--{0:.1f}","minkowski_0--{0:.1f}_minkowski_1--{0:.1f}_minkowski_2--{0:.1f}","power_spectrum--{0:.1f}","moments--{0:.1f}"]
+	descriptors_robustness = ["minkowski_0--{0:.1f}","minkowski_1--{0:.1f}","minkowski_2--{0:.1f}","minkowski_012--{0:.1f}_power_spectrum--{0:.1f}","power_spectrum--{0:.1f}","moments--{0:.1f}"]
 	descriptor_titles = dict()
 	descriptor_titles["minkowski_0--{0:.1f}"] = r"$V_0$"
 	descriptor_titles["minkowski_1--{0:.1f}"] = r"$V_1$"
@@ -158,6 +159,7 @@ def robustness():
 	descriptor_titles["minkowski_0--{0:.1f}_minkowski_1--{0:.1f}_minkowski_2--{0:.1f}"] = r"$V_0 \times V_1 \times V_2$"
 	descriptor_titles["power_spectrum--{0:.1f}"] = r"$\mathrm{PS}$"
 	descriptor_titles["moments--{0:.1f}"] = r"$\mathrm{Moments}$"
+	descriptor_titles["minkowski_012--{0:.1f}_power_spectrum--{0:.1f}"] = r"$V_0 \times V_1 \times V_2 \times \mathrm{PS}$"
 
 	#Number of principal components to display
 	principal_components = dict()
@@ -219,7 +221,82 @@ def robustness():
 
 
 	#Save the figure
-	fig.savefig("robustness_pca.eps")
+	fig.savefig("robustness_pca.png")
+
+##################################################################################################################################################
+
+def comparison():
+
+	#Smoothing scales in arcmin
+	smoothing_scale=1.0
+	n_components=30
+
+	#Likelihood levels
+	levels = [0.684]
+
+	#Descriptors
+	descriptors_comparison = ["minkowski_0--{0:.1f}","minkowski_1--{0:.1f}","minkowski_2--{0:.1f}","minkowski_012--{0:.1f}_power_spectrum--{0:.1f}","minkowski_0--{0:.1f}_minkowski_1--{0:.1f}_minkowski_2--{0:.1f}","power_spectrum--{0:.1f}"]
+	descriptor_titles = dict()
+	descriptor_titles["minkowski_0--{0:.1f}"] = r"$V_0$"
+	descriptor_titles["minkowski_1--{0:.1f}"] = r"$V_1$"
+	descriptor_titles["minkowski_2--{0:.1f}"] = r"$V_2$"
+	descriptor_titles["minkowski_0--{0:.1f}_minkowski_1--{0:.1f}_minkowski_2--{0:.1f}"] = r"$V_0 \times V_1 \times V_2$"
+	descriptor_titles["power_spectrum--{0:.1f}"] = r"$\mathrm{PS}$"
+	descriptor_titles["moments--{0:.1f}"] = r"$\mathrm{Moments}$"
+	descriptor_titles["minkowski_012--{0:.1f}_power_spectrum--{0:.1f}"] = r"$V_0 \times V_1 \times V_2 \times$ $\mathrm{PS}$"
+
+	#Parameters of which we want to compute the confidence estimates
+	parameter_axes = {"Omega_m":0,"w":1,"sigma8":2}
+	cosmo_labels = {"Omega_m":r"$\Omega_m$","w":r"$w$","sigma8":r"$\sigma_8$"}
+	
+	#Parse command line options
+	parser = argparse.ArgumentParser(prog=sys.argv[0])
+	parser.add_argument("-f","--file",dest="options_file",action="store",type=str,help="analysis options file")
+
+	cmd_args = parser.parse_args()
+
+	if cmd_args.options_file is None:
+		parser.print_help()
+		sys.exit(0)
+
+	#Parse options from configuration file
+	options = ConfigParser.ConfigParser()
+	with open(cmd_args.options_file,"r") as configfile:
+		options.readfp(configfile)
+
+	#Create the figure
+	fig,ax = plt.subplots()
+
+	#Cycle over the desctiptors
+	for n,descr in enumerate(descriptors_comparison):
+
+		#Instantiate contour plot
+		contour = ContourPlot(fig=fig,ax=ax)
+
+		#Load the likelihood
+		likelihood_file = os.path.join(root_dir,"likelihoods","likelihoodmock_"+descr.format(smoothing_scale)+"_ncomp{0}.npy".format(n_components))
+		contour.getLikelihood(likelihood_file,parameter_axes=parameter_axes,parameter_labels=cosmo_labels)
+
+		#Set physical units
+		contour.getUnitsFromOptions(options)
+
+		#Marginalize
+		contour.marginalize("w")
+
+		#Get levels
+		contour.getLikelihoodValues(levels=levels)
+
+		#Plot the contour
+		contour.plotContours(colors=[brew_colors[n]],fill=False,display_percentages=False,display_maximum=False)
+
+	#Labels
+	contour.title_label=""
+	contour.labels(contour_label=[descriptor_titles[descr] for descr in descriptors_comparison])
+
+	#Save the figure
+	fig.savefig("comparison_pca{0}.png".format(n_components))
+
+
 
 ##################################################################################################################################################
 
@@ -278,6 +355,5 @@ def w_likelihood():
 
 
 if __name__=="__main__":
-	w_likelihood()
-
+	comparison()
 
