@@ -2,7 +2,10 @@ import sys,os,argparse,ConfigParser
 from lenstools.constraints import LikelihoodAnalysis
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import rc
 from contours import ContourPlot
+
+axes_facecolor = rc.func_globals["rcParams"]["axes.facecolor"]
 
 root_dir = "/Users/andreapetri/Documents/Columbia/CFHTLens_analysis/andrea/convergence_map_analysis/cfht_masked_BAD_clipped"
 brew_colors = ["red","green","blue","black","orange"]
@@ -109,16 +112,19 @@ def contours():
 
 		#Marginalize
 		contour_marg.marginalize("w")
-		#Slice
-		contour_slice.slice("w",-1.0)
+		
+		#Slice on best fit for w
+		maximum = contour_slice.getMaximum()
+		print("Likelihood with {0} is maximum at {1}".format(descr,maximum))
+		contour_slice.slice("w",maximum["w"])
 
 		#Get levels
 		contour_marg.getLikelihoodValues(levels=levels)
 		contour_slice.getLikelihoodValues(levels=levels)
 
 		#Plot contours
-		contour_marg.plotContours(colors=[brew_colors[n],"#eeeeee"],fill=True,display_maximum=False,display_percentages=False,alpha=0.45)
-		contour_slice.plotContours(colors=[brew_colors[n],"#eeeeee"],fill=True,display_maximum=False,display_percentages=False,alpha=0.45)
+		contour_marg.plotContours(colors=[brew_colors[n],axes_facecolor],fill=True,display_maximum=False,display_percentages=False,alpha=0.45)
+		contour_slice.plotContours(colors=[brew_colors[n],axes_facecolor],fill=True,display_maximum=False,display_percentages=False,alpha=0.45)
 
 	
 	#Legend
@@ -128,7 +134,7 @@ def contours():
 	contour_slice.labels(None)
 
 	#Save
-	fig.savefig("contours_{0}comp.png".format(n_components))
+	fig.savefig("contours_{0}comp.pdf".format(n_components))
 
 
 
