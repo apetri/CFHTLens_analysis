@@ -7,6 +7,7 @@ import logging
 import numpy as np
 from scipy import stats
 import matplotlib.pyplot as plt
+from matplotlib import rc
 
 #############################################################
 ##################ContourPlot class##########################
@@ -189,6 +190,28 @@ class ContourPlot(object):
 		self.extent = (self.min[self.remaining_parameters[0]],self.max[self.remaining_parameters[0]],self.min[self.remaining_parameters[1]],self.max[self.remaining_parameters[1]])
 		self.ax.set_xlim(self.extent[0],self.extent[1])
 		self.ax.set_ylim(self.extent[2],self.extent[3])
+
+
+	def marginal(self,parameter_name="w"):
+
+		"""
+		Marginalize the likelihood over all parameters but one
+
+		"""
+
+		assert hasattr(self,"likelihood"),"You have to load in the likelihood first!"
+		assert parameter_name in self.parameter_axes.keys(),"You are trying to compute a marginal likelihood of a parameter that does not exist!"
+
+		remaining_parameters = self.parameter_axes.keys()
+		remaining_parameters.pop(remaining_parameters.index(parameter_name))
+		remaining_parameter_axes = [ self.parameter_axes[par] for par in remaining_parameters ]
+
+		#Marginalize the likelihood
+		marginal_likelihood = self.likelihood.sum(axis=tuple(remaining_parameter_axes))
+
+		#Return the non-normalized single parameter likelihood
+		return np.linspace(self.min[parameter_name],self.max[parameter_name],self.npoints[parameter_name]),marginal_likelihood
+
 
 	def slice(self,parameter_name="w",parameter_value=-1.0):
 
@@ -386,7 +409,7 @@ class ContourPlot(object):
 			self.contour = self.ax.contour(likelihood,values,colors=colors,origin="lower",extent=extent,aspect="auto",**kwargs)
 
 		#Contour labels
-		self.ax.proxy += [ plt.Rectangle((0,0),1,1,fc=color) for color in colors if color!="#eeeeee" ]
+		self.ax.proxy += [ plt.Rectangle((0,0),1,1,fc=color) for color in colors if color!=rc.func_globals["rcParams"]["axes.facecolor"] ]
 		
 		if display_percentages:
 			plt.clabel(self.contour,fmt=fmt,inline=1,fontsize=9)
