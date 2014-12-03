@@ -147,7 +147,7 @@ $N$ & $\Omega_m$ & $w$ & $\sigma_8$ & $N$ & $\Omega_m$ & $w$ & $\sigma_8$ & $N$ 
 \begin{figure*}
 \begin{center}
 \includegraphics[scale=0.4]{Figures/design.eps}
-\caption{$(\Omega_m,w)$ and $(w,\sigma_8)$ projections of our the simulation design; the blue points correspond to the CFHTemu1 simulation set, which consists of one $N$--body simulation per point, while the red point corresponds to the CFHTcov simulation set, which is based on 50 independent $N$--body simulations}
+\caption{$(\Omega_m,w)$ and $(\Omega_m,\sigma_8)$ projections of our the simulation design; the blue points correspond to the CFHTemu1 simulation set, which consists of one $N$--body simulation per point, while the red point corresponds to the CFHTcov simulation set, which is based on 50 independent $N$--body simulations}
 \label{designfig}
 \end{center}
 \end{figure*}
@@ -211,7 +211,7 @@ V_1(\kappa_0)=\frac{1}{4A}\int_A\delta(\kappa(\pmb{\theta})-\kappa_0)\sqrt{\kapp
 V_2(\kappa_0)=\frac{1}{2\pi A}\int_A\delta(\kappa(\pmb{\theta})-\kappa_0)\frac{2\kappa_x\kappa_y\kappa_{xy}-\kappa_x^2\kappa_{yy}-\kappa_y^2\kappa_{xx}}{\kappa_x^2+\kappa_y^2}d\pmb{\theta}.
 \end{equation*}
 %
-Where $A$ is the total area of the fields of view we have been using and the notation $\kappa_{x,y}$ indicates gradients of the $\kappa$ field, which we evaluate using finite differences. The first Minkowski functional, $V_0$, is equivalent to the cumulative one--point PDF of the $\kappa$ field, while $V_1,V_2$ are sensitive to the correlations between nearby pixels. In addition to these topological descriptors, we consider a set of low order moments (LM) of the convergence field (two quadratic, three cubic and four quartic), which are defined in the following way
+Where $A$ is the total area of the fields of view we have been using and the notation $\kappa_{x,y}$ indicates gradients of the $\kappa$ field, which we evaluate using finite differences. The first Minkowski functional, $V_0$, is equivalent to the cumulative one--point PDF of the $\kappa$ field, $\partial V_0$ (which can be obtained by differentiation $\partial V_0(\kappa_0)=dV_0(\kappa_0)/d\kappa_0$), while $V_1,V_2$ are sensitive to the correlations between nearby pixels. In addition to these topological descriptors, we consider a set of low order moments (LM) of the convergence field (two quadratic, three cubic and four quartic), which are defined in the following way
 %
 \begin{equation}
 \begin{matrix}
@@ -303,7 +303,7 @@ We follow the standard interpretation of PCA components, stating that the only m
 M(n)_{i}^r = V^T(n)_{ij}\tilde{M}_j^r \,\,\,\, ; \,\,\,\,  D(n)_i = V^T(n)_{ij}\tilde{D}_j
 \end{equation}
 %
-where we indicate with $V^T(n)$ the truncation of $V^T$ to the first $n$ rows. The dimensional reduction comes from the fact that physical arguments justify a choice of $n\approx 3< N_{b}$. We want to stress the fact that, because we vary only 3 parameters in the CFHTemu1 simulations, we expect our feature space to be a 3--dimensional manifold embedded in a $N_b$ dimensional space: the dimensionality reduction problem is equivalent to the accurate reconstruction of the coordinate chart of this feature manifold. As outlined in \citep{astroMLText}, the coordinate chart constructed with the PCA projection in (\ref{pcaprojection}) is accurate for reasonably flat feature manifolds: when curvature effects become important, more advanced projection techniques (such as Locally Linear Embedding) have to be employed. We are allowed some flexibility on this flatness assumption by allowing the number of principal components to be bigger than 3. 
+where we indicate with $V^T(n)$ the truncation of $V^T$ to the first $n$ rows. The dimensional reduction comes from the fact that physical arguments justify a choice of $n< N_{b}$. We want to stress the fact that, because we vary only 3 parameters in the CFHTemu1 simulations, we expect our feature space to be a 3--dimensional manifold embedded in a $N_b$ dimensional space: the dimensionality reduction problem is equivalent to the accurate reconstruction of the coordinate chart of this feature manifold. As outlined in \citep{astroMLText}, the coordinate chart constructed with the PCA projection in (\ref{pcaprojection}) is accurate for reasonably flat feature manifolds: when curvature effects become important, more advanced projection techniques (such as Locally Linear Embedding) have to be employed. We are allowed some flexibility on this flatness assumption by allowing the number of principal components to be bigger than 3. 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%% RESULTS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
