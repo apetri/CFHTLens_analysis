@@ -1,9 +1,10 @@
 from __future__ import print_function,division,with_statement
 
 import os,sys
-import argparse
+import argparse,ConfigParser
 import logging
 import time
+import json
 
 from operator import mul
 from functools import reduce
@@ -75,7 +76,7 @@ class FeatureLoaderCross(FeatureLoader):
 ###################Main execution#####################################
 ######################################################################
 
-def main(n_components,cmd_args,pool):
+def main(n_components_collection,cmd_args,pool):
 
 	#################################################################################################################
 	#################Info gathering: covariance matrix, observation and emulator#####################################
@@ -90,9 +91,23 @@ def main(n_components,cmd_args,pool):
 	fiducial_feature_ensemble_collection = list()
 	observed_feature_ensemble_collection = list()
 	analysis_collection = list()
+	formatted_output_string_collection = list()
+
+	#Sanity check
+	if type(n_components_collection)==list:
+		assert len(n_components_collection)==len(feature_loader_collection)
 
 	#Cycle over feature types
-	for feature_loader in feature_loader_collection:
+	for nc,feature_loader in enumerate(feature_loader_collection):
+
+		#Use the same number of components for all or not?
+		if type(n_components_collection)==list:
+			n_components = n_components_collection[nc]
+		else:
+			n_components = n_components_collection
+
+		#Format the output string
+		formatted_output_string_collection.append(output_string(feature_loader.feature_string)+"_ncomp{0}".format(n_components))
 
 		#Create a LikelihoodAnalysis instance by unpickling one of the emulators
 		emulators_dir = os.path.join(feature_loader.options.get("analysis","save_path"),"emulators")
@@ -280,10 +295,10 @@ def main(n_components,cmd_args,pool):
 	if cmd_args.realizations:
 		output_prefix+="{0}-{1}".format(first_realization,last_realization)
 
-	formatted_output_string = "-".join([output_string(feature_loader.feature_string) for feature_loader in feature_loader_collection])
+	formatted_output_string = "-".join(formatted_output_string_collection)
 	
-	chi2_file = os.path.join(likelihoods_dir,"chi2{0}_{1}_ncomp{2}.npy".format(output_prefix,formatted_output_string,n_components))
-	likelihood_file = os.path.join(likelihoods_dir,"likelihood{0}_{1}_ncomp{2}.npy".format(output_prefix,formatted_output_string,n_components))
+	chi2_file = os.path.join(likelihoods_dir,"chi2{0}_{1}.npy".format(output_prefix,formatted_output_string))
+	likelihood_file = os.path.join(likelihoods_dir,"likelihood{0}_{1}.npy".format(output_prefix,formatted_output_string))
 
 	logging.info("Saving chi2 to {0}".format(chi2_file))
 	np.save(chi2_file,chi_squared.reshape(Om.shape + w.shape + si8.shape))
@@ -320,6 +335,10 @@ if __name__=="__main__":
 		parser.print_help()
 		sys.exit(0)
 
+	#Need the options here too
+	options = ConfigParser.ConfigParser()
+	options.read(cmd_args.options_file)
+
 	#Set verbosity level
 	if cmd_args.verbose_plus:
 		logging.basicConfig(level=DEBUG_PLUS)
@@ -341,9 +360,9 @@ if __name__=="__main__":
 	if pool is not None:
 		logging.info("Started MPI Pool.")
 
-	test_components = [3,4,5,6,8,10,20,30,40,50]
-	for n_components in test_components:
-		main(n_components,cmd_args,pool)
+	test_components = json.loads(options.get("pca","num_components"))
+	for n_components_collection in test_components:
+		main(n_components_collection,cmd_args,pool)
 
 
 	#Close MPI Pool
