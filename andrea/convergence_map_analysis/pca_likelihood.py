@@ -6,7 +6,7 @@ import logging
 import time
 import json
 
-from operator import sum,mul
+from operator import add,mul
 from functools import reduce
 
 #################################################################################
