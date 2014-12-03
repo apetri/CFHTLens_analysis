@@ -287,7 +287,7 @@ def main(n_components_collection,cmd_args,pool):
 		output_prefix+="mock"
 
 	if cmd_args.cross:
-		output_prefix+="-cross-"
+		output_prefix+="_cross"
 
 	if cmd_args.realization_pick is not None:
 		output_prefix+="real{0}".format(cmd_args.realization_pick)
