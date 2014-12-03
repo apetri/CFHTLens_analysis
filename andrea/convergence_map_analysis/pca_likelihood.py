@@ -288,7 +288,7 @@ def main(n_components_collection,cmd_args,pool):
 		os.mkdir(likelihoods_dir)
 
 	#Output filename formatting
-	output_prefix=cmd_args.prefix
+	output_prefix=""
 	
 	if cmd_args.observations_mock:
 		output_prefix+="mock"
@@ -301,6 +301,8 @@ def main(n_components_collection,cmd_args,pool):
 	
 	if cmd_args.realizations:
 		output_prefix+="{0}-{1}".format(first_realization,last_realization)
+
+	output_prefix += cmd_args.prefix 
 
 	formatted_output_string = "-".join(formatted_output_string_collection)
 	
