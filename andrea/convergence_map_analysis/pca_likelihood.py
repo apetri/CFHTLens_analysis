@@ -220,8 +220,8 @@ def main(n_components_collection,cmd_args,pool):
 
 	#Sanity check
 	if type(n_components_collection)==list:
-		assert analysis.training_set.shape[1]==reduce(sum,n_components)
-		assert fiducial_feature_ensemble.data.shape[1]==reduce(sum,n_components)
+		assert analysis.training_set.shape[1]==reduce(sum,n_components_collection)
+		assert fiducial_feature_ensemble.data.shape[1]==reduce(sum,n_components_collection)
 	else:
 		assert analysis.training_set.shape[1]==n_components*len(feature_loader_collection)
 		assert fiducial_feature_ensemble.data.shape[1]==n_components*len(feature_loader_collection)
