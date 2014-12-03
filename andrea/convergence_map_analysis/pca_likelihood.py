@@ -6,7 +6,7 @@ import logging
 import time
 import json
 
-from operator import mul
+from operator import sum,mul
 from functools import reduce
 
 #################################################################################
@@ -219,8 +219,12 @@ def main(n_components_collection,cmd_args,pool):
 	fiducial_feature_ensemble = reduce(mul,fiducial_feature_ensemble_collection)
 
 	#Sanity check
-	assert analysis.training_set.shape[1]==n_components*len(feature_loader_collection)
-	assert fiducial_feature_ensemble.data.shape[1]==n_components*len(feature_loader_collection)
+	if type(n_components_collection)==list:
+		assert analysis.training_set.shape[1]==reduce(sum,n_components)
+		assert fiducial_feature_ensemble.data.shape[1]==reduce(sum,n_components)
+	else:
+		assert analysis.training_set.shape[1]==n_components*len(feature_loader_collection)
+		assert fiducial_feature_ensemble.data.shape[1]==n_components*len(feature_loader_collection)
 
 	#Covariance matrix
 	features_covariance = fiducial_feature_ensemble.covariance()
@@ -242,7 +246,10 @@ def main(n_components_collection,cmd_args,pool):
 		observed_feature = observed_feature_ensemble.mean()
 
 	#Sanity check
-	assert observed_feature.shape[0]==n_components*len(feature_loader_collection)
+	if type(n_components_collection)==list:
+		assert observed_feature.shape[0]==reduce(sum,n_components_collection)
+	else:
+		assert observed_feature.shape[0]==n_components*len(feature_loader_collection)
 
 	################################################################################################################################################
 	################################################################################################################################################
