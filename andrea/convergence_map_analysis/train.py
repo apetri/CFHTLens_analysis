@@ -80,7 +80,7 @@ class FeatureLoader(object):
 	##############Constructor takes care of options parsing#########################
 	################################################################################
 
-	def __init__(self,cmd_args):
+	def __init__(self,cmd_args,feature_string=None):
 
 		self.cmd_args = cmd_args
 
@@ -112,7 +112,11 @@ class FeatureLoader(object):
 		self.subfields = [ int(subfield) for subfield in self.options.get("analysis","subfields").split(",") ]
 
 		#Parse from options which type of descriptors (features) to use
-		self.feature_string = self.options.get("analysis","feature_types")
+		if feature_string is None:
+			self.feature_string = self.options.get("analysis","feature_types")
+		else:
+			self.feature_string = feature_string
+		
 		self.smoothing_scales,self.features_to_measure = parse_features(self.feature_string)
 
 		#Get masked area information

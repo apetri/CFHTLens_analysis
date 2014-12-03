@@ -5,6 +5,9 @@ import argparse
 import logging
 import time
 
+from operator import mul
+from functools import reduce
+
 #################################################################################
 ####################LensTools functionality######################################
 #################################################################################
@@ -40,6 +43,34 @@ from emcee.utils import MPIPool
 
 from train import DEBUG_PLUS
 
+
+######################################################################
+################FeatureLoaderCross####################################
+######################################################################
+
+class FeatureLoaderCross(FeatureLoader):
+
+	@classmethod
+	def fromArgs(cls,cmd_args):
+
+		feature_loader = cls(cmd_args)
+
+		#Check if -x option is specified
+		if cmd_args.cross:
+
+			feature_types = feature_loader.options.get("analysis","feature_types").replace(" ","").split("*")
+			feature_loader_collection = list()
+			
+			for feature_type in feature_types:
+				feature_loader_collection.append(cls(cmd_args,feature_string=feature_type))
+
+			return feature_loader_collection
+
+		else:
+			return [feature_loader]
+
+
+
 ######################################################################
 ###################Main execution#####################################
 ######################################################################
@@ -55,79 +86,129 @@ def main(n_components,cmd_args,pool):
 	last_timestamp = start
 
 	#Instantiate a FeatureLoader object that will take care of the data loading
-	feature_loader = FeatureLoader(cmd_args)
+	feature_loader_collection = FeatureLoaderCross.fromArgs(cmd_args)
+	fiducial_feature_ensemble_collection = list()
+	observed_feature_ensemble_collection = list()
+	analysis_collection = list()
 
-	#Create a LikelihoodAnalysis instance by unpickling one of the emulators
-	emulators_dir = os.path.join(feature_loader.options.get("analysis","save_path"),"emulators")
-	emulator_file = os.path.join(emulators_dir,"emulator{0}_{1}.p".format(cmd_args.prefix,output_string(feature_loader.feature_string)))
-	logging.info("Unpickling emulator from {0}...".format(emulator_file))
-	analysis = LikelihoodAnalysis.load(emulator_file)
+	#Cycle over feature types
+	for feature_loader in feature_loader_collection:
 
-	#timestamp
-	now = time.time()
-	logging.info("emulator unpickled in {0:.1f}s".format(now-last_timestamp))
-	last_timestamp = now
+		#Create a LikelihoodAnalysis instance by unpickling one of the emulators
+		emulators_dir = os.path.join(feature_loader.options.get("analysis","save_path"),"emulators")
+		emulator_file = os.path.join(emulators_dir,"emulator{0}_{1}.p".format(cmd_args.prefix,output_string(feature_loader.feature_string)))
+		logging.info("Unpickling emulator from {0}...".format(emulator_file))
+		analysis = LikelihoodAnalysis.load(emulator_file)
 
-	######################Compute PCA components here#####################################
-	pca = analysis.principalComponents()
+		#timestamp
+		now = time.time()
+		logging.info("emulator unpickled in {0:.1f}s".format(now-last_timestamp))
+		last_timestamp = now
 
-	now = time.time()
-	logging.info("Principal components computed in {0:.1f}s".format(now-last_timestamp))
-	last_timestamp = now
+		######################Compute PCA components here#####################################
+		pca = analysis.principalComponents()
 
-	####################Transform feature space by projecting on PCA eigenvectors############################
-	analysis = analysis.transform(pca_transform,pca=pca,n_components=n_components)
+		now = time.time()
+		logging.info("Principal components computed in {0:.1f}s".format(now-last_timestamp))
+		last_timestamp = now
 
-	now = time.time()
-	logging.info("Projection on first {1} principal components completed in {0:.1f}s".format(now-last_timestamp,analysis.training_set.shape[1]))
-	last_timestamp = now
+		####################Transform feature space by projecting on PCA eigenvectors############################
+		analysis = analysis.transform(pca_transform,pca=pca,n_components=n_components)
 
-	####################Retrain emulator######################################################################
-	analysis.train()
+		now = time.time()
+		logging.info("Projection on first {1} principal components completed in {0:.1f}s".format(now-last_timestamp,analysis.training_set.shape[1]))
+		last_timestamp = now
 
-	now = time.time()
-	logging.info("Emulator re-training completed in {0:.1f}s".format(now-last_timestamp))
-	last_timestamp = now
+		####################Retrain emulator######################################################################
+		analysis.train()
 
-	###########################################################################################################################################
-	###########################################################################################################################################
+		now = time.time()
+		logging.info("Emulator re-training completed in {0:.1f}s".format(now-last_timestamp))
+		last_timestamp = now
 
-	#Use this model for the covariance matrix (from the new set of 50 N body simulations)
-	covariance_model = CFHTcov.getModels(root_path=feature_loader.options.get("simulations","root_path"))
-	logging.info("Measuring covariance matrix from model {0}".format(covariance_model))
+		#Append to the collection
+		analysis_collection.append(analysis)
+
+		###########################################################################################################################################
+		###########################################################################################################################################
+
+		#Use this model for the covariance matrix (from the new set of 50 N body simulations)
+		covariance_model = CFHTcov.getModels(root_path=feature_loader.options.get("simulations","root_path"))
+		logging.info("Measuring covariance matrix from model {0}".format(covariance_model))
 	
-	#Load in the covariance matrix
-	fiducial_feature_ensemble = feature_loader.load_features(covariance_model)
+		#Load in the covariance matrix
+		fiducial_feature_ensemble = feature_loader.load_features(covariance_model)
 
-	#If options is enabled, use only the first N realizations to estimate the covariance matrix
-	if cmd_args.realizations:
+		#If options is enabled, use only the first N realizations to estimate the covariance matrix
+		if cmd_args.realizations:
 
-		first_realization = feature_loader.options.getint("mocks","first_realization")
-		last_realization = feature_loader.options.getint("mocks","last_realization")
+			first_realization = feature_loader.options.getint("mocks","first_realization")
+			last_realization = feature_loader.options.getint("mocks","last_realization")
 
-		logging.info("Using only the realizations {0}-{1} to build the fiducial ensemble".format(first_realization,last_realization))
-		fiducial_feature_ensemble = fiducial_feature_ensemble.subset(range(first_realization-1,last_realization))
-		assert fiducial_feature_ensemble.num_realizations==last_realization-first_realization+1
+			logging.info("Using only the realizations {0}-{1} to build the fiducial ensemble".format(first_realization,last_realization))
+			fiducial_feature_ensemble = fiducial_feature_ensemble.subset(range(first_realization-1,last_realization))
+			assert fiducial_feature_ensemble.num_realizations==last_realization-first_realization+1
 
 
-	###############Insert PCA transform here##############################
-	fiducial_feature_ensemble = fiducial_feature_ensemble.transform(pca_transform,pca=pca,n_components=n_components)
+		###############Insert PCA transform here##############################
+		fiducial_feature_ensemble = fiducial_feature_ensemble.transform(pca_transform,pca=pca,n_components=n_components)
 
-	now = time.time()
-	logging.info("Projection on first {1} principal components for covariance ensemble completed in {0:.1f}s".format(now-last_timestamp,analysis.training_set.shape[1]))
-	last_timestamp = now
+		now = time.time()
+		logging.info("Projection on first {1} principal components for covariance ensemble completed in {0:.1f}s".format(now-last_timestamp,analysis.training_set.shape[1]))
+		last_timestamp = now
 
-	fiducial_feature = fiducial_feature_ensemble.mean()
-	features_covariance = fiducial_feature_ensemble.covariance()
+		#Append to the collection
+		fiducial_feature_ensemble_collection.append(fiducial_feature_ensemble)
 
-	#timestamp
-	now = time.time()
-	logging.info("covariance computed in {0:.1f}s".format(now-last_timestamp))
-	last_timestamp = now
+		#timestamp
+		now = time.time()
+		logging.info("covariance computed in {0:.1f}s".format(now-last_timestamp))
+		last_timestamp = now
+
+		################################################################################################################################################
+
+		#Get also the observation instance
+
+		if cmd_args.observations_mock:
+
+			pass
+
+		else:
+			
+			observation = CFHTLens(root_path=feature_loader.options.get("observations","root_path"))
+			logging.info("Measuring the observations from {0}".format(observation))
+
+			#And load the observations
+			observed_feature_ensemble = feature_loader.load_features(observation)
+
+			###############Insert PCA transform here##############################
+			observed_feature_ensemble = observed_feature_ensemble.transform(pca_transform,pca=pca,n_components=n_components)
+
+			now = time.time()
+			logging.info("Projection on first {1} principal components for observation completed in {0:.1f}s".format(now-last_timestamp,analysis.training_set.shape[1]))
+			last_timestamp = now
+
+			observed_feature_ensemble_collection.append(observed_feature_ensemble)
+
+		#timestamp
+		now = time.time()
+		logging.info("observation loaded in {0:.1f}s".format(now-last_timestamp))
+		last_timestamp = now
+
 
 	################################################################################################################################################
+	################################Reduce the collections##########################################################################################
+	################################################################################################################################################
 
-	#Get also the observation instance
+	analysis = reduce(mul,analysis_collection)
+	fiducial_feature_ensemble = reduce(mul,fiducial_feature_ensemble_collection)
+
+	#Sanity check
+	assert analysis.training_set.shape[1]==n_components*len(feature_loader_collection)
+	assert fiducial_feature_ensemble.data.shape[1]==n_components*len(feature_loader_collection)
+
+	#Covariance matrix
+	features_covariance = fiducial_feature_ensemble.covariance()
 
 	if cmd_args.observations_mock:
 
@@ -137,28 +218,16 @@ def main(n_components,cmd_args,pool):
 			logging.info("Using realization {0} as data".format(cmd_args.realization_pick))
 			observed_feature = fiducial_feature_ensemble[cmd_args.realization_pick]
 		else:
-			observed_feature=fiducial_feature
+			observed_feature=fiducial_feature_ensemble.mean()
 
 	else:
-		observation = CFHTLens(root_path=feature_loader.options.get("observations","root_path"))
-		logging.info("Measuring the observations from {0}".format(observation))
 
 		#And load the observations
-		observed_feature_ensemble = feature_loader.load_features(observation)
-
-		###############Insert PCA transform here##############################
-		observed_feature_ensemble = observed_feature_ensemble.transform(pca_transform,pca=pca,n_components=n_components)
-
-		now = time.time()
-		logging.info("Projection on first {1} principal components for observation completed in {0:.1f}s".format(now-last_timestamp,analysis.training_set.shape[1]))
-		last_timestamp = now
-
+		observed_feature_ensemble = reduce(mul,observed_feature_ensemble_collection)
 		observed_feature = observed_feature_ensemble.mean()
 
-	#timestamp
-	now = time.time()
-	logging.info("observation loaded in {0:.1f}s".format(now-last_timestamp))
-	last_timestamp = now
+	#Sanity check
+	assert observed_feature.shape[0]==n_components*len(feature_loader_collection)
 
 	################################################################################################################################################
 	################################################################################################################################################
@@ -202,14 +271,19 @@ def main(n_components,cmd_args,pool):
 	if cmd_args.observations_mock:
 		output_prefix+="mock"
 
+	if cmd_args.cross:
+		output_prefix+="-cross-"
+
 	if cmd_args.realization_pick is not None:
 		output_prefix+="real{0}".format(cmd_args.realization_pick)
 	
 	if cmd_args.realizations:
 		output_prefix+="{0}-{1}".format(first_realization,last_realization)
+
+	formatted_output_string = "-".join([output_string(feature_loader.feature_string) for feature_loader in feature_loader_collection])
 	
-	chi2_file = os.path.join(likelihoods_dir,"chi2{0}_{1}_ncomp{2}.npy".format(output_prefix,output_string(feature_loader.feature_string),n_components))
-	likelihood_file = os.path.join(likelihoods_dir,"likelihood{0}_{1}_ncomp{2}.npy".format(output_prefix,output_string(feature_loader.feature_string),n_components))
+	chi2_file = os.path.join(likelihoods_dir,"chi2{0}_{1}_ncomp{2}.npy".format(output_prefix,formatted_output_string,n_components))
+	likelihood_file = os.path.join(likelihoods_dir,"likelihood{0}_{1}_ncomp{2}.npy".format(output_prefix,formatted_output_string,n_components))
 
 	logging.info("Saving chi2 to {0}".format(chi2_file))
 	np.save(chi2_file,chi_squared.reshape(Om.shape + w.shape + si8.shape))
@@ -238,6 +312,7 @@ if __name__=="__main__":
 	parser.add_argument("-rr","--realization_pick",dest="realization_pick",action="store",type=int,default=None,help="use this particular realization as data")
 	parser.add_argument("-d","--differentiate",dest="differentiate",action="store_true",default=False,help="differentiate the first minkowski functional to get the PDF")
 	parser.add_argument("-o","--observations_mock",dest="observations_mock",action="store_true",default=False,help="use the fiducial simulations as mock observations")
+	parser.add_argument("-x","--cross",dest="cross",action="store_true",default=False,help="do PCA on each descriptor separately, and co-add after that")
 
 	cmd_args = parser.parse_args()
 
