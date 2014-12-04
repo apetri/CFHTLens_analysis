@@ -200,7 +200,7 @@ def contours(cmd_args):
 
 ##################################################################################################################################################
 
-def robustness(cmd_args):
+def robustness(cmd_args,parameter_axes={"Omega_m":0,"w":1,"sigma8":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","sigma8":r"$\sigma_8$"},marginalize_over="w"):
 
 	#Smoothing scales in arcmin
 	smoothing_scale=1.0
@@ -221,13 +221,15 @@ def robustness(cmd_args):
 	#Number of principal components to display
 	principal_components = dict()
 	for descr in descriptors_robustness:
-		principal_components[descr] = [3,5,10,20,30,40]
+		principal_components[descr] = [3,4,5,10,20,30,40,50]
 
-	principal_components["moments--{0:.1f}"] = [3,5,9]
+	principal_components["moments--{0:.1f}"] = [3,4,5,6,7,8,9]
+	principal_components["pdf_minkowski_0--{0:.1f}"] = [3,4,5,10,20,30,40,49]
 
-	#Parameters of which we want to compute the confidence estimates
-	parameter_axes = {"Omega_m":0,"w":1,"sigma8":2}
-	cosmo_labels = {"Omega_m":r"$\Omega_m$","w":r"$w$","sigma8":r"$\sigma_8$"}
+	#Paramteter hash
+	par = parameter_axes.keys()
+	par.sort(key=parameter_axes.__getitem__)
+	par_hash = "-".join(par)
 
 	#Parse options from configuration file
 	options = ConfigParser.ConfigParser()
@@ -247,14 +249,14 @@ def robustness(cmd_args):
 			contour = ContourPlot(fig=fig,ax=ax_flat[d])
 
 			#Load the likelihood
-			likelihood_file = os.path.join(root_dir,"likelihoods","likelihoodmock_"+descr.format(smoothing_scale)+"_ncomp{0}.npy".format(n_components))
+			likelihood_file = os.path.join(root_dir,"likelihoods_{0}".format(par_hash),"likelihoodmock_"+descr.format(smoothing_scale)+"_ncomp{0}.npy".format(n_components))
 			contour.getLikelihood(likelihood_file,parameter_axes=parameter_axes,parameter_labels=cosmo_labels)
 
 			#Set physical units
 			contour.getUnitsFromOptions(options)
 
 			#Marginalize
-			contour.marginalize("w")
+			contour.marginalize(marginalize_over)
 
 			#Get levels
 			contour.getLikelihoodValues(levels=levels)
@@ -267,8 +269,18 @@ def robustness(cmd_args):
 		contour.labels(contour_label=[r"$n={0}$".format(n) for n in principal_components[descr]])
 
 
+	par.pop(par.index(marginalize_over))
+	par_hash = "-".join(par)
+
 	#Save the figure
-	fig.savefig("robustness_pca.{0}".format(cmd_args.type))
+	fig.savefig("robustness_pca_{0}.{1}".format(par_hash,cmd_args.type))
+
+
+##################################################################################################################################################
+
+def robustness_reparametrize(cmd_args):
+
+	robustness(cmd_args,parameter_axes={"Omega_m":0,"w":1,"Sigma8Om0.55":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","Sigma8Om0.55":r"$\sigma_8(\Omega_m/0.27)^{0.55}$"},marginalize_over="Omega_m")
 
 ##################################################################################################################################################
 
@@ -353,9 +365,21 @@ def contours_combine(cmd_args,parameter_axes={"Omega_m":0,"w":1,"sigma8":2},cosm
 
 ##################################################################################################################################################
 
+def contours_combine_reparametrize(cmd_args):
+
+	contours_combine(cmd_args,parameter_axes={"Omega_m":0,"w":1,"Sigma8Om0.55":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","Sigma8Om0.55":r"$\sigma_8(\Omega_m/0.27)^{0.55}$"},marginalize_over="Omega_m")
+
+##################################################################################################################################################
+
 def contours_combine_mock(cmd_args):
 
 	contours_combine(cmd_args,mock=True)
+
+##################################################################################################################################################
+
+def contours_combine_mock_reparametrize(cmd_args):
+
+	contours_combine(cmd_args,parameter_axes={"Omega_m":0,"w":1,"Sigma8Om0.55":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","Sigma8Om0.55":r"$\sigma_8(\Omega_m/0.27)^{0.55}$"},marginalize_over="Omega_m",mock=True)
 
 ##################################################################################################################################################
 
@@ -494,11 +518,14 @@ figure_method = dict()
 figure_method["2"] = design
 figure_method["3"] = pca
 figure_method["4"] = robustness
+figure_method["4rep"] = robustness_reparametrize
 figure_method["4b"] = w_mock_likelihood
 figure_method["5"] = contours
 figure_method["6"] = w_likelihood
 figure_method["7"] = contours_combine
+figure_method["7rep"] = contours_combine_reparametrize
 figure_method["7b"] = contours_combine_mock
+figure_method["7brep"] = contours_combine_mock_reparametrize
 figure_method["8"] = w_likelihood_combine
 figure_method["8b"] = w_mock_likelihood_combine
 
