@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import sys,os,argparse,ConfigParser
 
 from lenstools.constraints import LikelihoodAnalysis
@@ -270,7 +272,7 @@ def robustness(cmd_args):
 
 ##################################################################################################################################################
 
-def contours_combine(cmd_args,mock=False):
+def contours_combine(cmd_args,parameter_axes={"Omega_m":0,"w":1,"sigma8":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","sigma8":r"$\sigma_8$"},marginalize_over="w",mock=False):
 
 	#These are the statistics to cross
 	single = ["power_spectrum","minkowski_0"]
@@ -285,9 +287,10 @@ def contours_combine(cmd_args,mock=False):
 	#Smoothing scales in arcmin
 	levels = [0.684]
 
-	#Parameters of which we want to compute the confidence estimates
-	parameter_axes = {"Omega_m":0,"w":1,"sigma8":2}
-	cosmo_labels = {"Omega_m":r"$\Omega_m$","w":r"$w$","sigma8":r"$\sigma_8$"}
+	#Parametrization hash
+	par = parameter_axes.keys()
+	par.sort(key=parameter_axes.__getitem__)
+	par_hash = "-".join(par)
 
 	#Parse options from configuration file
 	options = ConfigParser.ConfigParser()
@@ -308,10 +311,10 @@ def contours_combine(cmd_args,mock=False):
 
 		#Construct the likelihood file
 		if type(descr)==str:
-			likelihood_file = os.path.join(root_dir,"likelihoods","likelihood{0}_{1}--{2:.1f}_ncomp{3}.npy".format(mock_prefix,descr,smoothing_scales[descr],num_components[descr]))
+			likelihood_file = os.path.join(root_dir,"likelihoods_{0}".format(par_hash),"likelihood{0}_{1}--{2:.1f}_ncomp{3}.npy".format(mock_prefix,descr,smoothing_scales[descr],num_components[descr]))
 			contour_labels.append(descriptors[descr]+r"$({0})$".format(num_components[descr]))
 		elif type(descr)==tuple:
-			likelihood_file = os.path.join(root_dir,"likelihoods","likelihood{0}_cross_{1}.npy".format(mock_prefix,_cross_name(*descr)))
+			likelihood_file = os.path.join(root_dir,"likelihoods_{0}".format(par_hash),"likelihood{0}_cross_{1}.npy".format(mock_prefix,_cross_name(*descr)))
 			contour_labels.append(_cross_label(*descr))
 		else:
 			raise TypeError("type not valid")
@@ -326,7 +329,7 @@ def contours_combine(cmd_args,mock=False):
 		contour.getUnitsFromOptions(options)
 
 		#Marginalize
-		contour.marginalize("w")
+		contour.marginalize(marginalize_over)
 		
 		#Slice on best fit for w
 		maximum = contour.getMaximum()
@@ -344,7 +347,9 @@ def contours_combine(cmd_args,mock=False):
 	contour.labels(contour_labels)
 
 	#Save
-	fig.savefig("contours{0}_cross.{1}".format(mock_prefix,cmd_args.type))	
+	par.pop(par.index(marginalize_over))
+	par_hash = "-".join(par)
+	fig.savefig("contours{0}{1}_cross.{2}".format(mock_prefix,par_hash,cmd_args.type))	
 
 ##################################################################################################################################################
 
