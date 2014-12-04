@@ -91,8 +91,8 @@ def Sigma8reparametrize(p,a=0.55):
 ####################################################################################
 
 reparametrization = dict()
-reparametrization[["Omega_m","w","sigma8"]] = None 
-reparametrization[["Omega_m","w","Sigma8Om0.55"]] = Sigma8reparametrize
+reparametrization["Omega_m-w-sigma8"] = None 
+reparametrization["Omega_m-w-Sigma8Om0.55"] = Sigma8reparametrize
 
 
 ######################################################################
@@ -285,22 +285,27 @@ def main(n_components_collection,cmd_args,pool):
 	#Read parameters to use from options
 	use_parameters = feature_loader.options.get("parameters","use_parameters").replace(" ","").split(",")
 	assert len(use_parameters)==3
+	
+	#Reparametrization hash key
+	use_parameters_hash = "-".join(use_parameters)
 
 	########################################################################################
 	#Might need to reparametrize the emulator here, use a dictionary for reparametrizations#
 	########################################################################################
 
-	assert use_parameters in reparametrization.keys(),"No reparametrization scheme specified for {0} parametrization".format("-".join(use_parameters))
+	assert use_parameters_hash in reparametrization.keys(),"No reparametrization scheme specified for {0} parametrization".format(use_parameters_hash)
 	
-	if reparametrization[use_parameters] is not None:
+	if reparametrization[use_parameters_hash] is not None:
 		
 		#Reparametrize
-		logging.info("Reparametrizing emulator according to {0} parametrization".format("-".join(use_parameters)))
-		analysis.reparametrize(reparametrization[use_parameters])
+		logging.info("Reparametrizing emulator according to {0} parametrization".format(use_parameters_hash))
+		analysis.reparametrize(reparametrization[use_parameters_hash])
 
 		#Retrain for safety
 		analysis.train()
 
+	#Log current parametrization to user
+	logging.info("Using parametrization {0}".format(use_parameters_hash))
 
 	#Set the points in parameter space on which to compute the chi2 (read extremes from options)
 	par = list()
@@ -327,7 +332,7 @@ def main(n_components_collection,cmd_args,pool):
 	last_timestamp = now
 
 	#save output
-	likelihoods_dir = os.path.join(feature_loader.options.get("analysis","save_path"),"likelihoods"+"-".join(use_parameters))
+	likelihoods_dir = os.path.join(feature_loader.options.get("analysis","save_path"),"likelihoods_{0}".format(use_parameters_hash))
 	if not os.path.isdir(likelihoods_dir):
 		os.mkdir(likelihoods_dir)
 
@@ -354,10 +359,10 @@ def main(n_components_collection,cmd_args,pool):
 	likelihood_file = os.path.join(likelihoods_dir,"likelihood{0}_{1}.npy".format(output_prefix,formatted_output_string))
 
 	logging.info("Saving chi2 to {0}".format(chi2_file))
-	np.save(chi2_file,chi_squared.reshape(Om.shape + w.shape + si8.shape))
+	np.save(chi2_file,chi_squared.reshape(par[0].shape + par[1].shape + par[2].shape))
 
 	logging.info("Saving full likelihood to {0}".format(likelihood_file))
-	likelihood_cube = analysis.likelihood(chi_squared.reshape(Om.shape + w.shape + si8.shape))
+	likelihood_cube = analysis.likelihood(chi_squared.reshape(par[0].shape + par[1].shape + par[2].shape))
 	np.save(likelihood_file,likelihood_cube)
 
 
