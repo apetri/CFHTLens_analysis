@@ -71,6 +71,29 @@ class FeatureLoaderCross(FeatureLoader):
 			return [feature_loader]
 
 
+#####################################################################
+###########Emulator reparametrizations###############################
+#####################################################################
+
+def Sigma8reparametrize(p,a=0.55):
+
+	q = p.copy()
+
+	#Change only the last parameter
+	q[:,2] = p[:,2]*(p[:,0]/0.27)**a
+
+	#Done
+	return q
+
+
+####################################################################################
+###########Dictionary for emulator reparametrizations###############################
+####################################################################################
+
+reparametrization = dict()
+reparametrization[["Omega_m","w","sigma8"]] = None 
+reparametrization[["Omega_m","w","Sigma8Om0.55"]] = Sigma8reparametrize
+
 
 ######################################################################
 ###################Main execution#####################################
@@ -259,14 +282,35 @@ def main(n_components_collection,cmd_args,pool):
 
 	logging.info("Initializing chi2 meshgrid...")
 
-	#Set the points in parameter space on which to compute the chi2 (read from options)
-	Om = np.ogrid[feature_loader.options.getfloat("Omega_m","min"):feature_loader.options.getfloat("Omega_m","max"):feature_loader.options.getint("Omega_m","num_points")*1j]
-	w = np.ogrid[feature_loader.options.getfloat("w","min"):feature_loader.options.getfloat("w","max"):feature_loader.options.getint("w","num_points")*1j]
-	si8 = np.ogrid[feature_loader.options.getfloat("sigma8","min"):feature_loader.options.getfloat("sigma8","max"):feature_loader.options.getint("sigma8","num_points")*1j]
+	#Read parameters to use from options
+	use_parameters = feature_loader.options.get("parameters","use_parameters").replace(" ","").split(",")
+	assert len(use_parameters)==3
 
-	num_points = len(Om) * len(w) * len(si8) 
+	########################################################################################
+	#Might need to reparametrize the emulator here, use a dictionary for reparametrizations#
+	########################################################################################
 
-	points = np.array(np.meshgrid(Om,w,si8,indexing="ij")).reshape(3,num_points).transpose()
+	assert use_parameters in reparametrization.keys(),"No reparametrization scheme specified for {0} parametrization".format("-".join(use_parameters))
+	
+	if reparametrization[use_parameters] is not None:
+		
+		#Reparametrize
+		logging.info("Reparametrizing emulator according to {0} parametrization".format("-".join(use_parameters)))
+		analysis.reparametrize(reparametrization[use_parameters])
+
+		#Retrain for safety
+		analysis.train()
+
+
+	#Set the points in parameter space on which to compute the chi2 (read extremes from options)
+	par = list()
+	for p in range(3):
+		assert feature_loader.options.has_section(use_parameters[p]),"No extremes specified for parameter {0}".format(use_parameters[p])
+		par.append(np.ogrid[feature_loader.options.getfloat(use_parameters[p],"min"):feature_loader.options.getfloat(use_parameters[p],"max"):feature_loader.options.getint(use_parameters[p],"num_points")*1j])
+
+	num_points = len(par[0]) * len(par[1]) * len(par[2]) 
+
+	points = np.array(np.meshgrid(par[0],par[1],par[2],indexing="ij")).reshape(3,num_points).transpose()
 	
 	#Now compute the chi2 at each of these points
 	if pool:
@@ -283,7 +327,7 @@ def main(n_components_collection,cmd_args,pool):
 	last_timestamp = now
 
 	#save output
-	likelihoods_dir = os.path.join(feature_loader.options.get("analysis","save_path"),"likelihoods")
+	likelihoods_dir = os.path.join(feature_loader.options.get("analysis","save_path"),"likelihoods"+"-".join(use_parameters))
 	if not os.path.isdir(likelihoods_dir):
 		os.mkdir(likelihoods_dir)
 
