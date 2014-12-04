@@ -225,6 +225,30 @@ class ContourPlot(object):
 		return expectation
 
 
+	def variance(self,function,**kwargs):
+
+		"""
+		Computes the variance of a function of the parameters over the current parameter likelihood
+
+		"""
+
+		expectation = self.expectationValue(function,**kwargs)
+
+		#Parameters
+		parameters = self.parameter_axes.keys()
+		parameters.sort(key=self.parameter_axes.__getitem__)
+
+		#Initialize the parameter mesh
+		mesh_axes = [ np.linspace(self.min[par],self.max[par],self.npoints[par]) for par in parameters ]
+		parameter_mesh = np.meshgrid(*tuple(mesh_axes),indexing="ij")
+
+		#Compute the variance
+		variance = (self.likelihood*(function(parameter_mesh,**kwargs) - expectation)**2).sum() / self.likelihood.sum()
+
+		#Return 
+		return variance
+
+
 	def marginalize(self,parameter_name="w"):
 
 		"""
