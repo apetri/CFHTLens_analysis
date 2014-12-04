@@ -1,4 +1,4 @@
-command: mpiexec -n 101 -hostfile %hostfile% python pca_likelihood.py -f options_bnl.ini -g -m -vv -p cumul
+command: mpiexec -n 101 -hostfile %hostfile% python pca_likelihood.py -f options_bnl.ini -g -m -vv -o -x
 mode: bycore
 N: 101
 hostfile: auto

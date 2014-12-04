@@ -200,6 +200,55 @@ class ContourPlot(object):
 
 		return max_parameters
 
+
+	def expectationValue(self,function,**kwargs):
+
+		"""
+		Computes the expectation value of a function of the parameters over the current parameter likelihood
+
+		"""
+
+		assert hasattr(self,"likelihood"),"You have to load in the likelihood first!"
+
+		#Parameters
+		parameters = self.parameter_axes.keys()
+		parameters.sort(key=self.parameter_axes.__getitem__)
+
+		#Initialize the parameter mesh
+		mesh_axes = [ np.linspace(self.min[par],self.max[par],self.npoints[par]) for par in parameters ]
+		parameter_mesh = np.meshgrid(*tuple(mesh_axes),indexing="ij")
+
+		#Compute the expectation value
+		expectation = (function(parameter_mesh,**kwargs)*self.likelihood).sum() / self.likelihood.sum()  
+
+		#Return
+		return expectation
+
+
+	def variance(self,function,**kwargs):
+
+		"""
+		Computes the variance of a function of the parameters over the current parameter likelihood
+
+		"""
+
+		expectation = self.expectationValue(function,**kwargs)
+
+		#Parameters
+		parameters = self.parameter_axes.keys()
+		parameters.sort(key=self.parameter_axes.__getitem__)
+
+		#Initialize the parameter mesh
+		mesh_axes = [ np.linspace(self.min[par],self.max[par],self.npoints[par]) for par in parameters ]
+		parameter_mesh = np.meshgrid(*tuple(mesh_axes),indexing="ij")
+
+		#Compute the variance
+		variance = (self.likelihood*(function(parameter_mesh,**kwargs) - expectation)**2).sum() / self.likelihood.sum()
+
+		#Return 
+		return variance
+
+
 	def marginalize(self,parameter_name="w"):
 
 		"""
@@ -337,7 +386,7 @@ class ContourPlot(object):
 
 		self.ax.set_xlabel(self.parameter_labels[self.remaining_parameters[0]])
 		self.ax.set_ylabel(self.parameter_labels[self.remaining_parameters[1]])
-		self.ax.set_title(self.title_label)
+		self.ax.set_title(self.title_label,fontsize=22)
 
 		if contour_label is not None:
 			self.ax.legend(self.ax.proxy,contour_label)
