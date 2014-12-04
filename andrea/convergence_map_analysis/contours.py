@@ -200,6 +200,31 @@ class ContourPlot(object):
 
 		return max_parameters
 
+
+	def expectationValue(self,function,**kwargs):
+
+		"""
+		Computes the expectation value of a function of the parameters over the current parameter likelihood
+
+		"""
+
+		assert hasattr(self,"likelihood"),"You have to load in the likelihood first!"
+
+		#Parameters
+		parameters = self.parameter_axes.keys()
+		parameters.sort(key=self.parameter_axes.__getitem__)
+
+		#Initialize the parameter mesh
+		mesh_axes = [ np.linspace(self.min[par],self.max[par],self.npoints[par]) for par in parameters ]
+		parameter_mesh = np.meshgrid(*tuple(mesh_axes),indexing="ij")
+
+		#Compute the expectation value
+		expectation = (function(parameter_mesh,**kwargs)*self.likelihood).sum() / self.likelihood.sum()  
+
+		#Return
+		return expectation
+
+
 	def marginalize(self,parameter_name="w"):
 
 		"""
