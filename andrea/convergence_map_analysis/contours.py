@@ -86,6 +86,16 @@ class ContourPlot(object):
 		self.npoints = dict()
 		self.unit = dict()
 
+	def close(self):
+
+		"""
+		Closes the figure
+
+		"""
+
+		plt.close(self.fig)
+	
+
 	def savefig(self,figname):
 
 		"""
