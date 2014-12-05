@@ -284,7 +284,7 @@ def robustness_reparametrize(cmd_args):
 
 ##################################################################################################################################################
 
-def contours_combine(cmd_args,parameter_axes={"Omega_m":0,"w":1,"sigma8":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","sigma8":r"$\sigma_8$"},marginalize_over="w",mock=False):
+def contours_combine(cmd_args,parameter_axes={"Omega_m":0,"w":1,"sigma8":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","sigma8":r"$\sigma_8$"},select="w",marginalize_over="me",mock=False):
 
 	#These are the statistics to cross
 	single = ["power_spectrum","minkowski_0"]
@@ -319,7 +319,13 @@ def contours_combine(cmd_args,parameter_axes={"Omega_m":0,"w":1,"sigma8":2},cosm
 	for n,descr in enumerate(single+multiple):
 
 		#Instantiate contour plot
-		contour = ContourPlot(fig=fig,ax=ax)
+		if marginalize_over=="me":
+			contour = ContourPlot(fig=fig,ax=ax)
+		elif marginalize_over=="others":
+			contour = ContourPlot()
+		else:
+			raise ValueError("marginalize_over must be in [me,others]")
+
 
 		#Construct the likelihood file
 		if type(descr)==str:
@@ -340,34 +346,54 @@ def contours_combine(cmd_args,parameter_axes={"Omega_m":0,"w":1,"sigma8":2},cosm
 		#Set the physical units
 		contour.getUnitsFromOptions(options)
 
-		#Marginalize
-		contour.marginalize(marginalize_over)
+		if marginalize_over=="me":
 		
-		#Slice on best fit for w
-		maximum = contour.getMaximum()
-		print("Likelihood with {0} is maximum at {1}".format(descr,maximum))
+			#Marginalize
+			contour.marginalize(select)
+		
+			#Best fit
+			maximum = contour.getMaximum()
+			print("Likelihood with {0} is maximum at {1}".format(descr,maximum))
 
-		#Get levels
-		contour.getLikelihoodValues(levels=levels)
+			#Get levels
+			contour.getLikelihoodValues(levels=levels)
 
-		#Plot contours
-		contour.plotContours(colors=[brew_colors[n]],fill=False,display_maximum=False,display_percentages=False,alpha=1.0)
+			#Plot contours
+			contour.plotContours(colors=[brew_colors[n]],fill=False,display_maximum=False,display_percentages=False,alpha=1.0)
+
+		else:
+			
+			p,l = contour.marginal(select)
+			ax.plot(p,l,label=contour_labels[-1])		
+			
 
 	
-	#Legend
-	contour.title_label=""
-	contour.labels(contour_labels)
+	if marginalize_over=="me":
+	
+		#Legend
+		contour.title_label=""
+		contour.labels(contour_labels)
 
-	#Save
-	par.pop(par.index(marginalize_over))
-	par_hash = "-".join(par)
-	fig.savefig("contours{0}{1}_cross.{2}".format(mock_prefix,par_hash,cmd_args.type))	
+		#Save
+		par.pop(par.index(select))
+		par_hash = "-".join(par)
+		fig.savefig("contours{0}{1}_cross.{2}".format(mock_prefix,par_hash,cmd_args.type))	
+
+	else:
+
+		#Legend
+		ax.set_xlabel(cosmo_labels[select])
+		ax.set_ylabel(r"$\mathcal{L}$" + "$($" + cosmo_labels[select] + "$)$" )
+		ax.legend()
+
+		#Save
+		fig.savefig("contours{0}{1}_cross.{2}".format(mock_prefix,select,cmd_args.type))
 
 ##################################################################################################################################################
 
 def contours_combine_reparametrize(cmd_args):
 
-	contours_combine(cmd_args,parameter_axes={"Omega_m":0,"w":1,"Sigma8Om0.55":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","Sigma8Om0.55":r"$\sigma_8(\Omega_m/0.27)^{0.55}$"},marginalize_over="Omega_m")
+	contours_combine(cmd_args,parameter_axes={"Omega_m":0,"w":1,"Sigma8Om0.55":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","Sigma8Om0.55":r"$\sigma_8(\Omega_m/0.27)^{0.55}$"},select="Omega_m")
 
 ##################################################################################################################################################
 
@@ -379,7 +405,7 @@ def contours_combine_mock(cmd_args):
 
 def contours_combine_mock_reparametrize(cmd_args):
 
-	contours_combine(cmd_args,parameter_axes={"Omega_m":0,"w":1,"Sigma8Om0.55":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","Sigma8Om0.55":r"$\sigma_8(\Omega_m/0.27)^{0.55}$"},marginalize_over="Omega_m",mock=True)
+	contours_combine(cmd_args,parameter_axes={"Omega_m":0,"w":1,"Sigma8Om0.55":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","Sigma8Om0.55":r"$\sigma_8(\Omega_m/0.27)^{0.55}$"},select="Omega_m",mock=True)
 
 ##################################################################################################################################################
 
@@ -440,76 +466,13 @@ def w_mock_likelihood(cmd_args):
 
 def w_likelihood_combine(cmd_args,mock=False):
 
-	#These are the statistics to cross
-	single = ["power_spectrum","minkowski_0"]
-	multiple = [("minkowski_0","minkowski_1","minkowski_2"),("power_spectrum","minkowski_0","minkowski_1","minkowski_2"),("power_spectrum","minkowski_0","minkowski_1","minkowski_2","moments")]
-
-	#decide if consider data or simulations
-	if mock:
-		mock_prefix="mock"
-	else:
-		mock_prefix=""
-
-	#Smoothing scales in arcmin
-	levels = [0.684]
-
-	#Parameters of which we want to compute the confidence estimates
-	parameter_axes = {"Omega_m":0,"w":1,"sigma8":2}
-	cosmo_labels = {"Omega_m":r"$\Omega_m$","w":r"$w$","sigma8":r"$\sigma_8$"}
-
-	#Parse options from configuration file
-	options = ConfigParser.ConfigParser()
-	with open(cmd_args.options_file,"r") as configfile:
-		options.readfp(configfile)
-
-	#Create figure
-	fig,ax = plt.subplots()
-
-	#Plot labels
-	contour_labels = list()
-
-	#Cycle over descriptors
-	for n,descr in enumerate(single+multiple):
-
-		#Instantiate contour plot
-		contour = ContourPlot(fig=fig,ax=ax)
-
-		#Construct the likelihood file
-		if type(descr)==str:
-			likelihood_file = os.path.join(root_dir,"likelihoods","likelihood{0}_{1}--{2:.1f}_ncomp{3}.npy".format(mock_prefix,descr,smoothing_scales[descr],num_components[descr]))
-			contour_labels.append(descriptors[descr]+r"$({0})$".format(num_components[descr]))
-		elif type(descr)==tuple:
-			likelihood_file = os.path.join(root_dir,"likelihoods","likelihood{0}_cross_{1}.npy".format(mock_prefix,_cross_name(*descr)))
-			contour_labels.append(_cross_label(*descr))
-		else:
-			raise TypeError("type not valid")
-
-		#Log filename
-		print("Loading likelihood from {0}".format(likelihood_file))
-		
-		#Load the likelihood
-		contour.getLikelihood(likelihood_file,parameter_axes=parameter_axes,parameter_labels=cosmo_labels)
-		
-		#Set the physical units
-		contour.getUnitsFromOptions(options)
-
-		#Calculate the w marginal likelihood
-		w,l = contour.marginal("w")
-		ax.plot(w,l,label=contour_labels[-1])
-	
-	#Legend
-	ax.set_xlabel(r"$w$",fontsize=18)
-	ax.set_ylabel(r"$\mathcal{L}(w)$",fontsize=18)
-	ax.legend(loc="upper left",prop={"size":10})
-
-	#Save
-	fig.savefig("w{0}_likelihood_cross.{1}".format(mock_prefix,cmd_args.type))
+	contours_combine(cmd_args,marginalize_over="others")
 
 ###################################################################################################################################################
 
 def w_mock_likelihood_combine(cmd_args):
 
-	w_likelihood_combine(cmd_args,mock=True)
+	contours_combine(cmd_args,marginalize_over="others",mock=True)
 
 ############################################################################################################################
 ############################################################################################################################
