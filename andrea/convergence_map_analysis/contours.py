@@ -86,16 +86,6 @@ class ContourPlot(object):
 		self.npoints = dict()
 		self.unit = dict()
 
-	def close(self):
-
-		"""
-		Closes the figure
-
-		"""
-
-		plt.close(self.fig)
-	
-
 	def savefig(self,figname):
 
 		"""
@@ -387,16 +377,16 @@ class ContourPlot(object):
 		self.labels()
 		
 
-	def labels(self,contour_label=None):
+	def labels(self,contour_label=None,fontsize=22):
 
 		"""
 		Put the labels on the plot
 
 		"""
 
-		self.ax.set_xlabel(self.parameter_labels[self.remaining_parameters[0]])
-		self.ax.set_ylabel(self.parameter_labels[self.remaining_parameters[1]])
-		self.ax.set_title(self.title_label,fontsize=22)
+		self.ax.set_xlabel(self.parameter_labels[self.remaining_parameters[0]],fontsize=fontsize)
+		self.ax.set_ylabel(self.parameter_labels[self.remaining_parameters[1]],fontsize=fontsize)
+		self.ax.set_title(self.title_label,fontsize=fontsize)
 
 		if contour_label is not None:
 			self.ax.legend(self.ax.proxy,contour_label)
