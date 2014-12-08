@@ -52,7 +52,7 @@ keys.sort()
 ###################Consider these for the combinations###########################################
 #################################################################################################
 
-single = ["power_spectrum","minkowski_0"]
+single = ["power_spectrum","minkowski_0","minkowski_1","minkowski_2","moments"]
 multiple = [("minkowski_0","minkowski_1","minkowski_2"),("power_spectrum","minkowski_0","minkowski_1","minkowski_2"),("power_spectrum","minkowski_0","minkowski_1","minkowski_2","moments")]
 all_descriptors = single + multiple
 
@@ -109,7 +109,7 @@ def pca(cmd_args):
 	fig,ax = plt.subplots(1,2,figsize=(16,8))
 
 	#Cycle over descriptors to plot PCA eigenvalues
-	for n,descr in enumerate(keys):
+	for n,descr in enumerate(single):
 
 		#Unpickle the emulator
 		an = LikelihoodAnalysis.load(os.path.join(root_dir,"emulators","emulator_{0}--{1:.1f}.p".format(descr,smoothing_scale)))
@@ -141,69 +141,6 @@ def pca(cmd_args):
 
 	#Save figure
 	fig.savefig("pca_components.{0}".format(cmd_args.type))
-
-
-##############################################################################################################################################
-
-def contours(cmd_args):
-
-	#Smoothing scales in arcmin
-	smoothing_scale=1.0
-	levels = [0.684,0.001]
-
-	#Parameters of which we want to compute the confidence estimates
-	parameter_axes = {"Omega_m":0,"w":1,"sigma8":2}
-	cosmo_labels = {"Omega_m":r"$\Omega_m$","w":r"$w$","sigma8":r"$\sigma_8$"}
-
-	#Parse options from configuration file
-	options = ConfigParser.ConfigParser()
-	with open(cmd_args.options_file,"r") as configfile:
-		options.readfp(configfile)
-
-	#Create figure
-	fig,ax = plt.subplots(1,2,figsize=(16,8))
-
-	#Cycle over descriptors
-	for n,descr in enumerate(keys):
-
-		#Instantiate contour plot
-		contour_marg = ContourPlot(fig=fig,ax=ax[0])
-		contour_slice = ContourPlot(fig=fig,ax=ax[1])
-
-		#Load the likelihood
-		likelihood_file = os.path.join(root_dir,"likelihoods","likelihood_{0}--{1:.1f}_ncomp{2}.npy".format(descr,smoothing_scale,num_components[descr]))
-		contour_marg.getLikelihood(likelihood_file,parameter_axes=parameter_axes,parameter_labels=cosmo_labels)
-		contour_slice.getLikelihood(likelihood_file,parameter_axes=parameter_axes,parameter_labels=cosmo_labels)
-		
-		#Set the physical units
-		contour_marg.getUnitsFromOptions(options)
-		contour_slice.getUnitsFromOptions(options)
-
-		#Marginalize
-		contour_marg.marginalize("w")
-		
-		#Slice on best fit for w
-		maximum = contour_slice.getMaximum()
-		print("Likelihood with {0} is maximum at {1}".format(descr,maximum))
-		contour_slice.slice("w",maximum["w"])
-
-		#Get levels
-		contour_marg.getLikelihoodValues(levels=levels)
-		contour_slice.getLikelihoodValues(levels=levels)
-
-		#Plot contours
-		contour_marg.plotContours(colors=[brew_colors[n],axes_facecolor],fill=False,display_maximum=False,display_percentages=False,alpha=1.0)
-		contour_slice.plotContours(colors=[brew_colors[n],axes_facecolor],fill=False,display_maximum=False,display_percentages=False,alpha=1.0)
-
-	
-	#Legend
-	contour_marg.title_label=""
-	contour_slice.title_label=""
-	contour_marg.labels([descriptors[key]+r"$({0})$".format(num_components[key]) for key in keys])
-	contour_slice.labels(None)
-
-	#Save
-	fig.savefig("contours_data.{0}".format(cmd_args.type))
 
 ##################################################################################################################################################
 ##################################################################################################################################################
@@ -301,10 +238,10 @@ def robustness(cmd_args,parameter_axes={"Omega_m":0,"w":1,"sigma8":2},cosmo_labe
 	#Save the figure
 	if marginalize_over=="me":
 		par.pop(par.index(select))
-		par_hash = "-".join(par)
+		par_hash = "-".join(par).replace(".","")
 		fig.savefig("robustness_pca_{0}.{1}".format(par_hash,cmd_args.type))
 	else:
-		fig.savefig("robustness_pca_{0}.{1}".format(select,cmd_args.type))
+		fig.savefig("robustness_pca_{0}.{1}".format(select.replace(".",""),cmd_args.type))
 
 
 ##################################################################################################################################################
@@ -329,7 +266,7 @@ def robustness_reparametrize(cmd_args):
 ##################################################################################################################################################
 ##################################################################################################################################################
 
-def contours_combine(cmd_args,descriptors_in_plot=all_descriptors,parameter_axes={"Omega_m":0,"w":1,"sigma8":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","sigma8":r"$\sigma_8$"},select="w",marginalize_over="me",mock=False):
+def contours_combine(cmd_args,descriptors_in_plot=multiple,parameter_axes={"Omega_m":0,"w":1,"sigma8":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","sigma8":r"$\sigma_8$"},select="w",marginalize_over="me",mock=False,cross_label="cross"):
 
 	#decide if consider data or simulations
 	if mock:
@@ -351,7 +288,7 @@ def contours_combine(cmd_args,descriptors_in_plot=all_descriptors,parameter_axes
 		options.readfp(configfile)
 
 	#Create figure
-	fig,ax = plt.subplots()
+	fig,ax = plt.subplots(figsize=(8,8))
 
 	#Plot labels
 	contour_labels = list()
@@ -417,24 +354,54 @@ def contours_combine(cmd_args,descriptors_in_plot=all_descriptors,parameter_axes
 
 		#Save
 		par.pop(par.index(select))
-		par_hash = "-".join(par)
-		fig.savefig("contours{0}{1}_cross.{2}".format(mock_prefix,par_hash,cmd_args.type))	
+		par_hash = "-".join(par).replace(".","")
+		fig.savefig("contours{0}{1}_{2}.{3}".format(mock_prefix,par_hash,cross_label,cmd_args.type))	
 
 	else:
 
 		#Legend
-		ax.set_xlabel(cosmo_labels[select])
-		ax.set_ylabel(r"$\mathcal{L}$" + "$($" + cosmo_labels[select] + "$)$" )
+		ax.set_xlabel(cosmo_labels[select],fontsize=22)
+		ax.set_ylabel(r"$\mathcal{L}$" + "$($" + cosmo_labels[select] + "$)$",fontsize=22)
 		ax.legend(loc="upper left",prop={"size":10})
 
 		#Save
-		fig.savefig("contours{0}{1}_cross.{2}".format(mock_prefix,select,cmd_args.type))
+		fig.savefig("contours{0}{1}_{2}.{3}".format(mock_prefix,select.replace(".",""),cross_label,cmd_args.type))
+
+##################################################################################################################################################
+
+def contours_single(cmd_args):
+
+	contours_combine(cmd_args,descriptors_in_plot=single,cross_label="single")
+
+##################################################################################################################################################
+
+def contours_single_mock(cmd_args):
+
+	contours_combine(cmd_args,descriptors_in_plot=single,cross_label="single",mock=True)
+
+##################################################################################################################################################
+
+def contours_single_reparametrize(cmd_args):
+
+	contours_combine(cmd_args,descriptors_in_plot=single,cross_label="single",parameter_axes={"Omega_m":0,"w":1,"Sigma8Om0.55":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","Sigma8Om0.55":r"$\Sigma_8$"},select="Omega_m")
+
+##################################################################################################################################################
+
+def contours_single_mock_reparametrize(cmd_args):
+
+	contours_combine(cmd_args,descriptors_in_plot=single,cross_label="single",parameter_axes={"Omega_m":0,"w":1,"Sigma8Om0.55":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","Sigma8Om0.55":r"$\Sigma_8$"},select="Omega_m",mock=True)
+
+##################################################################################################################################################
+
+def Si8_likelihood_single(cmd_args):
+
+	contours_combine(cmd_args,descriptors_in_plot=single,cross_label="single",parameter_axes={"Omega_m":0,"w":1,"Sigma8Om0.55":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","Sigma8Om0.55":r"$\Sigma_8$"},select="Sigma8Om0.55",marginalize_over="others")
 
 ##################################################################################################################################################
 
 def contours_combine_reparametrize(cmd_args):
 
-	contours_combine(cmd_args,parameter_axes={"Omega_m":0,"w":1,"Sigma8Om0.55":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","Sigma8Om0.55":r"$\sigma_8(\Omega_m/0.27)^{0.55}$"},select="Omega_m")
+	contours_combine(cmd_args,parameter_axes={"Omega_m":0,"w":1,"Sigma8Om0.55":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","Sigma8Om0.55":r"$\Sigma_8$"},select="Omega_m")
 
 ##################################################################################################################################################
 
@@ -464,7 +431,7 @@ def w_mock_likelihood_combine(cmd_args):
 
 def Si8_likelihood_combine(cmd_args):
 
-	contours_combine(cmd_args,parameter_axes={"Omega_m":0,"w":1,"Sigma8Om0.55":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","Sigma8Om0.55":r"$\sigma_8(\Omega_m/0.27)^{0.55}$"},select="Sigma8Om0.55",marginalize_over="others")
+	contours_combine(cmd_args,parameter_axes={"Omega_m":0,"w":1,"Sigma8Om0.55":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","Sigma8Om0.55":r"$\Sigma_8$"},select="Sigma8Om0.55",marginalize_over="others")
 
 ##################################################################################################################################################
 ##################################################################################################################################################
@@ -478,13 +445,12 @@ figure_method["4"] = robustness
 figure_method["4s"] = robustness_1d
 figure_method["4rep"] = robustness_reparametrize
 figure_method["4srep"] = robustness_1d_reparametrize
-figure_method["5"] = contours
-figure_method["7"] = contours_combine
-figure_method["7rep"] = contours_combine_reparametrize
-figure_method["7b"] = contours_combine_mock
-figure_method["7brep"] = contours_combine_mock_reparametrize
-figure_method["8"] = w_likelihood_combine
-figure_method["8b"] = w_mock_likelihood_combine
+figure_method["5"] = contours_single
+figure_method["5b"] = contours_single_mock
+figure_method["6"] = contours_single_reparametrize
+figure_method["7"] = Si8_likelihood_single
+figure_method["8"] = contours_combine
+figure_method["8b"] = contours_combine_reparametrize
 figure_method["9"] = Si8_likelihood_combine
 
 

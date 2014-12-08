@@ -48,7 +48,7 @@
 \label{firstpage}
 
 \begin{abstract}
-Weak gravitational lensing has been proposed as an interesting probe for cosmology, and in particular for the Dark Energy (DE) equation of state $w$; the fact that typical weak lensing fields are non--Gaussian in nature, quadratic statistics, such as angular power spectra, can miss some of the cosmological information contained in survey data. In this work we examine constraints on the parameter triplet $(\Omega_m,w,\sigma_8)$ from weak lensing Minkowski Functionals and Moments, using the publicly available data from the 154\,deg$^2$ CFHTLenS survey. We utilize a new suite of ray--tracing N-body simulations spanning 91 points in the $(\Omega_m,w,\sigma_8)$ parameter space, replicating the galaxy sky positions, redshift and shape noise read from the CFHTLenS catalogs. We then build an emulator that interpolates the feature space with an accuracy of $\sim5\%$, and use it to compute the parameter likelihood, from which we derive the data constraints. We find that...
+Weak gravitational lensing has been proposed as an interesting probe for cosmology, and in particular for the Dark Energy (DE) equation of state $w$; the fact that typical weak lensing fields are non--Gaussian in nature, quadratic statistics, such as angular power spectra, can miss some of the cosmological information contained in survey data. In this work we examine constraints on the parameter triplet $(\Omega_m,w,\sigma_8)$ from weak lensing Minkowski Functionals and Moments, using the publicly available data from the 154\,deg$^2$ CFHTLenS survey. We utilize a new suite of ray--tracing N-body simulations spanning 91 points in the $(\Omega_m,w,\sigma_8)$ parameter space, replicating the galaxy sky positions, redshift and shape noise read from the CFHTLenS catalogs. We then build an emulator that interpolates the simulated feature spaces, and use it to compute the parameter likelihood, from which we derive the data constraints. We find that the constraint on $\Sigma_8$ is ...
 
 \end{abstract}
 
@@ -79,7 +79,7 @@ The CFHTLenS survey covers four sky patches of 64,23,44 and 23 deg$^2$ area, for
 W_{\theta_G}(\pmb{\theta}) = \frac{1}{2\pi\theta_G^2}\exp{\left(-\frac{\pmb{\theta}^2}{2\theta_G^2}\right)}
 \end{equation}
 %
-where the smoothing kernel $W_{\theta_G}$ has been varied choosing from the set $(0.5,1.0,1.8,3.5,5.3,8.9)\,$arcmin; the multiplicative and additive corrections $m,c$ related the observed and true ellipticities of the galaxies in the catalogue
+where the smoothing scale $\theta_G$ has been fixed to 1.0\,arcmin; the multiplicative and additive corrections $m,c$ related the observed and true ellipticities of the galaxies in the catalogue
 \begin{equation}
 \mathbf{e}^{obs} = (1+m)\mathbf{e}^{true} + c
 \end{equation}
@@ -308,52 +308,96 @@ where we indicate with $V^T(n)$ the truncation of $V^T$ to the first $n$ rows. T
 %%%%%%%%%%%%%%%%%%%%%%%%%% RESULTS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Results}
-In this section we outline our main results
-
-\subsection{Number of principal components}
 %
-The results of the PCA analysis are outlined in Figure \ref{pcafig}
-\begin{figure*}
-\includegraphics[scale=0.4]{Figures/pca_components.eps}
-\caption{Principal Components of the $V_0$ (red), $V_1$ (blue), $V_2$ (green), LM (black) and Power Spectrum (orange) feature spaces; the left plot shows the magnitudes of the PCA eigenvalues $\Sigma_i^2$, the right plot shows their cumulative sum. A dashed black line has been drawn in correspondence of $n=3$ components}
-\label{pcafig}
-\end{figure*}
+This section describes the results we have obtained in this work, and is organized as follows: we first use our simulations to perform a robustness analysis of the parameter confidence intervals with respect to the number of PCA components used in the projection. We then show the cosmological constraints from the CFHTLenS data. Because of the relatively small size of this survey, degeneracy in the parameters can have undesired effect on the constraints: this is why, in addition to the usual $(\Omega_m,w,\sigma_8)$ parametrization, we consider a slightly different one, built with the parameter triplet $(\Omega_m,w,\Sigma_8)$ with $\Sigma_8=\sigma_8(\Omega_m/0.27)^{0.55}$. The reason for this is that, while $\Omega_m$ and $\sigma_8$ are poorly constrained by CFHTLenS due to degeneracies, the $\Sigma_8$ combination lies on the smallest variance direction of $\mathcal{L}(\Omega_m,\sigma_8)$ and hence has a much smaller relative uncertainty. We show the constraints in both the $(\Omega_m,\sigma_8)$ and $(w,\Sigma_8)$ planes; we also show the $\Sigma_8$ marginalized likelihood. We finally study the effect of combining different descriptors, in hope that this helps in tightening the constraints. A summary with the complete set of results, along with the relevant Figures, is shown in Table \ref{summarytable}. 
 
 \subsection{Robustness}
 %
-The purpose of this paragraph is to convince the reader that the cosmological constraints we show in this paper are numerically robust, i.e. they are reasonably stable once we consider an increasing number of Principal Components. These stability plots are shown in Figure \ref{robustnessfig}
-
+The purpose of this paragraph is to convince the reader that the cosmological constraints we show in this paper are numerically robust, i.e. they are reasonably stable once we consider an large enough number $n$ of Principal Components. We show the PCA eigenvalues for the complete set of statistical descriptors in Figure \ref{pcafig}, as well as the contour stability plots in Figure \ref{robustnessfig}. 
+%
 \begin{figure*}
-\includegraphics[scale=0.4]{Figures/robustness_pca.eps}
-\caption{Stability plot}
+\includegraphics[scale=0.4]{Figures/pca_components.eps}
+\caption{Principal Components of the Power Spectrum(red), $V_0$ (blue), $V_1$ (green), $V_2$ (black) and the Moments (orange) feature spaces; the left plot shows the magnitudes of the PCA eigenvalues $\Sigma_i^2$, the right plot shows their cumulative sum. A dashed black line has been drawn in correspondence of $n=3$ components}
+\label{pcafig}
+\end{figure*}
+%
+\begin{figure*}
+\includegraphics[scale=0.4]{Figures/robustness_pca_Omega_m-sigma8.eps}
+\caption{PCA projection dependence of the $1\sigma$ contours in the $(\Omega_m,\sigma_8)$ plane obtained from a mock observation constructed with the CFHTcov simulations; the different panels refer to the descriptors (from left to right, top to bottom) $V_0$, $\partial V_0$(PDF), $V_1$, $V_2$, Power Spectrum and Moments}
 \label{robustnessfig}
 \end{figure*}
-
+%
 \subsection{Cosmological constraints}
+%
+We make use of equations (\ref{parameterlikelihood})-(\ref{ennesigma}) to compute the $1\sigma$ constraints on different combinations of cosmological parameters: in Figure \ref{contours3single} we show the constraints in the $(\Omega_m,\sigma_8)$ plane, in Figure \ref{contours3singleRep} we focus on the $(w,\Sigma_8)$ plane. Additionally we show the $\Sigma_8$ likelihood function (marginalized over $\Omega_m$ and $w$) in Figure \ref{likelihoodSi8single}.
 
 \begin{figure*}
 \begin{center}
-\includegraphics[scale=0.4]{Figures/contours_3comp.pdf}
+\includegraphics[scale=0.45]{Figures/contoursOmega_m-sigma8_single.eps}
+\includegraphics[scale=0.45]{Figures/contoursmockOmega_m-sigma8_single.eps}
 \end{center}
-\caption{$1\sigma$ constraints on the $(\Omega_m,\sigma_8)$ parameter doublet using the $V_0$ (red), $V_1$ (blue), $V_2$ (green), LM (black) and Power Spectrum (orange) statistics; the two panels are obtained marginalizing the parameter likelihood (\ref{parameterlikelihood}) over $w$ (left panel) and conditioning it on the plane where $w$ corresponds to its best fit value (right panel)}
-\label{contours3comp}
+\caption{$1\sigma$ constraints on the $(\Omega_m,\sigma_8)$ parameter doublet using the Power Spectrum (red), $V_0$ (blue), $V_1$ (green), $V_2$ (black) and Moments (orange) statistics; we show the constraints from the data (left panel) and from a mock observation constructed using the CFHTcov simulations as data (right panel). The contours are calculated from the parameter likelihood function $\mathcal{L}$ marginalized over $w$. The parentheses near the descriptor label refer to the number of principal components.}
+\label{contours3single}
 \end{figure*}
+
+\begin{figure}
+\begin{center}
+\includegraphics[scale=0.45]{Figures/contoursw-Sigma8Om055_single.eps}
+\end{center}
+\caption{$1\sigma$ constraints on the $(w,\Sigma_8)$ parameter doublet from the CFHTLenS data, obtained with the Power Spectrum (red), $V_0$ (blue), $V_1$ (green), $V_2$ (black) and Moments (orange) statistics; we show the constraints from the data. The contours are calculated from the parameter likelihood function $\mathcal{L}$ marginalized over $\Omega_m$. The parentheses near the descriptor label refer to the number of principal components.}
+\label{contours3singleRep}
+\end{figure}
+
+\begin{figure}
+\begin{center}
+\includegraphics[scale=0.45]{Figures/contoursSigma8Om055_single.eps}
+\end{center}
+\caption{$\Sigma_8$ parameter likelihood calculated from the CFHTLenS data using the Power Spectrum (red), $V_0$ (blue), $V_1$ (green), $V_2$ (black) and Moments (orange) statistics; the likelihood has been marginalized over $\Omega_m$ and $w$. The parentheses near the descriptor label refer to the number of principal components.}
+\label{likelihoodSi8single}
+\end{figure}
 
 \begin{table*}
 \begin{tabular}{c|c|c|c|c||c}
 Parameters & Descriptors & $\theta_G$ & Additional details & Short description & Relevant Figures/Tables \\ \hline \hline
-$(\Omega_m,w,\sigma_8)$ & $V_0,V_1,V_2$, LM, PS & $1^\prime$ & BAD mask & $1\sigma$ contours from CFHTLenS data & Figure \ref{contours3comp} \\ \hline 
-$(\Omega_m,w,\sigma_8)$ & $V_0,V_1,V_2$, LM, PS & $1^\prime$ & BAD mask &\pbox{20cm}{$1\sigma$ contours from simulations \\ for robustness test}  & Figure \ref{robustnessfig} \\
+$(\Omega_m,\sigma_8)$ & PS,$V_0,V_1,V_2$,LM & $1^\prime$ & BAD mask & Stability of contours & Figure \ref{robustnessfig} \\ \hline 
+$(\Omega_m,\sigma_8)$ & PS(3),$V_0(5),V_1(20),V_2(20)$,LM(9) & $1^\prime$ & BAD mask &\pbox{20cm}{$1\sigma$ constraints from CFHTLenS \\ and mock observations}  & Figures \ref{contours3single},\ref{contours3single}b \\ \hline
+$(w,\Sigma_8)$ & PS(3),$V_0(10),V_1(10),V_2(10)$,LM(9) & $1^\prime$ & BAD mask & contours from CFHTLenS & Figure \ref{contours3singleRep} \\ \hline 
+$\Sigma_8$ & PS(3),$V_0(10),V_1(10),V_2(10)$,LM(9) & $1^\prime$ & BAD mask & $\mathcal{L}(\Sigma_8)$ from CFHTLenS & Figure \ref{likelihoodSi8single} \\ \hline
+$(\Omega_m,\sigma_8)$ & PS(3)$\times V_0(5)\times V_1(20)\times V_2(20)\times$LM(9) & $1^\prime$ & BAD mask & \pbox{20cm}{constraints from CFHTLenS \\ combining statistics} & Figure \ref{contours3combined} \\ \hline
+$(w,\Sigma_8)$ & PS(3)$\times V_0(10)\times V_1(10)\times V_2(10)\times$LM(9) & $1^\prime$ & BAD mask & \pbox{20cm}{constraints from CFHTLenS \\ combining statistics} & Figure \ref{contours3combined}b \\ \hline 
+$\Sigma_8$ & PS(3)$\times V_0(10)\times V_1(10)\times V_2(10)\times$LM(9) & $1^\prime$ & BAD mask & \pbox{20cm}{$\mathcal{L}(\Sigma_8)$ from CFHTLenS \\ combining statistics} & Figure \ref{likelihoodSi8cross} \\ \hline
 \end{tabular}
 \caption{Summary table of our results}
 \label{summarytable}
 \end{table*}
+%
+We discuss these results in \S~\ref{discussion}. 
 
 \subsection{Combining statistics}
+%
+An important point of this work is trying to address is whether the combination of different statistics can help in tighening the constraints on cosmology; some work in this direction has already been done in our companion paper \citep{Companion}, where we combine the power spectrum and peak count statistics, as well as in the literature (see \citep{CFHTFu}) where the authors combine quadratic statistics with the skewness of the CFHTLenS $\kappa$ fields. The procedure we adopt is the following: suppose we consider two descriptors, $d_{1,i},d_{2,i}$ where the index $i$ corresponds to the bin number of the particular descriptor; we compute the single descriptor constraints as in Figure \ref{robustnessfig} and we decide which is the minimum number of principal components $n_{1,2}$ to keep in order for the constraints to be stable. We then construct the vector $d_{1\times2} = (d_1(n_1),d_2(n_2))$ and consider this as the combined feature vector: this procedure allows us to take the cross covariance between different descriptors. We show in Figure \ref{contours3combined} the combined CFHTLenS constraints on the $(\Omega_m,\sigma_8)$ and $(w,\Sigma_8)$ planes, and in Figure \ref{likelihoodSi8cross} the combined $\Sigma_8$ likelihood. We discuss our findings in the next section. 
+    
+\begin{figure*}
+\begin{center}
+\includegraphics[scale=0.45]{Figures/contoursOmega_m-sigma8_cross.eps}
+\includegraphics[scale=0.45]{Figures/contoursw-Sigma8Om055_cross.eps}
+\end{center}
+\caption{Combined $1\sigma$ constraints on the $(\Omega_m,\sigma_8)$ (left panel) and $(w,\Sigma_8)$ (right panel) doublets, using the MFs (red), MFs$\times$Power Spectrum (green) and MFs$\times$Power Spectrum$\times$Moments (blue). The likelihood function has been marginalized over $w$ (left panel) and $\Omega_m$ (right panel). The parentheses near the descriptor labels refer to the number of principal components.}
+\label{contours3combined}
+\end{figure*}
+
+\begin{figure}
+\begin{center}
+\includegraphics[scale=0.5]{Figures/contoursSigma8Om055_cross.eps}
+\end{center}
+\caption{$\Sigma_8$ parameter likelihood calculated from the CFHTLenS data using the combinations of MFs (red), MFs$\times$Power Spectrum (green) and MFs$\times$Power Spectrum$\times$Moments (blue); the likelihood function has been marginalized over $\Omega_m$ and $w$. The parentheses near the descriptor label refer to the number of principal components.}
+\label{likelihoodSi8cross}
+\end{figure}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%% DISCUSSION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Discussion}
+\label{discussion}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%% CONCLUSIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
