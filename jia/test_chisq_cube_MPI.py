@@ -7,17 +7,19 @@ from scipy import *
 from scipy import interpolate
 import os
 import WLanalysis
-from emcee.utils import MPIPool
 import sys
 
-nn = int(sys.argv[1])#range from 0 to 10 for idx_arr
+#comment out if use on laptop
+#from emcee.utils import MPIPool
+nn = 0#int(sys.argv[1])#range from 0 to 10 for idx_arr
 print nn
+#test_dir = '/home1/02977/jialiu/chisq_cube/'
+
 
 fsky_all = 10.010646820070001
 fsky_pass= 7.6645622253410002
 
-#test_dir = '/Users/jia/Documents/weaklensing/CFHTLenS/emulator/test_ps_bug/'
-test_dir = '/home1/02977/jialiu/chisq_cube/'
+test_dir = '/Users/jia/Documents/weaklensing/CFHTLenS/emulator/test_ps_bug/'
 cosmo_params = genfromtxt(test_dir+'cosmo_params.txt')
 im, iw, s = cosmo_params.T
 
@@ -124,20 +126,20 @@ def plot_heat_map_w (values):
 ###########################################################
 ############ operation ####################################
 ##########################################################
-pool=MPIPool()
-print 'boo'
-idx = idx_arr[nn]
+#pool=MPIPool()
+#print 'boo'
+#idx = idx_arr[nn]
 
-interp_cosmo, cov_mat, cov_inv, ps_CFHT = return_interp_cosmo_for_idx (idx)
-print 'boo2'
-values = [[w, idx, interp_cosmo, cov_inv, ps_CFHT] for w in w_arr]
+#interp_cosmo, cov_mat, cov_inv, ps_CFHT = return_interp_cosmo_for_idx (idx)
+#print 'boo2'
+#values = [[w, idx, interp_cosmo, cov_inv, ps_CFHT] for w in w_arr]
 
-pool.map(plot_heat_map_w, values)
+#pool.map(plot_heat_map_w, values)
 
-cube = array([load('/home1/02977/jialiu/chisq_cube/test/chisqcube_%s_w%s.npy'%(fn_arr[nn], w)) for w in w_arr])
+#cube = array([load('/home1/02977/jialiu/chisq_cube/test/chisqcube_%s_w%s.npy'%(fn_arr[nn], w)) for w in w_arr])
 
-save(test_dir+'covmat_%s.npy'%(fn_arr[nn]), cov_mat)
-save(test_dir+'chisqcube_%s.npy'%(fn_arr[nn]), cube)
+#save(test_dir+'covmat_%s.npy'%(fn_arr[nn]), cov_mat)
+#save(test_dir+'chisqcube_%s.npy'%(fn_arr[nn]), cube)
 
 ############### junk
 #def chisq2P(chisq_mat):#(idx=idx_full,w=-1):#aixs 0-w, 1-om, 2-si8

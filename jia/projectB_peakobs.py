@@ -19,10 +19,12 @@ from scipy.integrate import quad
 plot_galn_vs_kappa_hist = 0
 list_peaks_cat = 0
 update_mag_i = 0
-do_hist_galn_magcut = 1
+update_mag_all = 1
+do_hist_galn_magcut = 0
 z_lo = 0.6
 z_hi = z_hi = '%s_hi'%(z_lo)
 ########### constants ######################
+obsPK_dir = '/Users/jia/CFHTLenS/obsPK/'
 plot_dir = '/Users/jia/weaklensing/CFHTLenS/plot/obsPK/'
 kmapGen = lambda i, z: WLanalysis.readFits('/Users/jia/CFHTLenS/obsPK/maps/W%i_KS_%s_sigmaG10.fit'%(i, z))
 # This is smoothed galn
@@ -360,3 +362,51 @@ if plot_galn_vs_kappa_hist:
 	savefig(plot_dir+'W%i_galn_peaks_%sarcmin_zlo%s_zhi%s.jpg'%(Wx,arcmin, z_lo, z_hi))
 	#savefig(plot_dir+'galn_peaks_%sarcmin_zlo%s_zhi%s.jpg'%(arcmin, z_lo, z_hi))
 	close()
+	
+if update_mag_all:
+	## 12/08/2014, code to: 
+	## (1) replace Mag_i = -99 items with Mag_y values
+	## (2) add ugriz bands to the catalogue
+	## (3) convert from MegaCam to SDSS AB system
+	color_cat = load(obsPK_dir+'CFHTdata_RA_DEC_ugriyz_2014-12-08T21-58-57.npy')
+	RA, DEC, star_flag, weight, MAG_u, MAG_g, MAG_r, MAG_i, MAG_y, MAG_z = color_cat.T
+	RADEC = RA+1.0j*DEC
+	# merge i and y band, rid of the 99 values
+	idx_badi = where(abs(MAG_i)==99)[0]
+	MAG_iy = MAG_i.copy()
+	MAG_iy[idx_badi]=MAG_y[idx_badi]
+	# test # of bad magnitude in i, y, and iy 
+	#array([sum(abs(arr)==99) for arr in (MAG_i, MAG_y, MAG_iy)])/7522546.0
+	#[963311, 6562757, 3523]
+	#[0.128, 0.872, 0.000468]
+	
+	### convert to SDSS ##############
+	### r_SDSS=r_Mega +0.011 (g_Mega - r_Mega)
+	### z_SDSS=z_Mega -0.099 (i_Mega - z_Mega)
+	r_SDSS=MAG_r + 0.011*(MAG_g - MAG_r)
+	z_SDSS=MAG_z - 0.099*(MAG_iy - MAG_z)
+	# rz = r_SDSS - z_SDSS # should do after redshift
+	idx_badrz = where(amax(abs(array([MAG_g, MAG_r, MAG_iy, MAG_z])), axis=0)==99)[0]
+	r_SDSS[idx_badrz] = MAG_r 
+	z_SDSS[idx_badrz] = MAG_z # replace bad r_SDSS with MAG_r, in case it's caused by MAG_g
+	##################################
+	color_cat_reorder = array([weight, MAG_u, MAG_g, MAG_r, MAG_iy, MAG_z, r_SDSS, z_SDSS]).T
+	for i in range(1,5):
+		print i
+		icat = cat_gen(i) #ra, dec, mag_i, z_peak
+		iradec = icat.T[0]+1.0j*icat.T[1]
+		
+		idx = where(in1d(RADEC, iradec)==True)[0]
+		if idx.shape[0] != icat.shape[0]:
+			print 'Error in shape matching'
+		
+		iRADEC = RADEC[idx]
+		id1 = argsort(iradec)
+		id2 = argsort(iRADEC)
+			
+		### test - the 2 arrays should be identical - pass!
+		### iRADEC[id2] - iradec[id1]
+		
+		icat_new = concatenate([icat[id1][:,[0,1,3]], color_cat_reorder[id2]], axis=1)
+		np.save(obsPK_dir+'W%s_cat_z0213_ra_dec_weight_z_ugriz_SDSSr_SDSSz'%(i), icat_new)
+		# columns: ra, dec, z_peak, weight, MAG_u, MAG_g, MAG_r, MAG_iy, MAG_z, r_SDSS, z_SDSS
