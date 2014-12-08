@@ -6,7 +6,8 @@
 ### 1) find PDF for # gal within 2 arcmin as fcn of peak
 ### hights
 ### 2) the same, as 1) but for random direction
-### 3) future modification needed to include L-M conversion
+### 3) L-M conversion: L_k -> halo mass, using Vale&JPO06 (2014/12)
+### 4) kappa_proj assuming NFW (2014/12)
 
 import numpy as np
 from scipy import *
