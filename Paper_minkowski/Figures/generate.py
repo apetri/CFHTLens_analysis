@@ -221,7 +221,7 @@ def robustness(cmd_args,parameter_axes={"Omega_m":0,"w":1,"sigma8":2},cosmo_labe
 			else:
 
 				#Plot the likelihood
-				p,l = contour.marginal(select)
+				p,l,pmax = contour.marginal(select)
 				ax_flat[d].plot(p,l,color=brew_colors_diverging[n],label=r"$n={0}$".format(n_components))
 
 		#Labels
@@ -341,7 +341,8 @@ def contours_combine(cmd_args,descriptors_in_plot=multiple,parameter_axes={"Omeg
 
 		else:
 			
-			p,l = contour.marginal(select)
+			p,l,pmax,p0 = contour.marginal(select,levels=[0.684])
+			print(pmax,p0)
 			ax.plot(p,l,color=brew_colors[n],label=contour_labels[-1])		
 			
 
