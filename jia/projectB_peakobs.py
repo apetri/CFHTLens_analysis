@@ -39,7 +39,7 @@ PPR512=8468.416479647716
 PPA512=2.4633625
 c = 299792.458
 H0 = 70.0
-OmegaM = 0.3
+OmegaM = 0.25#0.3
 OmegaV = 1.0-OmegaM
 
 ############ functions #####################
@@ -54,7 +54,8 @@ DL_interp = interpolate.interp1d(z_arr, DL_arr)
 # find the rest magnitude at the galaxy, from observed magnitude cut
 M_rest_fcn = lambda M_obs, z: M_obs - 5.0*log10(DL_interp(z)) - 25.0
 
-cat_gen = lambda Wx: np.load('/Users/jia/CFHTLenS/obsPK/W%s_cat_z0213_ra_dec_magy_zpeak.npy'%(Wx))
+cat_gen_junk = lambda Wx: np.load('/Users/jia/CFHTLenS/obsPK/W%s_cat_z0213_ra_dec_magy_zpeak.npy'%(Wx))
+cat_gen = lambda Wx: np.load('/Users/jia/CFHTLenS/obsPK/W%s_cat_z0213_ra_dec_weight_z_ugriz_SDSSr_SDSSz.npy'%(Wx))
 
 def maskGen (Wx, sigma_pix=0, z=0.4):
 	'''generate mask using galn (galaxy count) map
@@ -410,7 +411,7 @@ if update_mag_all:
 	color_cat_reorder = array([weight, MAG_u, MAG_g, MAG_r, MAG_iy, MAG_z, r_SDSS, z_SDSS]).T
 	for i in range(1,5):
 		print i
-		icat = cat_gen(i) #ra, dec, mag_i, z_peak
+		icat = cat_gen_junk(i) #ra, dec, mag_i, z_peak
 		iradec = icat.T[0]+1.0j*icat.T[1]
 		
 		idx = where(in1d(RADEC, iradec)==True)[0]
