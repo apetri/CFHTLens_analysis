@@ -25,14 +25,14 @@ contour_peaks_smoothing = 0
 contour_ps_fieldselect = 0
 contour_peaks_powspec = 0
 contour_including_w = 0
-contour_peaks_powspec_covariance = 1
+contour_peaks_powspec_covariance = 0
 
 good_bad_powspec = 0
 interp_2D_plane = 0
 good_bad_peaks = 0
 sample_interpolation = 0
 sample_points = 0
-SIGMA_contour = 0
+SIGMA_contour = 1
 
 ########### constants ####################
 l=100
@@ -238,7 +238,7 @@ if SIGMA_contour:
 	######### build interpolator for 2D array ###
 	######### alpha = comb:0.63, pk:0.60, ps:0.64
 	import test_chisq_cube_MPI as tcs
-	nn_arr = [[tcs.idx_psPass7000, 0.64, 'ps'],[tcs.idx_pk2, 0.60, 'pk'],[tcs.idx_full, 0.63, 'comb']]
+	nn_arr = [[tcs.idx_psPass7000, 0.64, 'ps'],[tcs.idx_pk2, 0.60, 'pk'],[tcs.idx_full, 0.63, 'combfix']]
 	S_arr = linspace(0.5, 1.1, 150)
 	w_arr = linspace(-2.2, -0.2, 70)
 	def heatmap_sigma8 (nn):
