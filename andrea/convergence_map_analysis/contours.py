@@ -305,6 +305,9 @@ class ContourPlot(object):
 		normalization = integrate.simps(marginal_likelihood,x=parameter_range)
 		marginal_likelihood /= normalization
 
+		#Compute the maximum
+		par_max = parameter_range[np.where(marginal_likelihood==marginal_likelihood.max())[0][0]]
+
 		#Compute also the contour extremes if levels 
 		if levels is not None:
 
@@ -315,12 +318,12 @@ class ContourPlot(object):
 				par_extremes.append((pL[0],pL[1]))
 
 			#Return the normalized single parameter likelihood, along with the contour extremes
-			return parameter_range,marginal_likelihood,par_extremes
+			return parameter_range,marginal_likelihood,par_max,par_extremes
 
 		else:
 			
 			#Return the normalized single parameter likelihood
-			return parameter_range,marginal_likelihood
+			return parameter_range,marginal_likelihood,par_max
 
 
 	def slice(self,parameter_name="w",parameter_value=-1.0):

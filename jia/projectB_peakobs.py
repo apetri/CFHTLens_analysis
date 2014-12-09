@@ -6,7 +6,8 @@
 ### 1) find PDF for # gal within 2 arcmin as fcn of peak
 ### hights
 ### 2) the same, as 1) but for random direction
-### 3) future modification needed to include L-M conversion
+### 3) L-M conversion: L_k -> halo mass, using Vale&JPO06 (2014/12)
+### 4) kappa_proj assuming NFW (2014/12)
 
 import numpy as np
 from scipy import *
@@ -19,10 +20,12 @@ from scipy.integrate import quad
 plot_galn_vs_kappa_hist = 0
 list_peaks_cat = 0
 update_mag_i = 0
-do_hist_galn_magcut = 1
+update_mag_all = 0
+do_hist_galn_magcut = 0
 z_lo = 0.6
 z_hi = z_hi = '%s_hi'%(z_lo)
 ########### constants ######################
+obsPK_dir = '/Users/jia/CFHTLenS/obsPK/'
 plot_dir = '/Users/jia/weaklensing/CFHTLenS/plot/obsPK/'
 kmapGen = lambda i, z: WLanalysis.readFits('/Users/jia/CFHTLenS/obsPK/maps/W%i_KS_%s_sigmaG10.fit'%(i, z))
 # This is smoothed galn
@@ -36,7 +39,7 @@ PPR512=8468.416479647716
 PPA512=2.4633625
 c = 299792.458
 H0 = 70.0
-OmegaM = 0.3
+OmegaM = 0.25#0.3
 OmegaV = 1.0-OmegaM
 
 ############ functions #####################
@@ -51,7 +54,8 @@ DL_interp = interpolate.interp1d(z_arr, DL_arr)
 # find the rest magnitude at the galaxy, from observed magnitude cut
 M_rest_fcn = lambda M_obs, z: M_obs - 5.0*log10(DL_interp(z)) - 25.0
 
-cat_gen = lambda Wx: np.load('/Users/jia/CFHTLenS/obsPK/W%s_cat_z0213_ra_dec_magy_zpeak.npy'%(Wx))
+cat_gen_junk = lambda Wx: np.load('/Users/jia/CFHTLenS/obsPK/W%s_cat_z0213_ra_dec_magy_zpeak.npy'%(Wx))
+cat_gen = lambda Wx: np.load('/Users/jia/CFHTLenS/obsPK/W%s_cat_z0213_ra_dec_weight_z_ugriz_SDSSr_SDSSz.npy'%(Wx))
 
 def maskGen (Wx, sigma_pix=0, z=0.4):
 	'''generate mask using galn (galaxy count) map
@@ -225,6 +229,22 @@ def hist_galn_magcut(z_lo, z_hi, R=2.0, mag_cut=-19, noise=False):
 	kappa_arr = icat_cut[1,sort_idx[unique_idx]]
 	return galn_arr, kappa_arr
 
+##################### MAG_z to M_halo tabulated values 2014/12##########
+h = 0.7
+L_Lsun1 = lambda MAG_z, rminusz: 10**(-0.4*MAG_z+1.863+0.444*rminusz)#from mag
+L_Lsun_VO = lambda M: 1.23e10*(M/3.7e9)**29.78*(1+(M/3.7e9)**(29.5*0.0255))**(-1.0/0.0255)
+L_Lsun_CM = lambda M: 4.4e11*(M/1e11)**4.0*(0.9+(M/1e11)**(3.85*0.1))**(-1.0/0.1)
+
+import scipy.optimize as op
+Mminfun = lambda M, MAG_z, rminusz: L_Lsun_VO(M)/h**2-L_Lsun1(MAG_z, rminusz)
+def findM(MAG_z_rminusz):
+	print MAG_z_rminusz
+	out = op.root(Mminfun, 1e12, args=(MAG_z_rminusz[0], MAG_z_rminusz[1]), method='lm')#lm:9414; anderson:slow..;hybr:5443;broyden1: slow...
+	return float(out.x),float(out.fun)
+#MAG_z_rminusz_arr = array([[MAG_z, rminusz] for MAG_z in linspace(-19, -25, 100) for rminusz in linspace(-5,5, 100)])
+#M_arr = array(map(findM, MAG_z_rminusz_arr))
+#print sum(abs(M_arr[:,-1])<1)
+#################################################################
 ################################################
 ################ operations ####################
 ################################################
@@ -360,3 +380,56 @@ if plot_galn_vs_kappa_hist:
 	savefig(plot_dir+'W%i_galn_peaks_%sarcmin_zlo%s_zhi%s.jpg'%(Wx,arcmin, z_lo, z_hi))
 	#savefig(plot_dir+'galn_peaks_%sarcmin_zlo%s_zhi%s.jpg'%(arcmin, z_lo, z_hi))
 	close()
+	
+if update_mag_all:
+	## 12/08/2014, code to: 
+	## (1) replace Mag_i = -99 items with Mag_y values
+	## (2) add ugriz bands to the catalogue
+	## (3) convert from MegaCam to SDSS AB system
+	color_cat = load(obsPK_dir+'CFHTdata_RA_DEC_ugriyz_2014-12-08T21-58-57.npy')
+	RA, DEC, star_flag, weight, MAG_u, MAG_g, MAG_r, MAG_i, MAG_y, MAG_z = color_cat.T
+	RADEC = RA+1.0j*DEC
+	# merge i and y band, rid of the 99 values
+	idx_badi = where(abs(MAG_i)==99)[0]
+	MAG_iy = MAG_i.copy()
+	MAG_iy[idx_badi]=MAG_y[idx_badi]
+	# test # of bad magnitude in i, y, and iy 
+	#array([sum(abs(arr)==99) for arr in (MAG_i, MAG_y, MAG_iy)])/7522546.0
+	#[963311, 6562757, 3523]
+	#[0.128, 0.872, 0.000468]
+	
+	### convert to SDSS ##############
+	### r_SDSS=r_Mega +0.011 (g_Mega - r_Mega)
+	### z_SDSS=z_Mega -0.099 (i_Mega - z_Mega)
+	r_SDSS=MAG_r + 0.011*(MAG_g - MAG_r)
+	z_SDSS=MAG_z - 0.099*(MAG_iy - MAG_z)
+	# rz = r_SDSS - z_SDSS # should do after redshift
+	idx_badrz = where(amax(abs(array([MAG_g, MAG_r, MAG_iy, MAG_z])), axis=0)==99)[0]
+	r_SDSS[idx_badrz] = MAG_r[idx_badrz]
+	z_SDSS[idx_badrz] = MAG_z[idx_badrz] # replace bad r_SDSS with MAG_r, in case it's caused by MAG_g
+	##################################
+	color_cat_reorder = array([weight, MAG_u, MAG_g, MAG_r, MAG_iy, MAG_z, r_SDSS, z_SDSS]).T
+	for i in range(1,5):
+		print i
+		icat = cat_gen_junk(i) #ra, dec, mag_i, z_peak
+		iradec = icat.T[0]+1.0j*icat.T[1]
+		
+		idx = where(in1d(RADEC, iradec)==True)[0]
+		if idx.shape[0] != icat.shape[0]:
+			print 'Error in shape matching'
+		
+		iRADEC = RADEC[idx]
+		id1 = argsort(iradec)
+		id2 = argsort(iRADEC)
+			
+		### test - the 2 arrays should be identical - pass!
+		### iRADEC[id2] - iradec[id1]
+		
+		icat_new = concatenate([icat[id1][:,[0,1,3]], color_cat_reorder[idx[id2]]], axis=1)
+		np.save(obsPK_dir+'W%s_cat_z0213_ra_dec_weight_z_ugriz_SDSSr_SDSSz'%(i), icat_new)
+		# columns: ra, dec, z_peak, weight, MAG_u, MAG_g, MAG_r, MAG_iy, MAG_z, r_SDSS, z_SDSS
+		
+		### test 
+		### a=icat[id1][:,-2]
+		### b=icat_new[:,-4]
+		### sum((a-b)==0) - pass!
