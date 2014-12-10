@@ -64,6 +64,8 @@ def npy_filename(feature_type):
 
 	if "minkowski" in feature_type:
 		return "minkowski_all.npy"
+	elif "moments" in feature_type:
+		return "moments.npy"
 	else:
 		return feature_type+".npy"
 
@@ -221,12 +223,16 @@ class FeatureLoader(object):
 							logging.log(DEBUG_PLUS,"Scaling {0} of subfield {1}, masked fraction {2}, multiplying by {3}".format(feature_type,subfield,masked_fraction,(1.0 - masked_fraction)/self.total_non_masked_fraction[smoothing_scale]))
 							ens.scale((1.0 - masked_fraction)/self.total_non_masked_fraction[smoothing_scale])
 
-					###############################################################################
-					##MFs only: check if we want to discard some of the Minkowski functionals######
-					###############################################################################
-
+					#Regular expressions to parse the feature string
 					num = re.match(r"minkowski_([0-2]+)",feature_type)
+					momParse = re.match(r"moments(_[qsk][1-4]+)?(_[qsk][1-4]+)?(_[qsk][1-4]+)?",feature_type)
+					assert (num is None) or (momParse is None)
+
 					if num is not None:
+
+						###############################################################################
+						##MFs only: check if we want to discard some of the Minkowski functionals######
+						###############################################################################
 						
 						mink_to_measure = [ int(n_mf) for n_mf in list(num.group(1)) ]
 						ens_split = ens.split(self.mink_idx)
@@ -245,6 +251,45 @@ class FeatureLoader(object):
 								np.save(os.path.join(self.save_path,"th_new_minkowski.npy"),new_thresholds[0])
 					
 						[ ensemble_subfield.append(ens_split[n_mf]) for n_mf in mink_to_measure ]
+
+					elif momParse is not None:
+
+						###############################################################################
+						##Moments only: check if we want to keep only a subset of the moments##########
+						###############################################################################
+
+						momGroups = momParse.groups()
+						mom_indices = list()
+
+						#Check, one by one, the moment indices
+						for gr in momGroups:
+							
+							if gr is not None:
+								
+								moment_type = gr[1]
+								moment_numbers = [ int(n_mom)-1 for n_mom in gr[2:] ]
+
+								#Compute offset
+								if moment_type=="q":
+									mom_offset=0
+								elif moment_type=="s":
+									mom_offset=2
+								elif moment_type=="k":
+									mom_offset=5
+								else:
+									raise ValueError("Only quadratic, cubic, quartic moments implemented!")
+
+								#Append indices to list
+								for mom_num in moment_numbers:
+									mom_indices.append(mom_offset+mom_num)
+
+						#Slice the ensemble accordingly
+						if len(mom_indices)>0:
+							logging.info("Measuring moments {0}".format("-".join(mom_indices)))
+							ens.cut(mom_indices)
+
+						#Append to subfield
+						ensemble_subfield.append(ens)
 				
 					else:
 					
