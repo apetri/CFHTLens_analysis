@@ -285,7 +285,7 @@ class FeatureLoader(object):
 
 						#Slice the ensemble accordingly
 						if len(mom_indices)>0:
-							logging.info("Measuring moments {0}".format("-".join(mom_indices)))
+							logging.info("Measuring moments {0}".format(mom_indices))
 							ens.cut(mom_indices)
 
 						#Append to subfield
