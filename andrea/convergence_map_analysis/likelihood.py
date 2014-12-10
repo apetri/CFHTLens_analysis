@@ -189,7 +189,7 @@ def main():
 	last_timestamp = now
 
 	#save output
-	likelihoods_dir = os.path.join(feature_loader.options.get("analysis","save_path"),"likelihoods")
+	likelihoods_dir = os.path.join(feature_loader.options.get("analysis","save_path"),"likelihoods_Omega_m-w-sigma8")
 	if not os.path.isdir(likelihoods_dir):
 		os.mkdir(likelihoods_dir)
 	
