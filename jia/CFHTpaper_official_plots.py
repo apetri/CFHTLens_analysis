@@ -32,7 +32,7 @@ interp_2D_plane = 0
 good_bad_peaks = 0
 sample_interpolation = 0
 sample_points = 0
-SIGMA_contour = 1
+SIGMA_contour = 0
 
 ########### constants ####################
 l=100
@@ -220,7 +220,7 @@ if SIGMA_contour:
 	all_points = array([X.flatten(),Y.flatten()]).T
 	repeat_elem = lambda aP: (repeat(aP[0], aP[1]*1e5).reshape(2,-1)).T
 	alpha_arr = linspace(0.4,0.8,301)
-	def findalpha (P, fn):
+	def findalpha (P, fn=None):
 		all_prob0 = (P.T).flatten()#/amax(P)
 		idx = where(all_prob0*1e4>2)[0]#only care about points with larger prob.
 		iall_points, all_prob = all_points[idx], all_prob0[idx]
