@@ -28,6 +28,13 @@ descriptors["minkowski_0"]=r"$V_0$"
 descriptors["minkowski_1"]=r"$V_1$"
 descriptors["minkowski_2"]=r"$V_2$"
 descriptors["moments"]=r"$\mathrm{Moments}$"
+descriptors["moments_q12_s1"]=r"$\sigma_0^2\times\sigma_1^2\times S_0$"
+descriptors["moments_q12_s12"]=r"$\mathrm{Add}$ $S_1$"
+descriptors["moments_q12_s123"]=r"$\mathrm{Add}$ $S_2$"
+descriptors["moments_q12_s123_k1"]=r"$\mathrm{Add}$ $K_0$"
+descriptors["moments_q12_s123_k12"]=r"$\mathrm{Add}$ $K_1$"
+descriptors["moments_q12_s123_k123"]=r"$\mathrm{Add}$ $K_2$"
+descriptors["moments_q12_s123_k1234"]=r"$\mathrm{Add}$ $K_3$"
 
 #Number of principal components
 num_components = dict()
@@ -44,6 +51,13 @@ smoothing_scales["minkowski_0"] = 1.0
 smoothing_scales["minkowski_1"] = 1.0
 smoothing_scales["minkowski_2"] = 1.0 
 smoothing_scales["moments"] = 1.0
+smoothing_scales["moments_q12_s1"]=1.0
+smoothing_scales["moments_q12_s12"]=1.0
+smoothing_scales["moments_q12_s123"]=1.0
+smoothing_scales["moments_q12_s123_k1"]=1.0
+smoothing_scales["moments_q12_s123_k12"]=1.0
+smoothing_scales["moments_q12_s123_k123"]=1.0
+smoothing_scales["moments_q12_s123_k1234"]=1.0
 
 keys = descriptors.keys()
 keys.sort()
@@ -55,6 +69,7 @@ keys.sort()
 single = ["power_spectrum","minkowski_0","minkowski_1","minkowski_2","moments"]
 multiple = [("minkowski_0","minkowski_1","minkowski_2"),("power_spectrum","minkowski_0","minkowski_1","minkowski_2"),("power_spectrum","minkowski_0","minkowski_1","minkowski_2","moments")]
 all_descriptors = single + multiple
+moment_list = ["moments_q12_s1","moments_q12_s12","moments_q12_s123","moments_q12_s123_k1","moments_q12_s123_k12","moments_q12_s123_k123","moments_q12_s123_k1234"]
 
 ################################################################################################################################################
 ################################################################################################################################################
@@ -274,7 +289,7 @@ def contours_combine(cmd_args,descriptors_in_plot=multiple,parameter_axes={"Omeg
 	else:
 		mock_prefix=""
 
-	#Smoothing scales in arcmin
+	#Likelihood levels
 	levels = [0.684]
 
 	#Parametrization hash
@@ -301,6 +316,7 @@ def contours_combine(cmd_args,descriptors_in_plot=multiple,parameter_axes={"Omeg
 			contour = ContourPlot(fig=fig,ax=ax)
 		elif marginalize_over=="others":
 			contour = ContourPlot()
+			contour.close()
 		else:
 			raise ValueError("marginalize_over must be in [me,others]")
 
@@ -434,6 +450,116 @@ def Si8_likelihood_combine(cmd_args):
 
 	contours_combine(cmd_args,parameter_axes={"Omega_m":0,"w":1,"Sigma8Om0.55":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","Sigma8Om0.55":r"$\Sigma_8$"},select="Sigma8Om0.55",marginalize_over="others")
 
+
+##################################################################################################################################################
+##################################################################################################################################################
+
+def contour_moments(cmd_args,descriptors_in_plot=moment_list,parameter_axes={"Omega_m":0,"w":1,"sigma8":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","sigma8":r"$\sigma_8$"},select="w",marginalize_over="me"):
+
+	#Likelihood levels
+	levels = [0.684]
+
+	#Parametrization hash
+	par = parameter_axes.keys()
+	par.sort(key=parameter_axes.__getitem__)
+	par_hash = "-".join(par)
+
+	#Parse options from configuration file
+	options = ConfigParser.ConfigParser()
+	with open(cmd_args.options_file,"r") as configfile:
+		options.readfp(configfile)
+
+	#Create figure
+	fig,ax = plt.subplots(figsize=(8,8))
+
+	#Plot labels
+	contour_labels = list()
+
+	#Cycle over descriptors
+	for n,descr in enumerate(descriptors_in_plot):
+
+		#Instantiate contour plot
+		if marginalize_over=="me":
+			contour = ContourPlot(fig=fig,ax=ax)
+		elif marginalize_over=="others":
+			contour = ContourPlot()
+			contour.close()
+		else:
+			raise ValueError("marginalize_over must be in [me,others]")
+
+
+		#Construct the likelihood file
+		likelihood_file = os.path.join(root_dir,"likelihoods_{0}".format(par_hash),"likelihood_{0}--{1:.1f}.npy".format(descr,smoothing_scales[descr]))
+		contour_labels.append(descriptors[descr])
+
+		#Log filename
+		print("Loading likelihood from {0}".format(likelihood_file))
+		
+		#Load the likelihood
+		contour.getLikelihood(likelihood_file,parameter_axes=parameter_axes,parameter_labels=cosmo_labels)
+		
+		#Set the physical units
+		contour.getUnitsFromOptions(options)
+
+		if marginalize_over=="me":
+		
+			#Marginalize
+			contour.marginalize(select)
+		
+			#Best fit
+			maximum = contour.getMaximum()
+			print("Likelihood with {0} is maximum at {1}".format(descr,maximum))
+
+			#Get levels
+			contour.getLikelihoodValues(levels=levels)
+
+			#Plot contours
+			contour.plotContours(colors=[brew_colors_diverging[n]],fill=False,display_maximum=False,display_percentages=False,alpha=1.0)
+
+		else:
+			
+			p,l,pmax,p0 = contour.marginal(select,levels=[0.684])
+			print(pmax,p0)
+			ax.plot(p,l,color=brew_colors_diverging[n],label=contour_labels[-1])		
+			
+
+	
+	if marginalize_over=="me":
+	
+		#Legend
+		contour.title_label=""
+		contour.labels(contour_labels)
+
+		#Save
+		par.pop(par.index(select))
+		par_hash = "-".join(par).replace(".","")
+		fig.savefig("contours_moments{0}.{1}".format(par_hash,cmd_args.type))	
+
+	else:
+
+		#Legend
+		ax.set_xlabel(cosmo_labels[select],fontsize=22)
+		ax.set_ylabel(r"$\mathcal{L}$" + "$($" + cosmo_labels[select] + "$)$",fontsize=22)
+		ax.legend(loc="upper left",prop={"size":10})
+
+		#Save
+		fig.savefig("contours_moments{0}.{1}".format(select.replace(".",""),cmd_args.type))
+
+
+###################################################################################################################################################
+
+def contour_moments_reparametrize(cmd_args):
+
+	contour_moments(cmd_args,parameter_axes={"Omega_m":0,"w":1,"Sigma8Om0.55":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","Sigma8Om0.55":r"$\sigma_8(\Omega_m/0.27)^{0.55}$"},select="Omega_m")
+
+###################################################################################################################################################
+
+def Si8_likelihood_moments(cmd_args):
+
+	contour_moments(cmd_args,parameter_axes={"Omega_m":0,"w":1,"Sigma8Om0.55":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","Sigma8Om0.55":r"$\sigma_8(\Omega_m/0.27)^{0.55}$"},select="Sigma8Om0.55",marginalize_over="others")
+
+
+
 ##################################################################################################################################################
 ##################################################################################################################################################
 ##################################################################################################################################################
@@ -453,6 +579,9 @@ figure_method["7"] = Si8_likelihood_single
 figure_method["8"] = contours_combine
 figure_method["8b"] = contours_combine_reparametrize
 figure_method["9"] = Si8_likelihood_combine
+figure_method["10a"] = contour_moments
+figure_method["10b"] = contour_moments_reparametrize
+figure_method["10c"] = Si8_likelihood_moments
 
 
 if __name__=="__main__":
