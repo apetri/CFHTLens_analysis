@@ -85,7 +85,7 @@ class FeatureLoader(object):
 	def __init__(self,cmd_args,feature_string=None):
 
 		self.cmd_args = cmd_args
-		if not(hasattr(cmd_args),"mean_subtract"):
+		if not(hasattr(cmd_args,"mean_subtract")):
 			cmd_args.mean_subtract = False
 
 		#Parse INI options file
