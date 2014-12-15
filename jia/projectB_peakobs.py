@@ -301,12 +301,6 @@ cNFW_fcn = lambda zM: 11.0/(1.0+zM[0])*(zM[1]/1e13)**(-0.13)#Lin&Kilbinger2014
 rho_mz = lambda z: OmegaM*rho_c0*(1+z)**3#done, unit g/cm^3
 Rvir_fcn = lambda M, z: (M*M_sun/(4.0/3.0*pi*178*rho_mz(z)))**0.3333#set delta_c=178, unit=cm
 #Rvir = lambda M, z: (M*M_sun/(4.0/3.0*pi*delta_c*rho_mz(z)))**0.3333# free delta c 
-def DDs_fcn (z_fore, z_back):
-	Ds = DL(z_back)
-	Dl = DL(z_fore)
-	Dls = Ds - Dl
-	return Dl*3.08567758e24, Ds/(Dl*Dls)/3.08567758e24# 3e24 = 1Mpc/1cm
-
 def Gx_fcn (x, cNFW):
 	if x < 1:
 		out = 1.0/(x**2-1.0)*sqrt(cNFW**2-x**2)/(cNFW+1.0)+1.0/(1.0-x**2)**1.5*arccosh((x**2+cNFW)/x/(cNFW+1.0))
@@ -319,18 +313,27 @@ def Gx_fcn (x, cNFW):
 	return x
 
 
-def kappa_proj (cNFW, z_fore, z_back, theta, theta_s, M, ra_fore, dec_fore, ra_back, dec_back): 
+def kappa_proj (cNFW, z_fore, M, ra_fore, dec_fore):
+	'''return a function, for certain foreground halo, 
+	calculate the projected mass between a foreground halo and a background galaxy pair.
+	'''
 	f = lambda c: 1.0/(log(1+cNFW)-cNFW/(1+cNFW))
 	Rvir = Rvir_fcn(M, z)
 	two_rhos_rs = M*f*cNFW**2/(2*pi*r_vir**2)#see LK2014 footnote
-	Dl, DDs = DDs(z_fore, z_back)#all in cgs unit
-	SIGMAc = (c*1e5)**2/4/pi/Gnewton*DDs
-	theta = WLanalysis.gnom_fun(ra_fore, dec_fore)(ra_back, dec_back)
-	thata_vir = Rvir/DL
-	x = cNFW*theta/theta_vir
-	Gx = Gx_fcn(x, cNFW)
-	kappa_p = two_rhos_rs/SIGMAc*Gx
-	return kappa_p
+	theta = WLanalysis.gnom_fun(ra_fore, dec_fore)
+	Dl = DL(z_fore)
+	Dl_cm = Dl*3.08567758e24
+	thata_vir = Rvir/Dl_cm
+	
+	def kappa_proj_fcn (z_back, ra_back, dec_back):
+		Ds = DL(z_back)
+		Dls = Ds - Dl
+		DDs = Ds/(Dl*Dls)/3.08567758e24# 3e24 = 1Mpc/1cm
+		SIGMAc = (c*1e5)**2/4/pi/Gnewton*DDs
+		x = cNFW*theta(ra_back, dec_back)/theta_vir
+		Gx = Gx_fcn(x, cNFW)
+		kappa_p = two_rhos_rs/SIGMAc*Gx
+		return kappa_p
 
 def MassProj (radec0, kappa0, zcut, gridofdata, R = 2.0, MAGcut = -18):
 	'''For a peak at (ra0, dec0) = radec0, I try to get a projected kappa from foreground halos.
