@@ -62,7 +62,7 @@ def main():
 	parser.add_argument("-p","--prefix",dest="prefix",action="store",default="",help="prefix of the emulator to pickle")
 	parser.add_argument("-r","--realizations",dest="realizations",type=int,default=None,help="use only the first N realizations to estimate the covariance matrix")
 	parser.add_argument("-d","--differentiate",dest="differentiate",action="store_true",default=False,help="differentiate the first minkowski functional to get the PDF")
-	parser.add_argument("-ms","--mean_subtract",dest="mean_subtract".action="store_true",default=False,help="lod in the observations with the subtracted means")
+	parser.add_argument("-ms","--mean_subtract",dest="mean_subtract",action="store_true",default=False,help="lod in the observations with the subtracted means")
 
 	cmd_args = parser.parse_args()
 

@@ -144,7 +144,7 @@ class FeatureLoader(object):
 
 			for subfield in self.subfields:
 
-				m = Measurement(model=None,options=self.options,subfield=subfield,smoothing_scale=smoothing_scale,measurer=None,mean_subtract=self.cmd_args["mean_subtract"])
+				m = Measurement(model=None,options=self.options,subfield=subfield,smoothing_scale=smoothing_scale,measurer=None,mean_subtract=self.cmd_args.mean_subtract)
 				
 				self.masked_fraction[smoothing_scale][subfield] = m.maskedFraction
 				logging.debug("Masked fraction of subfield {0}, {1} arcmin smoothing is {2}".format(subfield,smoothing_scale,self.masked_fraction[smoothing_scale][subfield]))
@@ -174,7 +174,7 @@ class FeatureLoader(object):
 			m = dict()
 
 			for smoothing_scale in self.smoothing_scales:
-				m[smoothing_scale] = Measurement(model=model,options=self.options,subfield=subfield,smoothing_scale=smoothing_scale,measurer=None,mean_subtract=self.cmd_args["mean_subtract"])
+				m[smoothing_scale] = Measurement(model=model,options=self.options,subfield=subfield,smoothing_scale=smoothing_scale,measurer=None,mean_subtract=self.cmd_args.mean_subtract)
 				m[smoothing_scale].get_all_map_names()
 
 			#Construct one ensemble for each feature (with included smoothing scales) and load in the data
