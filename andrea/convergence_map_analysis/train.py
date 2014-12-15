@@ -144,7 +144,7 @@ class FeatureLoader(object):
 
 			for subfield in self.subfields:
 
-				m = Measurement(model=None,options=self.options,subfield=subfield,smoothing_scale=smoothing_scale,measurer=None)
+				m = Measurement(model=None,options=self.options,subfield=subfield,smoothing_scale=smoothing_scale,measurer=None,mean_subtract=self.cmd_args["mean_subtract"])
 				
 				self.masked_fraction[smoothing_scale][subfield] = m.maskedFraction
 				logging.debug("Masked fraction of subfield {0}, {1} arcmin smoothing is {2}".format(subfield,smoothing_scale,self.masked_fraction[smoothing_scale][subfield]))
@@ -174,7 +174,7 @@ class FeatureLoader(object):
 			m = dict()
 
 			for smoothing_scale in self.smoothing_scales:
-				m[smoothing_scale] = Measurement(model=model,options=self.options,subfield=subfield,smoothing_scale=smoothing_scale,measurer=None)
+				m[smoothing_scale] = Measurement(model=model,options=self.options,subfield=subfield,smoothing_scale=smoothing_scale,measurer=None,mean_subtract=self.cmd_args["mean_subtract"])
 				m[smoothing_scale].get_all_map_names()
 
 			#Construct one ensemble for each feature (with included smoothing scales) and load in the data
@@ -189,7 +189,9 @@ class FeatureLoader(object):
 				for smoothing_scale in self.features_to_measure[feature_type]:
 					
 					#Construct the subfield/smoothing scale/feature specific ensemble
-					ens = Ensemble.fromfilelist([os.path.join(m[smoothing_scale].full_save_path,npy_filename(feature_type))])
+					ens_filename = os.path.join(m[smoothing_scale].full_save_path,npy_filename(feature_type))
+					logging.info("Reading ensemble from {0}".format(ens_filename))
+					ens = Ensemble.fromfilelist([ens_filename])
 					ens.load(from_old=True)
 
 					#Check if we want to cut out some of the peaks

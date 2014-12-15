@@ -81,7 +81,7 @@ def cfht_fits_loader(filename):
 ########################CFHT convergence maps measurer#####################
 ###########################################################################
 
-def cfht_convergence_measure_all(filename,index,mask_filename):
+def cfht_convergence_measure_all(filename,index,mask_filename,mean_subtract=False):
 
 	"""
 	Measures all the statistical descriptors of a convergence map as indicated by the index instance
@@ -100,6 +100,13 @@ def cfht_convergence_measure_all(filename,index,mask_filename):
 		logging.debug("Loading mask from {0}".format(mask_filename))
 		#Mask the map
 		masked_conv_map = conv_map.mask(mask_profile)
+
+	if mean_subtract:
+		
+		if mask_filename is not None:
+			masked_conv_map.data -= masked_conv_map.mean()
+		else:
+			conv_map.data -= conv_map.mean()
 
 	#Allocate memory for observables
 	descriptors = index
@@ -222,7 +229,11 @@ class Measurement(object):
 		elif type(self.model) == CFHTLens:
 			
 			self.map_names = [self.model.getName(subfield=self.subfield,smoothing=self.smoothing_scale)]
-			self.full_save_path = os.path.join(self.save_path,"observations",self.subfield_name,self.smoothing_name)
+
+			if self.kwargs["mean_subtract"]:
+				self.full_save_path = os.path.join(self.save_path,"observations_meansub",self.subfield_name,self.smoothing_name)
+			else:
+				self.full_save_path = os.path.join(self.save_path,"observations",self.subfield_name,self.smoothing_name)
 		
 		else:
 			raise TypeError("Your model is not supported in this analysis!")
@@ -258,6 +269,7 @@ if __name__=="__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument("-f","--file",dest="options_file",action="store",type=str,help="analysis options file")
 	parser.add_argument("-v","--verbose",dest="verbose",action="store_true",default=False,help="turn on verbosity")
+	parser.add_argument("-m","--mean_subtract",dest="mean_subtract",action="store_true",default=False,help="subtract the mean pixel value from the maps")
 
 	cmd_args = parser.parse_args()
 
@@ -359,7 +371,10 @@ if __name__=="__main__":
 		elif type(model)==CFHTcov:
 			dir_to_make = os.path.join(save_path,model._cosmo_id_string+"_cov")
 		elif type(model) == CFHTLens:
-			dir_to_make = os.path.join(save_path,"observations")
+			if cmd_args.mean_subtract:
+				dir_to_make = os.path.join(save_path,"observations_meansub")
+			else:
+				dir_to_make = os.path.join(save_path,"observations")
 		else:
 			raise TypeError("Your model is not supported in this analysis!")
 
@@ -380,7 +395,7 @@ if __name__=="__main__":
 				if not os.path.exists(dir_to_make):
 					os.mkdir(dir_to_make)
 	
-				m = Measurement(model=model,options=options,subfield=subfield,smoothing_scale=smoothing_scale,measurer=cfht_convergence_measure_all,index=idx)
+				m = Measurement(model=model,options=options,subfield=subfield,smoothing_scale=smoothing_scale,measurer=cfht_convergence_measure_all,index=idx,mean_subtract=cmd_args.mean_subtract)
 				m.get_all_map_names()
 				m.measure(pool=pool)
 
