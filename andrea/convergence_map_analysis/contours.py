@@ -95,6 +95,16 @@ class ContourPlot(object):
 
 		self.fig.savefig(figname)
 
+
+	def close(self):
+
+		"""
+		Closes the figure
+
+		"""
+
+		plt.close(self.fig)
+
 	def getUnitsFromOptions(self,options):
 		
 		"""
