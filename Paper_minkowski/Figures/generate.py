@@ -1,7 +1,9 @@
 #!/usr/bin/env python
+from __future__ import division,print_function
 
 import sys,os,argparse,ConfigParser
 
+from lenstools import Ensemble
 from lenstools.constraints import LikelihoodAnalysis
 from lenstools.simulations import Design
 
@@ -111,6 +113,33 @@ def design(cmd_args):
 
 	#Save the figure 
 	fig.savefig("design.{0}".format(cmd_args.type))
+
+################################################################################################################################################
+
+def emulatorAccuracy(cmd_args,descriptors_in_plot=single[:-1]):
+
+	#Smoothing scale
+	smoothing_scale = 1.0
+
+	#Ready to plot
+	fig,ax = plt.subplots(figsize=(8,8))
+	for n,descr in enumerate(descriptors_in_plot):
+
+		predicted = np.load(os.path.join(root_dir,"troubleshoot","fiducial_from_interpolator_{0}--{1:.1f}.npy".format(descr,smoothing_scale)))
+		measured = np.load(os.path.join(root_dir,"troubleshoot","fiducial_{0}--{1:.1f}.npy".format(descr,smoothing_scale)))
+		covariance = np.load(os.path.join(root_dir,"troubleshoot","covariance_{0}--{1:.1f}.npy".format(descr,smoothing_scale)))
+
+		ax.plot(np.abs(measured-predicted)/np.sqrt(covariance.diagonal()),color=brew_colors[n],label=descriptors[descr])
+
+	#Plot labels
+	ax.set_xlabel(r"$i$",fontsize=22)
+	ax.set_ylabel(r"$(E-M)/\sqrt{C_{MM}}$")
+	ax.set_yscale("log")
+	ax.legend(loc="lower left")
+
+	#Save the figure
+	fig.savefig("emulator_accuracy.{0}".format(cmd_args.type))
+
 
 
 ##############################################################################################################################################
@@ -567,7 +596,9 @@ def Si8_likelihood_moments(cmd_args):
 
 
 figure_method = dict()
-figure_method["2"] = design
+
+figure_method["1"] = design
+figure_method["2"] = emulatorAccuracy
 figure_method["3"] = pca
 figure_method["4"] = robustness
 figure_method["4s"] = robustness_1d
