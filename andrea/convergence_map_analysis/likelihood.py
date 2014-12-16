@@ -39,6 +39,29 @@ from emcee.utils import MPIPool
 
 from train import DEBUG_PLUS
 
+#####################################################################
+###########Emulator reparametrizations###############################
+#####################################################################
+
+def Sigma8reparametrize(p,a=0.55):
+
+	q = p.copy()
+
+	#Change only the last parameter
+	q[:,2] = p[:,2]*(p[:,0]/0.27)**a
+
+	#Done
+	return q
+
+
+####################################################################################
+###########Dictionary for emulator reparametrizations###############################
+####################################################################################
+
+reparametrization = dict()
+reparametrization["Omega_m-w-sigma8"] = None 
+reparametrization["Omega_m-w-Sigma8Om0.55"] = Sigma8reparametrize
+
 ######################################################################
 ###################Main execution#####################################
 ######################################################################
@@ -158,18 +181,41 @@ def main():
 
 	logging.info("Initializing chi2 meshgrid...")
 
-	#Set the points in parameter space on which to compute the chi2 (read from options)
-	Om = np.ogrid[feature_loader.options.getfloat("Omega_m","min"):feature_loader.options.getfloat("Omega_m","max"):feature_loader.options.getint("Omega_m","num_points")*1j]
-	w = np.ogrid[feature_loader.options.getfloat("w","min"):feature_loader.options.getfloat("w","max"):feature_loader.options.getint("w","num_points")*1j]
-	si8 = np.ogrid[feature_loader.options.getfloat("sigma8","min"):feature_loader.options.getfloat("sigma8","max"):feature_loader.options.getint("sigma8","num_points")*1j]
+	#Read parameters to use from options
+	use_parameters = feature_loader.options.get("parameters","use_parameters").replace(" ","").split(",")
+	assert len(use_parameters)==3
+	
+	#Reparametrization hash key
+	use_parameters_hash = "-".join(use_parameters)
 
-	num_points = len(Om) * len(w) * len(si8) 
+	########################################################################################
+	#Might need to reparametrize the emulator here, use a dictionary for reparametrizations#
+	########################################################################################
 
-	points = np.array(np.meshgrid(Om,w,si8,indexing="ij")).reshape(3,num_points).transpose()
-	if cmd_args.save_points is not None:
-		logging.info("Saving points to {0}.npy".format(cmd_args.save_points.rstrip(".npy")))
-		np.save(cmd_args.save_points.rstrip(".npy")+".npy",points)
+	assert use_parameters_hash in reparametrization.keys(),"No reparametrization scheme specified for {0} parametrization".format(use_parameters_hash)
+	
+	if reparametrization[use_parameters_hash] is not None:
+		
+		#Reparametrize
+		logging.info("Reparametrizing emulator according to {0} parametrization".format(use_parameters_hash))
+		analysis.reparametrize(reparametrization[use_parameters_hash])
 
+		#Retrain for safety
+		analysis.train()
+
+	#Log current parametrization to user
+	logging.info("Using parametrization {0}".format(use_parameters_hash))
+
+	#Set the points in parameter space on which to compute the chi2 (read extremes from options)
+	par = list()
+	for p in range(3):
+		assert feature_loader.options.has_section(use_parameters[p]),"No extremes specified for parameter {0}".format(use_parameters[p])
+		par.append(np.ogrid[feature_loader.options.getfloat(use_parameters[p],"min"):feature_loader.options.getfloat(use_parameters[p],"max"):feature_loader.options.getint(use_parameters[p],"num_points")*1j])
+
+	num_points = len(par[0]) * len(par[1]) * len(par[2]) 
+
+	points = np.array(np.meshgrid(par[0],par[1],par[2],indexing="ij")).reshape(3,num_points).transpose()
+	
 	#Now compute the chi2 at each of these points
 	if pool:
 		split_chunks = pool.size
@@ -180,17 +226,17 @@ def main():
 	
 	chi_squared = analysis.chi2(points,observed_feature=observed_feature,features_covariance=features_covariance,pool=pool,split_chunks=split_chunks)
 
-	#Close MPI Pool
-	if pool is not None:
-		pool.close()
-		logging.info("Closed MPI Pool.")
-
 	now = time.time()
 	logging.info("chi2 calculations completed in {0:.1f}s".format(now-last_timestamp))
 	last_timestamp = now
 
+	#Close pool
+	if pool is not None:
+		pool.close()
+		logging.info("Closed MPI Pool.")
+
 	#save output
-	likelihoods_dir = os.path.join(feature_loader.options.get("analysis","save_path"),"likelihoods_Omega_m-w-sigma8")
+	likelihoods_dir = os.path.join(feature_loader.options.get("analysis","save_path"),"likelihoods_{0}".format(use_parameters_hash))
 	prefix = cmd_args.prefix
 	if cmd_args.mean_subtract:
 		prefix += "_meansub"
@@ -206,15 +252,15 @@ def main():
 		likelihood_file = os.path.join(likelihoods_dir,"likelihood{0}{1}real_{2}.npy".format(prefix,cmd_args.realizations,output_string(feature_loader.feature_string)))
 
 	logging.info("Saving chi2 to {0}".format(chi2_file))
-	np.save(chi2_file,chi_squared.reshape(Om.shape + w.shape + si8.shape))
+	np.save(chi2_file,chi_squared.reshape(par[0].shape + par[1].shape + par[2].shape))
 
 	logging.info("Saving full likelihood to {0}".format(likelihood_file))
-	likelihood_cube = analysis.likelihood(chi_squared.reshape(Om.shape + w.shape + si8.shape))
+	likelihood_cube = analysis.likelihood(chi_squared.reshape(par[0].shape + par[1].shape + par[2].shape))
 	np.save(likelihood_file,likelihood_cube)
 
 	#Find the maximum of the likelihood using ContourPlot functionality
 	contour = ContourPlot()
-	contour.getLikelihood(likelihood_cube)
+	contour.getLikelihood(likelihood_cube,parameter_axes={use_parameters[0]:0,use_parameters[1]:1,use_parameters[2]:2},parameter_labels={use_parameters[0]:"0",use_parameters[1]:"1",use_parameters[2]:"2"})
 	contour.getUnitsFromOptions(feature_loader.options)
 	parameters_maximum = contour.getMaximum()
 	parameter_keys = parameters_maximum.keys()
@@ -227,7 +273,7 @@ def main():
 	#Additionally save some debugging info to plot, etc...
 	if cmd_args.save_debug:
 
-		troubleshoot_dir = os.path.join(feature_loader.options.get("analysis","save_path"),"troubleshoot")
+		troubleshoot_dir = os.path.join(feature_loader.options.get("analysis","save_path"),"troubleshoot_{0}".format(use_parameters_hash))
 		if not os.path.isdir(troubleshoot_dir):
 			os.mkdir(troubleshoot_dir)
 
