@@ -230,6 +230,11 @@ def main():
 	logging.info("chi2 calculations completed in {0:.1f}s".format(now-last_timestamp))
 	last_timestamp = now
 
+	#Close pool
+	if pool is not None:
+		pool.close()
+		logging.info("Closed MPI Pool.")
+
 	#save output
 	likelihoods_dir = os.path.join(feature_loader.options.get("analysis","save_path"),"likelihoods_{0}".format(use_parameters_hash))
 	prefix = cmd_args.prefix
