@@ -20,6 +20,7 @@ import scipy.optimize as op
 
 list_peaks_cat = 0 #! generate a list of galaxies for all peaks
 update_mag_all = 0 #! make a list of galaxie catagues with useful quantities
+project_mass = 1
 #junk routines below
 update_mag_i = 0
 plot_galn_vs_kappa_hist = 0
@@ -28,7 +29,7 @@ do_hist_galn_magcut = 0
 z_lo = 0.6
 z_hi = z_hi = '%s_hi'%(z_lo)
 obsPK_dir = '/Users/jia/CFHTLenS/obsPK/'
-plot_dir = '/Users/jia/weaklensing/CFHTLenS/plot/obsPK/'
+plot_dir = '/Users/jia/weaklensing/CFHTLenS/obsPK/plot/'
 kmapGen = lambda i, z: WLanalysis.readFits('/Users/jia/CFHTLenS/obsPK/maps/W%i_KS_%s_sigmaG10.fit'%(i, z))
 # This is smoothed galn
 # galnGen = lambda i, z: WLanalysis.readFits('/Users/jia/CFHTLenS/obsPK/maps/W%i_galn_%s_hi_sigmaG10.fit'%(i, z))
@@ -46,6 +47,7 @@ OmegaM = 0.25#0.3
 OmegaV = 1.0-OmegaM
 rho_c0 = 9.9e-30#g/cm^3
 M_sun = 1.989e33#gram
+
 ############ functions #####################
 # growth factor
 H_inv = lambda z: 1.0/(H0*sqrt(OmegaM*(1+z)**3+OmegaV))
@@ -58,9 +60,7 @@ DL_interp = interpolate.interp1d(z_arr, DL_arr)
 # find the rest magnitude at the galaxy, from observed magnitude cut
 M_rest_fcn = lambda M_obs, z: M_obs - 5.0*log10(DL_interp(z)) - 25.0
 
-cat_gen_junk = lambda Wx: np.load('/Users/jia/CFHTLenS/obsPK/W%s_cat_z0213_ra_dec_magy_zpeak.npy'%(Wx))
-cat_gen = lambda Wx: np.load('/Users/jia/CFHTLenS/obsPK/W%s_cat_z0213_ra_dec_weight_z_ugriz_SDSSr_SDSSz.npy'%(Wx))
-#columns: ra, dec, z_peak, weight, MAG_u, MAG_g, MAG_r, MAG_iy, MAG_z, r_SDSS, z_SDSS
+cat_gen = lambda Wx: np.load(obsPK_dir+'W%s_cat_z0213_ra_dec_weight_z_ugriz_SDSSr_SDSSz.npy'%(Wx)) #columns: ra, dec, z_peak, weight, MAG_u, MAG_g, MAG_r, MAG_iy, MAG_z, r_SDSS, z_SDSS
 
 def maskGen (Wx, sigma_pix=0, z=0.4):
 	'''generate mask using galn (galaxy count) map
@@ -287,8 +287,7 @@ Rvir_fcn = lambda M, z: (M*M_sun/(4.0/3.0*pi*178*rho_mz(z)))**0.3333#set delta_c
 
 ########## convert from M100 (get from Lk) to Mvir (needed for NFW) ############
 ratio_r100_rvir = lambda gamma, c: (1.0/(c*gamma+1.0)+log(c*gamma+1.0)-1.0)/(1.0/(c+1.0)+log(c+1.0)-1.0) - gamma**3.0*100.0/178.0
-findGamma = lambda c: op.brentq(ratio_r100_rvir, 1e-6, 50, args=(c))
-convertMvir2M100 = lambda c: findGamma(c)**3.0*100.0/178.0
+ratio_M100_Mvir = lambda c: op.brentq(ratio_r100_rvir, 1e-6, 50, args=(c))**3.0*100.0/178.0
 ############################################################################## 
 
 def Gx_fcn (x, cNFW):
@@ -300,35 +299,38 @@ def Gx_fcn (x, cNFW):
 		out = 1.0/(x**2-1.0)*sqrt(cNFW**2-x**2)/(cNFW+1.0)-1.0/(x**2-1.0)**1.5*arccos((x**2+cNFW)/x/(cNFW+1.0))
 	elif x > cNFW:
 		out = 0
-	return x
+	return out
 
 
-def kappa_proj (cNFW, z_fore, M, ra_fore, dec_fore):
+def kappa_proj (cNFW, z_fore, M100, ra_fore, dec_fore):
 	'''return a function, for certain foreground halo, 
 	calculate the projected mass between a foreground halo and a background galaxy pair.
 	'''
 	f = 1.0/(log(1+cNFW)-cNFW/(1+cNFW))
-	Rvir = Rvir_fcn(M, z)
-	two_rhos_rs = M*f*cNFW**2/(2*pi*Rvir**2)#see LK2014 footnote
+	Mvir = M100/ratio_M100_Mvir(cNFW)
+	Rvir = Rvir_fcn(Mvir, z)#cm
+	two_rhos_rs = Mvir*M_sun*f*cNFW**2/(2*pi*Rvir**2)#cgs, see LK2014 footnote
 	xy_fcn = WLanalysis.gnom_fun((ra_fore, dec_fore))
 	Dl = DL(z_fore)/(1+z_fore)**2 # D_angular = D_luminosity/(1+z)**2
 	Dl_cm = Dl*3.08567758e24
 	theta_vir = Rvir/Dl_cm
-	
+
 	def kappa_proj_fcn (z_back, ra_back, dec_back):
 		Ds = DL(z_back)/(1+z_back)**2
 		Dls = Ds - Dl
 		DDs = Ds/(Dl*Dls)/3.08567758e24# 3e24 = 1Mpc/1cm
-		SIGMAc = (c*1e5)**2/4/pi/Gnewton*DDs
+		SIGMAc = (c*1e5)**2/4.0/pi/Gnewton*DDs
 		x_rad, y_rad = xy_fcn((ra_back, dec_back))
 		theta = sqrt(x_rad**2+y_rad**2)
 		x = cNFW*theta/theta_vir
 		Gx = Gx_fcn(x, cNFW)
 		kappa_p = two_rhos_rs/SIGMAc*Gx
+		print '%.3f\t%.3f\t%.3f\t%.3e\t%.3f\t%.3e\t'%(z_back, ra_back, dec_back, two_rhos_rs, SIGMAc, Gx)
 		return kappa_p
 	return kappa_proj_fcn
 
-def MassProj (radec0, kappa0, zcut, gridofdata, R = 2.0, MAGcut = -18):
+rad2arcmin = lambda distance: degrees(distance)*60.0
+def MassProj (radec0, kappa0, zcut, gridofdata, R = 2.0, MAGcut = -18, sigmaG=1.0):
 	'''For a peak at (ra0, dec0) = radec0, I try to get a projected kappa from foreground halos.
 	steps:
 	1) cut galaxies to background & foreground by zcut
@@ -338,37 +340,73 @@ def MassProj (radec0, kappa0, zcut, gridofdata, R = 2.0, MAGcut = -18):
 	5) note, everything need to be weighted by CFHT weight
 	'''
 	ra0, dec0 = radec0
-	idx_dist = where(degrees(gridofdata[-1])<R/60.0)[0]
-	identifier, ra, dec, redshift, SDSSr_rest, SDSSz_rest, MAG_iy_rest, M_halo, distance = gridofdata[:,idx_dist]
+	idx_dist = where(degrees(gridofdata[-2])<R/60.0)[0]
+	identifier, ra, dec, redshift, SDSSr_rest, SDSSz_rest, MAG_iy_rest, M_halo, distance, weight = gridofdata[:,idx_dist]
 	idx_fore = where(redshift<zcut)[0]
 	idx_back = where(redshift>=zcut)[0]
 	cNFW_arr = cNFW_fcn(array([redshift[idx_fore], M_halo[idx_fore]]))
-	
 
+	kappa_arr = zeros(shape=(len(idx_fore),len(idx_back)))
+	weight_arr = exp(-rad2arcmin(distance[idx_back])**2/(2*pi*sigmaG))*weight[idx_back]
+	weight_arr /= sum(weight_arr)
+	for j in range(len(idx_fore)):# foreground halo count
+		jidx = idx_fore[j]
+		cNFW, z_fore, M, ra_fore, dec_fore = cNFW_arr[j], redshift[jidx], M_halo[jidx], ra[jidx], dec[jidx]
+		ikappa_proj = kappa_proj (cNFW, z_fore, M, ra_fore, dec_fore)	
+	#iidx_back=idx_back[50]
+	#z_back, ra_back, dec_back = redshift[iidx_back], ra[iidx_back], dec[iidx_back]
 
-
-
-
-
-
+		i = 0
+		for iidx_back in idx_back:
+			kappa_arr[j,i]=ikappa_proj(redshift[iidx_back], ra[iidx_back], dec[iidx_back])
+			i+=1
+	kappa_arr[isnan(kappa_arr)]=0
+	icontribute = sum(kappa_arr*weight_arr, axis=1)
+	ikappa = sum(icontribute)
+	return idx_dist[idx_fore], icontribute, ikappa
 
 ################################################
 ################ operations ####################
 ################################################
 
-project_mass = 0
+
 if project_mass:
+	zcut=0.7
 	R=3.0
 	noise=False
 	kappa_list = load(obsPK_dir+'AllPeaks_kappa_raDec_zcut%s.npy'%(z_lo))
 	fn = obsPK_dir+'peaks_IDraDecZ_MAGrziMhalo_dist_weight_zcut%s_R%s_noise%s.npy'%(z_lo, R, noise)
 	alldata = load(fn)
 	ids = alldata[0, sort(np.unique(alldata[0], return_index=True)[1])]
-	for i in (7,):#range(kappa_list.shape[-1]):
+	seed(20)
+	for i in randint(0,11931,10):#range(kappa_list.shape[-1]):
 		print i
 		radec0 = kappa_list[1:,i]
 		iidx = where(alldata[0]==ids[i])[0]
 		gridofdata = alldata[:, iidx]
+		idx_fore, icontribute, ikappa = MassProj (radec0, kappa_list[0,i], zcut, gridofdata)
+
+		idx_nonzero=nonzero(icontribute)[0]
+		identifier, ra, dec, redshift, SDSSr_rest, SDSSz_rest, MAG_iy_rest, M_halo, distance, weight = gridofdata[:,idx_fore][:,idx_nonzero]
+		icontribute = icontribute[idx_nonzero]
+		
+		figure(figsize=(8,7))
+		subplot(221)
+		scatter(log10(M_halo),log10(icontribute/ikappa),marker='x',s=5)
+		title ('peak #%i, kappa = %.4f'%(i, ikappa))
+		xlabel('log10(M_halo/M_sun)')
+		ylabel('log10(kappa/kappa_tot)')
+
+		subplot(222)
+		scatter(log10(rad2arcmin(distance)), log10(icontribute/ikappa),marker='x',s=5)
+		xlabel('log10(r) arcmin')
+
+		subplot(223)
+		hist(redshift)
+		xlabel('z')
+
+		savefig(obsPK_dir+'plot/sample_contribute_vs_Mhalo_%s.jpg'%(i))
+		close()
 #################################################################
 
 if list_peaks_cat:
