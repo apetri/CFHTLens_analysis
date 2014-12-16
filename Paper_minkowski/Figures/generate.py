@@ -550,13 +550,13 @@ def contour_moments(cmd_args,descriptors_in_plot=moment_list,parameter_axes={"Om
 
 def contour_moments_reparametrize(cmd_args):
 
-	contour_moments(cmd_args,parameter_axes={"Omega_m":0,"w":1,"Sigma8Om0.55":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","Sigma8Om0.55":r"$\sigma_8(\Omega_m/0.27)^{0.55}$"},select="Omega_m")
+	contour_moments(cmd_args,parameter_axes={"Omega_m":0,"w":1,"Sigma8Om0.55":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","Sigma8Om0.55":r"$\Sigma_8$"},select="Omega_m")
 
 ###################################################################################################################################################
 
 def Si8_likelihood_moments(cmd_args):
 
-	contour_moments(cmd_args,parameter_axes={"Omega_m":0,"w":1,"Sigma8Om0.55":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","Sigma8Om0.55":r"$\sigma_8(\Omega_m/0.27)^{0.55}$"},select="Sigma8Om0.55",marginalize_over="others")
+	contour_moments(cmd_args,parameter_axes={"Omega_m":0,"w":1,"Sigma8Om0.55":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","Sigma8Om0.55":r"$\Sigma_8$"},select="Sigma8Om0.55",marginalize_over="others")
 
 
 
@@ -564,6 +564,7 @@ def Si8_likelihood_moments(cmd_args):
 ##################################################################################################################################################
 ##################################################################################################################################################
 ##################################################################################################################################################
+
 
 figure_method = dict()
 figure_method["2"] = design
