@@ -207,4 +207,4 @@ def hist_galn_magcut(z_lo, z_hi, R=2.0, mag_cut=-19, noise=False):
 	kappa_arr = icat_cut[1,sort_idx[unique_idx]]
 	return galn_arr, kappa_arr
 
-
+cat_gen_junk = lambda Wx: np.load('/Users/jia/CFHTLenS/obsPK/W%s_cat_z0213_ra_dec_magy_zpeak.npy'%(Wx))
