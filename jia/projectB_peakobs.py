@@ -376,7 +376,8 @@ if project_mass:
 	R=3.0
 	#zcut=0.7	
 	#noise=False
-	for znoise in [[z, noise] for z in (0.5, 0.6, 0.7) for noise in (True, False)]:
+	#for znoise in [[z, noise] for z in (0.5, 0.6, 0.7) for noise in (True, False)]:
+	for znoise in [[z, noise] for z in (0.5,) for noise in (True, False)]:
 		print znoise
 		zcut, noise = znoise
 		kappa_list = np.load(obsPK_dir+'AllPeaks_kappa_raDec_zcut%s.npy'%(zcut))
