@@ -426,5 +426,5 @@ if list_peaks_cat:
 
 
 print 'done-done-done'
-pool.close()
-sys.exit("done done done, sys exit")
+#pool.close()
+#sys.exit("done done done, sys exit")
