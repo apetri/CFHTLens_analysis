@@ -402,8 +402,8 @@ if project_mass:
 		halo_fn = obsPK_dir+'Halos_IDziM_DistContri_k4_kB_zcut%s_R%s_noise%s.npy'%(zcut, R, noise)
 		
 		pool = MPIPool()
-		all_halos=pool.map(halo_contribution, range(len(ids))
-		all_halos = concatenate(all_halos,axis=1)
+		all_halos = pool.map(halo_contribution, range(len(ids)))
+		all_halos = concatenate(all_halos, axis=1)
 		np.save(halo_fn,all_halos)
 
 #################################################################
