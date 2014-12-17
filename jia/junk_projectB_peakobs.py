@@ -1,3 +1,20 @@
+#cNFW_fcn = lambda zM: 9.0/(1.0+zM[0])*(zM[1]/1.3e13)**(-0.13)#Bullock2001
+#cNFW_fcn = lambda zM: 10.0/(1.0+zM[0])*(zM[1]/1e13)**(-0.2)#Takada&Jain2003
+#cNFW_fcn = lambda zM: 11.0/(1.0+zM[0])*(zM[1]/1e13)**(-0.13)#Lin&Kilbinger2014
+#Rvir = lambda M, z: (M*M_sun/(4.0/3.0*pi*delta_c*rho_mz(z)))**0.3333# free delta c 
+
+########## convert from M100 (get from Lk) to Mvir (needed for NFW) ############
+
+ratio_r100_rvir = lambda gamma, c: (1.0/(c*gamma+1.0)+log(c*gamma+1.0)-1.0)/(1.0/(c+1.0)+log(c+1.0)-1.0) - gamma**3.0*0.5#0.5 = 100/200
+ratio_M100_Mvir = lambda c: op.brentq(ratio_r100_rvir, 1e-6, 50, args=(c))**3.0*0.5
+# c = 5, M100/Mvir = 1.227
+rho_mz = lambda z: OmegaM*rho_c0*(1+z)**3#done, unit g/cm^3
+
+Rvir_fcn = lambda M, z: (M*M_sun/(4.0/3.0*pi*200*rho_mz(z)))**0.3333#set delta_c=178, unit=cm
+
+
+############################################################################## 
+
 update_weight = 0
 if update_weight:
 	'''one time use 12/15/2014'''
@@ -208,3 +225,26 @@ def hist_galn_magcut(z_lo, z_hi, R=2.0, mag_cut=-19, noise=False):
 	return galn_arr, kappa_arr
 
 cat_gen_junk = lambda Wx: np.load('/Users/jia/CFHTLenS/obsPK/W%s_cat_z0213_ra_dec_magy_zpeak.npy'%(Wx))
+
+
+######### plotting #################
+		#identifier, ra, dec, redshift, SDSSr_rest, SDSSz_rest, MAG_iy_rest, M_halo, distance, weight = gridofdata[:,idx_fore]
+		#ikappa = ikappa[0]
+		#figure(figsize=(8,7))
+		#subplot(221)
+		#scatter(log10(M_halo),log10(icontribute),marker='x',s=5)
+		#title ('peak #%i, kappa = %.4f'%(i, ikappa))
+		#xlabel('log10(M_halo/M_sun)')
+		#ylabel('log10(kappa/kappa_tot)')
+
+		#subplot(222)
+		#scatter(log10(rad2arcmin(distance)), log10(icontribute),marker='x',s=5)
+		#xlabel('log10(r) arcmin')
+		#title ('convergence = %.4f'%(kappa_list[0,i]))
+		
+		#subplot(223)
+		#hist(redshift)
+		#xlabel('z')
+
+		#savefig(obsPK_dir+'plot/sample2_contribute_vs_Mhalo_%s.jpg'%(i))
+		#close()
