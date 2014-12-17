@@ -395,11 +395,13 @@ if project_mass:
 			identifier, ra, dec, redshift, SDSSr_rest, SDSSz_rest, MAG_iy_rest, M_halo, distance, weight = newgrid
 			newarr = array([identifier, redshift, MAG_iy_rest, M_halo, distance, icontribute, ikappa, kappa_list[0,i]*ones(len(ikappa))])# things I need for final analysis
 			return newarr
-		halo_fn = obsPK_dir+'Halos_IDziM_DistContri_k4_kB_zcut%s_R%s_noise%s.npy'%(z_lo, R, noise)
+		halo_fn = obsPK_dir+'Halos_IDziM_DistContri_k4_kB_zcut%s_R%s_noise%s.npy'%(zcut, R, noise)
 		
 		pool = MPIPool()
 		all_halos=pool.map(halo_contribution, range(4,7))#range(len(ids))	
-		np.save(halo_fn,concatenate(all_halos,axis=1))
+		all_halos = concatenate(all_halos,axis=1)
+		print 'all_halos.shape',all_halos.shape
+		np.save(halo_fn,all_halos)
 		#else:
 			#print 'file exist', halo_fn
 
