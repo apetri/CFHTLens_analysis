@@ -397,12 +397,10 @@ if project_mass:
 		halo_fn = obsPK_dir+'Halos_IDziM_DistContri_k4_kB_zcut%s_R%s_noise%s.npy'%(z_lo, R, noise)
 		
 		pool = MPIPool()
-		if not os.path.isfile(halo_fn):
-		
-			all_halos=pool.map(halo_contribution, range(4,7))#range(len(ids))	
-			np.save(halo_fn,concatenate(all_halos,axis=1))
-		else:
-			print 'file exist', halo_fn
+		all_halos=pool.map(halo_contribution, range(4,7))#range(len(ids))	
+		np.save(halo_fn,concatenate(all_halos,axis=1))
+		#else:
+			#print 'file exist', halo_fn
 
 #################################################################
 
