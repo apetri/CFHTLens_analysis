@@ -380,16 +380,13 @@ if project_mass:
 	#zcut=0.7	
 	#noise=False
 	for znoise in [[z, noise] for z in (0.5, 0.6, 0.7) for noise in (True, False)]:
-	#for znoise in [[z, noise] for z in (0.5,) for noise in (False, True)]:
-		print znoise
 		zcut, noise = znoise
 		kappa_list = np.load(obsPK_dir+'AllPeaks_kappa_raDec_zcut%s.npy'%(zcut))
 		## columns: kappa, ra, dec
 		alldata = np.load(obsPK_dir+'peaks_IDraDecZ_MAGrziMhalo_dist_weight_zcut%s_R%s_noise%s.npy'%(zcut, R, noise))
 		## columns: identifier, ra, dec, redshift, SDSSr_rest, SDSSz_rest, MAG_iy_rest, M_halo, distance, weight
 		
-		ids = alldata[0, sort(np.unique(alldata[0], return_index=True)[1])]#all the identifiers	
-		print 'len(ids)',len(ids)
+		ids = alldata[0, sort(np.unique(alldata[0], return_index=True)[1])]#all the identifiers
 		def halo_contribution(i):#for i in randint(0,11931,20):
 			print zcut, noise, i
 			iidx = where(alldata[0]==ids[i])[0]
@@ -405,12 +402,9 @@ if project_mass:
 		halo_fn = obsPK_dir+'Halos_IDziM_DistContri_k4_kB_zcut%s_R%s_noise%s.npy'%(zcut, R, noise)
 		
 		pool = MPIPool()
-		all_halos=pool.map(halo_contribution, range(4,7))#range(len(ids))
-		#all_halos=map(halo_contribution, range(4,7))
+		all_halos=pool.map(halo_contribution, range(len(ids))
 		all_halos = concatenate(all_halos,axis=1)
 		np.save(halo_fn,all_halos)
-		#else:
-			#print 'file exist', halo_fn
 
 #################################################################
 
@@ -435,5 +429,5 @@ if list_peaks_cat:
 
 
 print 'done-done-done'
-pool.close()
+#pool.close()
 #sys.exit("done done done, sys exit")
