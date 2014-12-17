@@ -422,12 +422,14 @@ if project_mass:
 	#except Exception:
 		#print 'Cannot save file in npy'
 	
-	k = 0
-	while k <= len(ids):
-		all_halos = pool.map(halo_contribution, range(k, np.amin([k+1000, len(ids)])))
-		all_halos = concatenate(all_halos, axis=1)
-		np.save(obsPK_dir+'temp/Halos_k%i.npy'%(k),all_halos)
-		k+=1000
+	#k = 0
+	#while k <= len(ids):
+	kk = int(sys.argv([3]))
+	kk = 
+	all_halos = pool.map(halo_contribution, range(kk, np.amin([k+1000, len(ids)])))
+	all_halos = concatenate(all_halos, axis=1)
+	np.save(obsPK_dir+'temp/Halos_k%i.npy'%(kk),all_halos)
+		#k+=1000
 	
 
 #################################################################
