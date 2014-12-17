@@ -390,7 +390,7 @@ class ContourPlot(object):
 		self.labels()
 		
 
-	def labels(self,contour_label=None,fontsize=22):
+	def labels(self,contour_label=None,fontsize=22,**kwargs):
 
 		"""
 		Put the labels on the plot
@@ -402,7 +402,7 @@ class ContourPlot(object):
 		self.ax.set_title(self.title_label,fontsize=fontsize)
 
 		if contour_label is not None:
-			self.ax.legend(self.ax.proxy,contour_label)
+			self.ax.legend(self.ax.proxy,contour_label,**kwargs)
 
 	def point(self,coordinate_x,coordinate_y,color="green",marker="o"):
 
