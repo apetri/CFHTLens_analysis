@@ -380,9 +380,9 @@ if project_mass:
 	for znoise in [[z_lo, noise] for z_lo in (0.5, 0.6, 0.7) for noise in (True, False)]:
 		
 		zcut, noise = znoise
-		kappa_list = load(obsPK_dir+'AllPeaks_kappa_raDec_zcut%s.npy'%(z_lo))
+		kappa_list = np.load(obsPK_dir+'AllPeaks_kappa_raDec_zcut%s.npy'%(z_lo))
 		## columns: kappa, ra, dec
-		alldata = load(obsPK_dir+'peaks_IDraDecZ_MAGrziMhalo_dist_weight_zcut%s_R%s_noise%s.npy'%(z_lo, R, noise))
+		alldata = np.load(obsPK_dir+'peaks_IDraDecZ_MAGrziMhalo_dist_weight_zcut%s_R%s_noise%s.npy'%(z_lo, R, noise))
 		## columns: identifier, ra, dec, redshift, SDSSr_rest, SDSSz_rest, MAG_iy_rest, M_halo, distance, weight
 		
 		ids = alldata[0, sort(np.unique(alldata[0], return_index=True)[1])]#all the identifiers	
