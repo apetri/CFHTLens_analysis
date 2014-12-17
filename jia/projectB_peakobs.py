@@ -376,15 +376,16 @@ if project_mass:
 	R=3.0
 	#zcut=0.7	
 	#noise=False
-	for znoise in [[z_lo, noise] for z_lo in (0.5, 0.6, 0.7) for noise in (True, False)]:
-		
+	for znoise in [[z, noise] for z in (0.5, 0.6, 0.7) for noise in (True, False)]:
+		print znoise
 		zcut, noise = znoise
-		kappa_list = np.load(obsPK_dir+'AllPeaks_kappa_raDec_zcut%s.npy'%(z_lo))
+		kappa_list = np.load(obsPK_dir+'AllPeaks_kappa_raDec_zcut%s.npy'%(zcut))
 		## columns: kappa, ra, dec
-		alldata = np.load(obsPK_dir+'peaks_IDraDecZ_MAGrziMhalo_dist_weight_zcut%s_R%s_noise%s.npy'%(z_lo, R, noise))
+		alldata = np.load(obsPK_dir+'peaks_IDraDecZ_MAGrziMhalo_dist_weight_zcut%s_R%s_noise%s.npy'%(zcut, R, noise))
 		## columns: identifier, ra, dec, redshift, SDSSr_rest, SDSSz_rest, MAG_iy_rest, M_halo, distance, weight
 		
 		ids = alldata[0, sort(np.unique(alldata[0], return_index=True)[1])]#all the identifiers	
+		print 'len(ids)',len(ids)
 		def halo_contribution(i):#for i in randint(0,11931,20):
 			print zcut, noise, i
 			iidx = where(alldata[0]==ids[i])[0]
