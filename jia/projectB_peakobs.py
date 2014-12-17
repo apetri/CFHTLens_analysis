@@ -344,28 +344,31 @@ def MassProj (gridofdata, zcut, R = 3.0, sigmaG=1.0):
 	idx_dist = where(degrees(gridofdata[-2])<R/60.0)[0]
 	identifier, ra, dec, redshift, SDSSr_rest, SDSSz_rest, MAG_iy_rest, M_halo, distance, weight = gridofdata[:,idx_dist]
 	idx_fore = where(redshift<zcut)[0]
-	idx_back = where(redshift>=zcut)[0]
-	
-	### weight using gaussian wintow
-	weight_arr = exp(-rad2arcmin(distance[idx_back])**2.0/(2*pi*sigmaG**2.0))*weight[idx_back]
-	weight_arr /= sum(weight_arr)
-	
-	###### kappa_arr.shape = [ngal_fore, ngal_back]
-	kappa_arr = zeros(shape=(len(idx_fore),len(idx_back)))
-	for j in range(len(idx_fore)):# foreground halo count
-		jidx = idx_fore[j]
-		z_fore, M, ra_fore, dec_fore = redshift[jidx], M_halo[jidx], ra[jidx], dec[jidx]
-		ikappa_proj = kappa_proj (z_fore, M, ra_fore, dec_fore)	
-		i = 0
-		for iidx_back in idx_back:
-			kappa_arr[j,i]=ikappa_proj(redshift[iidx_back], ra[iidx_back], dec[iidx_back])
-			i+=1
-	kappa_arr[isnan(kappa_arr)]=0
-	icontribute = sum(kappa_arr*weight_arr, axis=1)#sum over back ground galaxies
-	idx_nonzero=nonzero(icontribute)[0]
-	ikappa = sum(icontribute)
-	icontribute/=ikappa
-	return idx_dist[idx_fore[idx_nonzero]], icontribute[idx_nonzero], ikappa*ones(len(idx_nonzero))
+	if len(idx_fore)==0: # no foreground galaxies
+		return [], [], []
+	else:
+		idx_back = where(redshift>=zcut)[0]
+		
+		### weight using gaussian wintow
+		weight_arr = exp(-rad2arcmin(distance[idx_back])**2.0/(2*pi*sigmaG**2.0))*weight[idx_back]
+		weight_arr /= sum(weight_arr)
+		
+		###### kappa_arr.shape = [ngal_fore, ngal_back]
+		kappa_arr = zeros(shape=(len(idx_fore),len(idx_back)))
+		for j in range(len(idx_fore)):# foreground halo count
+			jidx = idx_fore[j]
+			z_fore, M, ra_fore, dec_fore = redshift[jidx], M_halo[jidx], ra[jidx], dec[jidx]
+			ikappa_proj = kappa_proj (z_fore, M, ra_fore, dec_fore)	
+			i = 0
+			for iidx_back in idx_back:
+				kappa_arr[j,i]=ikappa_proj(redshift[iidx_back], ra[iidx_back], dec[iidx_back])
+				i+=1
+		kappa_arr[isnan(kappa_arr)]=0
+		icontribute = sum(kappa_arr*weight_arr, axis=1)#sum over back ground galaxies
+		idx_nonzero=nonzero(icontribute)[0]
+		ikappa = sum(icontribute)
+		icontribute/=ikappa
+		return idx_dist[idx_fore[idx_nonzero]], icontribute[idx_nonzero], ikappa*ones(len(idx_nonzero))
 
 ################################################
 ################ operations ####################
@@ -376,8 +379,8 @@ if project_mass:
 	R=3.0
 	#zcut=0.7	
 	#noise=False
-	#for znoise in [[z, noise] for z in (0.5, 0.6, 0.7) for noise in (True, False)]:
-	for znoise in [[z, noise] for z in (0.5,) for noise in (True, False)]:
+	for znoise in [[z, noise] for z in (0.5, 0.6, 0.7) for noise in (True, False)]:
+	#for znoise in [[z, noise] for z in (0.5,) for noise in (False, True)]:
 		print znoise
 		zcut, noise = znoise
 		kappa_list = np.load(obsPK_dir+'AllPeaks_kappa_raDec_zcut%s.npy'%(zcut))
@@ -392,16 +395,19 @@ if project_mass:
 			iidx = where(alldata[0]==ids[i])[0]
 			oldgrid = alldata[:, iidx]
 			idx_fore, icontribute, ikappa = MassProj (oldgrid, zcut)
-			newgrid = oldgrid[:, idx_fore]
-			identifier, ra, dec, redshift, SDSSr_rest, SDSSz_rest, MAG_iy_rest, M_halo, distance, weight = newgrid
-			newarr = array([identifier, redshift, MAG_iy_rest, M_halo, distance, icontribute, ikappa, kappa_list[0,i]*ones(len(ikappa))])# things I need for final analysis
-			return newarr
+			if len(idx_fore)==0:
+				return nan*zeros(shape=(8,1))
+			else:
+				newgrid = oldgrid[:, idx_fore]
+				identifier, ra, dec, redshift, SDSSr_rest, SDSSz_rest, MAG_iy_rest, M_halo, distance, weight = newgrid
+				newarr = array([identifier, redshift, MAG_iy_rest, M_halo, distance, icontribute, ikappa, kappa_list[0,i]*ones(len(ikappa))])# things I need for final analysis
+				return newarr
 		halo_fn = obsPK_dir+'Halos_IDziM_DistContri_k4_kB_zcut%s_R%s_noise%s.npy'%(zcut, R, noise)
 		
 		pool = MPIPool()
-		all_halos=pool.map(halo_contribution, range(4,7))#range(len(ids))	
+		all_halos=pool.map(halo_contribution, range(4,7))#range(len(ids))
+		#all_halos=map(halo_contribution, range(4,7))
 		all_halos = concatenate(all_halos,axis=1)
-		print 'all_halos.shape',all_halos.shape
 		np.save(halo_fn,all_halos)
 		#else:
 			#print 'file exist', halo_fn
@@ -429,5 +435,5 @@ if list_peaks_cat:
 
 
 print 'done-done-done'
-pool.close()
+#pool.close()
 #sys.exit("done done done, sys exit")
