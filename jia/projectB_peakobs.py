@@ -410,18 +410,25 @@ if project_mass:
 	halo_fn = obsPK_dir+'Halos_IDziM_DistContri_k4_kB_zcut%s_R%s_noise%s'%(zcut, R, noise)
 	
 	pool = MPIPool()
-	all_halos = pool.map(halo_contribution, range(len(ids)))
-	all_halos = concatenate(all_halos, axis=1)
-	try:
-		WLanalysis.writeFits(all_halos,halo_fn+'.fit')
+	#all_halos = pool.map(halo_contribution, range(len(ids)))
+	#all_halos = concatenate(all_halos, axis=1)
+	#try:
+		#WLanalysis.writeFits(all_halos,halo_fn+'.fit')
 		
-	except Exception:
-		print 'Cannot save file in fits'
-	try:
-		np.save(halo_fn+'.npy',all_halos)
-	except Exception:
-		print 'Cannot save file in npy'
-			
+	#except Exception:
+		#print 'Cannot save file in fits'
+	#try:
+		#np.save(halo_fn+'.npy',all_halos)
+	#except Exception:
+		#print 'Cannot save file in npy'
+	
+	k = 0
+	while k <= len(ids):
+		all_halos = pool.map(halo_contribution, range(k, np.amin(k+1000, len(ids)))
+		all_halos = concatenate(all_halos, axis=1)
+		np.save(obsPK_dir+'temp/Halos_k%i.npy'%(k),all_halos)
+		k+=1000
+	
 
 #################################################################
 
