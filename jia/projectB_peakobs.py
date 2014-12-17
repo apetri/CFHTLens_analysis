@@ -373,7 +373,6 @@ def MassProj (gridofdata, zcut, R = 3.0, sigmaG=1.0):
 
 
 if project_mass:
-	pool = MPIPool()
 	R=3.0
 	#zcut=0.7	
 	#noise=False
@@ -396,6 +395,8 @@ if project_mass:
 			newarr = array([identifier, redshift, MAG_iy_rest, M_halo, distance, icontribute, ikappa, kappa_list[0,i]*ones(len(ikappa))])# things I need for final analysis
 			return newarr
 		halo_fn = obsPK_dir+'Halos_IDziM_DistContri_k4_kB_zcut%s_R%s_noise%s.npy'%(z_lo, R, noise)
+		
+		pool = MPIPool()
 		if not os.path.isfile(halo_fn):
 		
 			all_halos=pool.map(halo_contribution, range(4,7))#range(len(ids))	
