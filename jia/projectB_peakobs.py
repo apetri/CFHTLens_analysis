@@ -17,6 +17,7 @@ import WLanalysis
 from scipy import interpolate
 from scipy.integrate import quad
 import scipy.optimize as op
+import sys
 
 ######## for stampede #####
 from emcee.utils import MPIPool
@@ -379,32 +380,48 @@ if project_mass:
 	R=3.0
 	#zcut=0.7	
 	#noise=False
-	for znoise in [[z, noise] for z in (0.5, 0.6, 0.7) for noise in (True, False)]:
-		zcut, noise = znoise
-		kappa_list = np.load(obsPK_dir+'AllPeaks_kappa_raDec_zcut%s.npy'%(zcut))
-		## columns: kappa, ra, dec
-		alldata = np.load(obsPK_dir+'peaks_IDraDecZ_MAGrziMhalo_dist_weight_zcut%s_R%s_noise%s.npy'%(zcut, R, noise))
-		## columns: identifier, ra, dec, redshift, SDSSr_rest, SDSSz_rest, MAG_iy_rest, M_halo, distance, weight
+	#for znoise in [[z, noise] for z in (0.5, 0.6, 0.7) for noise in (True, False)]:
+		#zcut, noise = znoise
+	zcut = float(sys.argv[1])
+	noise = bool(sys.argv[2])
+	print zcut, noise
+	
+	kappa_list = np.load(obsPK_dir+'AllPeaks_kappa_raDec_zcut%.1f.npy'%(zcut))
+	print 'got files'
+	## columns: kappa, ra, dec
+	alldata = np.load(obsPK_dir+'peaks_IDraDecZ_MAGrziMhalo_dist_weight_zcut%.1f_R%s_noise%s.npy'%(zcut, R, noise))
+	## columns: identifier, ra, dec, redshift, SDSSr_rest, SDSSz_rest, MAG_iy_rest, M_halo, distance, weight
+	
+	ids = alldata[0, sort(np.unique(alldata[0], return_index=True)[1])]#all the identifiers
+
+	print 'len(ids)',len(ids)
+	def halo_contribution(i):#for i in randint(0,11931,20):
+		print zcut, noise, i
+		iidx = where(alldata[0]==ids[i])[0]
+		oldgrid = alldata[:, iidx]
+		idx_fore, icontribute, ikappa = MassProj (oldgrid, zcut)
+		if len(idx_fore)==0:
+			return nan*zeros(shape=(8,1))
+		else:
+			newgrid = oldgrid[:, idx_fore]
+			identifier, ra, dec, redshift, SDSSr_rest, SDSSz_rest, MAG_iy_rest, M_halo, distance, weight = newgrid
+			newarr = array([identifier, redshift, MAG_iy_rest, M_halo, distance, icontribute, ikappa, kappa_list[0,i]*ones(len(ikappa))])# things I need for final analysis
+			return newarr
+	halo_fn = obsPK_dir+'Halos_IDziM_DistContri_k4_kB_zcut%s_R%s_noise%s'%(zcut, R, noise)
+	
+	pool = MPIPool()
+	all_halos = pool.map(halo_contribution, range(len(ids)))
+	all_halos = concatenate(all_halos, axis=1)
+	try:
+		WLanalysis.writeFits(all_halos,halo_fn+'.fit')
 		
-		ids = alldata[0, sort(np.unique(alldata[0], return_index=True)[1])]#all the identifiers
-		def halo_contribution(i):#for i in randint(0,11931,20):
-			print zcut, noise, i
-			iidx = where(alldata[0]==ids[i])[0]
-			oldgrid = alldata[:, iidx]
-			idx_fore, icontribute, ikappa = MassProj (oldgrid, zcut)
-			if len(idx_fore)==0:
-				return nan*zeros(shape=(8,1))
-			else:
-				newgrid = oldgrid[:, idx_fore]
-				identifier, ra, dec, redshift, SDSSr_rest, SDSSz_rest, MAG_iy_rest, M_halo, distance, weight = newgrid
-				newarr = array([identifier, redshift, MAG_iy_rest, M_halo, distance, icontribute, ikappa, kappa_list[0,i]*ones(len(ikappa))])# things I need for final analysis
-				return newarr
-		halo_fn = obsPK_dir+'Halos_IDziM_DistContri_k4_kB_zcut%s_R%s_noise%s.npy'%(zcut, R, noise)
-		
-		pool = MPIPool()
-		all_halos = pool.map(halo_contribution, range(len(ids)))
-		all_halos = concatenate(all_halos, axis=1)
-		np.save(halo_fn,all_halos)
+	except Exception:
+		print 'Cannot save file in fits'
+	try:
+		np.save(halo_fn+'.npy',all_halos)
+	except Exception:
+		print 'Cannot save file in npy'
+			
 
 #################################################################
 
