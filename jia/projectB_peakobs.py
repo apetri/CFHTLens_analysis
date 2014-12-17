@@ -399,7 +399,7 @@ if project_mass:
 		if not os.path.isfile(halo_fn):
 		
 			all_halos=pool.map(halo_contribution, range(4,7))#range(len(ids))	
-			save(halo_fn,concatenate(all_halos,axis=1))
+			np.save(halo_fn,concatenate(all_halos,axis=1))
 		else:
 			print 'file exist', halo_fn
 
@@ -421,7 +421,7 @@ if list_peaks_cat:
 		np.save(fn, concatenate(temp_arr,axis=1))
 		### the following block creates the catalogue for peaks [kappa, RA, DEC]
 		# all_peaks = [PeakPos(Wx, z_lo=z_lo, z_hi=z_hi, noise=noise) for Wx in range(1,5)]
-		# save(obsPK_dir+'AllPeaks_kappa_raDec_zcut%s.npy'%(z_lo), concatenate(all_peaks, axis=1))
+		# np.save(obsPK_dir+'AllPeaks_kappa_raDec_zcut%s.npy'%(z_lo), concatenate(all_peaks, axis=1))
 		#############################################################
 
 
