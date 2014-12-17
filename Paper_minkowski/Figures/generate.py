@@ -30,7 +30,7 @@ descriptors["minkowski_0"]=r"$V_0$"
 descriptors["minkowski_1"]=r"$V_1$"
 descriptors["minkowski_2"]=r"$V_2$"
 descriptors["moments"]=r"$\mathrm{Moments}$"
-descriptors["moments_q12_s1"]=r"$\sigma_0^2\times\sigma_1^2\times S_0$"
+descriptors["moments_q12_s1"]=r"$\sigma_0^2$ $\times$ $\sigma_1^2$ $\times$ $S_0$"
 descriptors["moments_q12_s12"]=r"$\mathrm{Add}$ $S_1$"
 descriptors["moments_q12_s123"]=r"$\mathrm{Add}$ $S_2$"
 descriptors["moments_q12_s123_k1"]=r"$\mathrm{Add}$ $K_0$"
@@ -41,9 +41,9 @@ descriptors["moments_q12_s123_k1234"]=r"$\mathrm{Add}$ $K_3$"
 #Number of principal components
 num_components = dict()
 num_components["power_spectrum"] = 3
-num_components["minkowski_0"] = 10
-num_components["minkowski_1"] = 10
-num_components["minkowski_2"] = 10
+num_components["minkowski_0"] = 5
+num_components["minkowski_1"] = 20
+num_components["minkowski_2"] = 20
 num_components["moments"] = 9 
 
 #Smoothing scales
@@ -69,7 +69,7 @@ keys.sort()
 #################################################################################################
 
 single = ["power_spectrum","minkowski_0","minkowski_1","minkowski_2","moments"]
-multiple = [("minkowski_0","minkowski_1","minkowski_2"),("power_spectrum","minkowski_0","minkowski_1","minkowski_2"),("power_spectrum","minkowski_0","minkowski_1","minkowski_2","moments")]
+multiple = [("power_spectrum","moments"),("minkowski_0","minkowski_1","minkowski_2"),("power_spectrum","minkowski_0","minkowski_1","minkowski_2"),("power_spectrum","minkowski_0","minkowski_1","minkowski_2","moments")]
 all_descriptors = single + multiple
 moment_list = ["moments_q12_s1","moments_q12_s12","moments_q12_s123","moments_q12_s123_k1","moments_q12_s123_k12","moments_q12_s123_k123","moments_q12_s123_k1234"]
 
@@ -133,12 +133,17 @@ def emulatorAccuracy(cmd_args,descriptors_in_plot=single[:-1]):
 
 	#Plot labels
 	ax.set_xlabel(r"$i$",fontsize=22)
-	ax.set_ylabel(r"$(E-M)/\sqrt{C_{MM}}$")
+	ax.set_ylabel(r"$(E-M)/\sqrt{C_{MM}}$",fontsize=22)
 	ax.set_yscale("log")
 	ax.legend(loc="lower left")
 
 	#Save the figure
 	fig.savefig("emulator_accuracy.{0}".format(cmd_args.type))
+
+
+##############################################################################################################################################
+
+def pdfGaussianity(cmd_args):
 
 
 
@@ -310,7 +315,7 @@ def robustness_reparametrize(cmd_args):
 ##################################################################################################################################################
 ##################################################################################################################################################
 
-def contours_combine(cmd_args,descriptors_in_plot=multiple,parameter_axes={"Omega_m":0,"w":1,"sigma8":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","sigma8":r"$\sigma_8$"},select="w",marginalize_over="me",mock=False,cross_label="cross"):
+def contours_combine(cmd_args,descriptors_in_plot=["power_spectrum"]+multiple,parameter_axes={"Omega_m":0,"w":1,"sigma8":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","sigma8":r"$\sigma_8$"},select="w",marginalize_over="me",mock=False,cross_label="cross"):
 
 	#decide if consider data or simulations
 	if mock:
@@ -396,7 +401,7 @@ def contours_combine(cmd_args,descriptors_in_plot=multiple,parameter_axes={"Omeg
 	
 		#Legend
 		contour.title_label=""
-		contour.labels(contour_labels)
+		contour.labels(contour_labels,loc="upper right",prop={"size":10})
 
 		#Save
 		par.pop(par.index(select))
@@ -408,7 +413,7 @@ def contours_combine(cmd_args,descriptors_in_plot=multiple,parameter_axes={"Omeg
 		#Legend
 		ax.set_xlabel(cosmo_labels[select],fontsize=22)
 		ax.set_ylabel(r"$\mathcal{L}$" + "$($" + cosmo_labels[select] + "$)$",fontsize=22)
-		ax.legend(loc="upper left",prop={"size":10})
+		ax.legend(loc="upper right",prop={"size":10})
 
 		#Save
 		fig.savefig("contours{0}{1}_{2}.{3}".format(mock_prefix,select.replace(".",""),cross_label,cmd_args.type))
