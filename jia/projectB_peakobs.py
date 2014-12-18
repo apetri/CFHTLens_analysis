@@ -14,21 +14,23 @@ from scipy import *
 from pylab import *
 import os
 import WLanalysis
-from scipy import interpolate
+from scipy import interpolate,stats
 from scipy.integrate import quad
 import scipy.optimize as op
 import sys
 
 ######## for stampede #####
-from emcee.utils import MPIPool
-obsPK_dir = '/home1/02977/jialiu/obsPK/'
+#from emcee.utils import MPIPool
+#obsPK_dir = '/home1/02977/jialiu/obsPK/'
 
 ######## for laptop #####
-#obsPK_dir = '/Users/jia/CFHTLenS/obsPK/'
-#plot_dir = obsPK_dir+'plot/'
+obsPK_dir = '/Users/jia/CFHTLenS/obsPK/'
+plot_dir = obsPK_dir+'plot/'
 
+cluster_counts = 0
+halo_plots = 1
 list_peaks_cat = 0 #! generate a list of galaxies for all peaks
-project_mass = 1
+project_mass = 0
 #junk routines below
 update_mag_i = 0
 plot_galn_vs_kappa_hist = 0
@@ -374,17 +376,146 @@ def MassProj (gridofdata, zcut, R = 3.0, sigmaG=1.0):
 ################################################
 ################ operations ####################
 ################################################
+zcenters = arange(0.225, 1.3, 0.05)#center of z bins from CFHT
+zbins = linspace(0.2,1.3,23)#edges
+zPDF = array([ 0.45445094,  0.80881598,  0.93470199,  0.76456038,  1.10499822,
+        0.8803627 ,  1.1195881 ,  1.50167501,  1.48711827,  1.60911659,
+        1.47213078,  1.31645756,  1.2022788 ,  1.76004064,  1.00095837,
+        1.08889524,  0.97712418,  0.91611398,  0.57378752,  0.31843705,
+        0.53337544,  0.17501226])# = dP/dz, normed in between z=0.2-1.3
 
+zPDF_normed = lambda zcut: zPDF[:where(zcenters<=zcut)[0][-1]+1]/sum(zPDF[:where(zcenters<=zcut)[0][-1]+1])
+
+	
+def Nhalo_vs_kappa (icontri_arr, iz_arr, izPDF):#iMhalo_arr
+	'''(1) count from the most contribution halo, til get 50% of the contribution.
+	(2) for a redshift PDF, normalized to N gals, for each redshift bins, assume sqrt(N) noise,
+	find peaks that have SNR > 3, say that's the # of peaks.
+	return: (Nhalo, Nzpeak)
+	'''
+	## use redshift to find clusters
+	NPDF = len(iz_arr)*izPDF/sum(izPDF)
+	ihist = histogram(iz_arr, bins=zbins[:len(izPDF)+1])[0]
+	SNR = (ihist-NPDF) / sqrt(NPDF)
+	iNclusters = sum(SNR>=3)
+	
+	## use galaxies, to find # of galaxies needed to contribute to largest mass
+	icontri_arr /= sum(icontri_arr)
+	iNgals = sum(cumsum(sort(icontri_arr)[::-1])<0.5)+1
+	return iNclusters, iNgals
+
+if cluster_counts:
+	R, zcut, noise = 3.0, 0.7, True
+	Rcut = 3.0
+	
+	halo_arr = np.load (obsPK_dir+'Halos_IDziM_DistContri_k4_kB_zcut%s_R%s_noise%s.npy'%(zcut, R, noise))
+
+	def idxcuts(halo_arr):
+		IDs, z_arr, MAGi_arr, Mhalo_arr, d_arr, contri_arr, \
+			kappaP_arr, kappaConv_arr = halo_arr		
+		idx_cut = where((MAGi_arr > -24) & (MAGi_arr < -18) & (Mhalo_arr < 5.3e15) &
+			(rad2arcmin(d_arr) < Rcut) & (kappaP_arr < 1.0))[0]
+		return idx_cut
+
+	idx_cut = idxcuts(halo_arr)
+	IDs, z_arr, MAGi_arr, Mhalo_arr, d_arr, contri_arr, \
+		kappaP_arr, kappaConv_arr = halo_arr[:,idx_cut]
+
+	uniqueID = unique(IDs)
+	izPDF = zPDF_normed(zcut)
+	def Nhalo_count(i):#for i in randint(0,11931,20):
+		print i
+		iidx = where(IDs==uniqueID[i])[0]
+		icontri_arr, iz_arr = contri_arr[iidx], z_arr[iidx]	
+		iNclusters, iNgals = Nhalo_vs_kappa(icontri_arr, iz_arr, izPDF)
+		return uniqueID[i], kappaP_arr[iidx[0]], kappaConv_arr[iidx[0]], iNclusters, iNgals
+
+	#all_Nhalos = map(Nhalo_count, range(len(uniqueID)))
+	#save(obsPK_dir+'ClusterCounts_ID_k4_kB_Ncluster_Ngal_zcut%s_R%s_noise%s.npy'%(zcut, Rcut, noise), all_Nhalos)
+
+if halo_plots:
+	R = 3.0
+	zcut = 0.6
+	all_Nhalos = load(obsPK_dir+'ClusterCounts_ID_k4_kB_Ncluster_Ngal_zcut%s_R3.0_noiseFalse.npy'%(zcut))
+	all_Nhalos_noise = load(obsPK_dir+'ClusterCounts_ID_k4_kB_Ncluster_Ngal_zcut%s_R3.0_noiseTrue.npy'%(zcut))
+	
+	ID, kappaP, kappaConv, Ncluster, Nhalo = array(all_Nhalos).T
+	nID, nkappaP, nkappaConv, nNcluster, nNhalo = array(all_Nhalos_noise).T
+
+	########### 2dhist = scatter plot, kappaP vs kappaConv##############
+	#figure()
+	#hist2d(kappaP, kappaConv,range=((0,0.0015),(-0.05,0.15)), bins=20)
+	#xlabel('kappa_project (from foreground halos)')
+	#ylabel('kappa_convergence (using background galaxies)')
+	#coeff, P = stats.spearmanr(kappaP, kappaConv)
+	#title('zcut=%s, coeff=%.5f, P=%.5f'%(zcut,coeff,P))
+	#colorbar()
+	#savefig(plot_dir+'conv_vs_proj_zcut%s.jpg'%(zcut))
+	#close()
+	####################################################################
+	
+	######### Yang 2011 Fig.5 ####################
+	#Nbin_edges = linspace(0.5, 8.5, 9)
+	#kappa_arr = [kappaP, kappaConv]
+	#nkappa_arr = [nkappaP, nkappaConv]
+	#sP, sC = std(kappaP), std(kappaConv)
+	#cuts = ([[-inf, sP],[sP, 3*sP],[3*sP, inf]],[[-inf, sC],[sC, 3*sC],[3*sC, inf]])
+	#f=figure(figsize=(12,8))
+	#title_arr = [['low (proj)','med (proj)','hi (proj)'],['low (conv)','med (conv)','hi (conv)']]
+	#for i in range(2):
+		#for j in range(3):
+			#x0, x1 = cuts[i][j]
+			#idxS = where((kappa_arr[i]<x1)& (kappa_arr[i]>x0))[0]
+			#idxN = where((nkappa_arr[i]<x1)& (nkappa_arr[i]>x0))[0]
+			##Nhalo[idxS], Ncluster[idxS]
+			#ax=f.add_subplot(2,3,j+1+i*3)
+			
+			#ax.hist(Ncluster[idxS], bins=Nbin_edges, histtype='step',label='peaks',normed=True)
+			#ax.hist(Ncluster[idxN],bins=Nbin_edges, histtype='step',label='rnd. direction',normed=True)
+
+			##hist(Nhalo[idxS], bins=Nbin_edges, histtype='step',label='peaks',normed=True)
+			##hist(nNhalo[idxN],bins=Nbin_edges, histtype='step',label='rnd. direction',normed=True)
+			#ax.set_title(title_arr[i][j])
+			#if i==0 and j==0:
+				#ax.legend(fontsize=10)
+			#if i == 1:
+				##xlabel('N_halo')
+				#ax.set_xlabel('N_cluster (SNR>3 in redshift bins)')
+			#if j == 0:
+				#ax.set_ylabel('Num. peaks')
+	#plt.subplots_adjust(wspace=0.25,hspace=0.25)
+	##savefig(plot_dir+'Nhalo_Npeaks_zcut%s.jpg'%(zcut))
+	#savefig(plot_dir+'Ncluster_Npeaks_zcut%s.jpg'%(zcut))
+	#close()
+	###############################################
+	
+	######## look at where I found clusters #########
+	idx_cluster = nonzero(Ncluster)
+	f=figure(figsize=(8,5))
+	subplot(121)
+	hist(kappaP[idx_cluster], range=(0,0.0015), histtype='step',label='clusters',normed=True)
+	hist(kappaP, histtype='step', range=(0,0.0015), label='all peaks',normed=True)
+	legend(fontsize=10)
+	xlabel('kappa_project')
+	title('peak counts')
+	matplotlib.pyplot.locator_params(nbins=4)
+	subplot(122)
+	hist(kappaConv[idx_cluster],range=(-0.05, 0.2),histtype='step',label='clusters',normed=True)
+	hist(kappaConv, range=(-0.05, 0.2), histtype='step',label='all peaks',normed=True)
+	xlabel('kappa_convergence')
+	title('peak counts')
+	matplotlib.pyplot.locator_params(nbins=4)
+	savefig(plot_dir+'PeakCounts_withCluster_zcut%s.jpg'%(zcut))
+	close()
 
 if project_mass:
 	R=3.0
-	#zcut=0.7	
-	#noise=False
+	zcut=0.6	
+	noise=False
 	#for znoise in [[z, noise] for z in (0.5, 0.6, 0.7) for noise in (True, False)]:
 		#zcut, noise = znoise
-	zcut = float(sys.argv[1])
-	noise = bool(int(sys.argv[2]))
-	print zcut, noise
+	#zcut = float(sys.argv[1])
+	#noise = bool(int(sys.argv[2]))
 	
 	kappa_list = np.load(obsPK_dir+'AllPeaks_kappa_raDec_zcut%.1f.npy'%(zcut))
 	print 'got files'
@@ -410,25 +541,9 @@ if project_mass:
 	halo_fn = obsPK_dir+'Halos_IDziM_DistContri_k4_kB_zcut%s_R%s_noise%s'%(zcut, R, noise)
 	
 	pool = MPIPool()
-	#all_halos = pool.map(halo_contribution, range(len(ids)))
-	#all_halos = concatenate(all_halos, axis=1)
-	#try:
-		#WLanalysis.writeFits(all_halos,halo_fn+'.fit')
-		
-	#except Exception:
-		#print 'Cannot save file in fits'
-	#try:
-		#np.save(halo_fn+'.npy',all_halos)
-	#except Exception:
-		#print 'Cannot save file in npy'
-	
-	#k = 0
-	#while k <= len(ids):
-	kk = int(sys.argv[3])
-	all_halos = pool.map(halo_contribution, range(kk, np.amin([kk+100, len(ids)])))
+	all_halos = pool.map(halo_contribution, range(len(ids)))
 	all_halos = concatenate(all_halos, axis=1)
-	np.save(obsPK_dir+'temp/Halos_k%i.npy'%(kk),all_halos)
-		#k+=1000
+	#np.save(halo_fn,all_halos)
 	
 
 #################################################################
@@ -454,5 +569,3 @@ if list_peaks_cat:
 
 
 print 'done-done-done'
-#pool.close()
-#sys.exit("done done done, sys exit")

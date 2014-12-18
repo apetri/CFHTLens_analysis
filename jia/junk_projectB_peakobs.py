@@ -248,3 +248,8 @@ cat_gen_junk = lambda Wx: np.load('/Users/jia/CFHTLenS/obsPK/W%s_cat_z0213_ra_de
 
 		#savefig(obsPK_dir+'plot/sample2_contribute_vs_Mhalo_%s.jpg'%(i))
 		#close()
+		
+noise_arr = np.load (obsPK_dir+'Halos_IDziM_DistContri_k4_kB_zcut%s_R%s_noise%s.npy'%(zcut, R, True))
+noiseIDs, noisez_arr, noiseMAGi_arr, noiseMhalo_arr, noised_arr, \
+	noisecontri_arr, noisekappaP_arr, noisekappaConv_arr = \
+	noise_arr[:, idxcuts(noise_arr)]
