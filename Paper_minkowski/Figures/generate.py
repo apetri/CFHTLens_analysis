@@ -2,6 +2,7 @@
 from __future__ import division,print_function
 
 import sys,os,argparse,ConfigParser
+import ast
 
 from lenstools import Ensemble
 from lenstools.constraints import LikelihoodAnalysis
@@ -22,6 +23,7 @@ design_points = "/Users/andreapetri/Documents/Cosmology_software/LensTools/lenst
 brew_colors = ["red","green","blue","black","orange","magenta","cyan"]
 brew_colors_11 = ["#a50026","#d73027","#f46d43","#fdae61","#fee08b","#ffffbf","#d9ef8b","#a6d96a","#66bd63","#1a9850","#006837"]
 brew_colors_diverging = ["#a6cee3","#1f78b4","#b2df8a","#33a02c","#fb9a99","#e31a1c","#fdbf6f","#ff7f00","#cab2d6","#6a3d9a","#ffff99","#b15928"]
+brew_colors_moments = ["black","#bdbdbd","#636363","green","#e34a33","#b30000","#74a9cf","#2b8cbe","yellow"]
 
 #Descriptor list
 descriptors=dict()
@@ -30,13 +32,16 @@ descriptors["minkowski_0"]=r"$V_0$"
 descriptors["minkowski_1"]=r"$V_1$"
 descriptors["minkowski_2"]=r"$V_2$"
 descriptors["moments"]=r"$\mathrm{Moments}$"
-descriptors["moments_q12_s1"]=r"$\sigma_0^2$ $\times$ $\sigma_1^2$ $\times$ $S_0$"
-descriptors["moments_q12_s12"]=r"$\mathrm{Add}$ $S_1$"
-descriptors["moments_q12_s123"]=r"$\mathrm{Add}$ $S_2$"
-descriptors["moments_q12_s123_k1"]=r"$\mathrm{Add}$ $K_0$"
-descriptors["moments_q12_s123_k12"]=r"$\mathrm{Add}$ $K_1$"
-descriptors["moments_q12_s123_k123"]=r"$\mathrm{Add}$ $K_2$"
-descriptors["moments_q12_s123_k1234"]=r"$\mathrm{Add}$ $K_3$"
+descriptors["moments_q1_s1_k1"]=r"$\sigma_{0}^2,S_0,K_0$"
+descriptors["moments_q12_s1_k1"]=r"$\sigma_{0,1}^2,S_0,K_0$"
+descriptors["moments_q12_s12_k1"]=r"$\sigma_{0,1}^2,S_{0,1},K_0$"
+descriptors["moments_q12_s1"]=r"$\sigma_{0,1}^2,S_0$"
+descriptors["moments_q12_s12"]=r"$\sigma_{0,1}^2,S_{0,1}$"
+descriptors["moments_q12_s123"]=r"$\sigma_{0,1}^2,S_{0,1,2}$"
+descriptors["moments_q12_s123_k1"]=r"$\sigma_{0,1}^2,S_{0,1,2},K_0$"
+descriptors["moments_q12_s123_k12"]=r"$\sigma_{0,1}^2,S_{0,1,2},K_{0,1}$"
+descriptors["moments_q12_s123_k123"]=r"$\sigma_{0,1}^2,S_{0,1,2},K_{0,1,2}$"
+descriptors["moments_q12_s123_k1234"]=r"$\sigma_{0,1}^2,S_{0,1,2},K_{0,1,2,3}$"
 
 #Number of principal components
 num_components = dict()
@@ -53,6 +58,9 @@ smoothing_scales["minkowski_0"] = 1.0
 smoothing_scales["minkowski_1"] = 1.0
 smoothing_scales["minkowski_2"] = 1.0 
 smoothing_scales["moments"] = 1.0
+smoothing_scales["moments_q1_s1_k1"] = "1.0+[1.0,1.8]+[1.0,1.8,3.5]"
+smoothing_scales["moments_q12_s1_k1"]=1.0
+smoothing_scales["moments_q12_s12_k1"]=1.0
 smoothing_scales["moments_q12_s1"]=1.0
 smoothing_scales["moments_q12_s12"]=1.0
 smoothing_scales["moments_q12_s123"]=1.0
@@ -71,7 +79,7 @@ keys.sort()
 single = ["power_spectrum","minkowski_0","minkowski_1","minkowski_2","moments"]
 multiple = [("power_spectrum","moments"),("minkowski_0","minkowski_1","minkowski_2"),("power_spectrum","minkowski_0","minkowski_1","minkowski_2"),("power_spectrum","minkowski_0","minkowski_1","minkowski_2","moments")]
 all_descriptors = single + multiple
-moment_list = ["moments_q12_s1","moments_q12_s12","moments_q12_s123","moments_q12_s123_k1","moments_q12_s123_k12","moments_q12_s123_k123","moments_q12_s123_k1234"]
+moment_list = ["moments_q1_s1_k1","moments_q12_s1_k1","moments_q12_s12_k1","moments_q12_s123_k1","moments_q12_s123_k12","moments_q12_s123_k123","moments_q12_s123_k1234"]
 
 ################################################################################################################################################
 ################################################################################################################################################
@@ -139,12 +147,6 @@ def emulatorAccuracy(cmd_args,descriptors_in_plot=single[:-1]):
 
 	#Save the figure
 	fig.savefig("emulator_accuracy.{0}".format(cmd_args.type))
-
-
-##############################################################################################################################################
-
-def pdfGaussianity(cmd_args):
-
 
 
 ##############################################################################################################################################
@@ -510,51 +512,76 @@ def contour_moments(cmd_args,descriptors_in_plot=moment_list,parameter_axes={"Om
 	contour_labels = list()
 
 	#Cycle over descriptors
-	for n,descr in enumerate(descriptors_in_plot):
+	c = 0
+	for descr in descriptors_in_plot:
 
-		#Instantiate contour plot
-		if marginalize_over=="me":
-			contour = ContourPlot(fig=fig,ax=ax)
-		elif marginalize_over=="others":
-			contour = ContourPlot()
-			contour.close()
+		#Smoothing scales for each descriptor
+		if type(smoothing_scales[descr])==str:
+			smoothing_scales_descr = [ ast.literal_eval(l) for l in smoothing_scales[descr].split("+") ]
+		elif type(smoothing_scales[descr]==float):
+			smoothing_scales_descr = [ smoothing_scales[descr] ]
 		else:
-			raise ValueError("marginalize_over must be in [me,others]")
+			raise TypeError("smoothing_scales[descr] must be either float or string")
+
+		#Cycle over smoothing scales
+		for smoothing_scale in smoothing_scales_descr:
+
+			#Instantiate contour plot
+			if marginalize_over=="me":
+				contour = ContourPlot(fig=fig,ax=ax)
+			elif marginalize_over=="others":
+				contour = ContourPlot()
+				contour.close()
+			else:
+				raise ValueError("marginalize_over must be in [me,others]")
 
 
-		#Construct the likelihood file
-		likelihood_file = os.path.join(root_dir,"likelihoods_{0}".format(par_hash),"likelihood_{0}--{1:.1f}.npy".format(descr,smoothing_scales[descr]))
-		contour_labels.append(descriptors[descr])
+			#We first need the smoothing scale suffix
+			if type(smoothing_scale)==float:
+				smoothing_scale_list = ["{0:.1f}".format(smoothing_scale)]
+			elif type(smoothing_scale==list):
+				smoothing_scale_list = [ "{0:.1f}".format(theta) for theta in smoothing_scale ]
+			else:
+				raise TypeError("smoothing scales must be ether float or list!!")
 
-		#Log filename
-		print("Loading likelihood from {0}".format(likelihood_file))
+			smoothing_scale_suffix = "-".join(smoothing_scale_list)
+			smoothing_scale_label = "$($" + r"$\times$ ".join(["$"+theta+r"^\prime"+"$" for theta in smoothing_scale_list]) + "$)$"
+
+			#Construct the likelihood filename
+			likelihood_file = os.path.join(root_dir,"likelihoods_{0}".format(par_hash),"likelihood_{0}--{1}.npy".format(descr,smoothing_scale_suffix))
+			contour_labels.append(descriptors[descr]+smoothing_scale_label)
+
+			#Log filename
+			print("Loading likelihood from {0}".format(likelihood_file))
 		
-		#Load the likelihood
-		contour.getLikelihood(likelihood_file,parameter_axes=parameter_axes,parameter_labels=cosmo_labels)
+			#Load the likelihood
+			contour.getLikelihood(likelihood_file,parameter_axes=parameter_axes,parameter_labels=cosmo_labels)
 		
-		#Set the physical units
-		contour.getUnitsFromOptions(options)
+			#Set the physical units
+			contour.getUnitsFromOptions(options)
 
-		if marginalize_over=="me":
+			if marginalize_over=="me":
 		
-			#Marginalize
-			contour.marginalize(select)
+				#Marginalize
+				contour.marginalize(select)
 		
-			#Best fit
-			maximum = contour.getMaximum()
-			print("Likelihood with {0} is maximum at {1}".format(descr,maximum))
+				#Best fit
+				maximum = contour.getMaximum()
+				print("Likelihood with {0} is maximum at {1}".format(descr,maximum))
 
-			#Get levels
-			contour.getLikelihoodValues(levels=levels)
+				#Get levels
+				contour.getLikelihoodValues(levels=levels)
 
-			#Plot contours
-			contour.plotContours(colors=[brew_colors_diverging[n]],fill=False,display_maximum=False,display_percentages=False,alpha=1.0)
+				#Plot contours
+				contour.plotContours(colors=[brew_colors_moments[c]],fill=False,display_maximum=False,display_percentages=False,alpha=1.0)
 
-		else:
+			else:
 			
-			p,l,pmax,p0 = contour.marginal(select,levels=[0.684])
-			print(pmax,p0)
-			ax.plot(p,l,color=brew_colors_diverging[n],label=contour_labels[-1])		
+				p,l,pmax,p0 = contour.marginal(select,levels=[0.684])
+				print(pmax,p0)
+				ax.plot(p,l,color=brew_colors_moments[c],label=contour_labels[-1])	
+
+			c += 1	
 			
 
 	
@@ -562,7 +589,7 @@ def contour_moments(cmd_args,descriptors_in_plot=moment_list,parameter_axes={"Om
 	
 		#Legend
 		contour.title_label=""
-		contour.labels(contour_labels)
+		contour.labels(contour_labels,prop={"size":10})
 
 		#Save
 		par.pop(par.index(select))
