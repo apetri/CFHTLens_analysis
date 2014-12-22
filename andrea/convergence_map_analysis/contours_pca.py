@@ -8,7 +8,7 @@ import numpy as np
 from scipy import stats
 import matplotlib.pyplot as plt
 
-from contours import ContourPlot
+from lenstools.contours import ContourPlot
 
 def main():
 
