@@ -7,11 +7,11 @@ import ast
 from lenstools import Ensemble
 from lenstools.constraints import LikelihoodAnalysis
 from lenstools.simulations import Design
+from lenstools.contours import ContourPlot
 
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import rc
-from contours import ContourPlot
 
 axes_facecolor = rc.func_globals["rcParams"]["axes.facecolor"]
 
