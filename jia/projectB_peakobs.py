@@ -172,7 +172,7 @@ if make_kappa_predict:
 	def kappa_individual_gal (i):
 		'''for individual background galaxies, find foreground galaxies within 7 arcmin and sum up the kappa contribution
 		'''
-		#print i
+		print i
 		iidx_fore = array(kdt.query_ball_point(xy_back[i], r))	
 		x_back, y_back = xy_back[i]
 		z_back, DL_back = redshift[idx_back][i], DL[idx_back][i]
@@ -194,12 +194,14 @@ if make_kappa_predict:
 				
 		return ikappa
 	#a=map(kappa_individual_gal, randint(0,len(idx_back)-1,5))
+	
 	def temp (ix):
 		print ix
-		kappa_all = map(kappa_individual_gal, arange(ix, amin([len(idx_back), ix+1e5])))
+		kappa_all = map(kappa_individual_gal, arange(ix, amin([len(idx_back), ix+1e3])))
 		np.save(obsPK_dir+'temp/kappa_proj%i_%07d.npy'%(Wx, ix),kappa_all)
 	pool = MPIPool()
-	ix_arr = arange(0, len(idx_back), 1e4)
+	#ix_arr = arange(0, len(idx_back), 1e4)
+	ix_arr = [0, 16e3, 1e3]
 	pool.map(temp, ix_arr)
 	#for ix in arange(0, len(idx_back), 1e4):
 	##kappa_all = array(pool.map(kappa_individual_gal, arange(0,len(idx_back))))
