@@ -1,3 +1,14 @@
+cluster_counts = 0
+halo_plots = 0
+list_peaks_cat = 0 #! generate a list of galaxies for all peaks
+project_mass = 0
+#junk routines below
+update_mag_i = 0
+plot_galn_vs_kappa_hist = 0
+do_hist_galn_magcut = 0
+update_mag_all = 0 #! make a list of galaxie catagues with useful quantities
+
+
 #cNFW_fcn = lambda zM: 9.0/(1.0+zM[0])*(zM[1]/1.3e13)**(-0.13)#Bullock2001
 #cNFW_fcn = lambda zM: 10.0/(1.0+zM[0])*(zM[1]/1e13)**(-0.2)#Takada&Jain2003
 #cNFW_fcn = lambda zM: 11.0/(1.0+zM[0])*(zM[1]/1e13)**(-0.13)#Lin&Kilbinger2014

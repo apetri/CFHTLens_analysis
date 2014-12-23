@@ -28,15 +28,7 @@ obsPK_dir = '/Users/jia/CFHTLenS/obsPK/'
 plot_dir = obsPK_dir+'plot/'
 
 make_kappa_predict = 1
-cluster_counts = 0
-halo_plots = 0
-list_peaks_cat = 0 #! generate a list of galaxies for all peaks
-project_mass = 0
-#junk routines below
-update_mag_i = 0
-plot_galn_vs_kappa_hist = 0
-do_hist_galn_magcut = 0
-update_mag_all = 0 #! make a list of galaxie catagues with useful quantities
+
 ########### constants ######################
 z_lo = 0.6
 z_hi = '%s_hi'%(z_lo)
@@ -139,39 +131,65 @@ def Gx_fcn (x, cNFW=5.0):
 	return out
 
 f = 1.043
-def kappa_proj (Mvir, Rvir, z_fore, ra_fore, dec_fore, DL_fore, cNFW=5.0):#(Mvir, Rvir, z_fore, ra_fore, dec_fore, DL_fore, z_back, ra_back, dec_back, DL_back, cNFW=5.0, f = 1.043):
+def kappa_proj (Mvir, Rvir, z_fore, x_fore, y_fore, DL_fore, z_back, x_back, y_back, DL_back, cNFW=5.0):
 	'''return a function, for certain foreground halo, 
 	calculate the projected mass between a foreground halo and a background galaxy pair.
 	'''
 	#f = 1.043#=1.0/(log(1+cNFW)-cNFW/(1+cNFW)) with cNFW=5.0
-	#Mvir = M100/1.227#cNFW = 5, M100/Mvir = 1.227
-	#Rvir = Rvir_fcn(Mvir, z)#cm
 	two_rhos_rs = Mvir*M_sun*f*cNFW**2/(2*pi*Rvir**2)#cgs, see LK2014 footnote
-	xy_fcn = WLanalysis.gnom_fun((ra_fore, dec_fore))
 	Dl = DL_fore/(1+z_fore)**2
 	Dl_cm = 3.08567758e24*Dl # D_angular = D_luminosity/(1+z)**2
-	theta_vir = Rvir/Dl_cm
-	def kappa_proj_fcn (z_back, ra_back, dec_back, DL_back):
-		Ds = DL_back/(1+z_back)**2
-		Dls = Ds - Dl
-		DDs = Ds/(Dl*Dls)/3.08567758e24# 3e24 = 1Mpc/1cm
-		SIGMAc = 1.07e+27*DDs#(c*1e5)**2/4.0/pi/Gnewton=1.0716311756473212e+27
-		x_rad, y_rad = xy_fcn(array([ra_back, dec_back]))
-		theta = sqrt(x_rad**2+y_rad**2)
-		x = cNFW*theta/theta_vir
-		Gx = Gx_fcn(x, cNFW)
-		kappa_p = two_rhos_rs/SIGMAc*Gx
-		return kappa_p
-	return kappa_proj_fcn
+	theta_vir = Rvir/Dl_cm	
+	Ds = DL_back/(1+z_back)**2
+	Dls = Ds - Dl
+	DDs = Ds/(Dl*Dls)/3.08567758e24# 3e24 = 1Mpc/1cm
+	SIGMAc = 1.07e+27*DDs#(c*1e5)**2/4.0/pi/Gnewton=1.0716311756473212e+27
+	#x_rad, y_rad = xy_fcn(array([ra_back, dec_back]))
+	theta = sqrt((x_fore-x_back)**2+(y_fore-y_back)**2)
+	x = cNFW*theta/theta_vir
+	Gx = Gx_fcn(x, cNFW)
+	kappa_p = two_rhos_rs/SIGMAc*Gx
+	return kappa_p
 
 if make_kappa_predict:
 	from scipy.spatial import cKDTree
-	zcut = 0.6
-	Wx = 1
+	zcut = 0.2#0.6
+	r = 0.0019#0.002rad = 7arcmin, within which I search for contributing halos
+	
+	Wx = int(sys.argv[1])
+	center = centers[Wx-1]
 	icat = cat_gen(Wx).T
+	
 	ra, dec, redshift, weight, MAGi, Mhalo, Rvir, DL = icat
-	idx_fore = where(redshift<zcut)[0]
-	idx_back = where(redshift<zcut)[0]
+	f_Wx = WLanalysis.gnom_fun(center)
+	xy = array(f_Wx(icat[:2])).T
 	
+	idx_back = where(redshift>zcut)[0]
+	xy_back = xy[idx_back]
 	
+	kdt = cKDTree(xy)
+	#nearestneighbors = kdt.query_ball_point(xy_back[:100], 0.002)
+	def kappa_individual_gal (i):
+		'''for individual background galaxies, find foreground galaxies within 7 arcmin and sum up the kappa contribution
+		'''
+		iidx_fore = array(kdt.query_ball_point(xy_back[i], r))	
+		x_back, y_back = xy_back[i]
+		z_back, DL_back = redshift[idx_back][i], DL[idx_back][i]
+		ikappa = 0
+		for jj in iidx_fore:
+			x_fore, y_fore = xy[jj]
+			jMvir, jRvir, z_fore, DL_fore = Mhalo[jj], Rvir[jj], redshift[jj], DL[jj]
+			if z_fore >= z_back:
+				kappa_temp = 0
+			else:
+				kappa_temp = kappa_proj (jMvir, jRvir, z_fore, x_fore, y_fore, DL_fore, z_back, x_back, y_back, DL_back, cNFW=5.0)
+			ikappa += kappa_temp
+			
+			if kappa_temp>0:
+				theta = sqrt((x_fore-x_back)**2+(y_fore-y_back)**2)
+				#print '%.2f\t%.3f\t%.3f\t%.4f\t%.6f'%(log10(jMvir), z_fore, z_back, rad2arcmin(theta), kappa_temp)
+				
+		#print '########## i, ikappa:',i, ikappa
+		return ikappa
+	a=map(kappa_individual_gal, randint(0,len(idx_back)-1,5))
 print 'done-done-done'
