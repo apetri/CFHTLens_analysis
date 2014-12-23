@@ -196,7 +196,11 @@ if make_kappa_predict:
 	#a=map(kappa_individual_gal, randint(0,len(idx_back)-1,5))
 
 	pool = MPIPool()
-	kappa_all = array(pool.map(kappa_individual_gal, arange(0,len(idx_back))))
-	np.save(obsPK_dir+'kappa_proj%i.npy'%(Wx),kappa_all)
+	for ix in arange(0, len(idx_back), 1e5):
+	#kappa_all = array(pool.map(kappa_individual_gal, arange(0,len(idx_back))))
+		kappa_all = pool.map(kappa_individual_gal, arange(ix, amin(len(idx_back), ix+1e5)))
+		kappa_all = array(kappa_all)
+		np.save(obsPK_dir+'temp/kappa_proj%i_%07d.npy'%(Wx, initi),kappa_all)
+		WLanalysis.writeFits(kappa_all, obsPK_dir+'temp/kappa_proj%i_%07d.fit'%(Wx, initi))
 
 print 'W%i done-done-done'%(Wx)
