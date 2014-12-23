@@ -27,7 +27,7 @@ obsPK_dir = '/home1/02977/jialiu/obsPK/'
 #obsPK_dir = '/Users/jia/CFHTLenS/obsPK/'
 #plot_dir = obsPK_dir+'plot/'
 
-make_kappa_predict = 0
+make_kappa_predict = 1
 
 ########### constants ######################
 z_lo = 0.6
@@ -172,6 +172,7 @@ if make_kappa_predict:
 	def kappa_individual_gal (i):
 		'''for individual background galaxies, find foreground galaxies within 7 arcmin and sum up the kappa contribution
 		'''
+		print i
 		iidx_fore = array(kdt.query_ball_point(xy_back[i], r))	
 		x_back, y_back = xy_back[i]
 		z_back, DL_back = redshift[idx_back][i], DL[idx_back][i]
@@ -183,36 +184,19 @@ if make_kappa_predict:
 				kappa_temp = 0
 			else:
 				kappa_temp = kappa_proj (jMvir, jRvir, z_fore, x_fore, y_fore, DL_fore, z_back, x_back, y_back, DL_back, cNFW=5.0)
+				if isnan(kappa_temp):
+					kappa_temp = 0
 			ikappa += kappa_temp
 			
-			if kappa_temp>0:
-				theta = sqrt((x_fore-x_back)**2+(y_fore-y_back)**2)
+			#if kappa_temp>0:
+				#theta = sqrt((x_fore-x_back)**2+(y_fore-y_back)**2)
 				#print '%.2f\t%.3f\t%.3f\t%.4f\t%.6f'%(log10(jMvir), z_fore, z_back, rad2arcmin(theta), kappa_temp)
 				
-		#print '########## i, ikappa:',i, ikappa
 		return ikappa
 	#a=map(kappa_individual_gal, randint(0,len(idx_back)-1,5))
 
-cat_gen_old = lambda Wx: np.load(obsPK_dir+'W%s_cat_z0213_ra_dec_weight_z_ugriz_SDSSr_SDSSz.npy'%(Wx)) #columns: ra, dec, z_peak, weight, MAG_u, MAG_g, MAG_r, MAG_iy, MAG_z, r_SDSS, z_SDSS
-def Mhalo_gen (Wx):
-	print Wx
-	ra, dec, z_arr, weight, MAG_u, MAG_g, MAG_r, MAG_iy, MAG_z, r_SDSS, z_SDSS = cat_gen_old(Wx).T
-	idx = where( (abs(r_SDSS)!=99)&(abs(z_SDSS)!=99) )[0]#rid of the mag=99 ones
-	SDSSr_rest = M_rest_fcn(r_SDSS[idx], z_arr[idx])
-	SDSSz_rest = M_rest_fcn(z_SDSS[idx], z_arr[idx])
-	#MAG_z_rest = M_rest_fcn(MAG_z[idx], z_arr[idx])
-	MAG_i_rest = M_rest_fcn(MAG_iy[idx], z_arr[idx])
-	rminusz = SDSSr_rest - SDSSz_rest
-	M_arr = Minterp(SDSSz_rest, rminusz)
-	M100 = M_arr[where(~isnan(M_arr))[0]]
-	idx_new = idx[where(~isnan(M_arr))[0]]
-	Mvir = M100/1.227
-	Rvir_arr = Rvir_fcn(Mvir, z_arr[idx_new])
-	DL_arr = DL_interp(z_arr[idx_new])	
-	new_cat = array([ra[idx_new], dec[idx_new], z_arr[idx_new], weight[idx_new], MAG_iy[idx_new], Mvir, Rvir_arr, DL_arr]).T
-	np.save(obsPK_dir+'W%s_cat_z0213_ra_dec_redshift_weight_MAGi_Mvir_Rvir_DL.npy'%(Wx), new_cat)
+	pool = MPIPool()
+	kappa_all = array(pool.map(Mhalo_gen, range(1,5)))
+	np.save(obsPK_dir+'kappa_proj%i.npy'%(Wx),kappa_all)
 
-pool = MPIPool()
-pool.map(Mhalo_gen, range(1,5))
-
-print 'done-done-done'
+print 'W%i done-done-done'%(Wx)
