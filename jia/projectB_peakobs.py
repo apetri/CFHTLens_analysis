@@ -193,17 +193,18 @@ if make_kappa_predict:
 				#print '%.2f\t%.3f\t%.3f\t%.4f\t%.6f'%(log10(jMvir), z_fore, z_back, rad2arcmin(theta), kappa_temp)
 				
 		return ikappa
+
 	#a=map(kappa_individual_gal, randint(0,len(idx_back)-1,5))
-	
+	step=1e4
 	def temp (ix):
 		print ix
-		kappa_all = map(kappa_individual_gal, arange(ix, amin([len(idx_back), ix+1e3])))
+		kappa_all = map(kappa_individual_gal, arange(ix, amin([len(idx_back), ix+step])))
 		np.save(obsPK_dir+'temp/kappa_proj%i_%07d.npy'%(Wx, ix),kappa_all)
 	pool = MPIPool()
-	#ix_arr = arange(0, len(idx_back), 1e4)
-	ix_arr = [0, 16e3, 1e3]
+	ix_arr = arange(0, len(idx_back), step)
 	pool.map(temp, ix_arr)
 	#for ix in arange(0, len(idx_back), 1e4):
+	#pool has trouble collecting all the results, so should write out on one thread
 	##kappa_all = array(pool.map(kappa_individual_gal, arange(0,len(idx_back))))
 		#kappa_all = pool.map(kappa_individual_gal, arange(ix, amin([len(idx_back), ix+1e5])))
 		#kappa_all = array(kappa_all)
