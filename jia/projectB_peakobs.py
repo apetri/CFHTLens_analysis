@@ -210,7 +210,8 @@ def Mhalo_gen (Wx):
 	Rvir_arr = Rvir_fcn(Mvir, z_arr[idx_new])
 	DL_arr = DL_interp(z_arr[idx_new])	
 	new_cat = array([ra[idx_new], dec[idx_new], z_arr[idx_new], weight[idx_new], MAG_iy[idx_new], Mvir, Rvir_arr, DL_arr]).T
-	save(obsPK_dir+'W%s_cat_z0213_ra_dec_redshift_weight_MAGi_Mvir_Rvir_DL.npy'%(Wx), new_cat)
+	np.save(obsPK_dir+'W%s_cat_z0213_ra_dec_redshift_weight_MAGi_Mvir_Rvir_DL.npy'%(Wx), new_cat)
+
 pool = MPIPool()
 pool.map(Mhalo_gen, range(1,5))
 
