@@ -196,13 +196,14 @@ if make_kappa_predict:
 	#a=map(kappa_individual_gal, randint(0,len(idx_back)-1,5))
 
 	pool = MPIPool()
-	for ix in arange(0, len(idx_back), 1e5):
+	for ix in arange(0, len(idx_back), 1e4):
 	#kappa_all = array(pool.map(kappa_individual_gal, arange(0,len(idx_back))))
 		kappa_all = pool.map(kappa_individual_gal, arange(ix, amin([len(idx_back), ix+1e5])))
 		kappa_all = array(kappa_all)
 		try:
-			np.save(obsPK_dir+'temp/kappa_proj%i_%07d.npy'%(Wx, ix),kappa_all.reshape(100,-1))
 			WLanalysis.writeFits(kappa_all.reshape(100,-1), obsPK_dir+'temp/kappa_proj%i_%07d.fit'%(Wx, ix))
+			#np.save(obsPK_dir+'temp/kappa_proj%i_%07d.npy'%(Wx, ix),kappa_all.reshape(100,-1))
+			
 		except Exception:
 			print 'error writting files'
 
