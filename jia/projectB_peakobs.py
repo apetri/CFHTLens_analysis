@@ -27,6 +27,7 @@ import sys
 obsPK_dir = '/Users/jia/CFHTLenS/obsPK/'
 plot_dir = obsPK_dir+'plot/'
 
+make_kappa_predict = 1
 cluster_counts = 0
 halo_plots = 0
 list_peaks_cat = 0 #! generate a list of galaxies for all peaks
@@ -66,8 +67,9 @@ kmapGen = lambda Wx, zcut, sigmaG: WLanalysis.readFits('/Users/jia/CFHTLenS/obsP
 
 bmodeGen = lambda Wx, zcut, sigmaG: WLanalysis.readFits('/Users/jia/CFHTLenS/obsPK/maps/W%i_Bmode_%s_sigmaG%02d.fit'%(Wx, zcut, sigmaG))*maskGen(Wx, zcut, sigmaG)
 
-cat_gen = lambda Wx: np.load(obsPK_dir+'W%s_cat_z0213_ra_dec_weight_z_ugriz_SDSSr_SDSSz.npy'%(Wx)) #columns: ra, dec, z_peak, weight, MAG_u, MAG_g, MAG_r, MAG_iy, MAG_z, r_SDSS, z_SDSS
-
+cat_gen = lambda Wx: np.load(obsPK_dir+'W%s_cat_z0213_ra_dec_redshift_weight_MAGi_Mvir_Rvir_DL.npy'%(Wx))
+#columns: ra, dec, redshift, weight, i, Mhalo, Rvir, DL
+	
 
 ########## cosmologies #######################
 # growth factor
@@ -80,6 +82,12 @@ DL_arr = array([DL(z) for z in z_arr])
 DL_interp = interpolate.interp1d(z_arr, DL_arr)
 # find the rest magnitude at the galaxy, from observed magnitude cut
 M_rest_fcn = lambda M_obs, z: M_obs - 5.0*log10(DL_interp(z)) - 25.0
+
+
+##################### MAG_z to M100 ##########
+datagrid_VO = np.load(obsPK_dir+'Mhalo_interpolator_VO.npy')#Mag_z, r-z, M100, residual
+Minterp = interpolate.CloughTocher2DInterpolator(datagrid_VO[:,:2],datagrid_VO[:,2])
+#usage: Minterp(MAGz_arr, r-z_arr)
 
 
 def PeakPos (Wx, z_lo=0.6, z_hi='0.6_lo',noise=False, Bmode=False):
@@ -112,14 +120,12 @@ def PeakPos (Wx, z_lo=0.6, z_hi='0.6_lo',noise=False, Bmode=False):
 	return kappaPos_arr.T
 
 	
-##################### MAG_z to M100 ##########
-datagrid_VO = np.load(obsPK_dir+'Mhalo_interpolator_VO.npy')#Mag_z, r-z, M100, residual
-Minterp = interpolate.CloughTocher2DInterpolator(datagrid_VO[:,:2],datagrid_VO[:,2])
 
 ################## kappa projection 2014/12/14 ##############
 rho_cz = lambda z: rho_c0*(OmegaM*(1+z)**3+(1-OmegaM))#critical density
 Rvir_fcn = lambda M, z: (M*M_sun/(4.0/3.0*pi*200*rho_cz(z)))**0.3333
 rad2arcmin = lambda distance: degrees(distance)*60.0
+
 
 def Gx_fcn (x, cNFW=5.0):
 	if x < 1:
@@ -132,24 +138,24 @@ def Gx_fcn (x, cNFW=5.0):
 		out = 0
 	return out
 
-def kappa_proj (z_fore, M100, ra_fore, dec_fore, cNFW=5.0):
+f = 1.043
+def kappa_proj (Mvir, Rvir, z_fore, ra_fore, dec_fore, DL_fore, cNFW=5.0):#(Mvir, Rvir, z_fore, ra_fore, dec_fore, DL_fore, z_back, ra_back, dec_back, DL_back, cNFW=5.0, f = 1.043):
 	'''return a function, for certain foreground halo, 
 	calculate the projected mass between a foreground halo and a background galaxy pair.
 	'''
-	f = 1.043#=1.0/(log(1+cNFW)-cNFW/(1+cNFW)) with cNFW=5.0
-	Mvir = M100/1.227#cNFW = 5, M100/Mvir = 1.227
-	Rvir = Rvir_fcn(Mvir, z)#cm
+	#f = 1.043#=1.0/(log(1+cNFW)-cNFW/(1+cNFW)) with cNFW=5.0
+	#Mvir = M100/1.227#cNFW = 5, M100/Mvir = 1.227
+	#Rvir = Rvir_fcn(Mvir, z)#cm
 	two_rhos_rs = Mvir*M_sun*f*cNFW**2/(2*pi*Rvir**2)#cgs, see LK2014 footnote
 	xy_fcn = WLanalysis.gnom_fun((ra_fore, dec_fore))
-	Dl = DL(z_fore)/(1+z_fore)**2 # D_angular = D_luminosity/(1+z)**2
-	Dl_cm = Dl*3.08567758e24
+	Dl = DL_fore/(1+z_fore)**2
+	Dl_cm = 3.08567758e24*Dl # D_angular = D_luminosity/(1+z)**2
 	theta_vir = Rvir/Dl_cm
-
-	def kappa_proj_fcn (z_back, ra_back, dec_back):
-		Ds = DL(z_back)/(1+z_back)**2
+	def kappa_proj_fcn (z_back, ra_back, dec_back, DL_back):
+		Ds = DL_back/(1+z_back)**2
 		Dls = Ds - Dl
 		DDs = Ds/(Dl*Dls)/3.08567758e24# 3e24 = 1Mpc/1cm
-		SIGMAc = (c*1e5)**2/4.0/pi/Gnewton*DDs
+		SIGMAc = 1.07e+27*DDs#(c*1e5)**2/4.0/pi/Gnewton=1.0716311756473212e+27
 		x_rad, y_rad = xy_fcn(array([ra_back, dec_back]))
 		theta = sqrt(x_rad**2+y_rad**2)
 		x = cNFW*theta/theta_vir
@@ -158,5 +164,14 @@ def kappa_proj (z_fore, M100, ra_fore, dec_fore, cNFW=5.0):
 		return kappa_p
 	return kappa_proj_fcn
 
-
+if make_kappa_predict:
+	from scipy.spatial import cKDTree
+	zcut = 0.6
+	Wx = 1
+	icat = cat_gen(Wx).T
+	ra, dec, redshift, weight, MAGi, Mhalo, Rvir, DL = icat
+	idx_fore = where(redshift<zcut)[0]
+	idx_back = where(redshift<zcut)[0]
+	
+	
 print 'done-done-done'
