@@ -155,20 +155,21 @@ if make_kappa_predict:
 	from scipy.spatial import cKDTree
 	zcut = 0.2#0.6
 	r = 0.0019#0.002rad = 7arcmin, within which I search for contributing halos
-	
+
 	Wx = int(sys.argv[1])
 	center = centers[Wx-1]
 	icat = cat_gen(Wx).T
-	
+
 	ra, dec, redshift, weight, MAGi, Mhalo, Rvir, DL = icat
+	Mhalo[Mhalo>2e15] = 2e15#prevent halos to get crazy mass
 	f_Wx = WLanalysis.gnom_fun(center)
 	xy = array(f_Wx(icat[:2])).T
-	
+
 	idx_back = where(redshift>zcut)[0]
 	xy_back = xy[idx_back]
-	
+
 	kdt = cKDTree(xy)
-	#nearestneighbors = kdt.query_ball_point(xy_back[:100], 0.002)
+#nearestneighbors = kdt.query_ball_point(xy_back[:100], 0.002)
 	def kappa_individual_gal (i):
 		'''for individual background galaxies, find foreground galaxies within 7 arcmin and sum up the kappa contribution
 		'''
@@ -188,10 +189,9 @@ if make_kappa_predict:
 					kappa_temp = 0
 			ikappa += kappa_temp
 			
-			#if kappa_temp>0:
-				#theta = sqrt((x_fore-x_back)**2+(y_fore-y_back)**2)
-				#print '%.2f\t%.3f\t%.3f\t%.4f\t%.6f'%(log10(jMvir), z_fore, z_back, rad2arcmin(theta), kappa_temp)
-				
+			if kappa_temp>0:
+				theta = sqrt((x_fore-x_back)**2+(y_fore-y_back)**2)
+				print '%s\t%.2f\t%.3f\t%.3f\t%.4f\t%.6f'%(jj,log10(jMvir), z_fore, z_back, rad2arcmin(theta), kappa_temp)	
 		return ikappa
 
 	#a=map(kappa_individual_gal, randint(0,len(idx_back)-1,5))
@@ -203,16 +203,48 @@ if make_kappa_predict:
 	pool = MPIPool()
 	ix_arr = arange(0, len(idx_back), step)
 	pool.map(temp, ix_arr)
-	#for ix in arange(0, len(idx_back), 1e4):
-	#pool has trouble collecting all the results, so should write out on one thread
-	##kappa_all = array(pool.map(kappa_individual_gal, arange(0,len(idx_back))))
-		#kappa_all = pool.map(kappa_individual_gal, arange(ix, amin([len(idx_back), ix+1e5])))
-		#kappa_all = array(kappa_all)
-		#try:
-			#WLanalysis.writeFits(kappa_all.reshape(100,-1), obsPK_dir+'temp/kappa_proj%i_%07d.fit'%(Wx, ix))
-			##np.save(obsPK_dir+'temp/kappa_proj%i_%07d.npy'%(Wx, ix),kappa_all.reshape(100,-1))
-			
-		#except Exception:
-			#print 'error writting files'
+#for Wx in (1,):#range(1,5):
+	#sizes = (1330, 800, 1120, 950)
+	#print Wx
+	#isize = sizes[Wx-1]
+	#center = centers[Wx-1]
+	#icat = cat_gen(Wx).T
+	##ra, dec, redshift, weight, MAGi, Mhalo, Rvir, DL = icat
+	#f_Wx = WLanalysis.gnom_fun(center)
+	
+	#y, x = array(f_Wx(icat[:2]))
+	#weight = icat[3]
+	#k = np.load(obsPK_dir+'kappa_predict_W%i.npy'%(Wx))
+	
+	#A, galn = WLanalysis.coords2grid(x, y, array([k*weight, weight]), size=isize)
+	#Mkw, Mw = A
 
-print 'W%i done-done-done'%(Wx)
+	#mat_dir = '/Users/jia/CFHTLenS/catalogue/Me_Mw_galn/'
+	#Mkw = np.load(mat_dir+'W%i_Mkw_pred.npy'%(Wx))
+	#Mw = np.load(mat_dir+'W%i_Mw_pred.npy'%(Wx))
+	#for sigmaG in (5.3, 8.9):
+		#print Wx, sigmaG
+		########## masks
+		#galn = WLanalysis.readFits(obsPK_dir+'maps/W%s_galn_1.3_lo_sigmaG%02d.fit'%(Wx,sigmaG*10))
+		#mask = ones(shape=galn.shape)
+		#idx = where(galn<0.5)
+		#mask[idx] = 0
+		#mask_smooth = WLanalysis.smooth(mask, 0)
+		
+		#kmap_lensing = WLanalysis.readFits(obsPK_dir+'maps/W%i_KS_1.3_lo_sigmaG%02d.fit'%(Wx, sigmaG*10))
+		#kmap_predict = WLanalysis.weighted_smooth(Mkw*mask_smooth, Mw*mask_smooth, PPA=PPA512, sigmaG=sigmaG)
+		##np.save(obsPK_dir+'kmap_W%i_lensing_sigmaG%02d'%(Wx, sigmaG), kmap_lensing)
+		#np.save(obsPK_dir+'maps/kmap_W%i_predict_sigmaG%02d'%(Wx, sigmaG*10), kmap_predict)
+		
+		#figure(figsize=(8,4))
+		#subplot(121)
+		#imshow(kmap_lensing, vmax=3*std(kmap_lensing), vmin=-2*std(kmap_lensing), origin = 'lower')
+		#title('W%i kmap_lensing'%(Wx))
+		#colorbar()
+		#subplot(122)
+		#imshow(kmap_predict-mean(kmap_predict), vmax=3*std(kmap_predict), vmin=-2*std(kmap_lensing), origin = 'lower')
+		#title('W%i kmap_predict'%(Wx))
+		#colorbar()
+		#savefig(plot_dir+'kmap_W%i_lensing_predict_sigmaG%s.jpg'%(Wx,sigmaG))
+		#close()
+print 'done-done-done'
