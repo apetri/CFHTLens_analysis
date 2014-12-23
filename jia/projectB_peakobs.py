@@ -198,7 +198,7 @@ if make_kappa_predict:
 	pool = MPIPool()
 	for ix in arange(0, len(idx_back), 1e5):
 	#kappa_all = array(pool.map(kappa_individual_gal, arange(0,len(idx_back))))
-		kappa_all = pool.map(kappa_individual_gal, arange(ix, amin(len(idx_back), ix+1e5)))
+		kappa_all = pool.map(kappa_individual_gal, arange(ix, amin([len(idx_back), ix+1e5])))
 		kappa_all = array(kappa_all)
 		try:
 			np.save(obsPK_dir+'temp/kappa_proj%i_%07d.npy'%(Wx, ix),kappa_all)
