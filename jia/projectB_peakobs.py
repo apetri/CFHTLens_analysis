@@ -20,12 +20,12 @@ import scipy.optimize as op
 import sys
 
 ######## for stampede #####
-#from emcee.utils import MPIPool
-#obsPK_dir = '/home1/02977/jialiu/obsPK/'
+from emcee.utils import MPIPool
+obsPK_dir = '/home1/02977/jialiu/obsPK/'
 
 ######## for laptop #####
-obsPK_dir = '/Users/jia/CFHTLenS/obsPK/'
-plot_dir = obsPK_dir+'plot/'
+#obsPK_dir = '/Users/jia/CFHTLenS/obsPK/'
+#plot_dir = obsPK_dir+'plot/'
 
 make_kappa_predict = 0
 
