@@ -196,7 +196,7 @@ if make_kappa_predict:
 	#a=map(kappa_individual_gal, randint(0,len(idx_back)-1,5))
 
 	pool = MPIPool()
-	kappa_all = array(pool.map(Mhalo_gen, range(1,5)))
+	kappa_all = array(pool.map(kappa_individual_gal, arange(0,len(idx_back))))
 	np.save(obsPK_dir+'kappa_proj%i.npy'%(Wx),kappa_all)
 
 print 'W%i done-done-done'%(Wx)
