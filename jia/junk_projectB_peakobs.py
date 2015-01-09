@@ -1,3 +1,14 @@
+cluster_counts = 0
+halo_plots = 0
+list_peaks_cat = 0 #! generate a list of galaxies for all peaks
+project_mass = 0
+#junk routines below
+update_mag_i = 0
+plot_galn_vs_kappa_hist = 0
+do_hist_galn_magcut = 0
+update_mag_all = 0 #! make a list of galaxie catagues with useful quantities
+
+
 #cNFW_fcn = lambda zM: 9.0/(1.0+zM[0])*(zM[1]/1.3e13)**(-0.13)#Bullock2001
 #cNFW_fcn = lambda zM: 10.0/(1.0+zM[0])*(zM[1]/1e13)**(-0.2)#Takada&Jain2003
 #cNFW_fcn = lambda zM: 11.0/(1.0+zM[0])*(zM[1]/1e13)**(-0.13)#Lin&Kilbinger2014
@@ -707,3 +718,131 @@ def MassProj (gridofdata, zcut, R = 3.0, sigmaG=1.0):
 		ikappa = sum(icontribute[idx_nonzero])
 		icontribute/=ikappa
 		return idx_dist[idx_fore[idx_nonzero]], icontribute[idx_nonzero], ikappa*ones(len(idx_nonzero))
+
+cat_gen_old = lambda Wx: np.load(obsPK_dir+'junk/W%s_cat_z0213_ra_dec_weight_z_ugriz_SDSSr_SDSSz.npy'%(Wx)) #columns: ra, dec, z_peak, weight, MAG_u, MAG_g, MAG_r, MAG_iy, MAG_z, r_SDSS, z_SDSS
+def Mhalo_gen (Wx):
+	print Wx
+	ra, dec, z_arr, weight, MAG_u, MAG_g, MAG_r, MAG_iy, MAG_z, r_SDSS, z_SDSS = cat_gen_old(Wx).T
+	idx = where( (abs(r_SDSS)!=99)&(abs(z_SDSS)!=99) )[0]#rid of the mag=99 ones
+	SDSSr_rest = M_rest_fcn(r_SDSS[idx], z_arr[idx])
+	SDSSz_rest = M_rest_fcn(z_SDSS[idx], z_arr[idx])
+	#MAG_z_rest = M_rest_fcn(MAG_z[idx], z_arr[idx])
+	MAG_i_rest = M_rest_fcn(MAG_iy[idx], z_arr[idx])
+	rminusz = SDSSr_rest - SDSSz_rest
+	M_arr = Minterp(SDSSz_rest, rminusz)
+	M100 = M_arr[where(~isnan(M_arr))[0]]
+	idx_new = idx[where(~isnan(M_arr))[0]]
+	Mvir = M100/1.227
+	Rvir_arr = Rvir_fcn(Mvir, z_arr[idx_new])
+	DL_arr = DL_interp(z_arr[idx_new])	
+	new_cat = array([ra[idx_new], dec[idx_new], z_arr[idx_new], weight[idx_new], MAG_iy[idx_new], Mvir, Rvir_arr, DL_arr]).T
+	save(obsPK_dir+'W%s_cat_z0213_ra_dec_redshift_weight_MAGi_Mvir_Rvir_DL.npy'%(Wx), new_cat)
+map(Mhalo_gen, range(1,5))
+
+def kappa_proj_old (z_fore, M100, ra_fore, dec_fore, cNFW=5.0):
+	'''return a function, for certain foreground halo, 
+	calculate the projected mass between a foreground halo and a background galaxy pair.
+	'''
+	f = 1.043#=1.0/(log(1+cNFW)-cNFW/(1+cNFW)) with cNFW=5.0
+	Mvir = M100/1.227#cNFW = 5, M100/Mvir = 1.227
+	Rvir = Rvir_fcn(Mvir, z)#cm
+	two_rhos_rs = Mvir*M_sun*f*cNFW**2/(2*pi*Rvir**2)#cgs, see LK2014 footnote
+	xy_fcn = WLanalysis.gnom_fun((ra_fore, dec_fore))
+	Dl = DL(z_fore)/(1+z_fore)**2 # D_angular = D_luminosity/(1+z)**2
+	Dl_cm = Dl*3.08567758e24
+	theta_vir = Rvir/Dl_cm
+
+	def kappa_proj_fcn (z_back, ra_back, dec_back):
+		Ds = DL(z_back)/(1+z_back)**2
+		Dls = Ds - Dl
+		DDs = Ds/(Dl*Dls)/3.08567758e24# 3e24 = 1Mpc/1cm
+		SIGMAc = (c*1e5)**2/4.0/pi/Gnewton*DDs
+		x_rad, y_rad = xy_fcn(array([ra_back, dec_back]))
+		theta = sqrt(x_rad**2+y_rad**2)
+		x = cNFW*theta/theta_vir
+		Gx = Gx_fcn(x, cNFW)
+		kappa_p = two_rhos_rs/SIGMAc*Gx
+		return kappa_p
+	return kappa_proj_fcn
+
+######## organize kappa_predict files on stampede #########
+import numpy as np
+obsPK_dir = '/home1/02977/jialiu/obsPK/'
+lenths = (1936992, 514501, 1269489, 593210)
+for Wx in range(1,5):
+	print Wx
+	ifile = lambda ix: np.load(obsPK_dir+'temp/kappa_proj%i_%07d.npy'%(Wx, ix))
+	ix_arr = np.arange(0, lenths[Wx-1], 1e4)
+	allkappa = np.concatenate(map(ifile, ix_arr))
+	print allkappa.shape
+	np.save(obsPK_dir+'kappa_predict_W%i.py'%(Wx), allkappa)
+	
+	
+if make_kappa_predict:
+	from scipy.spatial import cKDTree
+	zcut = 0.2#0.6
+	r = 0.0019#0.002rad = 7arcmin, within which I search for contributing halos
+
+	Wx = 1#int(sys.argv[1])
+	center = centers[Wx-1]
+	icat = cat_gen(Wx).T
+
+	ra, dec, redshift, weight, MAGi, Mhalo, Rvir, DL = icat
+	f_Wx = WLanalysis.gnom_fun(center)
+	xy = array(f_Wx(icat[:2])).T
+
+	idx_back = where(redshift>zcut)[0]
+	xy_back = xy[idx_back]
+
+	kdt = cKDTree(xy)
+#nearestneighbors = kdt.query_ball_point(xy_back[:100], 0.002)
+	def kappa_individual_gal (i):
+		'''for individual background galaxies, find foreground galaxies within 7 arcmin and sum up the kappa contribution
+		'''
+		print i
+		iidx_fore = array(kdt.query_ball_point(xy_back[i], r))	
+		x_back, y_back = xy_back[i]
+		z_back, DL_back = redshift[idx_back][i], DL[idx_back][i]
+		ikappa = 0
+		for jj in iidx_fore:
+			x_fore, y_fore = xy[jj]
+			jMvir, jRvir, z_fore, DL_fore = Mhalo[jj], Rvir[jj], redshift[jj], DL[jj]
+			if z_fore >= z_back:
+				kappa_temp = 0
+			else:
+				kappa_temp = kappa_proj (jMvir, jRvir, z_fore, x_fore, y_fore, DL_fore, z_back, x_back, y_back, DL_back, cNFW=5.0)
+				if isnan(kappa_temp):
+					kappa_temp = 0
+			ikappa += kappa_temp
+			
+			if kappa_temp>0:
+				theta = sqrt((x_fore-x_back)**2+(y_fore-y_back)**2)
+				print '%s\t%.2f\t%.3f\t%.3f\t%.4f\t%.6f'%(jj,log10(jMvir), z_fore, z_back, rad2arcmin(theta), kappa_temp)	
+		return ikappa
+
+	#a=map(kappa_individual_gal, randint(0,len(idx_back)-1,5))
+	step=1e4
+	def temp (ix):
+		print ix
+		kappa_all = map(kappa_individual_gal, arange(ix, amin([len(idx_back), ix+step])))
+		np.save(obsPK_dir+'temp/kappa_proj%i_%07d.npy'%(Wx, ix),kappa_all)
+	pool = MPIPool()
+	ix_arr = arange(0, len(idx_back), step)
+	pool.map(temp, ix_arr)
+
+### coords2grid kappa_pred map:
+for Wx in arange(1,5):
+	sizes = (1330, 800, 1120, 950)
+	print Wx
+	isize = sizes[Wx-1]
+	center = centers[Wx-1]
+	icat = cat_gen(Wx).T
+	#ra, dec, redshift, weight, MAGi, Mhalo, Rvir, DL = icat
+	f_Wx = WLanalysis.gnom_fun(center)
+	y, x = array(f_Wx(icat[:2]))
+	weight = icat[3]
+	k = np.load(obsPK_dir+'kappa_predict_W%i.npy'%(Wx))
+	A, galn = WLanalysis.coords2grid(x, y, array([k*weight, weight]), size=isize)
+	Mkw, Mw = A
+	np.save('/Users/jia/CFHTLenS/catalogue/Me_Mw_galn/W%i_Mkw_pred.npy'%(Wx), Mkw)
+	np.save('/Users/jia/CFHTLenS/catalogue/Me_Mw_galn/W%i_Mw_pred.npy'%(Wx), Mw)	

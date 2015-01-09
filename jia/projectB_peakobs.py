@@ -20,22 +20,15 @@ import scipy.optimize as op
 import sys
 
 ######## for stampede #####
-#from emcee.utils import MPIPool
-#obsPK_dir = '/home1/02977/jialiu/obsPK/'
+from emcee.utils import MPIPool
+obsPK_dir = '/home1/02977/jialiu/obsPK/'
 
 ######## for laptop #####
-obsPK_dir = '/Users/jia/CFHTLenS/obsPK/'
-plot_dir = obsPK_dir+'plot/'
+#obsPK_dir = '/Users/jia/CFHTLenS/obsPK/'
+#plot_dir = obsPK_dir+'plot/'
 
-cluster_counts = 0
-halo_plots = 0
-list_peaks_cat = 0 #! generate a list of galaxies for all peaks
-project_mass = 0
-#junk routines below
-update_mag_i = 0
-plot_galn_vs_kappa_hist = 0
-do_hist_galn_magcut = 0
-update_mag_all = 0 #! make a list of galaxie catagues with useful quantities
+make_kappa_predict = 1
+
 ########### constants ######################
 z_lo = 0.6
 z_hi = '%s_hi'%(z_lo)
@@ -66,8 +59,9 @@ kmapGen = lambda Wx, zcut, sigmaG: WLanalysis.readFits('/Users/jia/CFHTLenS/obsP
 
 bmodeGen = lambda Wx, zcut, sigmaG: WLanalysis.readFits('/Users/jia/CFHTLenS/obsPK/maps/W%i_Bmode_%s_sigmaG%02d.fit'%(Wx, zcut, sigmaG))*maskGen(Wx, zcut, sigmaG)
 
-cat_gen = lambda Wx: np.load(obsPK_dir+'W%s_cat_z0213_ra_dec_weight_z_ugriz_SDSSr_SDSSz.npy'%(Wx)) #columns: ra, dec, z_peak, weight, MAG_u, MAG_g, MAG_r, MAG_iy, MAG_z, r_SDSS, z_SDSS
-
+cat_gen = lambda Wx: np.load(obsPK_dir+'W%s_cat_z0213_ra_dec_redshift_weight_MAGi_Mvir_Rvir_DL.npy'%(Wx))
+#columns: ra, dec, redshift, weight, i, Mhalo, Rvir, DL
+	
 
 ########## cosmologies #######################
 # growth factor
@@ -80,6 +74,12 @@ DL_arr = array([DL(z) for z in z_arr])
 DL_interp = interpolate.interp1d(z_arr, DL_arr)
 # find the rest magnitude at the galaxy, from observed magnitude cut
 M_rest_fcn = lambda M_obs, z: M_obs - 5.0*log10(DL_interp(z)) - 25.0
+
+
+##################### MAG_z to M100 ##########
+datagrid_VO = np.load(obsPK_dir+'Mhalo_interpolator_VO.npy')#Mag_z, r-z, M100, residual
+Minterp = interpolate.CloughTocher2DInterpolator(datagrid_VO[:,:2],datagrid_VO[:,2])
+#usage: Minterp(MAGz_arr, r-z_arr)
 
 
 def PeakPos (Wx, z_lo=0.6, z_hi='0.6_lo',noise=False, Bmode=False):
@@ -112,14 +112,12 @@ def PeakPos (Wx, z_lo=0.6, z_hi='0.6_lo',noise=False, Bmode=False):
 	return kappaPos_arr.T
 
 	
-##################### MAG_z to M100 ##########
-datagrid_VO = np.load(obsPK_dir+'Mhalo_interpolator_VO.npy')#Mag_z, r-z, M100, residual
-Minterp = interpolate.CloughTocher2DInterpolator(datagrid_VO[:,:2],datagrid_VO[:,2])
 
 ################## kappa projection 2014/12/14 ##############
 rho_cz = lambda z: rho_c0*(OmegaM*(1+z)**3+(1-OmegaM))#critical density
 Rvir_fcn = lambda M, z: (M*M_sun/(4.0/3.0*pi*200*rho_cz(z)))**0.3333
 rad2arcmin = lambda distance: degrees(distance)*60.0
+
 
 def Gx_fcn (x, cNFW=5.0):
 	if x < 1:
@@ -132,31 +130,121 @@ def Gx_fcn (x, cNFW=5.0):
 		out = 0
 	return out
 
-def kappa_proj (z_fore, M100, ra_fore, dec_fore, cNFW=5.0):
+f = 1.043
+def kappa_proj (Mvir, Rvir, z_fore, x_fore, y_fore, DL_fore, z_back, x_back, y_back, DL_back, cNFW=5.0):
 	'''return a function, for certain foreground halo, 
 	calculate the projected mass between a foreground halo and a background galaxy pair.
 	'''
-	f = 1.043#=1.0/(log(1+cNFW)-cNFW/(1+cNFW)) with cNFW=5.0
-	Mvir = M100/1.227#cNFW = 5, M100/Mvir = 1.227
-	Rvir = Rvir_fcn(Mvir, z)#cm
+	#f = 1.043#=1.0/(log(1+cNFW)-cNFW/(1+cNFW)) with cNFW=5.0
 	two_rhos_rs = Mvir*M_sun*f*cNFW**2/(2*pi*Rvir**2)#cgs, see LK2014 footnote
-	xy_fcn = WLanalysis.gnom_fun((ra_fore, dec_fore))
-	Dl = DL(z_fore)/(1+z_fore)**2 # D_angular = D_luminosity/(1+z)**2
-	Dl_cm = Dl*3.08567758e24
-	theta_vir = Rvir/Dl_cm
+	Dl = DL_fore/(1+z_fore)**2
+	Dl_cm = 3.08567758e24*Dl # D_angular = D_luminosity/(1+z)**2
+	theta_vir = Rvir/Dl_cm	
+	Ds = DL_back/(1+z_back)**2
+	Dls = Ds - Dl
+	DDs = Ds/(Dl*Dls)/3.08567758e24# 3e24 = 1Mpc/1cm
+	SIGMAc = 1.07e+27*DDs#(c*1e5)**2/4.0/pi/Gnewton=1.0716311756473212e+27
+	#x_rad, y_rad = xy_fcn(array([ra_back, dec_back]))
+	theta = sqrt((x_fore-x_back)**2+(y_fore-y_back)**2)
+	x = cNFW*theta/theta_vir
+	Gx = Gx_fcn(x, cNFW)
+	kappa_p = two_rhos_rs/SIGMAc*Gx
+	return kappa_p
 
-	def kappa_proj_fcn (z_back, ra_back, dec_back):
-		Ds = DL(z_back)/(1+z_back)**2
-		Dls = Ds - Dl
-		DDs = Ds/(Dl*Dls)/3.08567758e24# 3e24 = 1Mpc/1cm
-		SIGMAc = (c*1e5)**2/4.0/pi/Gnewton*DDs
-		x_rad, y_rad = xy_fcn(array([ra_back, dec_back]))
-		theta = sqrt(x_rad**2+y_rad**2)
-		x = cNFW*theta/theta_vir
-		Gx = Gx_fcn(x, cNFW)
-		kappa_p = two_rhos_rs/SIGMAc*Gx
-		return kappa_p
-	return kappa_proj_fcn
+if make_kappa_predict:
+	from scipy.spatial import cKDTree
+	zcut = 0.2#0.6
+	r = 0.0019#0.002rad = 7arcmin, within which I search for contributing halos
 
+	Wx = int(sys.argv[1])
+	center = centers[Wx-1]
+	icat = cat_gen(Wx).T
 
+	ra, dec, redshift, weight, MAGi, Mhalo, Rvir, DL = icat
+	Mhalo[Mhalo>2e15] = 2e15#prevent halos to get crazy mass
+	f_Wx = WLanalysis.gnom_fun(center)
+	xy = array(f_Wx(icat[:2])).T
+
+	idx_back = where(redshift>zcut)[0]
+	xy_back = xy[idx_back]
+
+	kdt = cKDTree(xy)
+#nearestneighbors = kdt.query_ball_point(xy_back[:100], 0.002)
+	def kappa_individual_gal (i):
+		'''for individual background galaxies, find foreground galaxies within 7 arcmin and sum up the kappa contribution
+		'''
+		print i
+		iidx_fore = array(kdt.query_ball_point(xy_back[i], r))	
+		x_back, y_back = xy_back[i]
+		z_back, DL_back = redshift[idx_back][i], DL[idx_back][i]
+		ikappa = 0
+		for jj in iidx_fore:
+			x_fore, y_fore = xy[jj]
+			jMvir, jRvir, z_fore, DL_fore = Mhalo[jj], Rvir[jj], redshift[jj], DL[jj]
+			if z_fore >= z_back:
+				kappa_temp = 0
+			else:
+				kappa_temp = kappa_proj (jMvir, jRvir, z_fore, x_fore, y_fore, DL_fore, z_back, x_back, y_back, DL_back, cNFW=5.0)
+				if isnan(kappa_temp):
+					kappa_temp = 0
+			ikappa += kappa_temp
+			
+			if kappa_temp>0:
+				theta = sqrt((x_fore-x_back)**2+(y_fore-y_back)**2)
+				print '%s\t%.2f\t%.3f\t%.3f\t%.4f\t%.6f'%(jj,log10(jMvir), z_fore, z_back, rad2arcmin(theta), kappa_temp)	
+		return ikappa
+
+	#a=map(kappa_individual_gal, randint(0,len(idx_back)-1,5))
+	step=1e4
+	def temp (ix):
+		print ix
+		kappa_all = map(kappa_individual_gal, arange(ix, amin([len(idx_back), ix+step])))
+		np.save(obsPK_dir+'temp/kappa_proj%i_%07d.npy'%(Wx, ix),kappa_all)
+	pool = MPIPool()
+	ix_arr = arange(0, len(idx_back), step)
+	pool.map(temp, ix_arr)
+#for Wx in (1,):#range(1,5):
+	#sizes = (1330, 800, 1120, 950)
+	#print Wx
+	#isize = sizes[Wx-1]
+	#center = centers[Wx-1]
+	#icat = cat_gen(Wx).T
+	##ra, dec, redshift, weight, MAGi, Mhalo, Rvir, DL = icat
+	#f_Wx = WLanalysis.gnom_fun(center)
+	
+	#y, x = array(f_Wx(icat[:2]))
+	#weight = icat[3]
+	#k = np.load(obsPK_dir+'kappa_predict_W%i.npy'%(Wx))
+	
+	#A, galn = WLanalysis.coords2grid(x, y, array([k*weight, weight]), size=isize)
+	#Mkw, Mw = A
+
+	#mat_dir = '/Users/jia/CFHTLenS/catalogue/Me_Mw_galn/'
+	#Mkw = np.load(mat_dir+'W%i_Mkw_pred.npy'%(Wx))
+	#Mw = np.load(mat_dir+'W%i_Mw_pred.npy'%(Wx))
+	#for sigmaG in (5.3, 8.9):
+		#print Wx, sigmaG
+		########## masks
+		#galn = WLanalysis.readFits(obsPK_dir+'maps/W%s_galn_1.3_lo_sigmaG%02d.fit'%(Wx,sigmaG*10))
+		#mask = ones(shape=galn.shape)
+		#idx = where(galn<0.5)
+		#mask[idx] = 0
+		#mask_smooth = WLanalysis.smooth(mask, 0)
+		
+		#kmap_lensing = WLanalysis.readFits(obsPK_dir+'maps/W%i_KS_1.3_lo_sigmaG%02d.fit'%(Wx, sigmaG*10))
+		#kmap_predict = WLanalysis.weighted_smooth(Mkw*mask_smooth, Mw*mask_smooth, PPA=PPA512, sigmaG=sigmaG)
+		##np.save(obsPK_dir+'kmap_W%i_lensing_sigmaG%02d'%(Wx, sigmaG), kmap_lensing)
+		#np.save(obsPK_dir+'maps/kmap_W%i_predict_sigmaG%02d'%(Wx, sigmaG*10), kmap_predict)
+		
+		#figure(figsize=(8,4))
+		#subplot(121)
+		#imshow(kmap_lensing, vmax=3*std(kmap_lensing), vmin=-2*std(kmap_lensing), origin = 'lower')
+		#title('W%i kmap_lensing'%(Wx))
+		#colorbar()
+		#subplot(122)
+		#imshow(kmap_predict-mean(kmap_predict), vmax=3*std(kmap_predict), vmin=-2*std(kmap_lensing), origin = 'lower')
+		#title('W%i kmap_predict'%(Wx))
+		#colorbar()
+		#savefig(plot_dir+'kmap_W%i_lensing_predict_sigmaG%s.jpg'%(Wx,sigmaG))
+		#close()
 print 'done-done-done'
