@@ -108,20 +108,71 @@ def return_interp_cosmo_for_idx (idx, alpha = 0):
 def plot_heat_map_w (values):
 	w, idx, interp_cosmo, cov_inv, ps_CFHT = values
 	fn = test_dir+'test/chisqcube_%s_w%s.npy'%(fn_arr[nn], w)
-	if os.path.isfile(fn) == False:
-		print 'w=',w 
-		heatmap = zeros(shape=(l,ll))
-		for i in range(l):
-			for j in range(ll):
-				best_fit = (om_arr[i], w, si8_arr[j])
-				ps_interp = interp_cosmo(best_fit)
-				del_N = np.mat(ps_interp - ps_CFHT)
-				chisq = float(del_N*cov_inv*del_N.T)
-				heatmap[i,j] = chisq
-		save(fn, heatmap)
-	else:
-		print 'w=', w, 'done'
-	#return heatmap
+	#if os.path.isfile(fn) == False:
+	print 'w=',w 
+	heatmap = zeros(shape=(l,ll))
+	for i in range(l):
+		for j in range(ll):
+			best_fit = (om_arr[i], w, si8_arr[j])
+			ps_interp = interp_cosmo(best_fit)
+			del_N = np.mat(ps_interp - ps_CFHT)
+			chisq = float(del_N*cov_inv*del_N.T)
+			heatmap[i,j] = chisq
+		#save(fn, heatmap)
+	#else:
+		#print 'w=', w, 'done'
+	return heatmap
+
+
+#####################12/25/2014 ############
+#### test alpha as function of SNR cut #####
+############################################
+#kappa_arr = linspace(-0.0368,0.1168,25)
+#repeat_elem = lambda aP: (repeat(aP[0], aP[1]*1e5).reshape(2,-1)).T
+#X, Y = np.meshgrid(om_arr, si8_arr)
+#all_points = array([X.flatten(),Y.flatten()]).T
+#alpha_arr = linspace(0.4,0.8,301)
+#def findalpha(idxcut=20):
+	#idx_pk10high = arange(50+idxcut,75)# 16th bin = 0.066, 20th bin = 0.091
+	#interp_cosmo, cov_mat, cov_inv, ps_CFHT = return_interp_cosmo_for_idx (idx_pk10high)
+	#w = -1
+	#values = (w, idx_pk10high, interp_cosmo, cov_inv, ps_CFHT)
+	#heatmap = plot_heat_map_w (values)
+	#P = exp(-heatmap/2.0)
+	#P[67:,85:]=0
+	#P[:,:20]=0
+	#P/=sum(P)
+	
+	#all_prob0 = (P.T).flatten()#/amax(P)
+	#idx = where(all_prob0*1e4>2)[0]#only care about points with larger prob.
+	#iall_points, all_prob = all_points[idx], all_prob0[idx]
+	#samples = concatenate(map(repeat_elem, array([iall_points,all_prob]).T),axis=0)
+	#Sigma8 = lambda alpha: std((samples.T[0]/0.27)**alpha*samples.T[1])
+	#Sigma8_arr = array(map(Sigma8, alpha_arr))
+	#alpha = alpha_arr[argmin(Sigma8_arr)]
+	#SNR = kappa_arr[idxcut]/0.033
+	#print idxcut, SNR, alpha
+	#return P, SNR, alpha
+#a=map(findalpha,(0,16, 18, 20))
+#f = figure(figsize=(8,6))
+#ax=f.add_subplot(111)
+#lines=[]
+#labels=['SNR > %.1f, alpha = %.2f'%(a[i][1], a[i][2]) for i in arange(len(a))]
+#extents = (om_arr[0], om_arr[-1], si8_arr[0], si8_arr[-1])
+#i=0
+#icolors = ('r','b','m','g','k','g','r','c','b','g','m','k')
+#for ia in a:
+	#iP, inu, ialpha = ia
+	#V = WLanalysis.findlevel(iP)
+	#CS = ax.contour(X[20:85, 0:67], Y[20:85, 0:67], iP[0:67,20:85].T, levels=[V[0],], colors=icolors[i], origin='lower', extent=extents, linewidths=2)
+	#lines.append(CS.collections[0])
+	#i+=1
+#leg=ax.legend(lines, labels, ncol=1, labelspacing=0.3, prop={'size':12},loc=0)
+#ax.set_xlabel('Omega_m',fontsize=20)
+#ax.set_ylabel('sigma_8',fontsize=20)
+#show()
+############################################
+
 
 ###########################################################
 ############ operation ####################################

@@ -20,9 +20,10 @@ print 'frequency:', freq
 
 ###################### knobs###########################
 dusty = 0
-plot_crosscorrelate_all = 1
-create_noise_KS = 0
+plot_crosscorrelate_all = 0
+create_noise_KS = 0 # 500 CFHT sims x kSZ maps
 cross_cov_mat = 0
+SNR24bins = 1 # find SNR, using 6binsx4 field
 powspec_without_ells_factor = 0
 clean_dust = 0
 testCC = 0
@@ -85,13 +86,14 @@ def nosqkSZGen(Wx, freq = '2freqs'):#'857GHz'#
 		dust2 = dustGen(Wx, '857GHz')
 		alpha1 = return_alpha('545217GHzclean')
 		alpha2 = return_alpha('857GHz')
-		kSZ_NSQ_clean1 = (1+alpha1)*kSZ_NSQ[Wx-1]-alpha1*dust1
-		kSZ_NSQ_clean2 = (1+alpha2)*kSZ_NSQ[Wx-1]-alpha2*dust2
+		kSZ_NSQ_clean1 = (1+alpha1)*kSZ_NSQ-alpha1*dust1
+		kSZ_NSQ_clean2 = (1+alpha2)*kSZ_NSQ-alpha2*dust2
+		#kSZ_NSQ_clean2 = (1+alpha2)*kSZ_NSQ[Wx-1]-alpha2*dust2
 		kSZ_NSQ_clean = kSZ_NSQ_clean1*kSZ_NSQ_clean2
 	else:
 		dust = dustGen(Wx, freq)
 		alpha = return_alpha(freq)
-		kSZ_NSQ_clean = (1+alpha)*kSZ_NSQ[Wx-1]-alpha*dust
+		kSZ_NSQ_clean = (1+alpha)*kSZ_NSQ-alpha*dust
 	return kSZ_NSQ_clean
 
 #kSZmapGen = lambda i, freq: WLanalysis.readFits(kSZ_dir+'kSZmap_W%i_nearest.fit'%(i))
@@ -197,7 +199,7 @@ def kSZmapGen_fn (fn, offset=False, method='nearest'):
 	Wx = int(fn[fn.index('W')+1])
 	print 'Wx, fn:', Wx, fn
 	size=sizes[Wx-1]
-	kSZCoord = genfromtxt(fn)
+	kSZCoord = WLanalysis.readFits(fn)
 	radeclist = kSZCoord[:,:-1]
 	values = kSZCoord.T[-1]
 	xy = list2coords(radeclist, Wx, offset=offset)
@@ -216,9 +218,10 @@ def kSZmapGen_fn (fn, offset=False, method='nearest'):
 
 ##############################################################
 ######################## operations ##########################
-#for fn in os.listdir(kSZ_dir+'null/'):
+#for fn in os.listdir(kSZ_dir+'kSZ2/'):
 	##print fn
-	#full_fn = kSZ_dir+'null/'+fn
+	#full_fn = kSZ_dir+'kSZ2/'+fn
+	#kSZmapGen_fn(full_fn, offset = False)
 	#if 'offset' in  fn and 'txt' in fn:
 		#print 'offset', fn
 		#kSZmapGen_fn(full_fn, offset=True)
@@ -420,17 +423,44 @@ if cross_cov_mat:
 	###############################
 	
 	############ plottting ########
-	plotimshow(CCN_cov,'cov_%s'%(freq),vmin=None)
-	## correlation matrix
-	x = sqrt(diag(CCN_cov))
-	X,Y=np.meshgrid(x,x)
-	CCN_corr = CCN_cov/(X*Y)
-	plotimshow(CCN_corr,'corr_%s'%(freq),vmin=None)
+	#plotimshow(CCN_cov,'cov_%s'%(freq),vmin=None)
+	### correlation matrix
+	#x = sqrt(diag(CCN_cov))
+	#X,Y=np.meshgrid(x,x)
+	#CCN_corr = CCN_cov/(X*Y)
+	#plotimshow(CCN_corr,'corr_%s'%(freq),vmin=None)
 	###############################
-		
+
+if SNR24bins:
+	'''
+	Written on 2015/01/04, do not averge over 4 W fields, but rather do 24 bins instead, plot out the signal vs noise, where noise is the diagonal of cov mat.
+	'''
 	
-
-
+	CCN = array([load(CC_fcn(Wx, freq)+'.npy')/fmask2_arr[Wx-1] for Wx in range(1,5)])
+	CCN_mean = mean(CCN,axis=1).flatten()
+	CCN_std = std(CCN,axis=1).flatten()
+	CC_arr = array([KSxkSZ(Wx, freq=freq) for Wx in range(1,5)])
+	
+	CCK_arr, CCB_arr, CCO_arr, CCBMODE_arr, CCNSQ_arr, errK_arr, errB_arr, errO_arr, errBMODE_arr, errNSQ_arr, autoK_arr, autokSZ_arr, autoB_arr, autoBMODE_arr, autoO_arr, autoNSQ_arr, autoKerr_arr, autokSZerr_arr, autoBerr_arr, autoBMODEerr_arr, autoOerr_arr, autoNSQerr_arr = [CC_arr[:,i] for i in range(CC_arr.shape[1])]
+	
+	CCK_arr = CCK_arr.flatten()
+	########## plot 24 bins signal vs noise ##############
+	figure()
+	errorbar(arange(24), CCK_arr,yerr=CCN_std, label='kSZ x CFHT')
+	errorbar(arange(24), CCN_mean,yerr=CCN_std,ls='--', label='kSZ x 500 sims')
+	legend(fontsize=12)
+	savefig(plot_dir+'kSZxCFHT24bins_20150104_%s.jpg'%(freq))
+	close()
+	########################################################
+	
+	#covI_arr = [mat(cov(CCN[i],rowvar=0)).I for i in range(4)]
+	CCN_swap = swapaxes(CCN,1,2)
+	CCN_conc = concatenate(CCN_swap,axis=0)
+	cov_inv = mat(cov(CCN_conc,rowvar=1)).I
+	SNR = sqrt(float(mat(CCK_arr)*cov_inv*mat(CCK_arr).T))
+	noise_SNR = sqrt(float(mat(CCN_mean)*cov_inv*mat(CCN_mean).T))
+	print freq, SNR, noise_SNR
+	
 if create_noise_KS:
 	#from emcee.utils import MPIPool
 	#p = MPIPool()

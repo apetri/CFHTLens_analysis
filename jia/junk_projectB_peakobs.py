@@ -414,10 +414,24 @@ def L_Lsun_VO(M):
 	return out
 L_Lsun_CM = lambda M: 4.4e11*(M/1e11)**4.0*(0.9+(M/1e11)**(3.85*0.1))**(-1.0/0.1)
 
+
+
 datagrid_VO = np.load(obsPK_dir+'Mhalo_interpolator_VO.npy')
 Minterp = interpolate.CloughTocher2DInterpolator(datagrid_VO[:,:2],datagrid_VO[:,2])
 Mminfun = lambda M, MAG_z, rminusz: L_Lsun_VO(M)-L_Lsun1(MAG_z, rminusz)
 
+############ prepare interpolation
+input_arr = array([[SDSSz, rminusz] for SDSSz in linspace(-26, -14, 201) for rminusz in linspace(-6, 8, 201)])
+
+output_arr = pad(input_arr,((0,0),(0,2)),mode='constant')
+for i in arange(len(input_arr)):	
+	MAG_z, rminusz = input_arr[i]
+	x = op.brentq(Mminfun, 1e9, 1e40, args=(MAG_z, rminusz))
+	fun = Mminfun(x, MAG_z, rminusz)
+	output_arr[i,2]=x
+	output_arr[i,3]=fun
+	print i, x, fun
+save(obsPK_dir+'Mhalo_interpolator_VO.npy', output_arr)
 def findM(MAG_z, rminusz):
 	try:
 		x = op.brentq(Mminfun, 1e9, 1e40, args=(MAG_z, rminusz))
@@ -726,16 +740,16 @@ def Mhalo_gen (Wx):
 	idx = where( (abs(r_SDSS)!=99)&(abs(z_SDSS)!=99) )[0]#rid of the mag=99 ones
 	SDSSr_rest = M_rest_fcn(r_SDSS[idx], z_arr[idx])
 	SDSSz_rest = M_rest_fcn(z_SDSS[idx], z_arr[idx])
-	#MAG_z_rest = M_rest_fcn(MAG_z[idx], z_arr[idx])
 	MAG_i_rest = M_rest_fcn(MAG_iy[idx], z_arr[idx])
 	rminusz = SDSSr_rest - SDSSz_rest
 	M_arr = Minterp(SDSSz_rest, rminusz)
+	print '#nan values',len(where(~isnan(M_arr))
 	M100 = M_arr[where(~isnan(M_arr))[0]]
 	idx_new = idx[where(~isnan(M_arr))[0]]
 	Mvir = M100/1.227
 	Rvir_arr = Rvir_fcn(Mvir, z_arr[idx_new])
 	DL_arr = DL_interp(z_arr[idx_new])	
-	new_cat = array([ra[idx_new], dec[idx_new], z_arr[idx_new], weight[idx_new], MAG_iy[idx_new], Mvir, Rvir_arr, DL_arr]).T
+	new_cat = array([ra[idx_new], dec[idx_new], z_arr[idx_new], weight[idx_new], MAG_i_rest[idx_new], Mvir, Rvir_arr, DL_arr]).T
 	save(obsPK_dir+'W%s_cat_z0213_ra_dec_redshift_weight_MAGi_Mvir_Rvir_DL.npy'%(Wx), new_cat)
 map(Mhalo_gen, range(1,5))
 
@@ -775,7 +789,7 @@ for Wx in range(1,5):
 	ix_arr = np.arange(0, lenths[Wx-1], 1e4)
 	allkappa = np.concatenate(map(ifile, ix_arr))
 	print allkappa.shape
-	np.save(obsPK_dir+'kappa_predict_W%i.py'%(Wx), allkappa)
+	np.save(obsPK_dir+'kappa_predict_Mmax2e15_W%i.npy'%(Wx), allkappa)
 	
 	
 if make_kappa_predict:
