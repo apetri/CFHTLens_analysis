@@ -15,14 +15,15 @@ mask =  WLanalysis.readFits('/home1/02977/jialiu/KSsim/mask/CFHT_mask_ngal5_sigm
 def createPDF(r):
 	print r
 	kappa = KSgen(r).T[0]
-	kmap, galn = WLanalysis.coords2grid(x, y, array([k,])
+	kmap, galn = WLanalysis.coords2grid(x, y, array([kappa,]))
 	kmap_smooth = WLanalysis.weighted_smooth(kmap, galn, sigmaG=1.0)
 	all_kappa = kmap_smooth[where(mask>0)]
 	all_kappa -= mean(all_kappa)
 	PDF = histogram(all_kappa, bins=edges)[0]
-	PDF /= float(len(all_kapp))
-	return PDF
+	PDF_normed = PDF/float(len(all_kappa))
+	return PDF_normed
 
 from emcee.utils import MPIPool
 pool = MPIPool()
 PDF_arr = pool.map(createPDF, arange(1,1001))
+np.save('/home1/02977/jialiu/KSsim/PDF_noiseless/PDF_noiseless_50bins_sf1.npy', PDF_arr)
