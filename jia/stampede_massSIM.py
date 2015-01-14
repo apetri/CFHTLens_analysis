@@ -84,8 +84,8 @@ yxewm_fcn = lambda i: WLanalysis.readFits(KS_dir+'yxewm_subfield%i_zcut0213.fit'
 ######### next 4 lines for 1 subfield only
 Mw = Mw_fcn(i)
 y, x, e1, e2, w, m = yxewm_fcn(i).T
-#mask_bad_arr = array([Mask_bad_fn(i, sigmaG) for sigmaG in sigmaG_arr])
-#mask_all_arr = array([Mask_all_fn(i, sigmaG) for sigmaG in sigmaG_arr])
+mask_bad_arr = array([Mask_bad_fn(i, sigmaG) for sigmaG in sigmaG_arr])
+mask_all_arr = array([Mask_all_fn(i, sigmaG) for sigmaG in sigmaG_arr])
 ######### next 2 lines are for 13 fields, also need to change lines inside the code
 #Mw_arr = map(Mw_fcn, i_arr) # Mw = w (1+m) in a grid
 #yxewm_arr = map(yxewm_fcn, i_arr)
@@ -223,9 +223,9 @@ pool = MPIPool()
 #pool.map(KSmap_massproduce, iRcosmo)
 
 ### (cov 1) this block is for covariance cosmology 
-cosmo='WL-only_cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800'
-iRcosmo = [[i, R, cosmo] for i in range(1,14)[::-1] for R in R_arr]# for cosmo in cosmo_arr]
-cosmo_arr = [cosmo,]
+#cosmo='WL-only_cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800'
+#iRcosmo = [[i, R, cosmo] for i in range(1,14)[::-1] for R in R_arr]# for cosmo in cosmo_arr]
+#cosmo_arr = [cosmo,]
 
 #######################################################
 #### (2) power spectrum for 0.5 smoothing scale only###
@@ -271,24 +271,24 @@ cosmo_arr = [cosmo,]
 ### !!!will only work if the previous step is done!!!
 ###############################################################
 
-for cosmo in cosmo_arr:
-	# power spectrum only has 0.5 arcmin
-	psAll_gen = lambda i: np.load(powspec_sum_sf_fn(cosmo, 0.5, i, 'ALL'))
-	psPass_gen = lambda i: np.load(powspec_sum_sf_fn(cosmo, 0.5, i, 'PASS'))
-	sum_ps_all = sum(array(map(psAll_gen, i_arr)), axis=0)
-	sum_ps_pass = sum(array(map(psPass_gen, i_arr)), axis=0)
-	save(powspec_sum_fn(cosmo, 0.5, 'ALL'), sum_ps_all)
-	save(powspec_sum_fn(cosmo, 0.5, 'PASS'), sum_ps_pass)
+#for cosmo in cosmo_arr:
+	## power spectrum only has 0.5 arcmin
+	#psAll_gen = lambda i: np.load(powspec_sum_sf_fn(cosmo, 0.5, i, 'ALL'))
+	#psPass_gen = lambda i: np.load(powspec_sum_sf_fn(cosmo, 0.5, i, 'PASS'))
+	#sum_ps_all = sum(array(map(psAll_gen, i_arr)), axis=0)
+	#sum_ps_pass = sum(array(map(psPass_gen, i_arr)), axis=0)
+	#save(powspec_sum_fn(cosmo, 0.5, 'ALL'), sum_ps_all)
+	#save(powspec_sum_fn(cosmo, 0.5, 'PASS'), sum_ps_pass)
 
-	for sigmaG in sigmaG_arr[1:-1]:
-		pkAll_gen = lambda i: np.load(peaks_sum_sf_fn(cosmo, sigmaG, i, 'ALL'))
-		pkPass_gen = lambda i: np.load(peaks_sum_sf_fn(cosmo, sigmaG, i, 'PASS'))
-		sum_pk_all = sum(array(map(pkAll_gen, i_arr)), axis=0)
-		sum_pk_pass = sum(array(map(pkPass_gen, i_arr)), axis=0)
-		save(peaks_sum_fn(cosmo, sigmaG, 'ALL'), sum_pk_all)
-		save(peaks_sum_fn(cosmo, sigmaG, 'PASS'), sum_pk_pass)
+	#for sigmaG in sigmaG_arr[1:-1]:
+		#pkAll_gen = lambda i: np.load(peaks_sum_sf_fn(cosmo, sigmaG, i, 'ALL'))
+		#pkPass_gen = lambda i: np.load(peaks_sum_sf_fn(cosmo, sigmaG, i, 'PASS'))
+		#sum_pk_all = sum(array(map(pkAll_gen, i_arr)), axis=0)
+		#sum_pk_pass = sum(array(map(pkPass_gen, i_arr)), axis=0)
+		#save(peaks_sum_fn(cosmo, sigmaG, 'ALL'), sum_pk_all)
+		#save(peaks_sum_fn(cosmo, sigmaG, 'PASS'), sum_pk_pass)
 
-print 'DONE SUM SUM SUM'
+#print 'DONE SUM SUM SUM'
 
 ################################################################
 ## (5)average over 1000 realizations ###########################
