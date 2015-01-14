@@ -229,12 +229,12 @@ cosmo_arr = [cosmo,]
 ######################################################
 ### (2) power spectrum for 0.5 smoothing scale only###
 ######################################################
-for i in range(6, 14):
+for i in range(2, 6):
 	for cosmo in cosmo_arr:
 		ps_all_fn = powspec_sum_sf_fn(cosmo, 0.5, i, 'ALL')
 		ps_pass_fn = powspec_sum_sf_fn(cosmo, 0.5, i, 'PASS')
 		if os.path.isfile(ps_all_fn)==False or os.path.isfile(ps_pass_fn)==False:
-			print 'ps',cosmo
+			print 'ps', i, cosmo
 			iRcosmoSigma = [[i, R, cosmo, 0.5] for R in R_arr]
 			ps_arr = array(pool.map(create_ps, iRcosmoSigma))
 			#ps_arr.shape = [1000, 2, 39]
@@ -253,7 +253,7 @@ for i in range(6, 14):
 			pk_all_fn = peaks_sum_sf_fn(cosmo, sigmaG, i, 'ALL')
 			pk_pass_fn = peaks_sum_sf_fn(cosmo, sigmaG, i, 'PASS')
 			if os.path.isfile(pk_all_fn)==False or os.path.isfile(pk_pass_fn)==False:
-				print 'pk',cosmo
+				print 'pk', i, cosmo
 				iRcosmoSigma = [[i, R, cosmo, sigmaG] for R in R_arr]
 				pk_arr = array(pool.map(create_pk, iRcosmoSigma))
 				#pk_arr.shape = [1000, 2, 25]
