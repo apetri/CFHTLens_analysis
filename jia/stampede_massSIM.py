@@ -84,8 +84,8 @@ yxewm_fcn = lambda i: WLanalysis.readFits(KS_dir+'yxewm_subfield%i_zcut0213.fit'
 ######### next 4 lines for 1 subfield only
 Mw = Mw_fcn(i)
 y, x, e1, e2, w, m = yxewm_fcn(i).T
-mask_bad_arr = array([Mask_bad_fn(i, sigmaG) for sigmaG in sigmaG_arr])
-mask_all_arr = array([Mask_all_fn(i, sigmaG) for sigmaG in sigmaG_arr])
+#mask_bad_arr = array([Mask_bad_fn(i, sigmaG) for sigmaG in sigmaG_arr])
+#mask_all_arr = array([Mask_all_fn(i, sigmaG) for sigmaG in sigmaG_arr])
 ######### next 2 lines are for 13 fields, also need to change lines inside the code
 #Mw_arr = map(Mw_fcn, i_arr) # Mw = w (1+m) in a grid
 #yxewm_arr = map(yxewm_fcn, i_arr)
@@ -202,7 +202,7 @@ def create_pk (iiRcosmoSigma):
 ###############################################################
 ######## operations ###########################################
 ###############################################################
-#pool = MPIPool()
+pool = MPIPool()
 
 ####### (0)test corrupted SIM file ###########
 #def test_corrupte (iRcosmo):
@@ -230,62 +230,65 @@ cosmo_arr = [cosmo,]
 #######################################################
 #### (2) power spectrum for 0.5 smoothing scale only###
 #######################################################
+for i in i_arr:
+	mask_bad_arr = array([Mask_bad_fn(i, sigmaG) for sigmaG in sigmaG_arr])
+	mask_all_arr = array([Mask_all_fn(i, sigmaG) for sigmaG in sigmaG_arr])
 
-#for cosmo in cosmo_arr:
-	#ps_all_fn = powspec_sum_sf_fn(cosmo, 0.5, i, 'ALL')
-	#ps_pass_fn = powspec_sum_sf_fn(cosmo, 0.5, i, 'PASS')
-	#if os.path.isfile(ps_all_fn)==False or os.path.isfile(ps_pass_fn)==False:
-		#print 'ps', i, cosmo
-		#iRcosmoSigma = [[i, R, cosmo, 0.5] for R in R_arr]
-		#ps_arr = array(pool.map(create_ps, iRcosmoSigma))
-		##ps_arr.shape = [1000, 2, 39]
-		#save(ps_all_fn, ps_arr[:,0,:])
-		#save(ps_pass_fn, ps_arr[:,1,:])
-	#else:
-		#print 'already exist - ps',cosmo
+	for cosmo in cosmo_arr:
+		ps_all_fn = powspec_sum_sf_fn(cosmo, 0.5, i, 'ALL')
+		ps_pass_fn = powspec_sum_sf_fn(cosmo, 0.5, i, 'PASS')
+		if os.path.isfile(ps_all_fn)==False or os.path.isfile(ps_pass_fn)==False:
+			print 'ps', i, cosmo
+			iRcosmoSigma = [[i, R, cosmo, 0.5] for R in R_arr]
+			ps_arr = array(pool.map(create_ps, iRcosmoSigma))
+			#ps_arr.shape = [1000, 2, 39]
+			save(ps_all_fn, ps_arr[:,0,:])
+			save(ps_pass_fn, ps_arr[:,1,:])
+		else:
+			print 'already exist - ps',cosmo
 
 
-#######################################################
-###### (3) peak counts for 4 smoothing ################
-#######################################################
+	######################################################
+	##### (3) peak counts for 4 smoothing ################
+	######################################################
 
-#for cosmo in cosmo_arr:	
-	#for sigmaG in sigmaG_arr[1:-1]:
-		#pk_all_fn = peaks_sum_sf_fn(cosmo, sigmaG, i, 'ALL')
-		#pk_pass_fn = peaks_sum_sf_fn(cosmo, sigmaG, i, 'PASS')
-		#if os.path.isfile(pk_all_fn)==False or os.path.isfile(pk_pass_fn)==False:
-			#print 'pk', i, cosmo
-			#iRcosmoSigma = [[i, R, cosmo, sigmaG] for R in R_arr]
-			#pk_arr = array(pool.map(create_pk, iRcosmoSigma))
-			##pk_arr.shape = [1000, 2, 25]
-			#save(pk_all_fn, pk_arr[:,0,:])
-			#save(pk_pass_fn, pk_arr[:,1,:])
-		#else:
-			#print 'already exist - pk',cosmo
+	for cosmo in cosmo_arr:	
+		for sigmaG in sigmaG_arr[1:-1]:
+			pk_all_fn = peaks_sum_sf_fn(cosmo, sigmaG, i, 'ALL')
+			pk_pass_fn = peaks_sum_sf_fn(cosmo, sigmaG, i, 'PASS')
+			if os.path.isfile(pk_all_fn)==False or os.path.isfile(pk_pass_fn)==False:
+				print 'pk', i, cosmo
+				iRcosmoSigma = [[i, R, cosmo, sigmaG] for R in R_arr]
+				pk_arr = array(pool.map(create_pk, iRcosmoSigma))
+				#pk_arr.shape = [1000, 2, 25]
+				save(pk_all_fn, pk_arr[:,0,:])
+				save(pk_pass_fn, pk_arr[:,1,:])
+			else:
+				print 'already exist - pk',cosmo
 
 ###############################################################
 ### (4)sum over 13 sf for peaks and powspectrum
 ### !!!will only work if the previous step is done!!!
 ###############################################################
 
-for cosmo in cosmo_arr:
-	# power spectrum only has 0.5 arcmin
-	psAll_gen = lambda i: np.load(powspec_sum_sf_fn(cosmo, 0.5, i, 'ALL'))
-	psPass_gen = lambda i: np.load(powspec_sum_sf_fn(cosmo, 0.5, i, 'PASS'))
-	sum_ps_all = sum(array(map(psAll_gen, i_arr)), axis=0)
-	sum_ps_pass = sum(array(map(psPass_gen, i_arr)), axis=0)
-	save(powspec_sum_fn(cosmo, 0.5, 'ALL'), sum_ps_all)
-	save(powspec_sum_fn(cosmo, 0.5, 'PASS'), sum_ps_pass)
+#for cosmo in cosmo_arr:
+	## power spectrum only has 0.5 arcmin
+	#psAll_gen = lambda i: np.load(powspec_sum_sf_fn(cosmo, 0.5, i, 'ALL'))
+	#psPass_gen = lambda i: np.load(powspec_sum_sf_fn(cosmo, 0.5, i, 'PASS'))
+	#sum_ps_all = sum(array(map(psAll_gen, i_arr)), axis=0)
+	#sum_ps_pass = sum(array(map(psPass_gen, i_arr)), axis=0)
+	#save(powspec_sum_fn(cosmo, 0.5, 'ALL'), sum_ps_all)
+	#save(powspec_sum_fn(cosmo, 0.5, 'PASS'), sum_ps_pass)
 
-	for sigmaG in sigmaG_arr[1:-1]:
-		pkAll_gen = lambda i: np.load(peaks_sum_sf_fn(cosmo, sigmaG, i, 'ALL'))
-		pkPass_gen = lambda i: np.load(peaks_sum_sf_fn(cosmo, sigmaG, i, 'PASS'))
-		sum_pk_all = sum(array(map(pkAll_gen, i_arr)), axis=0)
-		sum_pk_pass = sum(array(map(pkPass_gen, i_arr)), axis=0)
-		save(peaks_sum_fn(cosmo, sigmaG, 'ALL'), sum_pk_all)
-		save(peaks_sum_fn(cosmo, sigmaG, 'PASS'), sum_pk_pass)
+	#for sigmaG in sigmaG_arr[1:-1]:
+		#pkAll_gen = lambda i: np.load(peaks_sum_sf_fn(cosmo, sigmaG, i, 'ALL'))
+		#pkPass_gen = lambda i: np.load(peaks_sum_sf_fn(cosmo, sigmaG, i, 'PASS'))
+		#sum_pk_all = sum(array(map(pkAll_gen, i_arr)), axis=0)
+		#sum_pk_pass = sum(array(map(pkPass_gen, i_arr)), axis=0)
+		#save(peaks_sum_fn(cosmo, sigmaG, 'ALL'), sum_pk_all)
+		#save(peaks_sum_fn(cosmo, sigmaG, 'PASS'), sum_pk_pass)
 
-print 'DONE SUM SUM SUM'
+#print 'DONE SUM SUM SUM'
 
 ################################################################
 ## (5)average over 1000 realizations ###########################
