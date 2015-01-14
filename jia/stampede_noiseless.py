@@ -17,7 +17,8 @@ sim_dir = '/home1/02977/jialiu/cov_cat/'#'/home1/02977/jialiu/cat/'
 
 mask = WLanalysis.readFits(KS_dir+'mask/CFHT_mask_ngal5_sigma%02d_subfield%02d.fits'%(sigmaG*10, 1))
 #mask = WLanalysis.readFits(KS_dir+'mask/BAD_CFHT_mask_ngal5_sigma%02d_subfield%02d.fits'%(sigmaG*10, 1))
-kappaGen_1sim = lambda r: WLanalysis.readFits( sim_dir+'emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765/emulator_subfield1_WL-only_emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765_4096xy_%04dr.fit'%(r)).T#[0]
+kappaGen_1sim = lambda r: WLanalysis.readFits('/home1/02977/jialiu/cat/emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765/emulator_subfield1_WL-only_emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765_4096xy_%04dr.fit'%(r)).T#[0]
+
 kappaGen = lambda r: WLanalysis.readFits(sim_dir+'emulator_subfield1_WL-only_cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800_4096xy_%04dr.fit'%(r)).T
 
 #k, s1, s2
@@ -62,8 +63,9 @@ def kmapPk_1sim (r):
 pool = MPIPool()
 #ps_mat = pool.map(kmapPs, range(1,1001))
 #WLanalysis.writeFits(ps_mat,KS_dir+'ps_mat_sf1_fidu_shear_noiseless_mask.fit')
-pk_mat = pool.map(kmapPk, range(1,1001))
-np.save(KS_dir+'cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800/pk_sigmaG10_sf1_cov.npy',pk_mat)
+
+#pk_mat = pool.map(kmapPk, range(1,1001))
+#np.save(KS_dir+'cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800/pk_sigmaG10_sf1_cov.npy',pk_mat)
 
 pk_mat1sim = pool.map(kmapPk_1sim, range(1,1001))
 np.save(KS_dir+'cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800/pk_sigmaG10_sf1_1sim.npy',pk_mat1sim)
