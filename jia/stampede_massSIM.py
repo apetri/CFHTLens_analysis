@@ -225,7 +225,7 @@ pool = MPIPool()
 ### (cov 1) this block is for covariance cosmology 
 cosmo='WL-only_cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800'
 iRcosmo = [[i, R, cosmo] for i in range(1,14)[::-1] for R in R_arr]# for cosmo in cosmo_arr]
-
+cosmo_arr = [cosmo,]
 ######################################################
 ### (2) power spectrum for 0.5 smoothing scale only###
 ######################################################
