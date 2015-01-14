@@ -113,7 +113,7 @@ def inverse_sum (CC_arr, errK_arr):
 	'''
 	weightK = 1/errK_arr/sum(1/errK_arr, axis=0)
 	CCK = sum(CC_arr*weightK,axis=0)
-	errK = sum(errK_arr*weightK,axis=0)
+	errK = sum(errK_arr*weightK,axis=0)#/sqrt(4)
 	return CCK, errK
 
 centers = array([[34.5, -7.5], [134.5, -3.25],[214.5, 54.5],[ 332.75, 1.9]])
@@ -431,35 +431,8 @@ if cross_cov_mat:
 	#plotimshow(CCN_corr,'corr_%s'%(freq),vmin=None)
 	###############################
 
-if SNR24bins:
-	'''
-	Written on 2015/01/04, do not averge over 4 W fields, but rather do 24 bins instead, plot out the signal vs noise, where noise is the diagonal of cov mat.
-	'''
+
 	
-	CCN = array([load(CC_fcn(Wx, freq)+'.npy')/fmask2_arr[Wx-1] for Wx in range(1,5)])
-	CCN_mean = mean(CCN,axis=1).flatten()
-	CCN_std = std(CCN,axis=1).flatten()
-	CC_arr = array([KSxkSZ(Wx, freq=freq) for Wx in range(1,5)])
-	
-	CCK_arr, CCB_arr, CCO_arr, CCBMODE_arr, CCNSQ_arr, errK_arr, errB_arr, errO_arr, errBMODE_arr, errNSQ_arr, autoK_arr, autokSZ_arr, autoB_arr, autoBMODE_arr, autoO_arr, autoNSQ_arr, autoKerr_arr, autokSZerr_arr, autoBerr_arr, autoBMODEerr_arr, autoOerr_arr, autoNSQerr_arr = [CC_arr[:,i] for i in range(CC_arr.shape[1])]
-	
-	CCK_arr = CCK_arr.flatten()
-	########## plot 24 bins signal vs noise ##############
-	figure()
-	errorbar(arange(24), CCK_arr,yerr=CCN_std, label='kSZ x CFHT')
-	errorbar(arange(24), CCN_mean,yerr=CCN_std,ls='--', label='kSZ x 500 sims')
-	legend(fontsize=12)
-	savefig(plot_dir+'kSZxCFHT24bins_20150104_%s.jpg'%(freq))
-	close()
-	########################################################
-	
-	#covI_arr = [mat(cov(CCN[i],rowvar=0)).I for i in range(4)]
-	CCN_swap = swapaxes(CCN,1,2)
-	CCN_conc = concatenate(CCN_swap,axis=0)
-	cov_inv = mat(cov(CCN_conc,rowvar=1)).I
-	SNR = sqrt(float(mat(CCK_arr)*cov_inv*mat(CCK_arr).T))
-	noise_SNR = sqrt(float(mat(CCN_mean)*cov_inv*mat(CCN_mean).T))
-	print freq, SNR, noise_SNR
 	
 if create_noise_KS:
 	#from emcee.utils import MPIPool
@@ -489,7 +462,72 @@ if create_noise_KS:
 		CC_fn = CC_fcn(Wx, freq)
 		np.save(CC_fn, CC_arr)
 		#WLanalysis.writeFits(array(CC_arr), CC_fn)
-		
+
+if SNR24bins:
+	'''
+	Written on 2015/01/04, do not averge over 4 W fields, but rather do 24 bins instead, plot out the signal vs noise, where noise is the diagonal of cov mat.
+	'''
+	
+	CCN = array([load(CC_fcn(Wx, freq)+'.npy')/fmask2_arr[Wx-1] for Wx in range(1,5)])
+	CCN_mean = mean(CCN,axis=1).flatten()
+	CCN_std = std(CCN,axis=1).flatten()
+	
+	#CC_arr = array([KSxkSZ(Wx, freq=freq) for Wx in range(1,5)])
+	#CCK_arr, CCB_arr, CCO_arr, CCBMODE_arr, CCNSQ_arr, errK_arr, errB_arr, errO_arr, errBMODE_arr, errNSQ_arr, autoK_arr, autokSZ_arr, autoB_arr, autoBMODE_arr, autoO_arr, autoNSQ_arr, autoKerr_arr, autokSZerr_arr, autoBerr_arr, autoBMODEerr_arr, autoOerr_arr, autoNSQerr_arr = [CC_arr[:,i] for i in range(CC_arr.shape[1])]
+	
+	#CCK_arr = CCK_arr.flatten()	
+	###covI_arr = [mat(cov(CCN[i],rowvar=0)).I for i in range(4)]
+	CCN_swap = swapaxes(CCN,1,2)
+	CCN_conc = concatenate(CCN_swap,axis=0)
+	#cov_inv = mat(cov(CCN_conc,rowvar=1)).I
+	#SNR = sqrt(float(mat(CCK_arr)*cov_inv*mat(CCK_arr).T))
+	#noise_SNR = sqrt(float(mat(CCN_mean)*cov_inv*mat(CCN_mean).T))
+	#print freq, SNR, noise_SNR
+	
+	########### correlation matrix ######
+	X, Y = np.meshgrid(CCN_std,CCN_std)
+	cov_mat = cov(CCN_conc,rowvar=1)
+	corr_mat = cov_mat / (X*Y)
+	
+	#savetxt(plot_dir+'kSZxCFHT24bins_%s.txt'%(freq), array([CCK_arr, CCN_mean]).T,header='kSZxCFHT\tkSZx500sim')
+	savetxt(plot_dir+'kSZx500sim_24bins_covmat_%s.txt'%(freq), cov_mat)
+	
+	########## plot 24 bins signal vs noise ##############
+	# 1) 24 bins
+	#figure()
+	#errorbar(arange(24), CCK_arr,yerr=CCN_std, label='kSZ x CFHT')
+	#errorbar(arange(24), CCN_mean,yerr=CCN_std,ls='--', label='kSZ x 500 sims')
+	#legend(fontsize=12)
+	#savefig(plot_dir+'kSZxCFHT24bins_20150104_%s.jpg'%(freq))
+	#close()
+	########################################################
+	
+	############### plot  4x6 bins ################
+	#CCK_is, errK_is = inverse_sum(CCK_arr.reshape(4,6), CCN_std.reshape(4,6))
+	#CCN_is, errN_is = inverse_sum(CCN_mean.reshape(4,6), CCN_std.reshape(4,6))
+	#figure(figsize=(10,13))
+	#for i in range(4):
+		#subplot(3, 2, i+1)
+		#errorbar(ell_arr, CCK_arr[i*6:(i+1)*6],yerr=CCN_std[i*6:(i+1)*6],ls='-', label='kSZ x CFHT (W%i)'%(i+1))
+		#if i == 0:
+			#title(freq)
+		#errorbar(ell_arr, CCN_mean[i*6:(i+1)*6],yerr=CCN_std[i*6:(i+1)*6],ls='--', label='kSZ x 500 sims')
+		#legend(fontsize=10,loc=0)
+		#ylim(-0.15, 0.3)
+	#subplot(3, 2, 5)
+	#errorbar(ell_arr, CCK_is, errK_is/2.0, label = 'kSZ x CFHT (sum)')
+	#errorbar(ell_arr, CCN_is, errK_is/2.0, ls='--',label = 'kSZ x 500 sim (sum)')
+	#legend(fontsize=10,loc=0)
+	#ylim(-0.15, 0.3)
+	#subplot(3, 2, 6)
+	#imshow(corr_mat,origin='lower',interpolation='nearest')
+	#colorbar()
+	##title('Correlation Matrix %s'%(freq))
+	##savefig(plot_dir+'corr_mat_24bins_%s.jpg'%(freq))
+	#savefig(plot_dir+'kSZxCFHT24bins_4x6_corr_%s.jpg'%(freq))
+	#close()
+	
+	
 if powspec_without_ells_factor:
 	Wx = 1
 	
