@@ -124,17 +124,17 @@ def plot_heat_map_w (values):
 	w, idx, interp_cosmo, cov_inv, ps_CFHT = values
 	fn = test_dir+'test/chisqcube_SIGMA_%s_w%s.npy'%(fn_arr[nn], w)
 	#fn = test_dir+'test/chisqcube_%s_w%s.npy'%(fn_arr[nn], w)
-	#if os.path.isfile(fn) == False:
-	print 'w=',w 
-	heatmap = zeros(shape=(l,ll))
-	for i in range(l):
-		for j in range(ll):
-			best_fit = (om_arr[i], w, si8_arr[j])
-			ps_interp = interp_cosmo(best_fit)
-			del_N = np.mat(ps_interp - ps_CFHT)
-			chisq = float(del_N*cov_inv*del_N.T)
-			heatmap[i,j] = chisq
-		save(fn, heatmap)
+	if os.path.isfile(fn) == False:
+		print 'w=',w 
+		heatmap = zeros(shape=(l,ll))
+		for i in range(l):
+			for j in range(ll):
+				best_fit = (om_arr[i], w, si8_arr[j])
+				ps_interp = interp_cosmo(best_fit)
+				del_N = np.mat(ps_interp - ps_CFHT)
+				chisq = float(del_N*cov_inv*del_N.T)
+				heatmap[i,j] = chisq
+			save(fn, heatmap)
 	#else:
 		#print 'w=', w, 'done'
 	#return heatmap
