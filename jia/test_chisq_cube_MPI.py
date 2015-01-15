@@ -35,7 +35,7 @@ if nn==0:
 elif nn==1:
 	alpha = 0.6#2pk
 elif nn==8:
-	elpha = 0.64#ps
+	alpha = 0.64#ps
 s=(im/0.27)**alpha*s
 
 
