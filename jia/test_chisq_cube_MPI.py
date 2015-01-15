@@ -9,17 +9,16 @@ import os
 import WLanalysis
 import sys
 
-#comment out if use on laptop
+########## comment out if use on laptop
 from emcee.utils import MPIPool
 nn = int(sys.argv[1])#range from 0 to 10 for idx_arr
 print nn # nn=0 (2pk+ps), 1 (2pk), 8 (ps, pass & ell cut)
-
+test_dir = '/home1/02977/jialiu/chisq_cube/'
+#test_dir = '/Users/jia/Documents/weaklensing/CFHTLenS/emulator/test_ps_bug/'
 
 fsky_all = 10.010646820070001
 fsky_pass= 7.6645622253410002
 
-test_dir = '/home1/02977/jialiu/chisq_cube/'
-#test_dir = '/Users/jia/Documents/weaklensing/CFHTLenS/emulator/test_ps_bug/'
 cosmo_params = genfromtxt(test_dir+'cosmo_params.txt')
 im, iw, s = cosmo_params.T
 
@@ -28,7 +27,7 @@ l,ll =  100,102
 om_arr = linspace(0,1.2,l)
 
 # for SIGMA8, change params to [om, w, SIGMA]
-# si8_arr = linspace(0,1.6,ll)#original
+#si8_arr = linspace(0,1.6,ll)#original
 si8_arr = linspace(0.4, 1.2, ll)
 if nn==0:
 	alpha = 0.63#ps+2pk
@@ -85,7 +84,35 @@ idx_ps_cut = idx_psPass[:-2]
 idx_arr = [idx_full, idx_pk2, idx_pk10, idx_pk18, idx_pk35, idx_pk53, idx_psPass, idx_psAll, idx_psPass7000, idx_psAll7000, idx_pk10PASS, idx_ps_cut]
 fn_arr = ['idx_psPass7000_pk2smoothing', 'pk2smoothing', 'pk10', 'pk18', 'pk35', 'pk53', 'psPass', 'psAll', 'psPass7000', 'psAll7000','idx_pk10PASS', 'idx_ps_cut']
 
-def return_interp_cosmo_for_idx (idx, alpha = 0):
+def return_interp_cosmo_for_idx (idx):
+	ps_CFHT_test = ps_CFHT0[idx]
+	idx = idx[where(ps_CFHT_test>0)[0]]#rid of zero bins
+	
+	ps_CFHT = ps_CFHT0[idx]
+	ps_fidu_mat = ps_fidu_mat0[:,idx]
+	ps_avg = ps_avg0[:,idx]
+	cov_mat = cov(ps_fidu_mat,rowvar=0)
+	cov_inv = mat(cov_mat).I
+
+	spline_interps = list()
+	for ibin in range(ps_avg.shape[-1]):
+		ps_model = ps_avg[:,ibin]
+		iinterp = interpolate.Rbf(im, iw, s, ps_model)
+		spline_interps.append(iinterp)
+
+	def interp_cosmo (params, method = 'multiquadric'):
+		'''Interpolate the powspec for certain param.
+		Params: list of 3 parameters = (om, w, si8)
+		Method: "multiquadric" for spline (default), and "GP" for Gaussian process.
+		'''
+		im, wm, sm = params
+		gen_ps = lambda ibin: spline_interps[ibin](im, wm, sm)
+		ps_interp = array(map(gen_ps, range(ps_avg.shape[-1])))
+		ps_interp = ps_interp.reshape(-1,1).squeeze()
+		return ps_interp
+	return interp_cosmo, cov_mat, cov_inv, ps_CFHT
+
+def return_interp_cosmo_for_idx_junk (idx, alpha = 0):
 	ps_CFHT_test = ps_CFHT0[idx]
 	idx = idx[where(ps_CFHT_test>0)[0]]#rid of zero bins
 	
@@ -138,6 +165,21 @@ def plot_heat_map_w (values):
 	#else:
 		#print 'w=', w, 'done'
 	#return heatmap
+	
+#####################01/15/2014 ############
+#### referee continued, get cube for Sigma8
+############################################
+pool=MPIPool()
+idx = idx_arr[nn]
+interp_cosmo, cov_mat, cov_inv, ps_CFHT = return_interp_cosmo_for_idx (idx)
+values = [[w, idx, interp_cosmo, cov_inv, ps_CFHT] for w in w_arr]
+
+pool.map(plot_heat_map_w, values)
+
+cube = array([load('/home1/02977/jialiu/chisq_cube/test/chisqcube_SIGMA_%s_w%s.npy'%(fn_arr[nn], w)) for w in w_arr])
+
+save(test_dir+'covmat_%s_SIGMA.npy'%(fn_arr[nn]), cov_mat)
+save(test_dir+'chisqcube_%s_SIGMA.npy'%(fn_arr[nn]), cube)
 
 #####################01/15/2014 ############
 #### referee report tests ##################
@@ -183,19 +225,6 @@ def plot_heat_map_w (values):
 #xlabel(r'$\rm{\Omega_m}$',fontsize=20)
 #ylabel(r'$\rm{\sigma_8}$',fontsize=20)
 #show()
-
-#### referee continued, get cube for Sigma8
-pool=MPIPool()
-idx = idx_arr[nn]
-interp_cosmo, cov_mat, cov_inv, ps_CFHT = return_interp_cosmo_for_idx (idx)
-values = [[w, idx, interp_cosmo, cov_inv, ps_CFHT] for w in w_arr]
-
-pool.map(plot_heat_map_w, values)
-
-cube = array([load('/home1/02977/jialiu/chisq_cube/test/chisqcube_SIGMA_%s_w%s.npy'%(fn_arr[nn], w)) for w in w_arr])
-
-save(test_dir+'covmat_%s_SIGMA.npy'%(fn_arr[nn]), cov_mat)
-save(test_dir+'chisqcube_%s_SIMGA.npy'%(fn_arr[nn]), cube)
 
 #####################12/25/2014 ############
 #### test alpha as function of SNR cut #####

@@ -32,7 +32,7 @@ interp_2D_plane = 0
 good_bad_peaks = 0
 sample_interpolation = 0
 sample_points = 0
-SIGMA_contour = 0
+SIGMA_contour = 1
 
 ########### constants ####################
 l=100
@@ -44,7 +44,7 @@ om_arr = linspace(0,1.2,l)[om0:om1]
 si8_arr = linspace(0,1.6,ll)[si80:si81]
 w_arr = linspace(0,-3,101)#[w0:w1]
 sigmaG_arr = [1.0, 1.8, 3.5, 5.3]
-fn_arr = ['idx_psPass7000_pk2smoothing', 'pk2smoothing', 'pk10', 'pk18', 'pk35', 'pk53', 'psPass', 'psAll', 'psPass7000', 'psAll7000']
+fn_arr = ['idx_psPass7000_pk2smoothing', 'pk2smoothing', 'pk10', 'pk18', 'pk35', 'pk53', 'psPass', 'psAll', 'psPass7000', 'psAll7000', 'idx_psPass7000_pk2smoothing_SIMGA', 'pk2smoothing_SIMGA', 'psPass7000_SIMGA']
 
 cube_arr = array([load(test_dir+'chisqcube_%s.npy'%(fn)) for fn in fn_arr])
 
@@ -55,11 +55,12 @@ lws = (4,4,2,2,4,4,2,2,4,4,2,2)
 
 ############################################
 
-def cube2P(chisq_cube, axis=0):#aixs 0-w, 1-om, 2-si8
-	if axis==0:
-		chisq_cube = chisq_cube[w0:w1,om0:om1,si80:si81]
-	else:
-		chisq_cube = chisq_cube[:,om0:om1,si80:si81]
+def cube2P(chisq_cube, axis=0, nocut = 0):#aixs 0-w, 1-om, 2-si8
+	if nocut==0:	
+		if axis==0:
+			chisq_cube = chisq_cube[w0:w1,om0:om1,si80:si81]
+		else:
+			chisq_cube = chisq_cube[:,om0:om1,si80:si81]
 	P = sum(exp(-chisq_cube/2),axis=axis)
 	P /= sum(P)
 	return P
@@ -203,8 +204,46 @@ if good_bad_powspec:
 	ax.set_ylim(1e-5, 1e-2)
 	savefig(fn)	
 	close()
-	
+
 if SIGMA_contour:
+	#cube_ps, cube_pk, cube_pspk = cube_arr[-3:]
+	Pcomb, Ppk, Pps = [cube2P(cube, nocut=1) for cube in cube_arr[-3:]]
+	
+	Pps_marg = sum(Pps, axis=0)/sum(Pps)
+	Ppk_marg = sum(Ppk, axis=0)/sum(Ppk)	
+	Pcomb_marg = sum(Pcomb, axis=0)/sum(Pcomb)
+	S_arr = linspace(0.4, 1.2, ll)
+	def findlevel1D (prob, xvalues):
+		idx = argmax(prob)
+		bestfit = xvalues[idx]
+		sortprob = sort(prob)[::-1]
+		tolprob = cumsum(sortprob)
+		idx = where(abs(tolprob-0.68) == sort(abs(tolprob-0.68))[0])
+		val = sortprob[idx]
+		left,right=xvalues[where(prob>val)][[0,-1]]-bestfit
+		print 'bestfit, left, right', bestfit, left, right
+		return bestfit, left, right
+
+	findlevel1D(Pps_marg, S_arr)
+	findlevel1D(Ppk_marg, S_arr)
+	findlevel1D(Pcomb_marg, S_arr)
+	
+	f = figure(figsize=(8,6))
+	ax=f.add_subplot(111)
+	ax.plot(S_arr, Pps_marg,'g--', label=r'$\rm{power\,spectrum}\,(\alpha=0.64)$',linewidth=2)
+	ax.plot(S_arr, Ppk_marg,'m-',label=r'$\rm{peaks}\,(\alpha=0.60)$',linewidth=1)
+	ax.plot(S_arr, Pcomb_marg, 'k-',label=r'$\rm{power\, spectrum + peaks}\,(\alpha=0.63)$',linewidth=2)
+	leg=ax.legend(ncol=1, labelspacing=0.3, prop={'size':16},loc=0)
+	leg.get_frame().set_visible(False)
+	ax.set_xlabel(r'$\rm{\Sigma_8=\sigma_8(\Omega_m/0.27)^\alpha}$',fontsize=20)
+	ax.set_ylabel(r'$\rm{Probability}$',fontsize=20)
+	ax.set_xlim(0.5, 1.2)
+	ax.set_ylim(0.0, 0.05)
+	savefig(plot_dir+'SIGMA_marg_prob.pdf')
+	close()
+
+SIGMA_contour_junk = 0
+if SIGMA_contour_junk:
 	# quote delta Sigma = simga_8*(omega_m/0.26)^0.6
 	# steps: 
 	# 1) find alpha
