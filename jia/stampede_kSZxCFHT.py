@@ -32,7 +32,7 @@ edgesGen = lambda Wx: linspace(5,75,7)*sizes[Wx-1]/1330.0
 maskGen = lambda Wx: np.load(kSZ_dir+'mask/W%i_mask.npy'%(Wx))
 nosqkSZmapGen = lambda Wx: np.load(kSZ_dir+'Planck/LGMCA_W%s_flipper8192_kSZfilt_NOTsquared_toJia.npy'%(i))
 
-kSZmapGen = nosqkSZmapGen(Wx)**2
+kSZmapGen = lambda Wx: nosqkSZmapGen(Wx)**2
 
 bmapGen = lambda Wx, iseed: np.load( kSZ_dir+'CFHT/Noise/W%i_Noise_sigmaG10_%04d.npy'%(Wx, iseed))
 
