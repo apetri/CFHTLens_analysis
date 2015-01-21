@@ -19,7 +19,7 @@ kSZ_dir = '/home1/02977/jialiu/kSZ/'
 freq = 'dusty'
 
 create_noise_KS = 0
-cross_correlate_kSZ_noise = 0
+cross_correlate_kSZ_noise = 1
 
 #####################################################
 ###################### constants ####################
