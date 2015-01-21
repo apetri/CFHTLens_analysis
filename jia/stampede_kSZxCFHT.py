@@ -30,7 +30,7 @@ PPA512=2.4633625
 edgesGen = lambda Wx: linspace(5,75,7)*sizes[Wx-1]/1330.0
 
 maskGen = lambda Wx: np.load(kSZ_dir+'mask/W%i_mask.npy'%(Wx))
-nosqkSZmapGen = lambda Wx: np.load(kSZ_dir+'Planck/LGMCA_W%s_flipper8192_kSZfilt_NOTsquared_toJia.npy'%(i))
+nosqkSZmapGen = lambda Wx: np.load(kSZ_dir+'Planck/LGMCA_W%s_flipper8192_kSZfilt_NOTsquared_toJia.npy'%(Wx))
 
 kSZmapGen = lambda Wx: nosqkSZmapGen(Wx)**2
 
