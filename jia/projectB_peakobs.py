@@ -51,17 +51,15 @@ M_sun = 1.989e33#gram
 ############################################
 
 ########### generate maps ##################
-
 maskGen = lambda Wx, zcut, sigmaG: load(obsPK_dir+'maps/Mask_W%s_%s_sigmaG%02d.npy'%(Wx,zcut,sigmaG*10))
 
 kmapGen = lambda Wx, zcut, sigmaG: WLanalysis.readFits('/Users/jia/CFHTLenS/obsPK/maps/W%i_KS_%s_hi_sigmaG%02d.fit'%(Wx,zcut,sigmaG*10))*maskGen(Wx, zcut, sigmaG)
-
 
 bmodeGen = lambda Wx, zcut, sigmaG: WLanalysis.readFits('/Users/jia/CFHTLenS/obsPK/maps/W%i_Bmode_%s_sigmaG%02d.fit'%(Wx, zcut, sigmaG))*maskGen(Wx, zcut, sigmaG)
 
 cat_gen = lambda Wx: np.load(obsPK_dir+'W%s_cat_z0213_ra_dec_redshift_weight_MAGi_Mvir_Rvir_DL.npy'%(Wx))
 #columns: ra, dec, redshift, weight, i, Mhalo, Rvir, DL
-	
+
 
 ########## cosmologies #######################
 # growth factor
@@ -75,12 +73,14 @@ DL_interp = interpolate.interp1d(z_arr, DL_arr)
 # find the rest magnitude at the galaxy, from observed magnitude cut
 M_rest_fcn = lambda M_obs, z: M_obs - 5.0*log10(DL_interp(z)) - 25.0
 
-
 ##################### MAG_z to M100 ##########
 datagrid_VO = np.load(obsPK_dir+'Mhalo_interpolator_VO.npy')#Mag_z, r-z, M100, residual
 Minterp = interpolate.CloughTocher2DInterpolator(datagrid_VO[:,:2],datagrid_VO[:,2])
 #usage: Minterp(MAGz_arr, r-z_arr)
 
+rho_cz = lambda z: rho_c0*(OmegaM*(1+z)**3+(1-OmegaM))#critical density
+Rvir_fcn = lambda M, z: (M*M_sun/(4.0/3.0*pi*200*rho_cz(z)))**0.3333
+rad2arcmin = lambda distance: degrees(distance)*60.0
 
 def PeakPos (Wx, z_lo=0.6, z_hi='0.6_lo',noise=False, Bmode=False):
 	'''For a map(kappa or bmode), find peaks, and its(RA, DEC)
@@ -114,10 +114,6 @@ def PeakPos (Wx, z_lo=0.6, z_hi='0.6_lo',noise=False, Bmode=False):
 	
 
 ################## kappa projection 2014/12/14 ##############
-rho_cz = lambda z: rho_c0*(OmegaM*(1+z)**3+(1-OmegaM))#critical density
-Rvir_fcn = lambda M, z: (M*M_sun/(4.0/3.0*pi*200*rho_cz(z)))**0.3333
-rad2arcmin = lambda distance: degrees(distance)*60.0
-
 
 def Gx_fcn (x, cNFW=5.0):
 	if x < 1:
@@ -205,6 +201,9 @@ if make_kappa_predict:
 	pool.map(temp, ix_arr)
 
 
+#########################################################
+####################### plotting ########################
+#########################################################
 #kproj = np.load(obsPK_dir+'maps/kmap_W1_predict_sigmaG35.npy')
 #kmap = WLanalysis.readFits(obsPK_dir+'maps/W1_KS_1.3_lo_sigmaG89.fit')
 #kproj_peak_mat = WLanalysis.peaks_mat(kproj)

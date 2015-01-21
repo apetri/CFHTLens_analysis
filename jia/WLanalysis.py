@@ -628,3 +628,15 @@ def findlevel (H):
 	v99 = float(H.flat[idx[idx99]])
 	V = [v68, v95, v99]
 	return V
+
+def update_values_by_RaDec (new_ra, new_dec, master_ra, master_dec):
+	'''For a list of [new_ra, new_dec], find index in [master_ra, master_dec].
+	requires all values in master are unique, and new ra dec all in master list.
+	'''
+	RADEC = master_ra+1.0j*master_dec
+	iradec = new_ra+1.0j*new_dec
+	idx = where(in1d(RADEC, iradec)==True)[0]
+	iRADEC = RADEC[idx]
+	unique_iradec, idx_inverse = unique(iradec, return_inverse=True)
+	newidx = idx[argsort(iRADEC)][idx_inverse]
+	return newidx

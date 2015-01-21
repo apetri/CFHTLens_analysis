@@ -27,15 +27,15 @@ l,ll =  100,102
 om_arr = linspace(0,1.2,l)
 
 # for SIGMA8, change params to [om, w, SIGMA]
-#si8_arr = linspace(0,1.6,ll)#original
-si8_arr = linspace(0.4, 1.2, ll)
-if nn==0:
-	alpha = 0.63#ps+2pk
-elif nn==1:
-	alpha = 0.6#2pk
-elif nn==8:
-	alpha = 0.64#ps
-s=(im/0.27)**alpha*s
+si8_arr = linspace(0,1.6,ll)#original
+#si8_arr = linspace(0.4, 1.2, ll)
+#if nn==0:
+	#alpha = 0.63#ps+2pk
+#elif nn==1:
+	#alpha = 0.6#2pk
+#elif nn==8:
+	#alpha = 0.64#ps
+#s=(im/0.27)**alpha*s
 
 
 ps_CFHT0 = concatenate(array([np.load(test_dir+fn) for fn in ('PASS_ps_CFHT.npy', 'ALL_pk_CFHT_sigmaG10.npy', 'ALL_pk_CFHT_sigmaG18.npy', 'ALL_pk_CFHT_sigmaG35.npy', 'ALL_pk_CFHT_sigmaG53.npy', 'ALL_ps_CFHT.npy','PASS_pk_CFHT_sigmaG10.npy')]),axis=-1)
@@ -105,43 +105,8 @@ def return_interp_cosmo_for_idx (idx):
 		Params: list of 3 parameters = (om, w, si8)
 		Method: "multiquadric" for spline (default), and "GP" for Gaussian process.
 		'''
-		im, wm, sm = params
-		gen_ps = lambda ibin: spline_interps[ibin](im, wm, sm)
-		ps_interp = array(map(gen_ps, range(ps_avg.shape[-1])))
-		ps_interp = ps_interp.reshape(-1,1).squeeze()
-		return ps_interp
-	return interp_cosmo, cov_mat, cov_inv, ps_CFHT
-
-def return_interp_cosmo_for_idx_junk (idx, alpha = 0):
-	ps_CFHT_test = ps_CFHT0[idx]
-	idx = idx[where(ps_CFHT_test>0)[0]]#rid of zero bins
-	
-	ps_CFHT = ps_CFHT0[idx]
-	ps_fidu_mat = ps_fidu_mat0[:,idx]
-	ps_avg = ps_avg0[:,idx]
-	cov_mat = cov(ps_fidu_mat,rowvar=0)
-	cov_inv = mat(cov_mat).I
-
-	spline_interps = list()
-	for ibin in range(ps_avg.shape[-1]):
-		ps_model = ps_avg[:,ibin]
-		if alpha:#for Sigma8 compute
-			iinterp = interpolate.Rbf((im/0.27)**alpha*s, iw, ps_model)
-		else:
-			iinterp = interpolate.Rbf(im, iw, s, ps_model)
-		spline_interps.append(iinterp)
-
-	def interp_cosmo (params, method = 'multiquadric',alpha = alpha):
-		'''Interpolate the powspec for certain param.
-		Params: list of 3 parameters = (om, w, si8)
-		Method: "multiquadric" for spline (default), and "GP" for Gaussian process.
-		'''
-		if alpha:
-			ss, wm = params
-			gen_ps = lambda ibin: spline_interps[ibin](ss, wm)
-		else:
-			im, wm, sm = params
-			gen_ps = lambda ibin: spline_interps[ibin](im, wm, sm)
+		mm, wm, sm = params
+		gen_ps = lambda ibin: spline_interps[ibin](mm, wm, sm)
 		ps_interp = array(map(gen_ps, range(ps_avg.shape[-1])))
 		ps_interp = ps_interp.reshape(-1,1).squeeze()
 		return ps_interp
@@ -149,23 +114,32 @@ def return_interp_cosmo_for_idx_junk (idx, alpha = 0):
 
 def plot_heat_map_w (values):
 	w, idx, interp_cosmo, cov_inv, ps_CFHT = values
-	fn = test_dir+'test/chisqcube_SIGMA_%s_w%s.npy'%(fn_arr[nn], w)
+	#fn = test_dir+'test/chisqcube_SIGMA_%s_w%s.npy'%(fn_arr[nn], w)
 	#fn = test_dir+'test/chisqcube_%s_w%s.npy'%(fn_arr[nn], w)
-	if os.path.isfile(fn) == False:
-		print 'w=',w 
-		heatmap = zeros(shape=(l,ll))
-		for i in range(l):
-			for j in range(ll):
-				best_fit = (om_arr[i], w, si8_arr[j])
-				ps_interp = interp_cosmo(best_fit)
-				del_N = np.mat(ps_interp - ps_CFHT)
-				chisq = float(del_N*cov_inv*del_N.T)
-				heatmap[i,j] = chisq
-			save(fn, heatmap)
+	#if os.path.isfile(fn) == False:
+	print 'w=',w 
+	heatmap = zeros(shape=(l,ll))
+	for i in range(l):
+		for j in range(ll):
+			best_fit = (om_arr[i], w, si8_arr[j])
+			ps_interp = interp_cosmo(best_fit)
+			del_N = np.mat(ps_interp - ps_CFHT)
+			chisq = float(del_N*cov_inv*del_N.T)
+			heatmap[i,j] = chisq
+		#save(fn, heatmap)
 	#else:
 		#print 'w=', w, 'done'
-	#return heatmap
-	
+	return heatmap
+
+#cov_mat = cov(ps_fidu_mat0[:,arange(10,100)],rowvar=0)
+#X, Y = np.meshgrid(sqrt(diag(cov_mat)), sqrt(diag(cov_mat)))
+
+#imshow(cov_mat / (X*Y), origin='lower', interpolation='nearest',vmin=-0.25,vmax=0.3,extent=(1,90,1,90))
+#colorbar()
+##xlabel(r'${\rm i}$',fontsize=20)
+##ylabel(r'${\rm j}$',fontsize=20)
+#savefig('/Users/jia/Documents/weaklensing/CFHTLenS/paper_all/CFHTpaper/CorrCoeff.pdf')
+#close()
 #####################01/15/2014 ############
 #### referee continued, get cube for Sigma8
 ############################################
@@ -173,6 +147,7 @@ def plot_heat_map_w (values):
 #idx = idx_arr[nn]
 #interp_cosmo, cov_mat, cov_inv, ps_CFHT = return_interp_cosmo_for_idx (idx)
 #values = [[w, idx, interp_cosmo, cov_inv, ps_CFHT] for w in w_arr]
+
 
 #pool.map(plot_heat_map_w, values)
 
@@ -199,8 +174,8 @@ def plot_heat_map_w (values):
 #P_pk10PAS, V_pk10PAS = idx2P (idx_pk10PASS)
 
 ## 2) ell cut at 2e5
-#P_psPASS, V_psPASS = idx2P (idx_psPass)
-#P_psCut,  V_psCut = idx2P (idx_ps_cut)
+##P_psPASS, V_psPASS = idx2P (idx_psPass)
+##P_psCut,  V_psCut = idx2P (idx_ps_cut)
 
 #X, Y = np.meshgrid(om_arr, si8_arr)
 
@@ -208,20 +183,22 @@ def plot_heat_map_w (values):
 #ax=f.add_subplot(111)
 #lines=[]
 ############# peaks
-##CS=ax.contour(X, Y, P_pk10ALL.T, levels=V_pk10ALL[:-1], origin='lower', colors='r')
-##lines.append(CS.collections[0])
-##CS=ax.contour(X, Y, P_pk10PAS.T, levels=V_pk10PAS[:-1], origin='lower', colors='b')
-##lines.append(CS.collections[0])
-##labels=('peaks 1 arcmin (all)', 'peaks 1 arcmin (pass)')
+#CS=ax.contour(X, Y, P_pk10ALL.T, levels=V_pk10ALL[:-1], origin='lower', colors='r')
+#lines.append(CS.collections[0])
+#CS=ax.contour(X, Y, P_pk10PAS.T, levels=V_pk10PAS[:-1], origin='lower', colors='b')
+#lines.append(CS.collections[0])
+#labels=('peaks 1 arcmin (all)', 'peaks 1 arcmin (pass)')
 ############# power spectrum
-#CS=ax.contour(X, Y, P_psPASS.T, levels=V_psPASS[:-1], origin='lower', colors='r')
-#lines.append(CS.collections[0])
-#CS=ax.contour(X, Y, P_psCut.T, levels=V_psCut[:-1], origin='lower', colors='b')
-#lines.append(CS.collections[0])
-#labels=('all ell', 'ell < 20193')
+##CS=ax.contour(X, Y, P_psPASS.T, levels=V_psPASS[:-1], origin='lower', colors='r')
+##lines.append(CS.collections[0])
+##CS=ax.contour(X, Y, P_psCut.T, levels=V_psCut[:-1], origin='lower', colors='b')
+##lines.append(CS.collections[0])
+##labels=('all ell', 'ell < 20193')
 
 #leg=ax.legend(lines, labels, ncol=1, labelspacing=0.3, prop={'size':20},loc=0)
 #leg.get_frame().set_visible(False)
+#xlim(0,0.8)
+#ylim(0.3,1.3)
 #xlabel(r'$\rm{\Omega_m}$',fontsize=20)
 #ylabel(r'$\rm{\sigma_8}$',fontsize=20)
 #show()

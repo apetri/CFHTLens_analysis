@@ -55,6 +55,8 @@ if update_weight:
 			new_fn = obsPK_dir+'peaks_IDraDecZ_MAGrziMhalo_dist_weight_zcut%s_R%s_noise%s.npy'%(z_lo, R, noise)
 			save(new_fn, new_temp_arr)
 
+
+
 if update_mag_all:
 	## 12/08/2014, code to: 
 	## (1) replace Mag_i = -99 items with Mag_y values
@@ -859,4 +861,31 @@ for Wx in arange(1,5):
 	A, galn = WLanalysis.coords2grid(x, y, array([k*weight, weight]), size=isize)
 	Mkw, Mw = A
 	np.save('/Users/jia/CFHTLenS/catalogue/Me_Mw_galn/W%i_Mkw_pred.npy'%(Wx), Mkw)
-	np.save('/Users/jia/CFHTLenS/catalogue/Me_Mw_galn/W%i_Mw_pred.npy'%(Wx), Mw)	
+	np.save('/Users/jia/CFHTLenS/catalogue/Me_Mw_galn/W%i_Mw_pred.npy'%(Wx), Mw)
+	
+#############################################################
+####### update Mvir using abs magnitude 2015/01/21###########
+#############################################################
+cat_gen_old2 = lambda Wx: np.load(obsPK_dir+'old/W%s_cat_z0213_ra_dec_redshift_weight_MAGi_Mvir_Rvir_DL.npy'%(Wx))
+RA, DEC, LP_Mr, LP_Mi, LP_Mz = load(obsPK_dir+'CFHTLens_2015-01-21T18-39-34.npy')[1:].T
+def Mhalo_gen (Wx):
+	'''after I found abs. magnitudes are already available from CFHT catalogue,
+	this code updates the halo mass using those values'''
+	print Wx
+	ra, dec, redshift, weight, i, Mhalo, Rvir, DL = cat_gen_old2(Wx).T	
+	idx_match = WLanalysis.update_values_by_RaDec(ra, dec, RA, DEC)
+	Mr, Mi, Mz = LP_Mr[idx_match], LP_Mi[idx_match], LP_Mz[idx_match]
+	rminusz = Mr - Mz
+	M_arr = Minterp(Mz, rminusz)
+	M_arr[Mr<-30]=nan
+	M_arr[Mz<-30]=nan
+	idx_new = where(~isnan(M_arr))[0]
+	#print '#nan values',len(where(~isnan(M_arr))
+	#M100 = M_arr[where(~isnan(M_arr))[0]]
+	#idx_new = idx[where(~isnan(M_arr))[0]]
+	Mvir = M_arr/1.227
+	Rvir_arr = Rvir_fcn(Mvir, redshift)	
+	new_cat = array([ra, dec, redshift, weight, Mi, Mvir, Rvir_arr, DL]).shape[idx_new]
+	save(obsPK_dir+'W%s_cat_z0213_ra_dec_redshift_weight_MAGi_Mvir_Rvir_DL.npy'%(Wx), new_cat)
+map(Mhalo_gen, range(1,5))
+##################################################
