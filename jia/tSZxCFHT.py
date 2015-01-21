@@ -435,6 +435,9 @@ if cross_cov_mat:
 	
 	
 if create_noise_KS:
+	'''create cross power for error estimation, between kSZ and
+	500 simulated noisy kappa maps.
+	'''
 	#from emcee.utils import MPIPool
 	#p = MPIPool()
 	#from multiprocessing import Pool
