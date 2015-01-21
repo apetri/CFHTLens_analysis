@@ -218,10 +218,12 @@ def kSZmapGen_fn (fn, offset=False, method='nearest'):
 
 ##############################################################
 ######################## operations ##########################
-#for fn in os.listdir(kSZ_dir+'kSZ2/'):
-	##print fn
-	#full_fn = kSZ_dir+'kSZ2/'+fn
-	#kSZmapGen_fn(full_fn, offset = False)
+new_dir = '/Users/jia/CFHTLenS/kSZ/filter_after_sq/'
+#new_dir = kSZ_dir+'kSZ2/'
+for fn in os.listdir(new_dir):
+	print fn
+	full_fn = new_dir+fn
+	kSZmapGen_fn(full_fn, offset = False)
 	#if 'offset' in  fn and 'txt' in fn:
 		#print 'offset', fn
 		#kSZmapGen_fn(full_fn, offset=True)
