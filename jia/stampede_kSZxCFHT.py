@@ -24,17 +24,17 @@ create_noise_KS = 1
 ############### create noise kappa maps #############
 #####################################################
 if create_noise_KS:
+	Wx=int(sys.argv(1))
 	p = MPIPool()
 	Mexw = lambda Wx, txt: WLanalysis.readFits(kSZ_dir+'CFHT/Me_Mw_galn/W%i_M%s_1.3_lo.fit'%(Wx,txt))
-	for Wx in range(2,5):
-		Me1, Me2, Mwm = Mexw(Wx, 'e1w'), Mexw(Wx, 'e2w'), Mexw(Wx, 'wm')
-		def randmap (iseed, Wx=Wx):
-			print Wx, iseed
-			Me1rnd, Me2rnd = WLanalysis.rndrot(Me1, Me2, iseed=iseed)
-			Me1smooth = WLanalysis.weighted_smooth(Me1rnd, Mwm)
-			Me2smooth = WLanalysis.weighted_smooth(Me2rnd, Mwm)
-			kmap_rand = WLanalysis.KSvw(Me1smooth, Me2smooth)
-			np.save(bmap_fn(Wx, iseed), kmap_rand)
-		p.map(randmap, arange(500))
-	print 'done creating 4x500 noise KS maps (1 arcmin smoothing).'
+	Me1, Me2, Mwm = Mexw(Wx, 'e1w'), Mexw(Wx, 'e2w'), Mexw(Wx, 'wm')
+	def randmap (iseed, Wx=Wx):	
+		Me1rnd, Me2rnd = WLanalysis.rndrot(Me1, Me2, iseed=iseed)
+		Me1smooth = WLanalysis.weighted_smooth(Me1rnd, Mwm)
+		Me2smooth = WLanalysis.weighted_smooth(Me2rnd, Mwm)
+		kmap_rand = WLanalysis.KSvw(Me1smooth, Me2smooth)
+		print Wx, iseed, kmap_rand.shape
+		np.save(bmap_fn(Wx, iseed), kmap_rand)
+	p.map(randmap, arange(500))
+	print 'done creating 500 noise KS maps'
 
