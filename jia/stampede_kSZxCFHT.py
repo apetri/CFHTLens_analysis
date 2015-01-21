@@ -69,7 +69,7 @@ if cross_correlate_kSZ_noise:
 		'''
 		Wx, iseed = iinput
 		print 'kSZxNoise', Wx, iseed
-		bmap = bmapGen(Wx, iseed)*mask_arr
+		bmap = bmapGen(Wx, iseed)*mask_arr[Wx-1]
 		kSZmap = masked_kSZ_arr[Wx-1]
 		edges = edgesGen(Wx)
 		ell_arr, CC = WLanalysis.CrossCorrelate (bmap, kSZmap,edges=edges)
