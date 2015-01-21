@@ -26,9 +26,9 @@ create_noise_KS = 1
 if create_noise_KS:
 	p = MPIPool()
 	Mexw = lambda Wx, txt: WLanalysis.readFits(kSZ_dir+'CFHT/Me_Mw_galn/W%i_M%s_1.3_lo.fit'%(Wx,txt))
-	for Wx in range(1,5):
+	for Wx in range(2,5):
 		Me1, Me2, Mwm = Mexw(Wx, 'e1w'), Mexw(Wx, 'e2w'), Mexw(Wx, 'wm')
-		def randmap (iseed):
+		def randmap (iseed, Wx=Wx):
 			print Wx, iseed
 			Me1rnd, Me2rnd = WLanalysis.rndrot(Me1, Me2, iseed=iseed)
 			Me1smooth = WLanalysis.weighted_smooth(Me1rnd, Mwm)
