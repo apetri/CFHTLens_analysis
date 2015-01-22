@@ -18,11 +18,11 @@ from emcee.utils import MPIPool
 kSZ_dir = '/home1/02977/jialiu/kSZ/'
 freq = 'dusty'
 
-#prefix = 'filterAfterSQ'
-#kSZmapGen = lambda Wx: np.load(kSZ_dir+'Planck/LGMCA_W%s_flipper8192_kSZfilt_squared_T2filt_toJia.npy'%(Wx))
+prefix = 'filterAfterSQ'
+kSZmapGen = lambda Wx: np.load(kSZ_dir+'Planck/LGMCA_W%s_flipper8192_kSZfilt_squared_T2filt_toJia.npy'%(Wx))
 
-prefix = 'filterB4SQ'
-kSZmapGen = lambda Wx: (np.load(kSZ_dir+'Planck/LGMCA_W%s_flipper8192_kSZfilt_NOTsquared_toJia.npy'%(Wx)))**2
+#prefix = 'filterB4SQ'
+#kSZmapGen = lambda Wx: (np.load(kSZ_dir+'Planck/LGMCA_W%s_flipper8192_kSZfilt_NOTsquared_toJia.npy'%(Wx)))**2
 
 
 create_noise_KS = 0
