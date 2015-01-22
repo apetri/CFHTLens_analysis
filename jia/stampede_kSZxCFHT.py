@@ -13,7 +13,7 @@ from pylab import *
 import os, sys
 import WLanalysis
 from scipy import interpolate
-#from emcee.utils import MPIPool
+from emcee.utils import MPIPool
 
 kSZ_dir = '/home1/02977/jialiu/kSZ/'
 freq = 'dusty'
