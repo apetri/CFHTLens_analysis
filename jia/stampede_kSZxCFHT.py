@@ -18,9 +18,16 @@ from scipy import interpolate
 kSZ_dir = '/home1/02977/jialiu/kSZ/'
 freq = 'dusty'
 
+#prefix = 'filterAfterSQ'
+#kSZmapGen = lambda Wx: np.load(kSZ_dir+'Planck/LGMCA_W%s_flipper8192_kSZfilt_squared_T2filt_toJia.npy'%(Wx))
+
+prefix = 'filterB4SQ'
+kSZmapGen = lambda Wx: (np.load(kSZ_dir+'Planck/LGMCA_W%s_flipper8192_kSZfilt_NOTsquared_toJia.npy'%(Wx)))**2
+
+
 create_noise_KS = 0
 cross_correlate_kSZ_noise = 1
-
+fmask2_arr = [0.65790059649362265, 0.55660343674246793, 0.56069976969877666, 0.4024946100277122]
 #####################################################
 ###################### constants ####################
 #####################################################
@@ -30,11 +37,9 @@ PPA512=2.4633625
 edgesGen = lambda Wx: linspace(5,75,7)*sizes[Wx-1]/1330.0
 
 maskGen = lambda Wx: np.load(kSZ_dir+'mask/W%i_mask.npy'%(Wx))
-nosqkSZmapGen = lambda Wx: np.load(kSZ_dir+'Planck/LGMCA_W%s_flipper8192_kSZfilt_NOTsquared_toJia.npy'%(Wx))
 
-kSZmapGen = lambda Wx: nosqkSZmapGen(Wx)**2
 
-bmapGen = lambda Wx, iseed: np.load( kSZ_dir+'CFHT/Noise/W%i_Noise_sigmaG10_%04d.npy'%(Wx, iseed))
+bmapGen = lambda Wx, iseed: np.load(kSZ_dir+'CFHT/Noise/W%i_Noise_sigmaG10_%04d.npy'%(Wx, iseed))
 
 kmapGen = lambda Wx: WLanalysis.readFits(kSZ_dir+'CFHT/conv/W%i_KS_1.3_lo_sigmaG10.fit'%(Wx))
 #####################################################
@@ -73,20 +78,32 @@ if cross_correlate_kSZ_noise:
 		bmap = bmapGen(Wx, iseed)*mask_arr[Wx-1]
 		kSZmap = masked_kSZ_arr[Wx-1]
 		edges = edgesGen(Wx)
+		
+		### set mean to 0
+		bmap -= mean(bmap)
+		kSZmap -= mean(kSZmap)
+		
 		ell_arr, CC = WLanalysis.CrossCorrelate (bmap, kSZmap,edges=edges)
+		CC = CC/fmask2_arr[Wx-1]
 		return CC
 	Wx_iseed_list = [[Wx, iseed] for Wx in range(1,5) for iseed in range(500)]
 	
-	#p = MPIPool()
-	#CC_arr = array(p.map(kSZxNoise, Wx_iseed_list))
-	#for Wx in arange(1,5):
-		#np.save(kSZ_dir+'filterbe4sq/convxkSZ_500sim_W%s_%s.npy'%(Wx,freq), CC_arr[(Wx-1)*500:Wx*500])
-	#print 'done cross correlate kSZ x 500 noise.'
+	p = MPIPool()
+	CC_arr = array(p.map(kSZxNoise, Wx_iseed_list))
+	for Wx in arange(1,5):
+		np.save(kSZ_dir+'%s/convxkSZ_500sim_W%s_%s.npy'%(prefix, Wx,freq), CC_arr[(Wx-1)*500:Wx*500])
+	print 'done cross correlate kSZ x 500 noise.'
 	
 	############# cross with CFHT ####################
 	for Wx in range(1,5):
 		kmap = kmapGen(Wx)*mask_arr[Wx-1]
 		kSZmap = masked_kSZ_arr[Wx-1]
+		
+		## set mean to 0
+		kmap -= mean(kmap)
+		kSZmap -= mean(kSZmap)
+		
 		edges = edgesGen(Wx)
-		CC_signal = WLanalysis.CrossCorrelate(kmap, kSZmap,edges=edges)[1]
-		np.save(kSZ_dir+'filterbe4sq/convxkSZ_W%s_%s.npy'%(Wx,freq), CC_signal)
+		CC_signal = WLanalysis.CrossCorrelate(kmap, kSZmap,edges=edges)[1]/fmask2_arr[Wx-1]
+		np.save(kSZ_dir+'%s/convxkSZ_W%s_%s.npy'%(prefix, Wx,freq), CC_signal)
+

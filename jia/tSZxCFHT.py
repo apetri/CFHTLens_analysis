@@ -199,7 +199,8 @@ def kSZmapGen_fn (fn, offset=False, method='nearest'):
 	Wx = int(fn[fn.index('W')+1])
 	print 'Wx, fn:', Wx, fn
 	size=sizes[Wx-1]
-	kSZCoord = WLanalysis.readFits(fn)
+	kSZCoord = genfromtxt(fn)
+	#kSZCoord = WLanalysis.readFits(fn)
 	radeclist = kSZCoord[:,:-1]
 	values = kSZCoord.T[-1]
 	xy = list2coords(radeclist, Wx, offset=offset)
@@ -218,7 +219,7 @@ def kSZmapGen_fn (fn, offset=False, method='nearest'):
 
 ##############################################################
 ######################## operations ##########################
-new_dir = '/Users/jia/CFHTLenS/kSZ/filter_after_sq/'
+new_dir = '/Users/jia/CFHTLenS/kSZ/filterAfterSQ/'
 #new_dir = kSZ_dir+'kSZ2/'
 for fn in os.listdir(new_dir):
 	print fn
