@@ -107,3 +107,4 @@ if cross_correlate_kSZ_noise:
 		CC_signal = WLanalysis.CrossCorrelate(kmap, kSZmap,edges=edges)[1]/fmask2_arr[Wx-1]
 		np.save(kSZ_dir+'%s/convxkSZ_W%s_%s.npy'%(prefix, Wx,freq), CC_signal)
 
+print 'done!done!done!done!'
