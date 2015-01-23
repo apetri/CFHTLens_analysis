@@ -20,6 +20,7 @@ freq = 'dusty'
 
 prefix = 'filterAfterSQ'
 kSZmapGen = lambda Wx: np.load(kSZ_dir+'Planck/LGMCA_W%s_flipper8192_kSZfilt_squared_T2filt_toJia.npy'%(Wx))
+#kSZmapGen = lambda Wx: np.load('/Users/jia/CFHTLenS/kSZ/filterAfterSQ/LGMCA_W%s_flipper8192_kSZfilt_squared_T2filt_toJia.npy'%(Wx))
 
 #prefix = 'filterB4SQ'
 #kSZmapGen = lambda Wx: (np.load(kSZ_dir+'Planck/LGMCA_W%s_flipper8192_kSZfilt_NOTsquared_toJia.npy'%(Wx)))**2

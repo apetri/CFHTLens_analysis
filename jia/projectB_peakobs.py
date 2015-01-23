@@ -20,14 +20,14 @@ import scipy.optimize as op
 import sys
 
 ######## for stampede #####
-#from emcee.utils import MPIPool
-#obsPK_dir = '/home1/02977/jialiu/obsPK/'
+from emcee.utils import MPIPool
+obsPK_dir = '/home1/02977/jialiu/obsPK/'
 
 ######## for laptop #####
-obsPK_dir = '/Users/jia/CFHTLenS/obsPK/'
-plot_dir = obsPK_dir+'plot/'
+#obsPK_dir = '/Users/jia/CFHTLenS/obsPK/'
+#plot_dir = obsPK_dir+'plot/'
 
-make_kappa_predict = 0
+make_kappa_predict = 1
 
 ########### constants ######################
 z_lo = 0.6
@@ -60,8 +60,10 @@ bmodeGen = lambda Wx, zcut, sigmaG: WLanalysis.readFits('/Users/jia/CFHTLenS/obs
 cat_gen = lambda Wx: np.load(obsPK_dir+'W%s_cat_z0213_ra_dec_redshift_weight_MAGi_Mvir_Rvir_DL.npy'%(Wx))
 #columns: ra, dec, redshift, weight, i, Mhalo, Rvir, DL
 
-
+##############################################
 ########## cosmologies #######################
+##############################################
+
 # growth factor
 H_inv = lambda z: 1.0/(H0*sqrt(OmegaM*(1+z)**3+OmegaV))
 # luminosity distance Mpc
@@ -73,7 +75,10 @@ DL_interp = interpolate.interp1d(z_arr, DL_arr)
 # find the rest magnitude at the galaxy, from observed magnitude cut
 M_rest_fcn = lambda M_obs, z: M_obs - 5.0*log10(DL_interp(z)) - 25.0
 
+##############################################
 ##################### MAG_z to M100 ##########
+##############################################
+
 datagrid_VO = np.load(obsPK_dir+'Mhalo_interpolator_VO.npy')#Mag_z, r-z, M100, residual
 Minterp = interpolate.CloughTocher2DInterpolator(datagrid_VO[:,:2],datagrid_VO[:,2])
 #usage: Minterp(MAGz_arr, r-z_arr)
@@ -81,6 +86,10 @@ Minterp = interpolate.CloughTocher2DInterpolator(datagrid_VO[:,:2],datagrid_VO[:
 rho_cz = lambda z: rho_c0*(OmegaM*(1+z)**3+(1-OmegaM))#critical density
 Rvir_fcn = lambda M, z: (M*M_sun/(4.0/3.0*pi*200*rho_cz(z)))**0.3333
 rad2arcmin = lambda distance: degrees(distance)*60.0
+
+##############################################
+######### find RA DEC for peaks ##############
+##############################################
 
 def PeakPos (Wx, z_lo=0.6, z_hi='0.6_lo',noise=False, Bmode=False):
 	'''For a map(kappa or bmode), find peaks, and its(RA, DEC)
@@ -112,8 +121,9 @@ def PeakPos (Wx, z_lo=0.6, z_hi='0.6_lo',noise=False, Bmode=False):
 	return kappaPos_arr.T
 
 	
-
+#############################################################
 ################## kappa projection 2014/12/14 ##############
+#############################################################
 
 def Gx_fcn (x, cNFW=5.0):
 	if x < 1:
@@ -147,10 +157,15 @@ def kappa_proj (Mvir, Rvir, z_fore, x_fore, y_fore, DL_fore, z_back, x_back, y_b
 	kappa_p = two_rhos_rs/SIGMAc*Gx
 	return kappa_p
 
+#############################################################
+############ operations #####################################
+#############################################################
+
 if make_kappa_predict:
 	from scipy.spatial import cKDTree
-	zcut = 0.2#0.6
-	r = 0.0019#0.002rad = 7arcmin, within which I search for contributing halos
+	zcut = 0.2	#this is the lowest redshift for backgorund galaxies. use 0.2 to count for all galaxies. z=0.6 is the lower limit for creating convergence maps.
+	r = 0.0019	# 0.0019 pix = 0.002 rad = 7arcmin, 
+			#within which I search for contributing halos
 
 	Wx = int(sys.argv[1])
 	center = centers[Wx-1]
@@ -192,6 +207,7 @@ if make_kappa_predict:
 
 	#a=map(kappa_individual_gal, randint(0,len(idx_back)-1,5))
 	step=1e4
+	
 	def temp (ix):
 		print ix
 		kappa_all = map(kappa_individual_gal, arange(ix, amin([len(idx_back), ix+step])))
@@ -199,8 +215,10 @@ if make_kappa_predict:
 	pool = MPIPool()
 	ix_arr = arange(0, len(idx_back), step)
 	pool.map(temp, ix_arr)
-
-
+	
+	all_kappa_proj = concatenate([np.load(obsPK_dir+'temp/kappa_proj%i_%07d.npy'%(Wx, ix)) for ix in ix_arr])
+	np.save(obsPK_dir+'kappa_predict_W%i.npy'%(Wx), all_kappa_proj)
+	
 #########################################################
 ####################### plotting ########################
 #########################################################
@@ -242,13 +260,17 @@ if make_kappa_predict:
 #ax.set_ylabel('Power')
 #show()
 
+#######################################################################
+#################### make kappa_predict_map ###########################
+#######################################################################
+
 #for Wx in range(1,5):#(1,):#
 	#sizes = (1330, 800, 1120, 950)
 	#print Wx
 	#isize = sizes[Wx-1]
 	#center = centers[Wx-1]
 
-	## make kappa_predict_map
+	
 	##icat = cat_gen(Wx).T #ra, dec, redshift, weight, MAGi, Mhalo, Rvir, DL = icat
 	##f_Wx = WLanalysis.gnom_fun(center)	
 	##y, x = array(f_Wx(icat[:2]))
