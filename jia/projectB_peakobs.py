@@ -20,14 +20,14 @@ import scipy.optimize as op
 import sys
 
 ######## for stampede #####
-from emcee.utils import MPIPool
-obsPK_dir = '/home1/02977/jialiu/obsPK/'
+#from emcee.utils import MPIPool
+#obsPK_dir = '/home1/02977/jialiu/obsPK/'
 
 ######## for laptop #####
-#obsPK_dir = '/Users/jia/CFHTLenS/obsPK/'
-#plot_dir = obsPK_dir+'plot/'
+obsPK_dir = '/Users/jia/CFHTLenS/obsPK/'
+plot_dir = obsPK_dir+'plot/'
 
-make_kappa_predict = 1
+make_kappa_predict = 0
 
 ########### constants ######################
 z_lo = 0.6
@@ -163,7 +163,7 @@ def kappa_proj (Mvir, Rvir, z_fore, x_fore, y_fore, DL_fore, z_back, x_back, y_b
 
 if make_kappa_predict:
 	from scipy.spatial import cKDTree
-	zcut = 0.2	#this is the lowest redshift for backgorund galaxies. use 0.2 to count for all galaxies. z=0.6 is the lower limit for creating convergence maps.
+	zcut = 0.2	#this is the lowest redshift for backgorund galaxies. use 0.2 to count for all galaxies.
 	r = 0.0019	# 0.0019 pix = 0.002 rad = 7arcmin, 
 			#within which I search for contributing halos
 
@@ -235,112 +235,134 @@ if make_kappa_predict:
 #contour(kproj_peak_smooth, origin='lower',levels=(5e-6,))
 #show()
 
-#Wx = 1
-#sigmaG = 1.0
-#galn = WLanalysis.readFits(obsPK_dir+'maps/W%i_galn_1.3_lo_sigmaG%02d.fit'%(Wx, sigmaG*10))
-#kmap = WLanalysis.readFits(obsPK_dir+'maps/W%i_KS_1.3_lo_sigmaG%02d.fit'%(Wx, sigmaG*10))
-#bmode = WLanalysis.readFits(obsPK_dir+'maps/W%i_Bmode_1.3_lo_sigmaG%02d.fit'%(Wx, sigmaG*10))
-#kproj = np.load(obsPK_dir+'maps/kmap_W%i_predict_sigmaG%02d.npy'%(Wx, sigmaG*10))
-##ell_arr, pk = WLanalysis.CrossCorrelate(kmap, galn,edges=logspace(0,2.5,10))
-##ell_arr, pb = WLanalysis.CrossCorrelate(kmap, bmode,edges=logspace(0,2.5,10))
-##ell_arr, pp = WLanalysis.CrossCorrelate(kproj, galn,edges=logspace(0,2.5,10))
-#ell_arr, ppk = WLanalysis.CrossCorrelate(kproj, kmap,edges=logspace(0,2.8,10))
-#ell_arr, ppb = WLanalysis.CrossCorrelate(kproj, bmode,edges=logspace(0,2.8,10))
+Wx = 4
+sigmaG = 1.0
+mask = maskGen(Wx, 0.5, sigmaG)
 
-#f=figure()
-#ax=f.add_subplot(111)
-##ax.plot(ell_arr, pk,'o',label='kappa x galn')
-##ax.plot(ell_arr, pb,'o', label='bmode x galn')
-##ax.plot(ell_arr, pp,'o', label='kproj x galn')
+galn = WLanalysis.readFits(obsPK_dir+'maps/W%i_galn_1.3_lo_sigmaG%02d.fit'%(Wx, sigmaG*10))
+
+kmap = WLanalysis.readFits(obsPK_dir+'maps/W%i_KS_1.3_lo_sigmaG%02d.fit'%(Wx, sigmaG*10))
+
+bmode = WLanalysis.readFits('/Users/jia/CFHTLenS/catalogue/Noise/W%i/W%i_Noise_sigmaG10_0499.fit'%(Wx, Wx))*mask
+
+#bmode = WLanalysis.readFits(obsPK_dir+'maps/W%i_Bmode_1.3_lo_sigmaG%02d.fit'%(Wx, sigmaG*10))
+
+kproj = np.load(obsPK_dir+'maps/kmap_W%i_predict_sigmaG%02d.npy'%(Wx, sigmaG*10))
+
+ell_arr, pk = WLanalysis.CrossCorrelate(kmap*mask, galn*mask,edges=logspace(0,2.5,10))
+ell_arr, pb = WLanalysis.CrossCorrelate(kmap*mask, bmode*mask,edges=logspace(0,2.5,10))
+ell_arr, pp = WLanalysis.CrossCorrelate(kproj*mask, galn*mask,edges=logspace(0,2.5,10))
+
+#ell_arr, ppk = WLanalysis.CrossCorrelate(kproj*mask, kmap*mask,edges=logspace(0,2.8,10))
+#ell_arr, ppb = WLanalysis.CrossCorrelate(kproj*mask, bmode*mask,edges=logspace(0,2.8,10))
+
+f=figure()
+ax=f.add_subplot(111)
+
+ax.plot(ell_arr, pk,'o',label='kappa x galn')
+ax.plot(ell_arr, pb,'o', label='bmode x galn')
+ax.plot(ell_arr, pp,'o', label='kproj x galn')
+
 #ax.plot(ell_arr, ppk,'-', label='kproj x kappa')
 #ax.plot(ell_arr, ppb,'--', label='kproj x bmode')
-#ax.set_xscale('log')
-#ax.legend(fontsize=10,loc=2)
-#ax.set_xlabel('ell')
-#ax.set_ylabel('Power')
-#show()
+ax.set_xscale('log')
+ax.legend(fontsize=10,loc=2)
+ax.set_xlabel('ell')
+ax.set_ylabel('Power')
+show()
 
 #######################################################################
 #################### make kappa_predict_map ###########################
 #######################################################################
 
 #for Wx in range(1,5):#(1,):#
-	#sizes = (1330, 800, 1120, 950)
-	#print Wx
-	#isize = sizes[Wx-1]
-	#center = centers[Wx-1]
+	
+	############### get catalogue
+	##sizes = (1330, 800, 1120, 950)
+	##print Wx
+	##isize = sizes[Wx-1]
+	##center = centers[Wx-1]
 
 	
 	##icat = cat_gen(Wx).T #ra, dec, redshift, weight, MAGi, Mhalo, Rvir, DL = icat
 	##f_Wx = WLanalysis.gnom_fun(center)	
 	##y, x = array(f_Wx(icat[:2]))
 	##weight = icat[3]
-	##k = np.load(obsPK_dir+'kappa_predict_Mmax2e15_W%i.npy'%(Wx))
+	##k = np.load(obsPK_dir+'kappa_predict_W%i.npy'%(Wx))#kappa_predict_Mmax2e15_W%i.npy
 	##A, galn = WLanalysis.coords2grid(x, y, array([k*weight, weight, k]), size=isize)
 	##Mkw, Mw, Mk = A
-
-	#for sigmaG in (1.0,):#(0.5, 1.0, 1.8, 3.5, 5.3, 8.9):#, (5.3, 8.9):#(0.5, 1.0, 1.8, 3.5, 5.3, 8.9)
+	############################################
+	
+	#for sigmaG in (0.5, 1.0,):#(0.5, 1.0, 1.8, 3.5, 5.3, 8.9):#(5.3, 8.9):#, (0.5, 1.0, 1.8, 3.5, 5.3, 8.9)
 		#print Wx, sigmaG
 		
-		##kmap_predict = WLanalysis.weighted_smooth(Mkw, Mw, PPA=PPA512, sigmaG=sigmaG)
 		#mask = maskGen(Wx, 0.5, sigmaG)
 		#mask = WLanalysis.smooth(mask, 5.0)
+		################# make maps ######################
+		##kmap_predict = WLanalysis.weighted_smooth(Mkw, Mw, PPA=PPA512, sigmaG=sigmaG)
 		##kmap_predict*=mask
-		##kmap_predict -= mean(kmap_predict[mask==1])
 		##np.save(obsPK_dir+'maps/kmap_W%i_predict_sigmaG%02d.npy'%(Wx, sigmaG*10), kmap_predict)
+		############################################
 		
-		
-		############ plotting after got all the maps already ########
-		###pgaln = WLanalysis.smooth(galn, sigmaG*PPA512)
+		############# plotting after got all the maps already ########
+		##pgaln = WLanalysis.smooth(galn, sigmaG*PPA512)
 		##lgaln = WLanalysis.readFits(obsPK_dir+'maps/W%i_galn_1.3_lo_sigmaG%02d.fit'%(Wx, sigmaG*10))
 		#kmap_predict = np.load(obsPK_dir+'maps/kmap_W%i_predict_sigmaG%02d.npy'%(Wx, sigmaG*10))*mask
 		#kmap_lensing = WLanalysis.readFits(obsPK_dir+'maps/W%i_KS_1.3_lo_sigmaG%02d.fit'%(Wx, sigmaG*10))*mask
 		
-		#bmode_lensing = WLanalysis.readFits('/Users/jia/CFHTLenS/catalogue/Noise/W%i/W%i_Noise_sigmaG10_0499.fit'%(Wx, Wx))*mask
+		##bmode_lensing = WLanalysis.readFits('/Users/jia/CFHTLenS/catalogue/Noise/W%i/W%i_Noise_sigmaG10_0499.fit'%(Wx, Wx))*mask
 		
-		##bmode_lensing = WLanalysis.readFits(obsPK_dir+'maps/W%i_Bmode_1.3_lo_sigmaG%02d.fit'%(Wx, sigmaG*10))*mask
+		#bmode_lensing = WLanalysis.readFits(obsPK_dir+'maps/W%i_Bmode_1.3_lo_sigmaG%02d.fit'%(Wx, sigmaG*10))*mask
 		
-		##P2D_signal = ifft2(fft2(kmap_predict)*conj(fft2(kmap_lensing)))
-		##P2D_bmode = ifft2(fft2(kmap_predict)*conj(fft2(bmode_lensing)))
+		############### plot the correlation ###########
+		#kmap_predict -= mean(kmap_predict)
+		#kmap_lensing -= mean(kmap_lensing)
 		
-		###P2D_galn = ifft2(fft2(kmap_predict)*conj(fft2(pgaln)))
+		#P2D_signal = ifft2(fft2(kmap_predict)*conj(fft2(kmap_lensing)))
+		#P2D_bmode = ifft2(fft2(kmap_predict)*conj(fft2(bmode_lensing)))
+		
+		##P2D_galn = ifft2(fft2(kmap_predict)*conj(fft2(pgaln)))
 		##P2D_lensinggaln = ifft2(fft2(kmap_lensing)*conj(fft2(lgaln)))
 		
 		#labels=['pred x lens','pred x bmode','lens x galn']#'pred x galn'
 		#f=figure()
 		#ax=f.add_subplot(111)
 		#i=0
-		##for iP2D in (P2D_signal, P2D_bmode):#, P2D_lensinggaln):
-		#for imap in (kmap_lensing, bmode_lensing):
-			#edges, power = WLanalysis.CrossCorrelate(kmap_predict, imap, edges = logspace(0,log10(500),10))
-			##edges, power = WLanalysis.azimuthalAverage(real(fftshift(iP2D)))
-			##ax.plot(edges[1:]/PPA512, power, label=labels[i])
-			#ax.plot(edges/PPA512, power, label=labels[i])
+		#for iP2D in (P2D_signal, P2D_bmode):#, P2D_lensinggaln):
+		##for imap in (kmap_lensing, bmode_lensing):
+			##edges, power = WLanalysis.CrossCorrelate(kmap_predict, imap, edges = logspace(0,log10(500),10))
+			#edges, power = WLanalysis.azimuthalAverage(real(fftshift(iP2D)))
+			#ax.plot(edges[1:]/PPA512, power, label=labels[i])
+			##ax.plot(edges/PPA512, power, label=labels[i])
 			#i+=1
 		#legend(fontsize=10)
 		##ax.set_xlabel('arcmin')
 		#ax.set_ylabel('Power')
 		#ax.set_xscale('log')
-		#savefig(plot_dir+'junk2/Noise2pcf_W%i_sigmaG%02d.jpg'%(Wx, sigmaG*10))
+		##savefig(plot_dir+'junk2/Noise2pcf_W%i_sigmaG%02d.jpg'%(Wx, sigmaG*10))
+		#savefig(plot_dir+'Test2pcf_W%i_sigmaG%02d.jpg'%(Wx, sigmaG*10))
 		#close()
-		####### plotting 
 		
-		##imshow(galn, origin = 'lower')
-		##title('W%i predict galn'%(Wx))
-		##colorbar()
-		##savefig(plot_dir+'kmap_W%i_sigmaG%s_predictgaln.jpg'%(Wx,sigmaG))
-		##close()		
+		###### plot the maps ######################
+		
+		#imshow(galn, origin = 'lower')
+		#title('W%i predict galn'%(Wx))
+		#colorbar()
+		#savefig(plot_dir+'kmap_W%i_sigmaG%s_predictgaln.jpg'%(Wx,sigmaG))
+		#close()		
 
-		##imshow(kmap_lensing, vmax=3*std(kmap_lensing), vmin=-2*std(kmap_lensing), origin = 'lower')
-		##title('W%i kmap_lensing'%(Wx))
-		##colorbar()
-		##savefig(plot_dir+'kmap_W%i_sigmaG%s_lensing.jpg'%(Wx,sigmaG))
-		##close()
+		#imshow(kmap_lensing, vmax=3*std(kmap_lensing), vmin=-2*std(kmap_lensing), origin = 'lower')
+		#title('W%i kmap_lensing'%(Wx))
+		#colorbar()
+		#savefig(plot_dir+'kmap_W%i_sigmaG%s_lensing.jpg'%(Wx,sigmaG))
+		#close()
 
+		##kmap_predict -= mean(kmap_predict[mask==1])
 		##imshow(kmap_predict, vmax=3*std(kmap_predict), vmin=-2*std(kmap_predict), origin = 'lower')
-		##title('W%i kmap_predict'%(Wx))
-		##colorbar()
-		##savefig(plot_dir+'kmap_W%i_sigmaG%s_predict.jpg'%(Wx,sigmaG))
-		##close()
+		#imshow(kmap_predict, vmax=4*std(kmap_predict), vmin=0, origin = 'lower')
+		#title('W%i kmap_predict'%(Wx))
+		#colorbar()
+		#savefig(plot_dir+'kmap_W%i_sigmaG%s_predict.jpg'%(Wx,sigmaG))
+		#close()
 
 print 'done-done-done'

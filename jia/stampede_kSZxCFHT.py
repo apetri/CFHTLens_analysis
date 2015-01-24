@@ -1,4 +1,6 @@
 #! python
+# ibrun python stampede_kSZxCFHT.py Wx freq
+# Wx goes from 1..4, freq goes from 0..2
 # 2015/01/21
 # this code computes kSZxCFHT cross correlation on stampede
 # (1) create 500 noise kappa maps by randomly rotate galaxies
@@ -16,14 +18,57 @@ from scipy import interpolate
 from emcee.utils import MPIPool
 
 kSZ_dir = '/home1/02977/jialiu/kSZ/'
-freq = 'dusty'
+freq_arr = ['2freqs', '545217GHzclean', '857GHz', 'dusty']
+if int(sys.argv[2]):
+	freq = freq_arr[int(sys.argv[1])]
+else:
+	freq = 'dusty'
+print 'frequency:', freq
 
-prefix = 'filterAfterSQ'
-kSZmapGen = lambda Wx: np.load(kSZ_dir+'Planck/LGMCA_W%s_flipper8192_kSZfilt_squared_T2filt_toJia.npy'%(Wx))
+#prefix = 'filterAfterSQ'
+#kSZmapGen = lambda Wx: np.load(kSZ_dir+'Planck/LGMCA_W%s_flipper8192_kSZfilt_squared_T2filt_toJia.npy'%(Wx))
 #kSZmapGen = lambda Wx: np.load('/Users/jia/CFHTLenS/kSZ/filterAfterSQ/LGMCA_W%s_flipper8192_kSZfilt_squared_T2filt_toJia.npy'%(Wx))
 
-#prefix = 'filterB4SQ'
-#kSZmapGen = lambda Wx: (np.load(kSZ_dir+'Planck/LGMCA_W%s_flipper8192_kSZfilt_NOTsquared_toJia.npy'%(Wx)))**2
+prefix = 'filterB4SQ'
+
+dustGen = lambda i, freq: np.load(kSZ_dir + 'dust/map%s_LGMCAfilt_uK_W%i_flipper8192_toJia.npy'%(freq, i))
+
+nosqkSZGen_dusty = np.load(kSZ_dir+'Planck/LGMCA_W%s_flipper8192_kSZfilt_NOTsquared_toJia.npy'%(Wx))
+
+def return_alpha (freq): 
+	if freq == '545217GHzclean':
+		alpha = -0.0045
+	elif freq == '857GHz':
+		alpha = -8e-5
+	return alpha
+
+def kSZGen_clean(Wx, freq = '2freqs'):
+	'''This routine cleans the kSZ map by applying some alpha value
+	Note that if freq = False, then return (kSZ_freq1*kSZ_freq2)
+	'''
+	kSZ_NSQ = nosqkSZGen_dusty(Wx)
+	if freq == '2freqs':
+		dust1 = dustGen(Wx, '545217GHzclean')
+		dust2 = dustGen(Wx, '857GHz')
+		alpha1 = return_alpha('545217GHzclean')
+		alpha2 = return_alpha('857GHz')
+		kSZ_NSQ_clean1 = (1+alpha1)*kSZ_NSQ-alpha1*dust1
+		kSZ_NSQ_clean2 = (1+alpha2)*kSZ_NSQ-alpha2*dust2
+		kSZ_NSQ_clean = kSZ_NSQ_clean1*kSZ_NSQ_clean2
+	else:
+		dust = dustGen(Wx, freq)
+		alpha = return_alpha(freq)
+		nosqkSZ_NSQ_clean = (1+alpha)*kSZ_NSQ-alpha*dust
+		kSZ_NSQ_clean = nosqkSZ_NSQ_clean**2
+	return kSZ_NSQ_clean
+
+def kSZmapGen(Wx, freq = '2freqs'):#clean dust
+	'''this returns a cleaned kSZ map, 
+	if freq='2freqs', return kSZ_freq1*kSZ_freq2'''	
+	if freq == 'dusty':
+		return nosqkSZGen_dusty(Wx)**2
+	else:
+		return kSZGen_clean(Wx, freq=freq)
 
 
 create_noise_KS = 0
@@ -96,6 +141,7 @@ if cross_correlate_kSZ_noise:
 	print 'done cross correlate kSZ x 500 noise.'
 	
 	############# cross with CFHT ####################
+if Wx == 4:
 	for Wx in range(1,5):
 		kmap = kmapGen(Wx)*mask_arr[Wx-1]
 		kSZmap = masked_kSZ_arr[Wx-1]
