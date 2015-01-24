@@ -20,8 +20,8 @@ from emcee.utils import MPIPool
 kSZ_dir = '/home1/02977/jialiu/kSZ/'
 freq_arr = ['2freqs', '545217GHzclean', '857GHz', 'dusty']
 freq = freq_arr[int(sys.argv[2])]
-Wx=int(sys.argv[1])
-print 'Wx, frequency:', Wx, freq
+#Wx=int(sys.argv[1])
+print 'frequency:', freq
 
 #prefix = 'filterAfterSQ'
 #kSZmapGen = lambda Wx: np.load(kSZ_dir+'Planck/LGMCA_W%s_flipper8192_kSZfilt_squared_T2filt_toJia.npy'%(Wx))
@@ -40,7 +40,7 @@ def return_alpha (freq):
 		alpha = -8e-5
 	return alpha
 
-def kSZGen_clean(Wx, freq = '2freqs'):
+def kSZGen_clean(Wx, freq = freq):
 	'''This routine cleans the kSZ map by applying some alpha value
 	Note that if freq = False, then return (kSZ_freq1*kSZ_freq2)
 	'''
@@ -60,7 +60,7 @@ def kSZGen_clean(Wx, freq = '2freqs'):
 		kSZ_NSQ_clean = nosqkSZ_NSQ_clean**2
 	return kSZ_NSQ_clean
 
-def kSZmapGen(Wx, freq = '2freqs'):#clean dust
+def kSZmapGen(Wx, freq = freq):#clean dust
 	'''this returns a cleaned kSZ map, 
 	if freq='2freqs', return kSZ_freq1*kSZ_freq2'''	
 	if freq == 'dusty':
@@ -139,7 +139,6 @@ if cross_correlate_kSZ_noise:
 	print 'done cross correlate kSZ x 500 noise.'
 	
 	############# cross with CFHT ####################
-if Wx == 4:
 	for Wx in range(1,5):
 		kmap = kmapGen(Wx)*mask_arr[Wx-1]
 		kSZmap = masked_kSZ_arr[Wx-1]
