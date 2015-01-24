@@ -19,11 +19,9 @@ from emcee.utils import MPIPool
 
 kSZ_dir = '/home1/02977/jialiu/kSZ/'
 freq_arr = ['2freqs', '545217GHzclean', '857GHz', 'dusty']
-if int(sys.argv[2]):
-	freq = freq_arr[int(sys.argv[1])]
-else:
-	freq = 'dusty'
-print 'frequency:', freq
+freq = freq_arr[int(sys.argv[2])]
+Wx=int(sys.argv[1])
+print 'Wx, frequency:', Wx, freq
 
 #prefix = 'filterAfterSQ'
 #kSZmapGen = lambda Wx: np.load(kSZ_dir+'Planck/LGMCA_W%s_flipper8192_kSZfilt_squared_T2filt_toJia.npy'%(Wx))
@@ -95,7 +93,7 @@ if create_noise_KS:
 	'''
 	create 500 noise maps by randomly rotate galaxies, also include weights and (1+m) correction. all maps are smoothed over 1 arcmin.
 	'''
-	Wx=int(sys.argv[1])
+	#Wx=int(sys.argv[1])
 	p = MPIPool()
 	
 	bmap_fn = lambda Wx, iseed: kSZ_dir+'CFHT/Noise/W%i_Noise_sigmaG10_%04d.npy'%(Wx, iseed)
