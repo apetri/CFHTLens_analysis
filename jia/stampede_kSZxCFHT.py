@@ -31,7 +31,7 @@ prefix = 'filterB4SQ'
 
 dustGen = lambda i, freq: np.load(kSZ_dir + 'dust/map%s_LGMCAfilt_uK_W%i_flipper8192_toJia.npy'%(freq, i))
 
-nosqkSZGen_dusty = np.load(kSZ_dir+'Planck/LGMCA_W%s_flipper8192_kSZfilt_NOTsquared_toJia.npy'%(Wx))
+nosqkSZGen_dusty = lambda Wx: np.load(kSZ_dir+'Planck/LGMCA_W%s_flipper8192_kSZfilt_NOTsquared_toJia.npy'%(Wx))
 
 def return_alpha (freq): 
 	if freq == '545217GHzclean':
