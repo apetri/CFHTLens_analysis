@@ -48,7 +48,29 @@
 \label{firstpage}
 
 \begin{abstract}
-Weak gravitational lensing is a potentially powerful probe for cosmology, and in particular for the Dark Energy (DE) equation of state $w$; the fact that typical weak lensing fields are non--Gaussian in nature, quadratic statistics, such as angular power spectra, can miss some of the cosmological information contained in survey data. In this work we examine constraints on the parameter triplet $(\Omega_m,w,\sigma_8)$ from weak lensing Minkowski Functionals and Moments, using the publicly available data from the 154\,deg$^2$ CFHTLenS survey. We utilize a new suite of ray--tracing N-body simulations spanning 91 points in the $(\Omega_m,w,\sigma_8)$ parameter space, replicating the galaxy sky positions, redshift and shape noise in the CFHTLenS catalogs. We then build an emulator that interpolates the simulated feature spaces, and use it to compute the parameter likelihood, from which we derive the data constraints. We find that dimensionality reduction techniques such as Principal Component Analysis help in stabilizing the constraints with respect to the number of bins used to construct the convergence statistics. Using our full set of statistical descriptors, we constrain the $\Sigma_8=\sigma_8(\Omega_m/0.27)^{0.55}$ to a value of $0.75\pm0.04$ at the $1\sigma$ significance level, well in agreement with the values already quoted in the literature. We find that, while the Minkowski Functionals constraints on the $(\Omega_m,\sigma_8)$ doublet suffer from a bias, the Moments provide a tight unbiased bound on the former parameters, with the main contribution coming from quartic moments of gradients.  
+Weak gravitational lensing is a powerful cosmological probe, with
+non--Gaussian features potentially containing the majority of the
+information. We examine constraints on the parameter triplet
+$(\Omega_m,w,\sigma_8)$ from high--order moments and Minkowski
+Functionals (non-Gaussian ``features'') of the weak lensing
+convergence field, using publicly available data from the 154\,deg$^2$
+CFHTLenS survey. We utilize a suite of ray--tracing N-body simulations
+spanning 91 points in the $(\Omega_m,w,\sigma_8)$ parameter space,
+replicating the galaxy sky positions, redshifts and shape noise in the
+CFHTLenS catalogs. We then build an emulator that interpolates the
+simulated features as a function of $(\Omega_m,w,\sigma_8)$, and use
+it to compute the likelihood function and parameter constraints. We
+employ a principal component analysis to reduce dimensionality and to
+help stabilize the constraints with respect to the number of bins used
+to construct each convergence statistics. Using the full set of
+statistics, we find
+$\Sigma_8\equiv\sigma_8(\Omega_m/0.27)^{0.55}=0.75\pm0.04$ (68\%
+C.L.), in agreement with previous values. We find that constraints on
+the $(\Omega_m,\sigma_8)$ doublet from the Minkowski Functionals
+suffer a strong bias. However, high-order moments break the
+$(\Omega_m,\sigma_8)$ degeneracy and provide a tight constraint on
+these parameters with no apparent bias.  The main contribution comes
+from quartic moments of gradients.
 
 \end{abstract}
 
