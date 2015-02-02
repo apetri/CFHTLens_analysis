@@ -20,14 +20,14 @@ import scipy.optimize as op
 import sys
 
 ######## for stampede #####
-from emcee.utils import MPIPool
-obsPK_dir = '/home1/02977/jialiu/obsPK/'
+#from emcee.utils import MPIPool
+#obsPK_dir = '/home1/02977/jialiu/obsPK/'
 
 ######## for laptop #####
-#obsPK_dir = '/Users/jia/CFHTLenS/obsPK/'
-#plot_dir = obsPK_dir+'plot/'
+obsPK_dir = '/Users/jia/CFHTLenS/obsPK/'
+plot_dir = obsPK_dir+'plot/'
 
-make_kappa_predict = 1
+make_kappa_predict = 0
 
 ########### constants ######################
 z_lo = 0.6
@@ -330,38 +330,36 @@ if make_kappa_predict:
 #################### make kappa_predict_map ###########################
 #######################################################################
 
-#for Wx in range(1,5):#(1,):#
+for Wx in (2,4):#range(1,5):#
 	
-	############### get catalogue
-	##sizes = (1330, 800, 1120, 950)
-	##print Wx
-	##isize = sizes[Wx-1]
-	##center = centers[Wx-1]
+	############## get catalogue
+	sizes = (1330, 800, 1120, 950)
+	print Wx
+	isize = sizes[Wx-1]
+	center = centers[Wx-1]
 
 	
-	##icat = cat_gen(Wx).T #ra, dec, redshift, weight, MAGi, Mhalo, Rvir, DL = icat
-	##f_Wx = WLanalysis.gnom_fun(center)	
-	##y, x = array(f_Wx(icat[:2]))
-	##weight = icat[3]
-	##k = np.load(obsPK_dir+'kappa_predict_W%i.npy'%(Wx))#kappa_predict_Mmax2e15_W%i.npy
-	##A, galn = WLanalysis.coords2grid(x, y, array([k*weight, weight, k]), size=isize)
-	##Mkw, Mw, Mk = A
-	############################################
+	icat = cat_gen(Wx).T #ra, dec, redshift, weight, MAGi, Mhalo, Rvir, DL = icat
+	f_Wx = WLanalysis.gnom_fun(center)	
+	y, x = array(f_Wx(icat[:2]))
+	weight = icat[3]
+	k = np.load(obsPK_dir+'kappa_predict_W%i.npy'%(Wx))#kappa_predict_Mmax2e15_W%i.npy
+	A, galn = WLanalysis.coords2grid(x, y, array([k*weight, weight, k]), size=isize)
+	Mkw, Mw, Mk = A
+	###########################################
 	
-	#for sigmaG in (1.8, 3.5, 5.3, 8.9):#(0.5, 1.0,):#(0.5, 1.0, (5.3, 8.9):#, (0.5, 1.0, 1.8, 3.5, 5.3, 8.9)
-		#print Wx, sigmaG
+	for sigmaG in (1.8, 3.5, 5.3, 8.9):#(0.5, 1.0,):#(0.5, 1.0, (5.3, 8.9):#, (0.5, 1.0, 1.8, 3.5, 5.3, 8.9)
+		print Wx, sigmaG
 		
-		#mask0 = maskGen(Wx, 0.5, sigmaG)
-		#mask = WLanalysis.smooth(mask0, 5.0)
-		################# make maps ######################
-		##kmap_predict = WLanalysis.weighted_smooth(Mkw, Mw, PPA=PPA512, sigmaG=sigmaG)
-		##kmap_predict*=mask
-		##np.save(obsPK_dir+'maps/kmap_W%i_predict_sigmaG%02d.npy'%(Wx, sigmaG*10), kmap_predict)
-		#############################################
+		mask0 = maskGen(Wx, 0.5, sigmaG)
+		mask = WLanalysis.smooth(mask0, 5.0)
+		################ make maps ######################
+		kmap_predict = WLanalysis.weighted_smooth(Mkw, Mw, PPA=PPA512, sigmaG=sigmaG)
+		kmap_predict*=mask
+		np.save(obsPK_dir+'maps/kmap_W%i_predict_sigmaG%02d.npy'%(Wx, sigmaG*10), kmap_predict)
+		############################################
 		
 		############## plotting after got all the maps already ########
-		##pgaln = WLanalysis.smooth(galn, sigmaG*PPA512)
-		##lgaln = WLanalysis.readFits(obsPK_dir+'maps/W%i_galn_1.3_lo_sigmaG%02d.fit'%(Wx, sigmaG*10))
 		#kmap_predict = np.load(obsPK_dir+'maps/kmap_W%i_predict_sigmaG%02d.npy'%(Wx, sigmaG*10))*mask
 		
 		#kmap_lensing = WLanalysis.readFits(obsPK_dir+'maps/W%i_KS_1.3_lo_sigmaG%02d.fit'%(Wx, sigmaG*10))*mask
@@ -407,20 +405,20 @@ if make_kappa_predict:
 		##savefig(plot_dir+'kmap_W%i_sigmaG%s_predictgaln.jpg'%(Wx,sigmaG))
 		##close()		
 		
-		#mask_nan = mask0.copy()
-		#mask_nan[mask0==0]=nan
+		mask_nan = mask0.copy()
+		mask_nan[mask0==0]=nan
 		#imshow(kmap_lensing*mask_nan, vmax=3*std(kmap_lensing), vmin=-2*std(kmap_lensing), origin = 'lower')
 		#title('W%i kmap_lensing'%(Wx))
 		#colorbar()
 		#savefig(plot_dir+'kmap_W%i_sigmaG%s_lensing.jpg'%(Wx,sigmaG))
 		#close()
 
-		##kmap_predict -= mean(kmap_predict[mask==1])
-		##imshow(kmap_predict, vmax=3*std(kmap_predict), vmin=-2*std(kmap_predict), origin = 'lower')
-		#imshow(kmap_predict*mask_nan, vmax=4*std(kmap_predict), vmin=0, origin = 'lower')
-		#title('W%i kmap_predict'%(Wx))
-		#colorbar()
-		#savefig(plot_dir+'kmap_W%i_sigmaG%s_predict.jpg'%(Wx,sigmaG))
-		#close()
+		#kmap_predict -= mean(kmap_predict[mask==1])
+		#imshow(kmap_predict, vmax=3*std(kmap_predict), vmin=-2*std(kmap_predict), origin = 'lower')
+		imshow(kmap_predict*mask_nan, vmax=4*std(kmap_predict), vmin=0, origin = 'lower')
+		title('W%i kmap_predict'%(Wx))
+		colorbar()
+		savefig(plot_dir+'kmap_r20arcmin_W%i_sigmaG%s_predict.jpg'%(Wx,sigmaG))
+		close()
 
 print 'done-done-done'
