@@ -19,8 +19,7 @@ from emcee.utils import MPIPool
 
 kSZ_dir = '/home1/02977/jialiu/kSZ/'
 freq_arr = ['2freqs', '545217GHzclean', '857GHz', 'dusty']
-freq = freq_arr[int(sys.argv[2])]
-#Wx=int(sys.argv[1])
+freq = freq_arr[int(sys.argv[1])]
 print 'frequency:', freq
 
 #prefix = 'filterAfterSQ'
