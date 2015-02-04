@@ -20,14 +20,14 @@ import scipy.optimize as op
 import sys
 
 ######## for stampede #####
-#from emcee.utils import MPIPool
-#obsPK_dir = '/home1/02977/jialiu/obsPK/'
+from emcee.utils import MPIPool
+obsPK_dir = '/home1/02977/jialiu/obsPK/'
 
 ######## for laptop #####
-obsPK_dir = '/Users/jia/CFHTLenS/obsPK/'
-plot_dir = obsPK_dir+'plot/'
+#obsPK_dir = '/Users/jia/CFHTLenS/obsPK/'
+#plot_dir = obsPK_dir+'plot/'
 
-make_kappa_predict = 0
+make_kappa_predict = 1
 
 ########### constants ######################
 z_lo = 0.6
@@ -45,7 +45,7 @@ OmegaM = 0.25#0.3
 OmegaV = 1.0-OmegaM
 rho_c0 = 9.9e-30#g/cm^3
 M_sun = 1.989e33#gram
-
+sigmaG_arr = (0.5, 1.0, 1.8, 3.5, 5.3, 8.9)
 ############################################
 ############ functions #####################
 ############################################
@@ -125,7 +125,7 @@ def PeakPos (Wx, z_lo=0.6, z_hi='0.6_lo',noise=False, Bmode=False):
 ################## kappa projection 2014/12/14 ##############
 #############################################################
 
-def Gx_fcn (x, cNFW=5.0):
+def Gx_fcn (x, cNFW):#=5.0):
 	if x < 1:
 		out = 1.0/(x**2-1.0)*sqrt(cNFW**2-x**2)/(cNFW+1.0)+1.0/(1.0-x**2)**1.5*arccosh((x**2+cNFW)/x/(cNFW+1.0))
 	elif x == 1:
@@ -137,16 +137,21 @@ def Gx_fcn (x, cNFW=5.0):
 	return out
 
 f = 1.043
+c0, beta = 11, 0.13 # lin & kilbinger2014
 def kappa_proj (Mvir, Rvir, z_fore, x_fore, y_fore, DL_fore, z_back, x_back, y_back, DL_back, cNFW=5.0):
 	'''return a function, for certain foreground halo, 
 	calculate the projected mass between a foreground halo and a background galaxy pair.
 	'''
-	#f = 1.043#=1.0/(log(1+cNFW)-cNFW/(1+cNFW)) with cNFW=5.0
+	######## updated next 2 lines to have a variable cNFW
+	cNFW = c0/(1+z_back)*(Mvir/1e13)**(-beta)
+	f=1.0/(log(1+cNFW)-cNFW/(1+cNFW))# = 1.043 with cNFW=5.0
+	
 	two_rhos_rs = Mvir*M_sun*f*cNFW**2/(2*pi*Rvir**2)#cgs, see LK2014 footnote
 	Dl = DL_fore/(1+z_fore)**2
 	Dl_cm = 3.08567758e24*Dl # D_angular = D_luminosity/(1+z)**2
 	theta_vir = Rvir/Dl_cm	
 	Ds = DL_back/(1+z_back)**2
+	#Ds_cm = 3.08567758e24*Ds### bug!!!
 	Dls = Ds - Dl
 	DDs = Ds/(Dl*Dls)/3.08567758e24# 3e24 = 1Mpc/1cm
 	SIGMAc = 1.07e+27*DDs#(c*1e5)**2/4.0/pi/Gnewton=1.0716311756473212e+27
@@ -172,8 +177,8 @@ if make_kappa_predict:
 	icat = cat_gen(Wx).T
 
 	ra, dec, redshift, weight, MAGi, Mhalo, Rvir, DL = icat
-	Mhalo[Mhalo>2e15] = 2e15#prevent halos to get crazy mass
-	f_Wx = WLanalysis.gnom_fun(center)
+	#Mhalo[Mhalo>2e15] = 2e15#prevent halos to get crazy mass
+	f_Wx = WLanalysis.gnom_fun(center)#turns to radians
 	xy = array(f_Wx(icat[:2])).T
 
 	idx_back = where(redshift>zcut)[0]
@@ -182,7 +187,7 @@ if make_kappa_predict:
 	kdt = cKDTree(xy)
 #nearestneighbors = kdt.query_ball_point(xy_back[:100], 0.002)
 	def kappa_individual_gal (i):
-		'''for individual background galaxies, find foreground galaxies within 7 arcmin and sum up the kappa contribution
+		'''for individual background galaxies, find foreground galaxies within 20 arcmin and sum up the kappa contribution
 		'''
 		print i
 		iidx_fore = array(kdt.query_ball_point(xy_back[i], r))	
@@ -222,203 +227,208 @@ if make_kappa_predict:
 #########################################################
 ####################### plotting correlation ########################
 #########################################################
+make_predict_maps = 0
+plot_predict_maps = 0
+peak_proj_vs_lensing = 0
+cross_correlate = 0
 
-##################### kappa_proj vs kappa_lensing ####
+kmap_predict_Gen = lambda Wx, sigmaG: np.load(obsPK_dir+'maps/kmap_W%i_predict_sigmaG%02d.npy'%(Wx, sigmaG*10))
 
-#Wx = 1
-#sigmaG = 1.0
+kmap_lensing_Gen = lambda Wx, sigmaG: WLanalysis.readFits(obsPK_dir+'maps/W%i_KS_1.3_lo_sigmaG%02d.fit'%(Wx, sigmaG*10))
 
-#mask = maskGen(Wx, 0.5, sigmaG)
+bmode_lensing_Gen = lambda Wx, sigmaG: WLanalysis.readFits(obsPK_dir+'maps/W%i_Bmode_1.3_lo_sigmaG%02d.fit'%(Wx, sigmaG*10))
 
-#kmap_predict = np.load(obsPK_dir+'maps/kmap_W%i_predict_sigmaG%02d.npy'%(Wx, sigmaG*10))*mask
-
-#kmap_lensing = WLanalysis.readFits(obsPK_dir+'maps/W%i_KS_1.3_lo_sigmaG%02d.fit'%(Wx, sigmaG*10))*mask
-#bmode = WLanalysis.readFits(obsPK_dir+'maps/W%i_Bmode_1.3_lo_sigmaG%02d.fit'%(Wx, sigmaG*10))
-
-#kproj_peak_mat = WLanalysis.peaks_mat(kmap_predict)
-##kproj_peak_mat = WLanalysis.peaks_mat(kmap_lensing)
-#idx_pos = (kproj_peak_mat!=0)&(~isnan(kproj_peak_mat))
-#kappa_proj = kmap_predict[idx_pos]
-#kappa_lensing = kmap_lensing[idx_pos]
-#kappa_bmode = bmode[idx_pos]
-#edge_arr = linspace(0,2*std(kappa_proj),7)
-#ymean = zeros(len(edge_arr)-1)
-#ymeanB =zeros(len(edge_arr)-1)
-#for i in arange(len(edge_arr)-1):
-	#ymean[i]=mean(kappa_lensing[(kappa_proj<edge_arr[i+1])&(kappa_proj>edge_arr[i])])
-	#ymeanB[i]=mean(kappa_bmode[(kappa_proj<edge_arr[i+1])&(kappa_proj>edge_arr[i])])
-#plot(edge_arr[1:], ymean, 'o')
-#plot(edge_arr[1:], ymeanB, 'x')
-#show()
-
-#Wx = 1
-#sigmaG = 0.5
-#kproj = np.load(obsPK_dir+'maps/kmap_W1_predict_sigmaG%02d.npy'%(sigmaG*10))
-#kmap = WLanalysis.readFits(obsPK_dir+'maps/W1_KS_1.3_lo_sigmaG%02d.fit'%(sigmaG*10))
-#kproj_peak_mat = WLanalysis.peaks_mat(kproj)
-#mask = maskGen(Wx, 0.5, sigmaG)
-#kproj_peak_mat[where(mask==0)]=nan
-#kproj_peak_mat[isnan(kproj_peak_mat)]=0
-#kproj_peak_smooth = WLanalysis.smooth(kproj_peak_mat,10)
-#mask2 = maskGen(Wx, 0.5, sigmaG)
-#kmap[where(mask2==0)]=nan
-#imshow(kmap, origin='lower',vmin=-2*std(kmap[~isnan(kmap)]),vmax=3*std(kmap[~isnan(kmap)]))
-#contour(kproj_peak_smooth, origin='lower',levels=(5e-6,))
-#show()
-
-#edgesGen = lambda Wx: logspace(log10(5),log10(300),7)*sizes[Wx-1]/1330.0
-#Wx = 1
-#sigmaG = 0.5
-#for sigmaG in (0.5, 1.0, 3.5, 5.3, 8.9):#
-	#print sigmaG
+if make_predict_maps:
+	for Wx in range(1,5):#
 	
-	##for Wx in range(1,5):
-	#def returnCC (Wx):
-		#edges = edgesGen(Wx)
-		##print Wx
-		#mask = maskGen(Wx, 0.5, sigmaG)
-		#galn = WLanalysis.readFits(obsPK_dir+'maps/W%i_galn_1.3_lo_sigmaG%02d.fit'%(Wx, sigmaG*10))
-		#kmap = WLanalysis.readFits(obsPK_dir+'maps/W%i_KS_1.3_lo_sigmaG%02d.fit'%(Wx, sigmaG*10))
+		############### get catalogue
+		sizes = (1330, 800, 1120, 950)
+		print Wx
+		isize = sizes[Wx-1]
+		center = centers[Wx-1]
 
-		#bmode = WLanalysis.readFits(obsPK_dir+'maps/W%i_Bmode_1.3_lo_sigmaG%02d.fit'%(Wx, sigmaG*10))
-
-		#kproj = np.load(obsPK_dir+'maps/kmap_W%i_predict_sigmaG%02d.npy'%(Wx, sigmaG*10))
 		
-		#ell_arr, pk = WLanalysis.CrossCorrelate(kmap*mask, galn*mask,edges=edges)
-		#ell_arr, pb = WLanalysis.CrossCorrelate(kmap*mask, bmode*mask,edges=edges)
-		#ell_arr, pp = WLanalysis.CrossCorrelate(kproj*mask, galn*mask,edges=edges)
-
-		#ell_arr, ppk = WLanalysis.CrossCorrelate(kproj*mask, kmap*mask,edges=edges)
-		#ell_arr, ppb = WLanalysis.CrossCorrelate(kproj*mask, bmode*mask,edges=edges)
-		#return ell_arr, pk, pb, pp, ppk, ppb
-	
-	#out = array(map(returnCC,range(1,5)))
-	#ell_arr, pk, pb, pp, ppk, ppb = mean(out, axis=0)
-	#ell_arr_err, pk_err, pb_err, pp_err, ppk_err, ppb_err = std(out, axis=0)
-	
-	#f=figure(figsize=(8,12))
-	#ax=f.add_subplot(211)
-	#ax2=f.add_subplot(212)	
-	#colors=['r','b','g','m']
-	#ax2.errorbar(ell_arr, pk, pk_err, fmt='o',label='kappa x galn')
-	#ax2.errorbar(ell_arr, pb, pb_err,fmt='*', label='bmode x galn')
-	#ax2.errorbar(ell_arr, pp, pp_err,fmt='d', label='kproj x galn')
-
-	#ax.errorbar(ell_arr, ppk,ppk_err,fmt='o', label='kproj x kappa')
-	#ax.errorbar(ell_arr, ppb,ppb_err,fmt='d', label='kproj x bmode')
-
-	#ax.set_xscale('log')
-	#leg=ax.legend(ncol=1, labelspacing=0.3, prop={'size':14},loc=0)
-	#leg.get_frame().set_visible(False)
-	#ax.set_xlabel('ell')
-	#ax.set_ylabel('Power')
-	#ax.set_xlim(1e3,2e4)
-	#ax.set_title('sigmaG = %s arcmin'%(sigmaG))
-	#ax.set_xlim(ell_arr[0]/2,ell_arr[-1]*2)
-	#ax2.set_xscale('log')
-	#ax2.legend(fontsize=10,loc=2)
-	#ax2.set_xlabel('ell')
-	#ax2.set_ylabel('Power')
-	#leg2=ax2.legend(ncol=1, labelspacing=0.3, prop={'size':14},loc=0)
-	#leg2.get_frame().set_visible(False)
-	#ax2.set_xlim(ell_arr[0]/2,ell_arr[-1]*2)
-	##show()
-	#savefig(plot_dir+'CCmean_kproj_kappa_sigmaG%02d.jpg'%(sigmaG*10))
-	#close()
-
-#######################################################################
-#################### make kappa_predict_map ###########################
-#######################################################################
-
-for Wx in (2,4):#range(1,5):#
-	
-	############## get catalogue
-	sizes = (1330, 800, 1120, 950)
-	print Wx
-	isize = sizes[Wx-1]
-	center = centers[Wx-1]
-
-	
-	icat = cat_gen(Wx).T #ra, dec, redshift, weight, MAGi, Mhalo, Rvir, DL = icat
-	f_Wx = WLanalysis.gnom_fun(center)	
-	y, x = array(f_Wx(icat[:2]))
-	weight = icat[3]
-	k = np.load(obsPK_dir+'kappa_predict_W%i.npy'%(Wx))#kappa_predict_Mmax2e15_W%i.npy
-	A, galn = WLanalysis.coords2grid(x, y, array([k*weight, weight, k]), size=isize)
-	Mkw, Mw, Mk = A
-	###########################################
-	
-	for sigmaG in (1.8, 3.5, 5.3, 8.9):#(0.5, 1.0,):#(0.5, 1.0, (5.3, 8.9):#, (0.5, 1.0, 1.8, 3.5, 5.3, 8.9)
-		print Wx, sigmaG
+		icat = cat_gen(Wx).T #ra, dec, redshift, weight, MAGi, Mhalo, Rvir, DL = icat
+		f_Wx = WLanalysis.gnom_fun(center)	
+		y, x = array(f_Wx(icat[:2]))
+		weight = icat[3]
+		k = np.load(obsPK_dir+'kappa_predict_W%i.npy'%(Wx))#kappa_predict_Mmax2e15_W%i.npy
+		A, galn = WLanalysis.coords2grid(x, y, array([k*weight, weight, k]), size=isize)
+		Mkw, Mw, Mk = A
+		###########################################
 		
+		for sigmaG in  (0.5, 1.0, 1.8, 3.5, 5.3, 8.9):
+			print Wx, sigmaG
+			
+			mask0 = maskGen(Wx, 0.5, sigmaG)
+			mask = WLanalysis.smooth(mask0, 5.0)
+			################ make maps ######################
+			kmap_predict = WLanalysis.weighted_smooth(Mkw, Mw, PPA=PPA512, sigmaG=sigmaG)
+			kmap_predict*=mask
+			np.save(obsPK_dir+'maps/kmap_W%i_predict_sigmaG%02d.npy'%(Wx, sigmaG*10), kmap_predict)
+			###########################################
+
+if peak_proj_vs_lensing:
+	'''for certain kappa_peak in project map, find the lensing kappa at that location
+	'''
+	sigmaG = 1.0
+	k=1
+	figure()
+	for sigmaG in sigmaG_arr:
+		subplot(3,2,k)
+		edge_arr = linspace(0,0.03,10)
+		def return_kappa_arr (Wx, sigmaG=sigmaG):
+			mask = maskGen(Wx, 0.5, sigmaG)
+			kmap_predict = kmap_predict_Gen(Wx, sigmaG)
+			kmap_lensing = kmap_lensing_Gen(Wx, sigmaG)
+			bmode = bmode_lensing_Gen(Wx, sigmaG)
+			kproj_peak_mat = WLanalysis.peaks_mat(kmap_predict)
+			#kproj_peak_mat = WLanalysis.peaks_mat(kmap_lensing)
+			idx_pos = (kproj_peak_mat!=0)&(~isnan(kproj_peak_mat))
+			kappa_proj = kmap_predict[idx_pos]
+			kappa_lensing = kmap_lensing[idx_pos]
+			kappa_bmode = bmode[idx_pos]
+			
+			return kappa_proj, kappa_lensing, kappa_bmode
+
+		out = map(return_kappa_arr, range(1,5))#4x3
+		kappa_proj, kappa_lensing, kappa_bmode = [concatenate([out[i][j] for i in range(4)]) for j in range(3)]
+
+		ymean = zeros(len(edge_arr)-1)
+		ymeanB =zeros(len(edge_arr)-1)
+		for i in arange(len(edge_arr)-1):
+			idx_pos2=(kappa_proj<edge_arr[i+1])&(kappa_proj>edge_arr[i])
+			ymean[i]=mean(kappa_lensing[idx_pos2])
+			ymeanB[i]=mean(kappa_bmode[idx_pos2])
+			
+		
+		plot(edge_arr[1:], ymean, 'ro',label='convergence')
+		plot(edge_arr[1:], ymeanB, 'bx',label='B mode')
+		
+		if k==1:
+			legend(loc=0,fontsize=10)
+		if k>4:
+			xlabel('kappa_predict')
+		title('%s arcmin'%(sigmaG))
+		k+=1
+	show()
+
+if cross_correlate:
+	edgesGen = lambda Wx: logspace(log10(5),log10(300),7)*sizes[Wx-1]/1330.0
+	def returnCC (Wx):
+		edges = edgesGen(Wx)
+		#print Wx
+		mask = maskGen(Wx, 0.5, sigmaG)
+		galn = WLanalysis.readFits(obsPK_dir+'maps/W%i_galn_1.3_lo_sigmaG%02d.fit'%(Wx, sigmaG*10))
+		kmap = kmap_lensing_Gen(Wx, sigmaG)
+		bmode = bmode_lensing_Gen(Wx, sigmaG)
+		kproj = kmap_predict_Gen(Wx, sigmaG)
+		
+		ell_arr, pk = WLanalysis.CrossCorrelate(kmap*mask, galn*mask,edges=edges)
+		ell_arr, pb = WLanalysis.CrossCorrelate(kmap*mask, bmode*mask,edges=edges)
+		ell_arr, pp = WLanalysis.CrossCorrelate(kproj*mask, galn*mask,edges=edges)
+
+		ell_arr, ppk = WLanalysis.CrossCorrelate(kproj*mask, kmap*mask,edges=edges)
+		ell_arr, ppb = WLanalysis.CrossCorrelate(kproj*mask, bmode*mask,edges=edges)
+		return ell_arr, pk, pb, pp, ppk, ppb
+	
+	out = array(map(returnCC,range(1,5)))
+	ell_arr, pk, pb, pp, ppk, ppb = mean(out, axis=0)
+	ell_arr_err, pk_err, pb_err, pp_err, ppk_err, ppb_err = std(out, axis=0)
+	
+	f=figure(figsize=(8,12))
+	ax=f.add_subplot(211)
+	ax2=f.add_subplot(212)	
+	colors=['r','b','g','m']
+	ax2.errorbar(ell_arr, pk, pk_err, fmt='o',label='kappa x galn')
+	ax2.errorbar(ell_arr, pb, pb_err,fmt='*', label='bmode x galn')
+	ax2.errorbar(ell_arr, pp, pp_err,fmt='d', label='kproj x galn')
+
+	ax.errorbar(ell_arr, ppk,ppk_err,fmt='o', label='kproj x kappa')
+	ax.errorbar(ell_arr, ppb,ppb_err,fmt='d', label='kproj x bmode')
+
+	ax.set_xscale('log')
+	leg=ax.legend(ncol=1, labelspacing=0.3, prop={'size':14},loc=0)
+	leg.get_frame().set_visible(False)
+	ax.set_xlabel('ell')
+	ax.set_ylabel('Power')
+	ax.set_xlim(1e3,2e4)
+	ax.set_title('sigmaG = %s arcmin'%(sigmaG))
+	ax.set_xlim(ell_arr[0]/2,ell_arr[-1]*2)
+	ax2.set_xscale('log')
+	ax2.legend(fontsize=10,loc=2)
+	ax2.set_xlabel('ell')
+	ax2.set_ylabel('Power')
+	leg2=ax2.legend(ncol=1, labelspacing=0.3, prop={'size':14},loc=0)
+	leg2.get_frame().set_visible(False)
+	ax2.set_xlim(ell_arr[0]/2,ell_arr[-1]*2)
+	#show()
+	savefig(plot_dir+'CCmean_kproj_kappa_sigmaG%02d.jpg'%(sigmaG*10))
+	close()
+
+	######
+	#kproj_peak_mat = WLanalysis.peaks_mat(kproj)
+	#mask = maskGen(Wx, 0.5, sigmaG)
+	#kproj_peak_mat[where(mask==0)]=nan
+	#kproj_peak_mat[isnan(kproj_peak_mat)]=0
+	#kproj_peak_smooth = WLanalysis.smooth(kproj_peak_mat,10)
+	#mask2 = maskGen(Wx, 0.5, sigmaG)
+	#kmap[where(mask2==0)]=nan
+	#imshow(kmap, origin='lower',vmin=-2*std(kmap[~isnan(kmap)]),vmax=3*std(kmap[~isnan(kmap)]))
+	#contour(kproj_peak_smooth, origin='lower',levels=(5e-6,))
+	#show()
+
+if plot_predict_maps:
+	def plot_predict_maps_fcn(Wx, sigmaG):
 		mask0 = maskGen(Wx, 0.5, sigmaG)
 		mask = WLanalysis.smooth(mask0, 5.0)
-		################ make maps ######################
-		kmap_predict = WLanalysis.weighted_smooth(Mkw, Mw, PPA=PPA512, sigmaG=sigmaG)
-		kmap_predict*=mask
-		np.save(obsPK_dir+'maps/kmap_W%i_predict_sigmaG%02d.npy'%(Wx, sigmaG*10), kmap_predict)
-		############################################
 		
-		############## plotting after got all the maps already ########
-		#kmap_predict = np.load(obsPK_dir+'maps/kmap_W%i_predict_sigmaG%02d.npy'%(Wx, sigmaG*10))*mask
-		
-		#kmap_lensing = WLanalysis.readFits(obsPK_dir+'maps/W%i_KS_1.3_lo_sigmaG%02d.fit'%(Wx, sigmaG*10))*mask
-		
-		##bmode_lensing = WLanalysis.readFits('/Users/jia/CFHTLenS/catalogue/Noise/W%i/W%i_Noise_sigmaG10_0499.fit'%(Wx, Wx))*mask
-		
-		#bmode_lensing = WLanalysis.readFits(obsPK_dir+'maps/W%i_Bmode_1.3_lo_sigmaG%02d.fit'%(Wx, sigmaG*10))*mask
-		
-		################ plot the correlation ###########
-		##kmap_predict -= mean(kmap_predict)
-		##kmap_lensing -= mean(kmap_lensing)
-		
-		##P2D_signal = ifft2(fft2(kmap_predict)*conj(fft2(kmap_lensing)))
-		##P2D_bmode = ifft2(fft2(kmap_predict)*conj(fft2(bmode_lensing)))
-		
-		###P2D_galn = ifft2(fft2(kmap_predict)*conj(fft2(pgaln)))
-		###P2D_lensinggaln = ifft2(fft2(kmap_lensing)*conj(fft2(lgaln)))
-		
-		##labels=['pred x lens','pred x bmode','lens x galn']#'pred x galn'
-		##f=figure()
-		##ax=f.add_subplot(111)
-		##i=0
-		##for iP2D in (P2D_signal, P2D_bmode):#, P2D_lensinggaln):
-		###for imap in (kmap_lensing, bmode_lensing):
-			###edges, power = WLanalysis.CrossCorrelate(kmap_predict, imap, edges = logspace(0,log10(500),10))
-			##edges, power = WLanalysis.azimuthalAverage(real(fftshift(iP2D)))
-			##ax.plot(edges[1:]/PPA512, power, label=labels[i])
-			###ax.plot(edges/PPA512, power, label=labels[i])
-			##i+=1
-		##legend(fontsize=10)
-		###ax.set_xlabel('arcmin')
-		##ax.set_ylabel('Power')
-		##ax.set_xscale('log')
-		###savefig(plot_dir+'junk2/Noise2pcf_W%i_sigmaG%02d.jpg'%(Wx, sigmaG*10))
-		##savefig(plot_dir+'Test2pcf_W%i_sigmaG%02d.jpg'%(Wx, sigmaG*10))
-		##close()
-		
-		####### plot the maps ######################
-		
-		##imshow(galn, origin = 'lower')
-		##title('W%i predict galn'%(Wx))
-		##colorbar()
-		##savefig(plot_dir+'kmap_W%i_sigmaG%s_predictgaln.jpg'%(Wx,sigmaG))
-		##close()		
+		kmap_lensing = kmap_lensing_Gen(Wx, sigmaG)*mask
+		kmap_predict = kmap_predict_Gen(Wx, sigmaG)*mask
+		bmode_lensing= bmode_lensing_Gen(Wx, sigmaG)
 		
 		mask_nan = mask0.copy()
 		mask_nan[mask0==0]=nan
-		#imshow(kmap_lensing*mask_nan, vmax=3*std(kmap_lensing), vmin=-2*std(kmap_lensing), origin = 'lower')
-		#title('W%i kmap_lensing'%(Wx))
-		#colorbar()
-		#savefig(plot_dir+'kmap_W%i_sigmaG%s_lensing.jpg'%(Wx,sigmaG))
-		#close()
+		imshow(kmap_lensing*mask_nan, vmax=3*std(kmap_lensing), vmin=-2*std(kmap_lensing), origin = 'lower')
+		title('W%i kmap_lensing'%(Wx))
+		colorbar()
+		savefig(plot_dir+'kmap_W%i_sigmaG%s_lensing.jpg'%(Wx,sigmaG))
+		close()
 
-		#kmap_predict -= mean(kmap_predict[mask==1])
-		#imshow(kmap_predict, vmax=3*std(kmap_predict), vmin=-2*std(kmap_predict), origin = 'lower')
+		imshow(kmap_predict, vmax=3*std(kmap_predict), vmin=-2*std(kmap_predict), origin = 'lower')
 		imshow(kmap_predict*mask_nan, vmax=4*std(kmap_predict), vmin=0, origin = 'lower')
 		title('W%i kmap_predict'%(Wx))
 		colorbar()
 		savefig(plot_dir+'kmap_r20arcmin_W%i_sigmaG%s_predict.jpg'%(Wx,sigmaG))
 		close()
+	map(plot_predict_maps_fcn, [[Wx, sigmaG] for Wx in range(1,5) for sigmaG in sigmaG_arr])
+
+	################ plot the correlation ###########
+	
+	##P2D_signal = ifft2(fft2(kmap_predict)*conj(fft2(kmap_lensing)))
+	##P2D_bmode = ifft2(fft2(kmap_predict)*conj(fft2(bmode_lensing)))
+	
+	###P2D_galn = ifft2(fft2(kmap_predict)*conj(fft2(pgaln)))
+	###P2D_lensinggaln = ifft2(fft2(kmap_lensing)*conj(fft2(lgaln)))
+	
+	##labels=['pred x lens','pred x bmode','lens x galn']#'pred x galn'
+	##f=figure()
+	##ax=f.add_subplot(111)
+	##i=0
+	##for iP2D in (P2D_signal, P2D_bmode):#, P2D_lensinggaln):
+	###for imap in (kmap_lensing, bmode_lensing):
+		###edges, power = WLanalysis.CrossCorrelate(kmap_predict, imap, edges = logspace(0,log10(500),10))
+		##edges, power = WLanalysis.azimuthalAverage(real(fftshift(iP2D)))
+		##ax.plot(edges[1:]/PPA512, power, label=labels[i])
+		###ax.plot(edges/PPA512, power, label=labels[i])
+		##i+=1
+	##legend(fontsize=10)
+	###ax.set_xlabel('arcmin')
+	##ax.set_ylabel('Power')
+	##ax.set_xscale('log')
+	###savefig(plot_dir+'junk2/Noise2pcf_W%i_sigmaG%02d.jpg'%(Wx, sigmaG*10))
+	##savefig(plot_dir+'Test2pcf_W%i_sigmaG%02d.jpg'%(Wx, sigmaG*10))
+	##close()
+			
 
 print 'done-done-done'
