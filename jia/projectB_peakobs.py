@@ -248,12 +248,12 @@ if make_kappa_predict:
 	def temp (ix):
 		print ix
 		temp_fn = obsPK_dir+'temp/kappa_proj%i_%07d.npy'%(Wx, ix)
-		#if not os.path.isfile(temp_fn):
-		kappa_all = map(kappa_individual_gal, arange(ix, amin([len(idx_back), ix+step])))
-		np.save(temp_fn,kappa_all)
+		if not os.path.isfile(temp_fn):
+			kappa_all = map(kappa_individual_gal, arange(ix, amin([len(idx_back), ix+step])))
+			np.save(temp_fn,kappa_all)
 	pool = MPIPool()
 	ix_arr = arange(0, len(idx_back), step)
-	pool.map(temp, ix_arr[::-1])
+	pool.map(temp, ix_arr)
 	
 	all_kappa_proj = concatenate([np.load(obsPK_dir+'temp/kappa_proj%i_%07d.npy'%(Wx, ix)) for ix in ix_arr])
 	np.save(obsPK_dir+'kappa_predict_W%i.npy'%(Wx), all_kappa_proj)
@@ -273,7 +273,7 @@ kmap_lensing_Gen = lambda Wx, sigmaG: WLanalysis.readFits(obsPK_dir+'maps/W%i_KS
 bmode_lensing_Gen = lambda Wx, sigmaG: WLanalysis.readFits(obsPK_dir+'maps/W%i_Bmode_1.3_lo_sigmaG%02d.fit'%(Wx, sigmaG*10))
 
 if make_predict_maps:
-	for Wx in (1,):#range(2,5):#
+	for Wx in (4,):#range(2,5):#
 	
 		############### get catalogue
 		sizes = (1330, 800, 1120, 950)
@@ -345,7 +345,7 @@ if peak_proj_vs_lensing:
 			xlabel('kappa_predict')
 		title('%s arcmin'%(sigmaG))
 		k+=1
-	savefig(plot_dir+'kappa_pred_lensing_varyingcNWF.jpg')
+	savefig(plot_dir+'kappa_pred_lensing_L12.jpg')
 	close()
 	
 if cross_correlate:
@@ -425,19 +425,20 @@ if plot_predict_maps:
 		
 		mask_nan = mask0.copy()
 		mask_nan[mask0==0]=nan
-		imshow(kmap_lensing*mask_nan, vmax=3*std(kmap_lensing), vmin=-2*std(kmap_lensing), origin = 'lower')
-		title('W%i kmap_lensing'%(Wx))
-		colorbar()
-		savefig(plot_dir+'kmap_W%i_sigmaG%s_lensing.jpg'%(Wx,sigmaG))
-		close()
+		
+		#imshow(kmap_lensing*mask_nan, vmax=3*std(kmap_lensing), vmin=-2*std(kmap_lensing), origin = 'lower')
+		#title('W%i kmap_lensing'%(Wx))
+		#colorbar()
+		#savefig(plot_dir+'kmap_W%i_sigmaG%s_lensing.jpg'%(Wx,sigmaG))
+		#close()
 
-		imshow(kmap_predict, vmax=3*std(kmap_predict), vmin=-2*std(kmap_predict), origin = 'lower')
+		##imshow(kmap_predict, vmax=3*std(kmap_predict), vmin=-2*std(kmap_predict), origin = 'lower')
 		imshow(kmap_predict*mask_nan, vmax=4*std(kmap_predict), vmin=0, origin = 'lower')
 		title('W%i kmap_predict'%(Wx))
 		colorbar()
-		savefig(plot_dir+'kmap_cNFW_W%i_sigmaG%s_predict.jpg'%(Wx,sigmaG))
+		savefig(plot_dir+'kmap_L12_W%i_sigmaG%s_predict.jpg'%(Wx,sigmaG))
 		close()
-	map(plot_predict_maps_fcn, [[Wx, sigmaG] for Wx in (1,) for sigmaG in sigmaG_arr])
+	map(plot_predict_maps_fcn, [[Wx, sigmaG] for Wx in (4,) for sigmaG in sigmaG_arr])
 
 	################ plot the correlation ###########
 	
