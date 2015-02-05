@@ -17,7 +17,7 @@ import WLanalysis
 from scipy import interpolate,stats
 from scipy.integrate import quad
 import scipy.optimize as op
-import sys
+import sys, os
 
 ######## for stampede #####
 from emcee.utils import MPIPool
@@ -215,11 +215,13 @@ if make_kappa_predict:
 	
 	def temp (ix):
 		print ix
-		kappa_all = map(kappa_individual_gal, arange(ix, amin([len(idx_back), ix+step])))
-		np.save(obsPK_dir+'temp/kappa_proj%i_%07d.npy'%(Wx, ix),kappa_all)
+		temp_fn = obsPK_dir+'temp/kappa_proj%i_%07d.npy'%(Wx, ix)
+		if not os.path.isfile(temp_fn):
+			kappa_all = map(kappa_individual_gal, arange(ix, amin([len(idx_back), ix+step])))
+			np.save(temp_fn,kappa_all)
 	pool = MPIPool()
 	ix_arr = arange(0, len(idx_back), step)
-	pool.map(temp, ix_arr)
+	pool.map(temp, ix_arr[::-1])
 	
 	all_kappa_proj = concatenate([np.load(obsPK_dir+'temp/kappa_proj%i_%07d.npy'%(Wx, ix)) for ix in ix_arr])
 	np.save(obsPK_dir+'kappa_predict_W%i.npy'%(Wx), all_kappa_proj)
@@ -239,7 +241,7 @@ kmap_lensing_Gen = lambda Wx, sigmaG: WLanalysis.readFits(obsPK_dir+'maps/W%i_KS
 bmode_lensing_Gen = lambda Wx, sigmaG: WLanalysis.readFits(obsPK_dir+'maps/W%i_Bmode_1.3_lo_sigmaG%02d.fit'%(Wx, sigmaG*10))
 
 if make_predict_maps:
-	for Wx in range(1,5):#
+	for Wx in range(2,5):#
 	
 		############### get catalogue
 		sizes = (1330, 800, 1120, 950)
@@ -379,7 +381,8 @@ if cross_correlate:
 	#show()
 
 if plot_predict_maps:
-	def plot_predict_maps_fcn(Wx, sigmaG):
+	def plot_predict_maps_fcn(WxsigmaG):
+		Wx, sigmaG = WxsigmaG
 		mask0 = maskGen(Wx, 0.5, sigmaG)
 		mask = WLanalysis.smooth(mask0, 5.0)
 		
@@ -399,9 +402,9 @@ if plot_predict_maps:
 		imshow(kmap_predict*mask_nan, vmax=4*std(kmap_predict), vmin=0, origin = 'lower')
 		title('W%i kmap_predict'%(Wx))
 		colorbar()
-		savefig(plot_dir+'kmap_r20arcmin_W%i_sigmaG%s_predict.jpg'%(Wx,sigmaG))
+		savefig(plot_dir+'kmap_cNFW_W%i_sigmaG%s_predict.jpg'%(Wx,sigmaG))
 		close()
-	map(plot_predict_maps_fcn, [[Wx, sigmaG] for Wx in range(1,5) for sigmaG in sigmaG_arr])
+	map(plot_predict_maps_fcn, [[Wx, sigmaG] for Wx in range(2,5) for sigmaG in sigmaG_arr])
 
 	################ plot the correlation ###########
 	
