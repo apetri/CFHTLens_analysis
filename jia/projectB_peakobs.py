@@ -245,7 +245,7 @@ if make_kappa_predict:
 		return ikappa
 
 	#a=map(kappa_individual_gal, randint(0,len(idx_back)-1,5))
-	step=1e4
+	step=2e3
 	
 	def temp (ix):
 		print ix
