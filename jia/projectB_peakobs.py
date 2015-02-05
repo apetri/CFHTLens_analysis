@@ -41,7 +41,7 @@ c = 299792.458#km/s
 Gnewton = 6.674e-8#cgs cm^3/g/s
 H0 = 70.0
 h = 0.7
-OmegaM = 0.3#0.25#
+OmegaM = 0.25#0.25#
 OmegaV = 1.0-OmegaM
 rho_c0 = 9.9e-30#g/cm^3
 M_sun = 1.989e33#gram
@@ -209,6 +209,8 @@ if make_kappa_predict:
 	icat = cat_gen(Wx).T
 
 	ra, dec, redshift, weight, MAGi, Mhalo, Rvir, DL = icat
+	## varying DL
+	DL = DL_interp(redshift)
 	#Mhalo[Mhalo>2e15] = 2e15#prevent halos to get crazy mass
 	f_Wx = WLanalysis.gnom_fun(center)#turns to radians
 	xy = array(f_Wx(icat[:2])).T
@@ -256,7 +258,7 @@ if make_kappa_predict:
 	pool.map(temp, ix_arr)
 	
 	all_kappa_proj = concatenate([np.load(obsPK_dir+'temp/kappa_proj%i_%07d.npy'%(Wx, ix)) for ix in ix_arr])
-	np.save(obsPK_dir+'kappa_predict_W%i.npy'%(Wx), all_kappa_proj)
+	np.save(obsPK_dir+'kappa_predict_W%i_om025.npy'%(Wx), all_kappa_proj)
 	
 #########################################################
 ####################### plotting correlation ############
@@ -266,6 +268,7 @@ plot_predict_maps = 0
 peak_proj_vs_lensing = 0
 cross_correlate = 0
 
+#kmap_predict_Gen = lambda Wx, sigmaG: np.load(obsPK_dir+'maps/r20arcmin_varyingcNFW_VO06/kmap_W%i_predict_sigmaG%02d.npy'%(Wx, sigmaG*10))
 kmap_predict_Gen = lambda Wx, sigmaG: np.load(obsPK_dir+'maps/kmap_W%i_predict_sigmaG%02d.npy'%(Wx, sigmaG*10))
 
 kmap_lensing_Gen = lambda Wx, sigmaG: WLanalysis.readFits(obsPK_dir+'maps/W%i_KS_1.3_lo_sigmaG%02d.fit'%(Wx, sigmaG*10))
@@ -273,7 +276,7 @@ kmap_lensing_Gen = lambda Wx, sigmaG: WLanalysis.readFits(obsPK_dir+'maps/W%i_KS
 bmode_lensing_Gen = lambda Wx, sigmaG: WLanalysis.readFits(obsPK_dir+'maps/W%i_Bmode_1.3_lo_sigmaG%02d.fit'%(Wx, sigmaG*10))
 
 if make_predict_maps:
-	for Wx in (4,):#range(2,5):#
+	for Wx in (3,):#range(2,5):#
 	
 		############### get catalogue
 		sizes = (1330, 800, 1120, 950)
@@ -310,14 +313,14 @@ if peak_proj_vs_lensing:
 	figure()
 	for sigmaG in sigmaG_arr:
 		subplot(3,2,k)
-		edge_arr = linspace(0,0.003,10)
+		edge_arr = linspace(-.04,0.1,10)
 		def return_kappa_arr (Wx, sigmaG=sigmaG):
 			mask = maskGen(Wx, 0.5, sigmaG)
 			kmap_predict = kmap_predict_Gen(Wx, sigmaG)
 			kmap_lensing = kmap_lensing_Gen(Wx, sigmaG)
 			bmode = bmode_lensing_Gen(Wx, sigmaG)
-			kproj_peak_mat = WLanalysis.peaks_mat(kmap_predict)
-			#kproj_peak_mat = WLanalysis.peaks_mat(kmap_lensing)
+			#kproj_peak_mat = WLanalysis.peaks_mat(kmap_predict)
+			kproj_peak_mat = WLanalysis.peaks_mat(kmap_lensing)
 			idx_pos = (kproj_peak_mat!=0)&(~isnan(kproj_peak_mat))
 			kappa_proj = kmap_predict[idx_pos]
 			kappa_lensing = kmap_lensing[idx_pos]
@@ -325,16 +328,19 @@ if peak_proj_vs_lensing:
 			
 			return kappa_proj, kappa_lensing, kappa_bmode
 
-		out = map(return_kappa_arr, range(1,5))#4x3
-		kappa_proj, kappa_lensing, kappa_bmode = [concatenate([out[i][j] for i in range(4)]) for j in range(3)]
+		out = map(return_kappa_arr, range(2,5))#4x3
+		kappa_proj, kappa_lensing, kappa_bmode = [concatenate([out[i][j] for i in range(3)]) for j in range(3)]
 
 		ymean = zeros(len(edge_arr)-1)
 		ymeanB =zeros(len(edge_arr)-1)
 		for i in arange(len(edge_arr)-1):
-			idx_pos2=(kappa_proj<edge_arr[i+1])&(kappa_proj>edge_arr[i])
-			ymean[i]=mean(kappa_lensing[idx_pos2])
-			ymeanB[i]=mean(kappa_bmode[idx_pos2])
-			
+			#idx_pos2=(kappa_proj<edge_arr[i+1])&(kappa_proj>edge_arr[i])
+			#ymean[i]=mean(kappa_lensing[idx_pos2])
+			#ymeanB[i]=mean(kappa_bmode[idx_pos2])
+			idx_pos2=(kappa_lensing<edge_arr[i+1])&(kappa_lensing>edge_arr[i])
+			idx_pos3=(kappa_bmode<edge_arr[i+1])&(kappa_bmode>edge_arr[i])
+			ymean[i]=mean(kappa_proj[idx_pos2])
+			ymeanB[i]=mean(kappa_proj[idx_pos3])
 		
 		plot(edge_arr[1:], ymean, 'ro',label='convergence')
 		plot(edge_arr[1:], ymeanB, 'bx',label='B mode')
@@ -345,7 +351,7 @@ if peak_proj_vs_lensing:
 			xlabel('kappa_predict')
 		title('%s arcmin'%(sigmaG))
 		k+=1
-	savefig(plot_dir+'kappa_pred_lensing_L12.jpg')
+	savefig(plot_dir+'kappa_pred_lensing_L12_lensingpeaksB.jpg')
 	close()
 	
 if cross_correlate:
@@ -438,7 +444,7 @@ if plot_predict_maps:
 		colorbar()
 		savefig(plot_dir+'kmap_L12_W%i_sigmaG%s_predict.jpg'%(Wx,sigmaG))
 		close()
-	map(plot_predict_maps_fcn, [[Wx, sigmaG] for Wx in (4,) for sigmaG in sigmaG_arr])
+	map(plot_predict_maps_fcn, [[Wx, sigmaG] for Wx in (3,) for sigmaG in sigmaG_arr])
 
 	################ plot the correlation ###########
 	
