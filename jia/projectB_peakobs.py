@@ -41,7 +41,7 @@ c = 299792.458#km/s
 Gnewton = 6.674e-8#cgs cm^3/g/s
 H0 = 70.0
 h = 0.7
-OmegaM = 0.25#0.3
+OmegaM = 0.3#0.25#
 OmegaV = 1.0-OmegaM
 rho_c0 = 9.9e-30#g/cm^3
 M_sun = 1.989e33#gram
@@ -58,6 +58,7 @@ kmapGen = lambda Wx, zcut, sigmaG: WLanalysis.readFits('/Users/jia/CFHTLenS/obsP
 bmodeGen = lambda Wx, zcut, sigmaG: WLanalysis.readFits('/Users/jia/CFHTLenS/obsPK/maps/W%i_Bmode_%s_sigmaG%02d.fit'%(Wx, zcut, sigmaG))*maskGen(Wx, zcut, sigmaG)
 
 cat_gen = lambda Wx: np.load(obsPK_dir+'W%s_cat_z0213_ra_dec_redshift_weight_MAGi_Mvir_Rvir_DL.npy'%(Wx))
+cat_gen_old = lambda Wx: np.load(obsPK_dir+'VO06mass/W%s_cat_z0213_ra_dec_redshift_weight_MAGi_Mvir_Rvir_DL.npy'%(Wx))
 #columns: ra, dec, redshift, weight, i, Mhalo, Rvir, DL
 
 ##############################################
@@ -162,6 +163,37 @@ def kappa_proj (Mvir, Rvir, z_fore, x_fore, y_fore, DL_fore, z_back, x_back, y_b
 	kappa_p = two_rhos_rs/SIGMAc*Gx
 	return kappa_p
 
+########## update halo mass using L12
+#Mhalo_params_arr = [[12.520, 10.916, 0.457, 0.566, 1.53],
+		    #[12.725, 11.038, 0.466, 0.610, 1.95],
+		    #[12.722, 11.100, 0.470, 0.393, 2.51]]
+##log10M1, log10M0, beta, sig, gamma
+
+#redshift_edges=[[0, 0.48], [0.48,0.74], [0.74, 1.30]]
+
+#master_ra, master_dec, w, M_star = genfromtxt('/Users/jia/CFHTLenS/catalogue/CFHTLens_2015-02-05T05-08-44.tsv', skip_header=1).T
+
+#def Mstar2Mhalo (Mstar_arr, redshift_arr):
+	#Mhalo_arr = zeros(len(Mstar_arr))
+	#for i in range(3):
+		#z0,z1 = redshift_edges[i]
+		#log10M1, log10M0, beta, sig, gamma = Mhalo_params_arr[i]
+		#Mhalo_fcn = lambda log10Mstar: log10M1+beta*(log10Mstar-log10M0)+10.0**(sig*(log10Mstar-log10M0))/(1+10.0**(-gamma*(log10Mstar-log10M0)))-0.5
+		#idx = where((redshift_arr>z0)&(redshift_arr<=z1))[0]
+		#Mhalo_arr[idx] = Mhalo_fcn(Mstar_arr[idx])
+	#return Mhalo_arr
+	
+#for Wx in range(1,5):
+	#print Wx
+	#icat = cat_gen_old(Wx).T
+	#ra, dec, redshift, weight, MAGi, Mhalo, Rvir, DL = icat.copy()
+	#idx = WLanalysis.update_values_by_RaDec(ra, dec, master_ra, master_dec)
+	#iM_star = M_star[idx]
+	#Mhalo_L12 = 10**Mstar2Mhalo(iM_star, redshift)
+	#icat[5] = Mhalo_L12
+	#icat[6] = Rvir_fcn(Mhalo_L12, redshift)
+	#icat[7] = DL_interp(redshift)
+	#save(obsPK_dir+'W%s_cat_z0213_ra_dec_redshift_weight_MAGi_Mvir_Rvir_DL.npy'%(Wx), icat[:,iM_star>-99].T)
 #############################################################
 ############ operations #####################################
 #############################################################
@@ -216,9 +248,9 @@ if make_kappa_predict:
 	def temp (ix):
 		print ix
 		temp_fn = obsPK_dir+'temp/kappa_proj%i_%07d.npy'%(Wx, ix)
-		if not os.path.isfile(temp_fn):
-			kappa_all = map(kappa_individual_gal, arange(ix, amin([len(idx_back), ix+step])))
-			np.save(temp_fn,kappa_all)
+		#if not os.path.isfile(temp_fn):
+		kappa_all = map(kappa_individual_gal, arange(ix, amin([len(idx_back), ix+step])))
+		np.save(temp_fn,kappa_all)
 	pool = MPIPool()
 	ix_arr = arange(0, len(idx_back), step)
 	pool.map(temp, ix_arr[::-1])
@@ -227,7 +259,7 @@ if make_kappa_predict:
 	np.save(obsPK_dir+'kappa_predict_W%i.npy'%(Wx), all_kappa_proj)
 	
 #########################################################
-####################### plotting correlation ########################
+####################### plotting correlation ############
 #########################################################
 make_predict_maps = 0
 plot_predict_maps = 0
@@ -241,7 +273,7 @@ kmap_lensing_Gen = lambda Wx, sigmaG: WLanalysis.readFits(obsPK_dir+'maps/W%i_KS
 bmode_lensing_Gen = lambda Wx, sigmaG: WLanalysis.readFits(obsPK_dir+'maps/W%i_Bmode_1.3_lo_sigmaG%02d.fit'%(Wx, sigmaG*10))
 
 if make_predict_maps:
-	for Wx in range(2,5):#
+	for Wx in (1,):#range(2,5):#
 	
 		############### get catalogue
 		sizes = (1330, 800, 1120, 950)
@@ -278,7 +310,7 @@ if peak_proj_vs_lensing:
 	figure()
 	for sigmaG in sigmaG_arr:
 		subplot(3,2,k)
-		edge_arr = linspace(0,0.03,10)
+		edge_arr = linspace(0,0.003,10)
 		def return_kappa_arr (Wx, sigmaG=sigmaG):
 			mask = maskGen(Wx, 0.5, sigmaG)
 			kmap_predict = kmap_predict_Gen(Wx, sigmaG)
@@ -313,8 +345,9 @@ if peak_proj_vs_lensing:
 			xlabel('kappa_predict')
 		title('%s arcmin'%(sigmaG))
 		k+=1
-	show()
-
+	savefig(plot_dir+'kappa_pred_lensing_varyingcNWF.jpg')
+	close()
+	
 if cross_correlate:
 	edgesGen = lambda Wx: logspace(log10(5),log10(300),7)*sizes[Wx-1]/1330.0
 	def returnCC (Wx):
@@ -404,7 +437,7 @@ if plot_predict_maps:
 		colorbar()
 		savefig(plot_dir+'kmap_cNFW_W%i_sigmaG%s_predict.jpg'%(Wx,sigmaG))
 		close()
-	map(plot_predict_maps_fcn, [[Wx, sigmaG] for Wx in range(2,5) for sigmaG in sigmaG_arr])
+	map(plot_predict_maps_fcn, [[Wx, sigmaG] for Wx in (1,) for sigmaG in sigmaG_arr])
 
 	################ plot the correlation ###########
 	
