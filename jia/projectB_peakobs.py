@@ -41,7 +41,7 @@ c = 299792.458#km/s
 Gnewton = 6.674e-8#cgs cm^3/g/s
 H0 = 70.0
 h = 0.7
-OmegaM = 0.25#0.25#
+OmegaM = 0.3#0.25#
 OmegaV = 1.0-OmegaM
 rho_c0 = 9.9e-30#g/cm^3
 M_sun = 1.989e33#gram
@@ -152,8 +152,8 @@ def kappa_proj (Mvir, Rvir, z_fore, x_fore, y_fore, DL_fore, z_back, x_back, y_b
 	Dl_cm = 3.08567758e24*Dl # D_angular = D_luminosity/(1+z)**2
 	theta_vir = Rvir/Dl_cm	
 	Ds = DL_back/(1+z_back)**2
-	#Ds_cm = 3.08567758e24*Ds### bug!!!
-	Dls = Ds - Dl
+	#Ds_cm = 3.08567758e24*Ds### 
+	Dls = (Ds - Dl)/(1+z_back)
 	DDs = Ds/(Dl*Dls)/3.08567758e24# 3e24 = 1Mpc/1cm
 	SIGMAc = 1.07e+27*DDs#(c*1e5)**2/4.0/pi/Gnewton=1.0716311756473212e+27
 	#x_rad, y_rad = xy_fcn(array([ra_back, dec_back]))
@@ -258,7 +258,7 @@ if make_kappa_predict:
 	pool.map(temp, ix_arr)
 	
 	all_kappa_proj = concatenate([np.load(obsPK_dir+'temp/kappa_proj%i_%07d.npy'%(Wx, ix)) for ix in ix_arr])
-	np.save(obsPK_dir+'kappa_predict_W%i_om025.npy'%(Wx), all_kappa_proj)
+	np.save(obsPK_dir+'kappa_predict_W%i.npy'%(Wx), all_kappa_proj)
 	
 #########################################################
 ####################### plotting correlation ############
@@ -276,7 +276,7 @@ kmap_lensing_Gen = lambda Wx, sigmaG: WLanalysis.readFits(obsPK_dir+'maps/W%i_KS
 bmode_lensing_Gen = lambda Wx, sigmaG: WLanalysis.readFits(obsPK_dir+'maps/W%i_Bmode_1.3_lo_sigmaG%02d.fit'%(Wx, sigmaG*10))
 
 if make_predict_maps:
-	for Wx in (3,):#range(2,5):#
+	for Wx in (1,):#range(2,5):#
 	
 		############### get catalogue
 		sizes = (1330, 800, 1120, 950)
@@ -304,7 +304,60 @@ if make_predict_maps:
 			kmap_predict*=mask
 			np.save(obsPK_dir+'maps/kmap_W%i_predict_sigmaG%02d.npy'%(Wx, sigmaG*10), kmap_predict)
 			###########################################
+if plot_predict_maps:
+	def plot_predict_maps_fcn(WxsigmaG):
+		Wx, sigmaG = WxsigmaG
+		mask0 = maskGen(Wx, 0.5, sigmaG)
+		mask = WLanalysis.smooth(mask0, 5.0)
+		
+		kmap_lensing = kmap_lensing_Gen(Wx, sigmaG)*mask
+		kmap_predict = kmap_predict_Gen(Wx, sigmaG)*mask
+		bmode_lensing= bmode_lensing_Gen(Wx, sigmaG)
+		
+		mask_nan = mask0.copy()
+		mask_nan[mask0==0]=nan
+		
+		#imshow(kmap_lensing*mask_nan, vmax=3*std(kmap_lensing), vmin=-2*std(kmap_lensing), origin = 'lower')
+		#title('W%i kmap_lensing'%(Wx))
+		#colorbar()
+		#savefig(plot_dir+'kmap_W%i_sigmaG%s_lensing.jpg'%(Wx,sigmaG))
+		#close()
 
+		##imshow(kmap_predict, vmax=3*std(kmap_predict), vmin=-2*std(kmap_predict), origin = 'lower')
+		imshow(kmap_predict*mask_nan, vmax=4*std(kmap_predict), vmin=0, origin = 'lower')
+		title('W%i kmap_predict'%(Wx))
+		colorbar()
+		savefig(plot_dir+'kmap_L12_W%i_sigmaG%s_predict.jpg'%(Wx,sigmaG))
+		close()
+	map(plot_predict_maps_fcn, [[Wx, sigmaG] for Wx in range(1,5) for sigmaG in sigmaG_arr])
+
+	################ plot the correlation ###########
+	
+	##P2D_signal = ifft2(fft2(kmap_predict)*conj(fft2(kmap_lensing)))
+	##P2D_bmode = ifft2(fft2(kmap_predict)*conj(fft2(bmode_lensing)))
+	
+	###P2D_galn = ifft2(fft2(kmap_predict)*conj(fft2(pgaln)))
+	###P2D_lensinggaln = ifft2(fft2(kmap_lensing)*conj(fft2(lgaln)))
+	
+	##labels=['pred x lens','pred x bmode','lens x galn']#'pred x galn'
+	##f=figure()
+	##ax=f.add_subplot(111)
+	##i=0
+	##for iP2D in (P2D_signal, P2D_bmode):#, P2D_lensinggaln):
+	###for imap in (kmap_lensing, bmode_lensing):
+		###edges, power = WLanalysis.CrossCorrelate(kmap_predict, imap, edges = logspace(0,log10(500),10))
+		##edges, power = WLanalysis.azimuthalAverage(real(fftshift(iP2D)))
+		##ax.plot(edges[1:]/PPA512, power, label=labels[i])
+		###ax.plot(edges/PPA512, power, label=labels[i])
+		##i+=1
+	##legend(fontsize=10)
+	###ax.set_xlabel('arcmin')
+	##ax.set_ylabel('Power')
+	##ax.set_xscale('log')
+	###savefig(plot_dir+'junk2/Noise2pcf_W%i_sigmaG%02d.jpg'%(Wx, sigmaG*10))
+	##savefig(plot_dir+'Test2pcf_W%i_sigmaG%02d.jpg'%(Wx, sigmaG*10))
+	##close()
+	
 if peak_proj_vs_lensing:
 	'''for certain kappa_peak in project map, find the lensing kappa at that location
 	'''
@@ -319,8 +372,8 @@ if peak_proj_vs_lensing:
 			kmap_predict = kmap_predict_Gen(Wx, sigmaG)
 			kmap_lensing = kmap_lensing_Gen(Wx, sigmaG)
 			bmode = bmode_lensing_Gen(Wx, sigmaG)
-			#kproj_peak_mat = WLanalysis.peaks_mat(kmap_predict)
-			kproj_peak_mat = WLanalysis.peaks_mat(kmap_lensing)
+			kproj_peak_mat = WLanalysis.peaks_mat(kmap_predict)
+			#kproj_peak_mat = WLanalysis.peaks_mat(kmap_lensing)
 			idx_pos = (kproj_peak_mat!=0)&(~isnan(kproj_peak_mat))
 			kappa_proj = kmap_predict[idx_pos]
 			kappa_lensing = kmap_lensing[idx_pos]
@@ -328,19 +381,19 @@ if peak_proj_vs_lensing:
 			
 			return kappa_proj, kappa_lensing, kappa_bmode
 
-		out = map(return_kappa_arr, range(2,5))#4x3
-		kappa_proj, kappa_lensing, kappa_bmode = [concatenate([out[i][j] for i in range(3)]) for j in range(3)]
+		out = map(return_kappa_arr, range(1,5))#4x3
+		kappa_proj, kappa_lensing, kappa_bmode = [concatenate([out[i][j] for i in range(4)]) for j in range(3)]
 
 		ymean = zeros(len(edge_arr)-1)
 		ymeanB =zeros(len(edge_arr)-1)
 		for i in arange(len(edge_arr)-1):
-			#idx_pos2=(kappa_proj<edge_arr[i+1])&(kappa_proj>edge_arr[i])
-			#ymean[i]=mean(kappa_lensing[idx_pos2])
-			#ymeanB[i]=mean(kappa_bmode[idx_pos2])
-			idx_pos2=(kappa_lensing<edge_arr[i+1])&(kappa_lensing>edge_arr[i])
-			idx_pos3=(kappa_bmode<edge_arr[i+1])&(kappa_bmode>edge_arr[i])
-			ymean[i]=mean(kappa_proj[idx_pos2])
-			ymeanB[i]=mean(kappa_proj[idx_pos3])
+			idx_pos2=(kappa_proj<edge_arr[i+1])&(kappa_proj>edge_arr[i])
+			ymean[i]=mean(kappa_lensing[idx_pos2])
+			ymeanB[i]=mean(kappa_bmode[idx_pos2])
+			#idx_pos2=(kappa_lensing<edge_arr[i+1])&(kappa_lensing>edge_arr[i])
+			#idx_pos3=(kappa_bmode<edge_arr[i+1])&(kappa_bmode>edge_arr[i])
+			#ymean[i]=mean(kappa_proj[idx_pos2])
+			#ymeanB[i]=mean(kappa_proj[idx_pos3])
 		
 		plot(edge_arr[1:], ymean, 'ro',label='convergence')
 		plot(edge_arr[1:], ymeanB, 'bx',label='B mode')
@@ -351,7 +404,7 @@ if peak_proj_vs_lensing:
 			xlabel('kappa_predict')
 		title('%s arcmin'%(sigmaG))
 		k+=1
-	savefig(plot_dir+'kappa_pred_lensing_L12_lensingpeaksB.jpg')
+	savefig(plot_dir+'kappa_pred_lensing_L12_lensingpeaks.jpg')
 	close()
 	
 if cross_correlate:
@@ -404,7 +457,7 @@ if cross_correlate:
 	leg2.get_frame().set_visible(False)
 	ax2.set_xlim(ell_arr[0]/2,ell_arr[-1]*2)
 	#show()
-	savefig(plot_dir+'CCmean_kproj_kappa_sigmaG%02d.jpg'%(sigmaG*10))
+	savefig(plot_dir+'CCmean_L12_kproj_kappa_sigmaG%02d.jpg'%(sigmaG*10))
 	close()
 
 	######
@@ -419,59 +472,7 @@ if cross_correlate:
 	#contour(kproj_peak_smooth, origin='lower',levels=(5e-6,))
 	#show()
 
-if plot_predict_maps:
-	def plot_predict_maps_fcn(WxsigmaG):
-		Wx, sigmaG = WxsigmaG
-		mask0 = maskGen(Wx, 0.5, sigmaG)
-		mask = WLanalysis.smooth(mask0, 5.0)
-		
-		kmap_lensing = kmap_lensing_Gen(Wx, sigmaG)*mask
-		kmap_predict = kmap_predict_Gen(Wx, sigmaG)*mask
-		bmode_lensing= bmode_lensing_Gen(Wx, sigmaG)
-		
-		mask_nan = mask0.copy()
-		mask_nan[mask0==0]=nan
-		
-		#imshow(kmap_lensing*mask_nan, vmax=3*std(kmap_lensing), vmin=-2*std(kmap_lensing), origin = 'lower')
-		#title('W%i kmap_lensing'%(Wx))
-		#colorbar()
-		#savefig(plot_dir+'kmap_W%i_sigmaG%s_lensing.jpg'%(Wx,sigmaG))
-		#close()
 
-		##imshow(kmap_predict, vmax=3*std(kmap_predict), vmin=-2*std(kmap_predict), origin = 'lower')
-		imshow(kmap_predict*mask_nan, vmax=4*std(kmap_predict), vmin=0, origin = 'lower')
-		title('W%i kmap_predict'%(Wx))
-		colorbar()
-		savefig(plot_dir+'kmap_L12_W%i_sigmaG%s_predict.jpg'%(Wx,sigmaG))
-		close()
-	map(plot_predict_maps_fcn, [[Wx, sigmaG] for Wx in (3,) for sigmaG in sigmaG_arr])
-
-	################ plot the correlation ###########
-	
-	##P2D_signal = ifft2(fft2(kmap_predict)*conj(fft2(kmap_lensing)))
-	##P2D_bmode = ifft2(fft2(kmap_predict)*conj(fft2(bmode_lensing)))
-	
-	###P2D_galn = ifft2(fft2(kmap_predict)*conj(fft2(pgaln)))
-	###P2D_lensinggaln = ifft2(fft2(kmap_lensing)*conj(fft2(lgaln)))
-	
-	##labels=['pred x lens','pred x bmode','lens x galn']#'pred x galn'
-	##f=figure()
-	##ax=f.add_subplot(111)
-	##i=0
-	##for iP2D in (P2D_signal, P2D_bmode):#, P2D_lensinggaln):
-	###for imap in (kmap_lensing, bmode_lensing):
-		###edges, power = WLanalysis.CrossCorrelate(kmap_predict, imap, edges = logspace(0,log10(500),10))
-		##edges, power = WLanalysis.azimuthalAverage(real(fftshift(iP2D)))
-		##ax.plot(edges[1:]/PPA512, power, label=labels[i])
-		###ax.plot(edges/PPA512, power, label=labels[i])
-		##i+=1
-	##legend(fontsize=10)
-	###ax.set_xlabel('arcmin')
-	##ax.set_ylabel('Power')
-	##ax.set_xscale('log')
-	###savefig(plot_dir+'junk2/Noise2pcf_W%i_sigmaG%02d.jpg'%(Wx, sigmaG*10))
-	##savefig(plot_dir+'Test2pcf_W%i_sigmaG%02d.jpg'%(Wx, sigmaG*10))
-	##close()
 			
 
 print 'done-done-done'
