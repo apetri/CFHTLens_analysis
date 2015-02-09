@@ -145,7 +145,7 @@ def kappa_proj (Mvir, Rvir, z_fore, x_fore, y_fore, DL_fore, z_back, x_back, y_b
 	'''
 	######## updated next 2 lines to have a variable cNFW
 	cNFW = c0/(1+z_back)*(Mvir/1e13)**(-beta)
-	f=1.0/(log(1+cNFW)-cNFW/(1+cNFW))# = 1.043 with cNFW=5.0
+	f=1.0/(log(1.0+cNFW)-cNFW/(1.0+cNFW))# = 1.043 with cNFW=5.0
 	
 	two_rhos_rs = Mvir*M_sun*f*cNFW**2/(2*pi*Rvir**2)#cgs, see LK2014 footnote
 	Dl = DL_fore/(1+z_fore)**2
@@ -178,12 +178,13 @@ def kappa_proj (Mvir, Rvir, z_fore, x_fore, y_fore, DL_fore, z_back, x_back, y_b
 	#for i in range(3):
 		#z0,z1 = redshift_edges[i]
 		#log10M1, log10M0, beta, sig, gamma = Mhalo_params_arr[i]
+		#print log10M1, log10M0, beta, sig, gamma 
 		#Mhalo_fcn = lambda log10Mstar: log10M1+beta*(log10Mstar-log10M0)+10.0**(sig*(log10Mstar-log10M0))/(1+10.0**(-gamma*(log10Mstar-log10M0)))-0.5
 		#idx = where((redshift_arr>z0)&(redshift_arr<=z1))[0]
 		#Mhalo_arr[idx] = Mhalo_fcn(Mstar_arr[idx])
 	#return Mhalo_arr
 	
-#for Wx in range(1,5):
+#for Wx in (4,):#range(1,5):
 	#print Wx
 	#icat = cat_gen_old(Wx).T
 	#ra, dec, redshift, weight, MAGi, Mhalo, Rvir, DL = icat.copy()
@@ -192,6 +193,33 @@ def kappa_proj (Mvir, Rvir, z_fore, x_fore, y_fore, DL_fore, z_back, x_back, y_b
 	#Mhalo_L12 = 10**Mstar2Mhalo(iM_star, redshift)
 	#icat[5] = Mhalo_L12
 	#icat[6] = Rvir_fcn(Mhalo_L12, redshift)
+	#icat[7] = DL_interp(redshift)
+	#save(obsPK_dir+'W%s_cat_z0213_ra_dec_redshift_weight_MAGi_Mvir_Rvir_DL.npy'%(Wx), icat[:,iM_star>-99].T)
+	
+############### halo mass using Guo 2010 ###############
+#M0 = 10**11.4
+#def minfcn (Mstar):
+	#def root (Mhalo):
+		#Mstar_Guo = Mhalo*0.129*((Mhalo/M0)**(-0.926)+(Mhalo/M0)**(0.261))**(-2.44)
+		#return Mstar - Mstar_Guo
+	#return root
+	
+#Mstar2Mhalo = lambda Mstar: op.bisect(minfcn(Mstar), 1e6, 1e19)
+#Mstar_arr = logspace(7,13,10000)
+#Mhalo_arr = array([Mstar2Mhalo(Mstar) for Mstar in Mstar_arr])
+#Mstar_interp = interpolate.interp1d(concatenate([(-100,),Mstar_arr]), concatenate([(-100,),Mhalo_arr]))
+##residuals = array([minfcn(Mstar_arr[i])(Mhalo_arr[i]) for i in range(10000)])
+##master_ra, master_dec, w, M_star = genfromtxt('/Users/jia/CFHTLenS/catalogue/CFHTLens_2015-02-05T05-08-44.tsv', skip_header=1).T
+#for Wx in range(1,5):
+	#print Wx
+	#icat = cat_gen_old(Wx).T
+	#ra, dec, redshift, weight, MAGi, Mhalo, Rvir, DL = icat.copy()
+	#idx = WLanalysis.update_values_by_RaDec(ra, dec, master_ra, master_dec)
+	#iM_star = M_star[idx]
+	#Mhalo_G10 = Mstar_interp(10**iM_star)
+	#Mhalo_G10[Mhalo_G10>1e15]=1e15
+	#icat[5] = Mhalo_G10
+	#icat[6] = Rvir_fcn(Mhalo_G10, redshift)
 	#icat[7] = DL_interp(redshift)
 	#save(obsPK_dir+'W%s_cat_z0213_ra_dec_redshift_weight_MAGi_Mvir_Rvir_DL.npy'%(Wx), icat[:,iM_star>-99].T)
 #############################################################
@@ -276,7 +304,7 @@ kmap_lensing_Gen = lambda Wx, sigmaG: WLanalysis.readFits(obsPK_dir+'maps/W%i_KS
 bmode_lensing_Gen = lambda Wx, sigmaG: WLanalysis.readFits(obsPK_dir+'maps/W%i_Bmode_1.3_lo_sigmaG%02d.fit'%(Wx, sigmaG*10))
 
 if make_predict_maps:
-	for Wx in (1,):#range(2,5):#
+	for Wx in range(1,5):#
 	
 		############### get catalogue
 		sizes = (1330, 800, 1120, 950)
@@ -285,11 +313,19 @@ if make_predict_maps:
 		center = centers[Wx-1]
 
 		
-		icat = cat_gen(Wx).T #ra, dec, redshift, weight, MAGi, Mhalo, Rvir, DL = icat
+		icat = cat_gen(Wx).T #
+		ra, dec, redshift, weight, MAGi, Mhalo, Rvir, DL = icat
+		##########next 3 lines, cut at z=0.4 for source galaxies
+		k = np.load(obsPK_dir+'kappa_predict_W%i.npy'%(Wx))
+		idx_k = where(k>0)[0]
+		k = k[idx_k]
+		icat = icat[:,idx_k]
+		
+		#####################################
 		f_Wx = WLanalysis.gnom_fun(center)	
 		y, x = array(f_Wx(icat[:2]))
 		weight = icat[3]
-		k = np.load(obsPK_dir+'kappa_predict_W%i.npy'%(Wx))#kappa_predict_Mmax2e15_W%i.npy
+		#k = np.load(obsPK_dir+'kappa_predict_W%i.npy'%(Wx))#kappa_predict_Mmax2e15_W%i.npy
 		A, galn = WLanalysis.coords2grid(x, y, array([k*weight, weight, k]), size=isize)
 		Mkw, Mw, Mk = A
 		###########################################
@@ -310,8 +346,8 @@ if plot_predict_maps:
 		mask0 = maskGen(Wx, 0.5, sigmaG)
 		mask = WLanalysis.smooth(mask0, 5.0)
 		
-		kmap_lensing = kmap_lensing_Gen(Wx, sigmaG)*mask
-		kmap_predict = kmap_predict_Gen(Wx, sigmaG)*mask
+		kmap_lensing = kmap_lensing_Gen(Wx, sigmaG)
+		kmap_predict = kmap_predict_Gen(Wx, sigmaG)
 		bmode_lensing= bmode_lensing_Gen(Wx, sigmaG)
 		
 		mask_nan = mask0.copy()
@@ -324,7 +360,8 @@ if plot_predict_maps:
 		#close()
 
 		##imshow(kmap_predict, vmax=3*std(kmap_predict), vmin=-2*std(kmap_predict), origin = 'lower')
-		imshow(kmap_predict*mask_nan, vmax=4*std(kmap_predict), vmin=0, origin = 'lower')
+		#imshow(kmap_predict*mask_nan, vmax=4*std(kmap_predict), vmin=0, origin = 'lower')
+		imshow(kmap_predict, origin = 'lower')
 		title('W%i kmap_predict'%(Wx))
 		colorbar()
 		savefig(plot_dir+'kmap_L12_W%i_sigmaG%s_predict.jpg'%(Wx,sigmaG))
@@ -366,15 +403,17 @@ if peak_proj_vs_lensing:
 	figure()
 	for sigmaG in sigmaG_arr:
 		subplot(3,2,k)
-		edge_arr = linspace(-.04,0.1,10)
+		#edge_arr = linspace(-.04,0.1,10)
+		edge_arr = linspace(-0.015,0.06,6)
 		def return_kappa_arr (Wx, sigmaG=sigmaG):
 			mask = maskGen(Wx, 0.5, sigmaG)
 			kmap_predict = kmap_predict_Gen(Wx, sigmaG)
+			#kmap_predict -= mean(kmap_predict)
 			kmap_lensing = kmap_lensing_Gen(Wx, sigmaG)
 			bmode = bmode_lensing_Gen(Wx, sigmaG)
 			kproj_peak_mat = WLanalysis.peaks_mat(kmap_predict)
 			#kproj_peak_mat = WLanalysis.peaks_mat(kmap_lensing)
-			idx_pos = (kproj_peak_mat!=0)&(~isnan(kproj_peak_mat))
+			idx_pos = (kproj_peak_mat!=0)&(~isnan(kproj_peak_mat))&(mask>0)
 			kappa_proj = kmap_predict[idx_pos]
 			kappa_lensing = kmap_lensing[idx_pos]
 			kappa_bmode = bmode[idx_pos]
@@ -404,10 +443,11 @@ if peak_proj_vs_lensing:
 			xlabel('kappa_predict')
 		title('%s arcmin'%(sigmaG))
 		k+=1
-	savefig(plot_dir+'kappa_pred_lensing_L12_lensingpeaks.jpg')
+	savefig(plot_dir+'kappa_pred_lensing_L12.jpg')
 	close()
 	
 if cross_correlate:
+	sigmaG = 1.0
 	edgesGen = lambda Wx: logspace(log10(5),log10(300),7)*sizes[Wx-1]/1330.0
 	def returnCC (Wx):
 		edges = edgesGen(Wx)
