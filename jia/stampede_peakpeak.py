@@ -39,7 +39,7 @@ maskGen = lambda i, sigmaG: WLanalysis.readFits(KS_dir+'mask/CFHT_mask_ngal5_sig
 ipeaklist_fn = lambda cosmo, R, sigmaG: KS_dir+'peaks_corr_single/%s/sigma%02d/Peaklist_sigma%02d_%s_%04dr.npy'%(cosmo, sigmaG*10, sigmaG*10, cosmo, R)
 
 mask_all_arr = array([[maskGen(i, sigmaG) for sigmaG in sigmaG_arr]for i in i_arr])
-
+#i, R, cosmo, sigmaG = 1, 99, cosmo_arr[5], 8.9
 def single_peaklist(i, cosmo, R, sigmaG):
 	'''for subfield=i, cosmo, realization=R, smoothing scale sigmaG, return the 2 correlation functions.
 	return: distance(in pixel), kappa1, kappa2
@@ -54,7 +54,6 @@ def single_peaklist(i, cosmo, R, sigmaG):
 	###### get all combination of the 2 peaks ########
 	peakmesh = array(meshgrid(peaks, peaks))
 	peakcplx = peakmesh[0] + 1j*peakmesh[1]#make 2 peaks to complex number
-	print peakcplx.shape
 	peaksarr = concatenate([diag(peakcplx,j) for j in range(1,len(peaks)-1)])#only take upper right triangle
 	###### the distance for all the peak pairs ########
 	iloc = loc[0] + 1j*loc[1]#turn x,y into X=x+iy, prepare for meshing
@@ -69,7 +68,7 @@ def single_corr(iRcosmosigmaG, edges = edges):
 	w_Corr = <kappa_i kappa_j> 
 	(combining 13 subfields).
 	'''	
-	cosmo, R, sigmaG = iRcosmosigmaG
+	R, cosmo, sigmaG = iRcosmosigmaG
 	print R, sigmaG, cosmo
 	fn = ipeaklist_fn(cosmo, R, sigmaG)
 	if not os.path.isfile(fn):
