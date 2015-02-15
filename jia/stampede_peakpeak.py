@@ -72,11 +72,11 @@ def single_corr(iRcosmosigmaG, edges = edges):
 	R, cosmo, sigmaG = iRcosmosigmaG
 	print R, sigmaG, cosmo
 	fn = ipeaklist_fn(cosmo, R, sigmaG)
-	if not os.path.isfile(fn):
-		ipeaklist =  concatenate([single_peaklist(i, cosmo, R, sigmaG) for i in i_arr], axis=-1)
-		save(fn, ipeaklist)
-	else:
-		ipeaklist = load(fn)
+	#if not os.path.isfile(fn):
+	ipeaklist =  concatenate([single_peaklist(i, cosmo, R, sigmaG) for i in i_arr], axis=-1)
+	save(fn, ipeaklist)
+	#else:
+		#ipeaklist = load(fn)
 	out_DDRR = zeros(len(edges)-1)
 	out_Corr = zeros(len(edges)-1)
 	for i in range(len(edges)-1):
@@ -85,15 +85,15 @@ def single_corr(iRcosmosigmaG, edges = edges):
 		out_Corr[i] = mean(ipeaklist[1,idx]*ipeaklist[2,idx])
 	return out_Corr, out_DDRR
 
-#pool = MPIPool()
-#for cosmo in cosmo_arr:
-	#for sigmaG in sigmaG_arr:
-		##print cosmo, sigmaG
-		#RcosmosigmaG = [[R, cosmo, sigmaG] for R in R_arr]
-		#peakpeak_arr = array(pool.map(single_corr, RcosmosigmaG))#1000 x 2 x 25
-		#fn_kappa = peaks_corr_dir+'Corr_kappa_sigma%02d_%s.npy'%(sigmaG*10, cosmo)
-		#fn_counts = peaks_corr_dir+'Corr_counts_sigma%02d_%s.npy'%(sigmaG*10, cosmo)
-		#save(fn_kappa, peakpeak_arr[:,0,:])
-		#save(fn_counts, peakpeak_arr[:,1,:])
+pool = MPIPool()
+for cosmo in cosmo_arr:
+	for sigmaG in sigmaG_arr:
+		#print cosmo, sigmaG
+		RcosmosigmaG = [[R, cosmo, sigmaG] for R in R_arr]
+		peakpeak_arr = array(pool.map(single_corr, RcosmosigmaG))#1000 x 2 x 25
+		fn_kappa = peaks_corr_dir+'Corr_kappa_sigma%02d_%s.npy'%(sigmaG*10, cosmo)
+		fn_counts = peaks_corr_dir+'Corr_counts_sigma%02d_%s.npy'%(sigmaG*10, cosmo)
+		save(fn_kappa, peakpeak_arr[:,0,:])
+		save(fn_counts, peakpeak_arr[:,1,:])
 	
 print 'Done-Done-Done-Done!!!'
