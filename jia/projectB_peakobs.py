@@ -19,15 +19,15 @@ from scipy.integrate import quad
 import scipy.optimize as op
 import sys, os
 
-######## for stampede #####
-from emcee.utils import MPIPool
-obsPK_dir = '/home1/02977/jialiu/obsPK/'
-
-######## for laptop #####
-#obsPK_dir = '/Users/jia/CFHTLenS/obsPK/'
-#plot_dir = obsPK_dir+'plot/'
-
-make_kappa_predict = 1
+make_kappa_predict = 0
+if make_kappa_predict:
+	######## for stampede #####
+	from emcee.utils import MPIPool
+	obsPK_dir = '/home1/02977/jialiu/obsPK/'
+else:
+	######## for laptop #####
+	obsPK_dir = '/Users/jia/CFHTLenS/obsPK/'
+	plot_dir = obsPK_dir+'plot/'
 
 ########### constants ######################
 z_lo = 0.6
@@ -269,7 +269,7 @@ if make_kappa_predict:
 			
 			if kappa_temp>0:
 				theta = sqrt((x_fore-x_back)**2+(y_fore-y_back)**2)
-				print '%s\t%.2f\t%.3f\t%.3f\t%.4f\t%.6f'%(jj,log10(jMvir), z_fore, z_back, rad2arcmin(theta), kappa_temp)	
+				print '%i\t%s\t%.2f\t%.3f\t%.3f\t%.4f\t%.6f'%(i, jj,log10(jMvir), z_fore, z_back, rad2arcmin(theta), kappa_temp)	
 		return ikappa
 
 	#a=map(kappa_individual_gal, randint(0,len(idx_back)-1,5))
@@ -293,7 +293,7 @@ if make_kappa_predict:
 #########################################################
 make_predict_maps = 0
 plot_predict_maps = 0
-peak_proj_vs_lensing = 0
+peak_proj_vs_lensing = 1
 cross_correlate = 0
 
 #kmap_predict_Gen = lambda Wx, sigmaG: np.load(obsPK_dir+'maps/r20arcmin_varyingcNFW_VO06/kmap_W%i_predict_sigmaG%02d.npy'%(Wx, sigmaG*10))
@@ -304,7 +304,7 @@ kmap_lensing_Gen = lambda Wx, sigmaG: WLanalysis.readFits(obsPK_dir+'maps/W%i_KS
 bmode_lensing_Gen = lambda Wx, sigmaG: WLanalysis.readFits(obsPK_dir+'maps/W%i_Bmode_1.3_lo_sigmaG%02d.fit'%(Wx, sigmaG*10))
 
 if make_predict_maps:
-	for Wx in range(1,5):#
+	for Wx in (2,):#range(1,5):#
 	
 		############### get catalogue
 		sizes = (1330, 800, 1120, 950)
@@ -364,9 +364,9 @@ if plot_predict_maps:
 		imshow(kmap_predict, origin = 'lower')
 		title('W%i kmap_predict'%(Wx))
 		colorbar()
-		savefig(plot_dir+'kmap_L12_W%i_sigmaG%s_predict.jpg'%(Wx,sigmaG))
+		savefig(plot_dir+'kmap_G10_W%i_sigmaG%s_predict.jpg'%(Wx,sigmaG))
 		close()
-	map(plot_predict_maps_fcn, [[Wx, sigmaG] for Wx in range(1,5) for sigmaG in sigmaG_arr])
+	map(plot_predict_maps_fcn, [[Wx, sigmaG] for Wx in (2,) for sigmaG in sigmaG_arr])#range(1,5)
 
 	################ plot the correlation ###########
 	
@@ -400,11 +400,11 @@ if peak_proj_vs_lensing:
 	'''
 	sigmaG = 1.0
 	k=1
-	figure()
+	f=figure(figsize=(8,10))
 	for sigmaG in sigmaG_arr:
-		subplot(3,2,k)
+		ax=f.add_subplot(3,2,k)
 		#edge_arr = linspace(-.04,0.1,10)
-		edge_arr = linspace(-0.015,0.06,6)
+		edge_arr = logspace(-3,-1,6)
 		def return_kappa_arr (Wx, sigmaG=sigmaG):
 			mask = maskGen(Wx, 0.5, sigmaG)
 			kmap_predict = kmap_predict_Gen(Wx, sigmaG)
@@ -418,10 +418,36 @@ if peak_proj_vs_lensing:
 			kappa_lensing = kmap_lensing[idx_pos]
 			kappa_bmode = bmode[idx_pos]
 			
+			######## do an overlay of peaks on top of convergence #######
+			if sigmaG == 8.9:
+				kmap_predict2 = kmap_predict_Gen(Wx, 5.3)
+				mask2 = maskGen(Wx, 0.5, 5.3)
+				kproj_peak_mat = WLanalysis.peaks_mat(kmap_predict2)
+				kproj_peak_mat[mask2==0] = nan
+				kproj_peak_mat[isnan(kproj_peak_mat)]=0
+				peaksmooth = WLanalysis.smooth(kproj_peak_mat,10)
+				kstd=std(kmap_lensing)
+				#pstd=std(kmap_predict2)
+				
+				kmap_lensing[peaksmooth>2*std(peaksmooth)]=nan
+				kmap_lensing[mask2==0]=-99
+				kmap_predict2[peaksmooth>2*std(peaksmooth)]=nan
+				f2=figure(figsize=(20,12))
+				axx=f2.add_subplot(121)
+				axy=f2.add_subplot(122)
+				axx.imshow(kmap_lensing,origin='lower',vmin=-2*kstd,vmax=3*kstd,interpolation='nearest')
+				#f2.colorbar()
+				axx.set_title('lensing')
+				axy.imshow(kmap_predict2,origin='lower',interpolation='nearest')
+				#plt.colorbar(cax=axy)
+				axy.set_title('predict')
+				savefig(plot_dir+'peaks_location_W%s.jpg'%(Wx))
+				close()
+				
 			return kappa_proj, kappa_lensing, kappa_bmode
-
-		out = map(return_kappa_arr, range(1,5))#4x3
-		kappa_proj, kappa_lensing, kappa_bmode = [concatenate([out[i][j] for i in range(4)]) for j in range(3)]
+		kappa_proj, kappa_lensing, kappa_bmode = return_kappa_arr(2, sigmaG)
+		#out = map(return_kappa_arr, range(1,5))#4x3
+		#kappa_proj, kappa_lensing, kappa_bmode = [concatenate([out[i][j] for i in range(4)]) for j in range(3)]
 
 		ymean = zeros(len(edge_arr)-1)
 		ymeanB =zeros(len(edge_arr)-1)
@@ -433,17 +459,18 @@ if peak_proj_vs_lensing:
 			#idx_pos3=(kappa_bmode<edge_arr[i+1])&(kappa_bmode>edge_arr[i])
 			#ymean[i]=mean(kappa_proj[idx_pos2])
 			#ymeanB[i]=mean(kappa_proj[idx_pos3])
-		
-		plot(edge_arr[1:], ymean, 'ro',label='convergence')
-		plot(edge_arr[1:], ymeanB, 'bx',label='B mode')
-		
+		ax.scatter(kappa_proj, kappa_lensing, s=1)
+		ax.plot(edge_arr[1:], ymean, 'ro',label='convergence')
+		ax.plot(edge_arr[1:], ymeanB, 'bx',label='B mode')
+		ax.set_xlim(0, 3*std(kappa_proj))
 		if k==1:
-			legend(loc=0,fontsize=10)
+			ax.legend(loc=0,fontsize=10)
 		if k>4:
-			xlabel('kappa_predict')
-		title('%s arcmin'%(sigmaG))
+			ax.set_xlabel('kappa_predict')
+		ax.set_title('%s arcmin'%(sigmaG))
 		k+=1
-	savefig(plot_dir+'kappa_pred_lensing_L12.jpg')
+		#ax.set_xscale('log')
+	savefig(plot_dir+'kappa_pred_lensing_G10.jpg')
 	close()
 	
 if cross_correlate:
