@@ -72,11 +72,11 @@ def single_corr(iRcosmosigmaG, edges = edges):
 	R, cosmo, sigmaG = iRcosmosigmaG
 	print R, sigmaG, cosmo
 	fn = ipeaklist_fn(cosmo, R, sigmaG)
-	#if not os.path.isfile(fn):
-	ipeaklist =  concatenate([single_peaklist(i, cosmo, R, sigmaG) for i in i_arr], axis=-1)
-	save(fn, ipeaklist)
-	#else:
-		#ipeaklist = load(fn)
+	if not os.path.isfile(fn):
+		ipeaklist =  concatenate([single_peaklist(i, cosmo, R, sigmaG) for i in i_arr], axis=-1)
+		save(fn, ipeaklist)
+	else:
+		ipeaklist = load(fn)
 	out_DDRR = zeros(len(edges)-1)
 	out_Corr = zeros(len(edges)-1)
 	for i in range(len(edges)-1):
