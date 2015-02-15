@@ -36,15 +36,15 @@ maskGen = lambda i, sigmaG: WLanalysis.readFits(KS_dir+'mask/CFHT_mask_ngal5_sig
 #done
 ########################################################
 
-ipeaklist_fn = lambda cosmo, R, sigmaG: KS_dir+'peaks_corr_single/%s/sigma%s/Peaklist_sigma%02d_%s_%04dr.npy'%(cosmo, sigmaG*10, sigmaG*10, cosmo, R)
+ipeaklist_fn = lambda cosmo, R, sigmaG: KS_dir+'peaks_corr_single/%s/sigma%02d/Peaklist_sigma%02d_%s_%04dr.npy'%(cosmo, sigmaG*10, sigmaG*10, cosmo, R)
 
-mask_all_arr = array([maskGen(i, sigmaG) for i in i_arr for sigmaG in sigmaG_arr])
+mask_all_arr = array([[maskGen(i, sigmaG) for sigmaG in sigmaG_arr]for i in i_arr])
 
 def single_peaklist(i, cosmo, R, sigmaG):
 	'''for subfield=i, cosmo, realization=R, smoothing scale sigmaG, return the 2 correlation functions.
 	return: distance(in pixel), kappa1, kappa2
 	'''
-	mask = mask_all_arr[i, int(where(sigmaG_arr==sigmaG)[0])]
+	mask = mask_all_arr[i-1, int(where(sigmaG_arr==sigmaG)[0])]
 	kmap = kmapGen(i, cosmo, R, sigmaG)
 	
 	peakmat = WLanalysis.peaks_mat(kmap)
@@ -54,12 +54,12 @@ def single_peaklist(i, cosmo, R, sigmaG):
 	###### get all combination of the 2 peaks ########
 	peakmesh = array(meshgrid(peaks, peaks))
 	peakcplx = peakmesh[0] + 1j*peakmesh[1]#make 2 peaks to complex number
-	peaksarr = concatenate([diag(peakcplx,i) for i in range(1,len(peakcplx)-1)])#only take upper right triangle
+	peaksarr = concatenate([diag(peakcplx,j) for j in range(1,len(peaks)-1)])#only take upper right triangle
 	###### the distance for all the peak pairs ########
 	iloc = loc[0] + 1j*loc[1]#turn x,y into X=x+iy, prepare for meshing
 	x, y = meshgrid(iloc,iloc)
 	distmat = abs(x-y)
-	dist = concatenate([diag(distmat,i) for i in range(1,len(iarr)-1)])
+	dist = concatenate([diag(distmat,j) for j in range(1,len(peaks)-1)])
 	return dist, real(peaksarr),imag(peaksarr)
 
 def single_corr(iRcosmosigmaG, edges = edges):
