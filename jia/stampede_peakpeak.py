@@ -54,6 +54,7 @@ def single_peaklist(i, cosmo, R, sigmaG):
 	###### get all combination of the 2 peaks ########
 	peakmesh = array(meshgrid(peaks, peaks))
 	peakcplx = peakmesh[0] + 1j*peakmesh[1]#make 2 peaks to complex number
+	print peakcplx.shape
 	peaksarr = concatenate([diag(peakcplx,j) for j in range(1,len(peaks)-1)])#only take upper right triangle
 	###### the distance for all the peak pairs ########
 	iloc = loc[0] + 1j*loc[1]#turn x,y into X=x+iy, prepare for meshing
