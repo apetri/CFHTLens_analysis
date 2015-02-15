@@ -23,7 +23,7 @@ R_arr = arange(1,1001)
 PPA512 = 2.4633625
 i_arr = range(1,14)
 #edges = logspace(log10(5),log10(512*sqrt(2)),bins+1)
-edges = linspace (5, 512*sqrt(2), bins+1)
+edges = linspace (5, 512, bins+1)
 
 kmapGen = lambda i, cosmo, R, sigmaG: WLanalysis.readFits(KS_dir+'%s/subfield%i/sigma%02d/SIM_KS_sigma%02d_subfield%i_%s_%04dr.fit'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo,R))
 
