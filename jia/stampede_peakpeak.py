@@ -86,8 +86,9 @@ def single_corr(iRcosmosigmaG, edges = edges):
 	return out_Corr, out_DDRR
 
 pool = MPIPool()
-for cosmo in cosmo_arr:
-	for sigmaG in sigmaG_arr:
+for sigmaG in sigmaG_arr[::-1]:
+	for cosmo in cosmo_arr:
+	
 		print cosmo, sigmaG
 		RcosmosigmaG = [[R, cosmo, sigmaG] for R in R_arr]
 		peakpeak_arr = array(pool.map(single_corr, RcosmosigmaG))#1000 x 2 x 25
