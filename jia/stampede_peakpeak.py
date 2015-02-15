@@ -4,7 +4,7 @@
 # Cluster: XSEDE Stampede
 
 import WLanalysis
-from emcee.utils import MPIPool
+#from emcee.utils import MPIPool
 import os
 import numpy as np
 from scipy import *
@@ -54,7 +54,7 @@ def single_peaklist(i, cosmo, R, sigmaG):
 	###### get all combination of the 2 peaks ########
 	peakmesh = array(meshgrid(peaks, peaks))
 	peakcplx = peakmesh[0] + 1j*peakmesh[1]#make 2 peaks to complex number
-	peaksarr = concatenate([diag(peakcplx,i) for i in range(1,len(b)-1)])#only take upper right triangle
+	peaksarr = concatenate([diag(peakcplx,i) for i in range(1,len(peakcplx)-1)])#only take upper right triangle
 	###### the distance for all the peak pairs ########
 	iloc = loc[0] + 1j*loc[1]#turn x,y into X=x+iy, prepare for meshing
 	x, y = meshgrid(iloc,iloc)
@@ -84,15 +84,15 @@ def single_corr(iRcosmosigmaG, edges = edges):
 		out_Corr[i] = mean(ipeaklist[1,idx]*ipeaklist[2,idx])
 	return out_Corr, out_DDRR
 
-pool = MPIPool()
-for cosmo in cosmo_arr:
-	for sigmaG in sigmaG_arr:
-		#print cosmo, sigmaG
-		RcosmosigmaG = [[R, cosmo, sigmaG] for R in R_arr]
-		peakpeak_arr = array(pool.map(single_corr, RcosmosigmaG))#1000 x 2 x 25
-		fn_kappa = peaks_corr_dir+'Corr_kappa_sigma%02d_%s.npy'%(sigmaG*10, cosmo)
-		fn_counts = peaks_corr_dir+'Corr_counts_sigma%02d_%s.npy'%(sigmaG*10, cosmo)
-		save(fn_kappa, peakpeak_arr[:,0,:])
-		save(fn_counts, peakpeak_arr[:,1,:])
+#pool = MPIPool()
+#for cosmo in cosmo_arr:
+	#for sigmaG in sigmaG_arr:
+		##print cosmo, sigmaG
+		#RcosmosigmaG = [[R, cosmo, sigmaG] for R in R_arr]
+		#peakpeak_arr = array(pool.map(single_corr, RcosmosigmaG))#1000 x 2 x 25
+		#fn_kappa = peaks_corr_dir+'Corr_kappa_sigma%02d_%s.npy'%(sigmaG*10, cosmo)
+		#fn_counts = peaks_corr_dir+'Corr_counts_sigma%02d_%s.npy'%(sigmaG*10, cosmo)
+		#save(fn_kappa, peakpeak_arr[:,0,:])
+		#save(fn_counts, peakpeak_arr[:,1,:])
 	
 print 'Done-Done-Done-Done!!!'
