@@ -23,7 +23,7 @@ design_points = "/Users/andreapetri/Documents/Cosmology_software/LensTools/lenst
 brew_colors = ["red","green","blue","black","orange","magenta","cyan"]
 brew_colors_11 = ["#a50026","#d73027","#f46d43","#fdae61","#fee08b","#ffffbf","#d9ef8b","#a6d96a","#66bd63","#1a9850","#006837"]
 brew_colors_diverging = ["#a6cee3","#1f78b4","#b2df8a","#33a02c","#fb9a99","#e31a1c","#fdbf6f","#ff7f00","#cab2d6","#6a3d9a","#ffff99","#b15928"]
-brew_colors_moments = ["black","#bdbdbd","#636363","green","#e34a33","#b30000","#74a9cf","#2b8cbe","yellow"]
+brew_colors_moments = ["black","green","#e34a33","#b30000","#74a9cf","#2b8cbe","yellow"]
 
 #Descriptor list
 descriptors=dict()
@@ -58,7 +58,7 @@ smoothing_scales["minkowski_0"] = 1.0
 smoothing_scales["minkowski_1"] = 1.0
 smoothing_scales["minkowski_2"] = 1.0 
 smoothing_scales["moments"] = 1.0
-smoothing_scales["moments_q1_s1_k1"] = "1.0+[1.0,1.8]+[1.0,1.8,3.5]"
+smoothing_scales["moments_q1_s1_k1"] = 1.0
 smoothing_scales["moments_q12_s1_k1"]=1.0
 smoothing_scales["moments_q12_s12_k1"]=1.0
 smoothing_scales["moments_q12_s1"]=1.0
@@ -317,7 +317,7 @@ def robustness_reparametrize(cmd_args):
 ##################################################################################################################################################
 ##################################################################################################################################################
 
-def contours_combine(cmd_args,descriptors_in_plot=["power_spectrum"]+multiple,parameter_axes={"Omega_m":0,"w":1,"sigma8":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","sigma8":r"$\sigma_8$"},select="w",marginalize_over="me",mock=False,cross_label="cross"):
+def contours_combine(cmd_args,descriptors_in_plot=["power_spectrum"]+multiple,parameter_axes={"Omega_m":0,"w":1,"sigma8":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","sigma8":r"$\sigma_8$"},select="w",marginalize_over="me",mock=False,cross_label="cross",levels=[0.684],appendSigma=False):
 
 	#decide if consider data or simulations
 	if mock:
@@ -326,7 +326,7 @@ def contours_combine(cmd_args,descriptors_in_plot=["power_spectrum"]+multiple,pa
 		mock_prefix=""
 
 	#Likelihood levels
-	levels = [0.684]
+	levels = levels
 
 	#Parametrization hash
 	par = parameter_axes.keys()
@@ -408,23 +408,40 @@ def contours_combine(cmd_args,descriptors_in_plot=["power_spectrum"]+multiple,pa
 		#Save
 		par.pop(par.index(select))
 		par_hash = "-".join(par).replace(".","")
-		fig.savefig("contours{0}{1}_{2}.{3}".format(mock_prefix,par_hash,cross_label,cmd_args.type))	
+		figname = "contours{0}{1}_{2}".format(mock_prefix,par_hash,cross_label)
+		if appendSigma:
+			figname += "c{0}".format(int(levels[0]*100))
+		fig.savefig(figname+".{0}".format(cmd_args.type))	
 
 	else:
 
 		#Legend
 		ax.set_xlabel(cosmo_labels[select],fontsize=22)
 		ax.set_ylabel(r"$\mathcal{L}$" + "$($" + cosmo_labels[select] + "$)$",fontsize=22)
+		ax.set_ylim(0,l.max()*1.5)
 		ax.legend(loc="upper right",prop={"size":10})
 
 		#Save
-		fig.savefig("contours{0}{1}_{2}.{3}".format(mock_prefix,select.replace(".",""),cross_label,cmd_args.type))
+		figname = "contours{0}{1}_{2}".format(mock_prefix,select.replace(".",""),cross_label,cmd_args.type)
+		if appendSigma:
+			figname += "c{0}".format(int(levels[0]*100))
+		fig.savefig(figname+".{0}".format(cmd_args.type))
 
 ##################################################################################################################################################
 
 def contours_single(cmd_args):
 
 	contours_combine(cmd_args,descriptors_in_plot=single,cross_label="single")
+
+##################################################################################################################################################
+
+def contours_single_2sigma(cmd_args):
+
+	contours_combine(cmd_args,descriptors_in_plot=single,cross_label="single",levels=[0.954],appendSigma=True)
+
+def contours_single_3sigma(cmd_args):
+
+	contours_combine(cmd_args,descriptors_in_plot=single,cross_label="single",levels=[0.997],appendSigma=True)	
 
 ##################################################################################################################################################
 
@@ -490,7 +507,7 @@ def Si8_likelihood_combine(cmd_args):
 ##################################################################################################################################################
 ##################################################################################################################################################
 
-def contour_moments(cmd_args,descriptors_in_plot=moment_list,parameter_axes={"Omega_m":0,"w":1,"sigma8":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","sigma8":r"$\sigma_8$"},select="w",marginalize_over="me"):
+def contour_moments(cmd_args,descriptors_in_plot=moment_list,parameter_axes={"Omega_m":0,"w":1,"sigma8":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","sigma8":r"$\sigma_8$"},select="w",marginalize_over="me",figure_label=None):
 
 	#Likelihood levels
 	levels = [0.684]
@@ -570,7 +587,7 @@ def contour_moments(cmd_args,descriptors_in_plot=moment_list,parameter_axes={"Om
 				print("Likelihood with {0} is maximum at {1}".format(descr,maximum))
 
 				#Get levels
-				contour.getLikelihoodValues(levels=levels)
+				contour.getLikelihoodValues(levels=levels,precision=0.01)
 
 				#Plot contours
 				contour.plotContours(colors=[brew_colors_moments[c]],fill=False,display_maximum=False,display_percentages=False,alpha=1.0)
@@ -594,18 +611,29 @@ def contour_moments(cmd_args,descriptors_in_plot=moment_list,parameter_axes={"Om
 		#Save
 		par.pop(par.index(select))
 		par_hash = "-".join(par).replace(".","")
-		fig.savefig("contours_moments{0}.{1}".format(par_hash,cmd_args.type))	
+		figname = "contours_moments{0}".format(par_hash)
+		if figure_label is not None:
+			figname += figure_label
+		fig.savefig(figname+".{0}".format(cmd_args.type))	
 
 	else:
 
 		#Legend
 		ax.set_xlabel(cosmo_labels[select],fontsize=22)
 		ax.set_ylabel(r"$\mathcal{L}$" + "$($" + cosmo_labels[select] + "$)$",fontsize=22)
-		ax.legend(loc="upper left",prop={"size":10})
+		ax.legend(loc="upper left",prop={"size":15})
 
 		#Save
-		fig.savefig("contours_moments{0}.{1}".format(select.replace(".",""),cmd_args.type))
+		figname = "contours_moments{0}".format(select.replace(".",""))
+		if figure_label is not None:
+			figname += figure_label
+		fig.savefig(figname+".{0}".format(cmd_args.type))
 
+def contour_moments_smoothing_scales(cmd_args):
+
+	smoothing_scales["moments_q1_s1_k1"] = "1.0+[1.0,1.8]+[1.0,1.8,3.5]"
+	contour_moments(cmd_args,descriptors_in_plot=["moments_q1_s1_k1"],figure_label="smooth")
+	smoothing_scales["moments_q1_s1_k1"] = 1.0
 
 ###################################################################################################################################################
 
@@ -638,15 +666,18 @@ figure_method["4rep"] = robustness_reparametrize
 figure_method["4srep"] = robustness_1d_reparametrize
 figure_method["5"] = contours_single
 figure_method["5b"] = contours_single_mock
-figure_method["6"] = contours_single_reparametrize
-figure_method["7"] = Si8_likelihood_single
-figure_method["8"] = contours_combine
-figure_method["8b"] = contours_combine_reparametrize
-figure_method["9"] = Si8_likelihood_combine
-figure_method["10a"] = contour_moments
-figure_method["10b"] = contour_moments_reparametrize
-figure_method["10c"] = Si8_likelihood_moments
+figure_method["6"] = contour_moments
+figure_method["6b"] = contour_moments_smoothing_scales
+figure_method["7"] = contour_moments_reparametrize
+figure_method["8"] = Si8_likelihood_single
+figure_method["9"] = contours_combine
+figure_method["9b"] = contours_combine_reparametrize
+figure_method["10"] = Si8_likelihood_combine
 
+#############################################
+
+figure_method["extra1"] = contours_single_2sigma
+figure_method["extra2"] = contours_single_3sigma
 
 if __name__=="__main__":
 
@@ -659,7 +690,13 @@ if __name__=="__main__":
 	cmd_args = parser.parse_args()
 
 	if len(cmd_args.figure_numbers)==0 or cmd_args.options_file is None:
+		
 		parser.print_help()
+		print("")
+		keys = figure_method.keys()
+		keys.sort()
+		for key in keys:
+			print("{0} : {1}".format(key,figure_method[key].__name__))
 		sys.exit(0)
 
 	#Generate all figures specified in input
