@@ -12,9 +12,9 @@ import WLanalysis
 from scipy import interpolate
 
 freq_arr = ['2freqs', '545217GHzclean', '857GHz', 'dusty']#
-if int(sys.argv[1]):
+try:
 	freq = freq_arr[int(sys.argv[1])]
-else:
+except Exception:
 	freq = freq_arr[0]
 print 'frequency:', freq
 

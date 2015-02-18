@@ -81,7 +81,6 @@ edgesGen = lambda Wx: linspace(5,75,7)*sizes[Wx-1]/1330.0
 
 maskGen = lambda Wx: np.load(kSZ_dir+'mask/W%i_mask.npy'%(Wx))
 
-
 bmapGen = lambda Wx, iseed: np.load(kSZ_dir+'CFHT/Noise/W%i_Noise_sigmaG10_%04d.npy'%(Wx, iseed))
 
 kmapGen = lambda Wx: WLanalysis.readFits(kSZ_dir+'CFHT/conv/W%i_KS_1.3_lo_sigmaG10.fit'%(Wx))
