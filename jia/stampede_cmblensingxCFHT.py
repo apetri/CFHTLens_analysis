@@ -90,11 +90,11 @@ def cmblGen_fn (fn, offset=False, method='nearest'):
 
 #ptsrcGen = lambda i: np.load(cmb_dir + 'planck/'+'kappamask_flipper2048_CFHTLS_W%i_map.npy'%(i))
 
-cmbl_dir = '/home1/02977/jialiu/cmbl/'
+kSZ_dir = '/home1/02977/jialiu/kSZ/'
 
-kmapGen = lambda Wx: WLanalysis.readFits(cmbl_dir+'CFHT/conv/W%i_KS_1.3_lo_sigmaG10.fit'%(Wx))
+kmapGen = lambda Wx: WLanalysis.readFits(kSZ_dir+'CFHT/conv/W%i_KS_1.3_lo_sigmaG10.fit'%(Wx))
 
-bmapGen = lambda Wx, iseed: np.load(cmbl_dir+'CFHT/Noise/W%i_Noise_sigmaG10_%04d.npy'%(Wx, iseed))
+bmapGen = lambda Wx, iseed: np.load(kSZ_dir+'CFHT/Noise/W%i_Noise_sigmaG10_%04d.npy'%(Wx, iseed))
 
 maskGen = lambda Wx: np.load(cmb_dir+'mask/W%i_mask.npy'%(Wx))
 cmblGen = lambda Wx: np.load(cmb_dir+'planck/dat_kmap_flipper2048_CFHTLS_W%i_map.npy'%(Wx))
