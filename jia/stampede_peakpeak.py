@@ -87,16 +87,19 @@ def single_corr(iRcosmosigmaG, edges = edges):
 
 pool = MPIPool()
 for sigmaG in sigmaG_arr[::-1]:
-	for cosmo in cosmo_arr:
+	for cosmo in cosmo_arr[::-1]:
 		print cosmo, sigmaG
 		fn_kappa = peaks_corr_dir+'Corr_kappa_sigma%02d_%s.npy'%(sigmaG*10, cosmo)
 		fn_counts = peaks_corr_dir+'Corr_counts_sigma%02d_%s.npy'%(sigmaG*10, cosmo)
 		if os.path.isfile(fn_kappa) and os.path.isfile(fn_counts):
 			continue
 		else:
-			RcosmosigmaG = [[R, cosmo, sigmaG] for R in R_arr]
-			peakpeak_arr = array(pool.map(single_corr, RcosmosigmaG))#1000 x 2 x 25
-			save(fn_kappa, peakpeak_arr[:,0,:])
-			save(fn_counts, peakpeak_arr[:,1,:])
+			try:
+				RcosmosigmaG = [[R, cosmo, sigmaG] for R in R_arr]
+				peakpeak_arr = array(pool.map(single_corr, RcosmosigmaG))#1000 x 2 x 25
+				save(fn_kappa, peakpeak_arr[:,0,:])
+				save(fn_counts, peakpeak_arr[:,1,:])
+			except Exception:
+				continue
 	
 print 'Done-Done-Done-Done!!!'
