@@ -132,7 +132,7 @@ bmapGen = lambda Wx, iseed: load(cmb_dir+'cfht/noise_nocut/W%i_Noise_sigmaG10_%0
 ##########################################################
 ######### cross correlate ################################
 ##########################################################
-create_noise_KS = 1
+create_noise_KS = 0
 cross_correlate_cmbl_noise = 1
 
 if create_noise_KS:
