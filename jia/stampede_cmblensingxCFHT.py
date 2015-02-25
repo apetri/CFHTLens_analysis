@@ -143,7 +143,7 @@ if create_noise_KS:
 	p = MPIPool()	
 	bmap_fn = lambda Wx, iseed: cmb_dir+'cfht/noise_nocut/W%i_Noise_sigmaG10_%04d.npy'%(Wx, iseed)
 
-	Mexw = lambda Wx, txt: np.load(cmb_dir+'cfht/W%i_M%s_nocut'%(Wx,txt))
+	Mexw = lambda Wx, txt: np.load(cmb_dir+'cfht/W%i_M%s_nocut.npy'%(Wx,txt))
 	Me1_arr = [Mexw(Wx, 'e1w') for Wx in range(1,5)]
 	Me2_arr = [Mexw(Wx, 'e2w') for Wx in range(1,5)]
 	Mwm_arr = [Mexw(Wx, 'wm') for Wx in range(1,5)]
