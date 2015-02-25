@@ -147,7 +147,8 @@ if create_noise_KS:
 	Me1_arr = [Mexw(Wx, 'e1w') for Wx in range(1,5)]
 	Me2_arr = [Mexw(Wx, 'e2w') for Wx in range(1,5)]
 	Mwm_arr = [Mexw(Wx, 'wm') for Wx in range(1,5)]
-	def randmap (iseed, Wx):
+	def randmap (iseedWx):
+		iseed, Wx = iseedWx
 		Me1, Me2 = Me1_arr[Wx-1], Me2_arr[Wx-1]
 		Mwm = Mwm_arr[Wx-1]
 		Me1rnd, Me2rnd = WLanalysis.rndrot(Me1, Me2, iseed=iseed)
