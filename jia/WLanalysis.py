@@ -137,7 +137,10 @@ def gnom_fun(center):
 	ra0 = ra0*pi/180
 	dec0 = dec0*pi/180
 	def gnom(radec):
-		ra,dec = radec[0].copy(), radec[1].copy()
+		if len(radec)>2:
+			ra, dec = (array(radec).copy()).T
+		else:
+			ra,dec = radec[0].copy(), radec[1].copy()
 		ra -= 180
 		ra = ra*pi/180
 		dec = dec*pi/180
