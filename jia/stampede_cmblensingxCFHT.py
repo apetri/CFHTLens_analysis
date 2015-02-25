@@ -142,9 +142,14 @@ if create_noise_KS:
 	#Wx=int(sys.argv[1])
 	p = MPIPool()	
 	bmap_fn = lambda Wx, iseed: cmb_dir+'cfht/noise_nocut/W%i_Noise_sigmaG10_%04d.npy'%(Wx, iseed)
+
 	Mexw = lambda Wx, txt: np.load(cmb_dir+'cfht/W%i_M%s_nocut'%(Wx,txt))
-	Me1, Me2, Mwm = Mexw(Wx, 'e1w'), Mexw(Wx, 'e2w'), Mexw(Wx, 'wm')
-	def randmap (iseed, Wx):	
+	Me1_arr = [Mexw(Wx, 'e1w') for Wx in range(1,5)]
+	Me2_arr = [Mexw(Wx, 'e2w') for Wx in range(1,5)]
+	Mwm_arr = [Mexw(Wx, 'wm') for Wx in range(1,5)]
+	def randmap (iseed, Wx):
+		Me1, Me2 = Me1_arr[Wx-1], Me2_arr[Wx-1]
+		Mwm = Mwm_arr[Wx-1]
 		Me1rnd, Me2rnd = WLanalysis.rndrot(Me1, Me2, iseed=iseed)
 		Me1smooth = WLanalysis.weighted_smooth(Me1rnd, Mwm)
 		Me2smooth = WLanalysis.weighted_smooth(Me2rnd, Mwm)
