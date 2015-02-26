@@ -47,9 +47,10 @@ cat_dir = '/Users/jia/weaklensing/CFHTLenS/catalogue/'
 #textfile = genfromtxt(cat_dir+'CFHTLenS_downloads/CFHTLens_2015-02-25T04-54-07.tsv')#374M
 #save(cat_dir+'CFHTLenS_downloads/All_RA_Dec_e12_w_z_m_c.npy', textfile.astype(float32))
 
-textfile = load(cat_dir+'CFHTLenS_downloads/All_RA_Dec_e12_w_z_m_c.npy')[1:]
-RA, DEC, e1, e2, weight, zB, m, c2 = textfile.T
+#textfile = load(cat_dir+'CFHTLenS_downloads/All_RA_Dec_e12_w_z_m_c.npy')[1:]
+#RA, DEC, e1, e2, weight, zB, m, c2 = textfile.T
 
+####################################
 
 def list2coords(radeclist, Wx):
 	'''from radeclist for Wx to xy position in radians for specific map
@@ -91,3 +92,28 @@ def construct_kmap (Wx, sigmaG=1.0):
 	
 #map(construct_kmap, range(1,5))
 kmapGen = lambda Wx: load(cat_dir+'kmap_W%i_sigma10_noZcut.npy'%(Wx))
+
+##########################
+#### galn x cmb lensing ##
+##########################
+############# galaxies only ########
+####textfile = genfromtxt(cat_dir+'CFHTLenS_downloads/CFHTLens_2015-02-26T02:54:49.tsv')
+####save(cat_dir+'CFHTLenS_downloads/CFHTLens_2015-02-26T02:54:49.npy', textfile.astype(float32))
+galntextfile = load (cat_dir+'CFHTLenS_downloads/CFHTLens_2015-02-26T02:54:49.npy')[1:]
+RA, DEC, w, zB, MAG_i = galntextfile.T
+
+def construct_galn (Wx, sigmaG=1.0):
+	print Wx
+	isize=sizes[Wx-1]
+	iRA0, iRA1 = RAs[Wx-1]
+	idx = where((RA<iRA1) & (RA>iRA0))[0]
+	iRA, iDEC, iw, izB, iMAG_i = galntextfile[idx].T
+	radeclist = array([iRA, iDEC]).T
+	xy = list2coords(radeclist, Wx)
+	y, x = xy
+	k = array([w,])
+	A, galn = WLanalysis.coords2grid(x, y, k, size=isize)
+	galn_smooth = WLanalysis.smooth(galn, PPA512)
+	save('/Users/jia/weaklensing/cmblensing/OmoriHolder_galn_W%i.npy'%(Wx),galn)
+	save('/Users/jia/weaklensing/cmblensing/OmoriHolder_galnSmooth_W%i.npy'%(Wx),galn_smooth)
+map(construct_galn, range(1,5))

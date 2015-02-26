@@ -13,7 +13,8 @@ centers = array([[34.5, -7.5], [134.5, -3.25],[214.5, 54.5],[ 332.75, 1.9]])
 sizes = (1330, 800, 1120, 950)
 PPR512=8468.416479647716
 PPA512=2.4633625
-edgesGen = lambda Wx: linspace(1,50,6)*sizes[Wx-1]/1330.0#linspace(5,80,11)
+#edgesGen = lambda Wx: linspace(1,50,6)*sizes[Wx-1]/1330.0#linspace(5,80,11)
+edgesGen = lambda Wx: logspace(0,log10(50),7)*sizes[Wx-1]/1330.0#linspace(5,80,11)
 rad2pix=lambda x, size: around(size/2.0-0.5 + x*PPR512).astype(int)
 
 ############## for zcut = 0213 ################
@@ -103,10 +104,7 @@ def cmblGen_fn (fn, offset=False, method='nearest'):
 #ptsrcGen = lambda i: np.load(cmb_dir + 'planck/'+'kappamask_flipper2048_CFHTLS_W%i_map.npy'%(i))
 #galnGen = lambda Wx: load('/Users/jia/weaklensing/CFHTLenS/catalogue/Me_Mw_galn/W%i_galn_nocut.npy'%(Wx))
 
-kmapGen = lambda Wx: np.load(cmb_dir+'cfht/kmap_W%i_sigma10_noZcut.npy'%(Wx))
-maskGen = lambda Wx: np.load(cmb_dir+'mask/W%i_mask_noZcut.npy'%(Wx))
-cmblGen = lambda Wx: np.load(cmb_dir+'planck/dat_kmap_flipper2048_CFHTLS_W%i_map.npy'%(Wx))
-bmapGen = lambda Wx, iseed: load(cmb_dir+'cfht/noise_nocut/W%i_Noise_sigmaG10_%04d.npy'%(Wx, iseed))
+############ only need once on local #################
 #def maskGen (Wx, sigma_pix=10):
 	#galn = WLanalysis.smooth(galnGen(Wx),PPA512)
 	#galn *= ptsrcGen (Wx)## add point source mask for cmbl
@@ -128,6 +126,13 @@ bmapGen = lambda Wx, iseed: load(cmb_dir+'cfht/noise_nocut/W%i_Noise_sigmaG10_%0
 	#save(cmb_dir+'mask/W%i_mask_noZcut.npy'%(Wx), maskGen(Wx)) 
 
 #a = [sum(maskGen(Wx)**2)/sizes[Wx-1]**2 for Wx in range(1,5)]
+
+#######################################
+
+kmapGen = lambda Wx: np.load(cmb_dir+'cfht/kmap_W%i_sigma10_noZcut.npy'%(Wx))
+maskGen = lambda Wx: np.load(cmb_dir+'mask/W%i_mask_noZcut.npy'%(Wx))
+cmblGen = lambda Wx: np.load(cmb_dir+'planck/dat_kmap_flipper2048_CFHTLS_W%i_map.npy'%(Wx))
+bmapGen = lambda Wx, iseed: load(cmb_dir+'cfht/noise_nocut/W%i_Noise_sigmaG10_%04d.npy'%(Wx, iseed))
 
 ##########################################################
 ######### cross correlate ################################
@@ -186,7 +191,7 @@ if cross_correlate_cmbl_noise:
 	p = MPIPool()
 	CC_arr = array(p.map(cmblxNoise, Wx_iseed_list))
 	for Wx in arange(1,5):
-		np.save(cmb_dir+'CC_noZcut/CFHTxPlanck_lensing_500sim_W%s.npy'%(Wx), CC_arr[(Wx-1)*500:Wx*500])
+		np.save(cmb_dir+'CC_noZcut/CFHTxPlanck_logbins_lensing_500sim_W%s.npy'%(Wx), CC_arr[(Wx-1)*500:Wx*500])
 	print 'done cross correlate cmbl x 500 noise.'
 	
 	############# cross with CFHT ####################
@@ -200,6 +205,6 @@ if cross_correlate_cmbl_noise:
 		
 		edges = edgesGen(Wx)
 		CC_signal = WLanalysis.CrossCorrelate(kmap, cmblmap,edges=edges)[1]/fmask2_arr[Wx-1]
-		np.save(cmb_dir+'CC_noZcut/CFHTxPlanck_lensing_W%s.npy'%(Wx), CC_signal)
+		np.save(cmb_dir+'CC_noZcut/CFHTxPlanck_logbins_lensing_W%s.npy'%(Wx), CC_signal)
 
 print 'done!done!done!done!'
