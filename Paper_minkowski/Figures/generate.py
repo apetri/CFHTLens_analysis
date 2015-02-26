@@ -139,10 +139,17 @@ def emulatorAccuracy(cmd_args,descriptors_in_plot=single[:-1]):
 
 		ax.plot(np.abs(measured-predicted)/np.sqrt(covariance.diagonal()),color=brew_colors[n],label=descriptors[descr])
 
+		#Plot also the predicted descriptors in another cosmology
+		emulator = LikelihoodAnalysis.load(os.path.join(root_dir,"emulators","emulator_{0}--{1:.1f}.p".format(descr,smoothing_scale)))
+		predictedOther = emulator.predict(np.array([0.8,-1.0,0.5]))
+
+		ax.plot(np.abs(measured-predictedOther)/np.sqrt(covariance.diagonal()),color=brew_colors[n],linestyle="--")
+
 	#Plot labels
 	ax.set_xlabel(r"$i$",fontsize=22)
 	ax.set_ylabel(r"$(E-M)/\sqrt{C_{MM}}$",fontsize=22)
 	ax.set_yscale("log")
+	ax.set_ylim(1.0e-3,10.0)
 	ax.legend(loc="lower left")
 
 	#Save the figure
