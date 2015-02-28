@@ -9,6 +9,14 @@ import WLanalysis
 from scipy import interpolate
 from emcee.utils import MPIPool
 
+try:
+	year = int(sys.argv([1]))
+else:
+	year = 2015
+print 'year', year
+create_noise_KS = 0
+cross_correlate_cmbl_noise = 1
+
 centers = array([[34.5, -7.5], [134.5, -3.25],[214.5, 54.5],[ 332.75, 1.9]])
 sizes = (1330, 800, 1120, 950)
 PPR512=8468.416479647716
@@ -17,6 +25,9 @@ PPA512=2.4633625
 edgesGen = lambda Wx: logspace(0,log10(50),7)*sizes[Wx-1]/1330.0#linspace(5,80,11)
 rad2pix=lambda x, size: around(size/2.0-0.5 + x*PPR512).astype(int)
 
+#cmb_dir = '/Users/jia/Documents/weaklensing/cmblensing/'
+cmb_dir = '/home1/02977/jialiu/cmblensing/'
+
 ############## for zcut = 0213 ################
 #fmask2_arr = [0.69589653344034097, 0.56642933419641017, 0.5884087465608, 0.43618153901026568]
 #W1, fsky=0.00146857, fsky2=0.00136595, fmask=0.74818035, fmask2=0.69589653
@@ -24,15 +35,13 @@ rad2pix=lambda x, size: around(size/2.0-0.5 + x*PPR512).astype(int)
 #W3, fsky=0.00090399, fsky2=0.00081903, fmask=0.64944117, fmask2=0.58840875
 #W4, fsky=0.00049279, fsky2=0.00043682, fmask=0.49207419, fmask2=0.43618154
 
-############# no z cut #################
-fmask2_arr = [0.71694393, 0.61341502, 0.61103857, 0.45879416]
+############# no z cut, planck 13+15, or 15 #################
+fmask2_arr = array([0.71694393, 0.61341502, 0.61103857, 0.45879416])
 #W1, fsky=0.00149613, fsky2=0.00140726, fmask=0.76221954, fmask2=0.71694393
 #W2, fsky=0.00049488, fsky2=0.00043563, fmask=0.69684520, fmask2=0.61341502
 #W3, fsky=0.00092528, fsky2=0.00085053, fmask=0.66473852, fmask2=0.61103857
 #W4, fsky=0.00050892, fsky2=0.00045946, fmask=0.50817719, fmask2=0.45879416
 
-#cmb_dir = '/Users/jia/Documents/weaklensing/cmblensing/'
-cmb_dir = '/home1/02977/jialiu/cmblensing/'
 #######################################################
 ########## map making #################################
 #######################################################
@@ -67,8 +76,8 @@ def cmblGen_fn (fn, offset=False, method='nearest'):
 	Wx = int(fn[fn.index('W')+1])
 	print 'Wx, fn:', Wx, fn
 	size=sizes[Wx-1]
-	cmblCoord = load(fn[:-3]+'npy')
-	#cmblCoord = genfromtxt(fn)
+	#cmblCoord = load(fn[:-3]+'npy')
+	cmblCoord = genfromtxt(fn)
 	#cmblCoord = WLanalysis.readFits(fn)
 	radeclist = cmblCoord[:,:-1]
 	values = cmblCoord.T[-1]
@@ -83,12 +92,13 @@ def cmblGen_fn (fn, offset=False, method='nearest'):
 	cmblmap[isnan(cmblmap)]=0.0
 	if offset:
 		cmblmap = cmblmap.T
-	np.save(fn[:-7]+'_map', cmblmap)
+	np.save(fn[:-3]+'npy', cmblmap)
 
-#for fn in os.listdir(cmb_dir+'planck/'):
-	#print fn
-	#full_fn = cmb_dir+'planck/'+fn
-	#cmblGen_fn(full_fn, offset = False)
+#for fn in os.listdir(cmb_dir+'planck/'):	
+	#if fn[-3:]=='txt':
+		#print fn[:-3]+'npy'
+		#full_fn = cmb_dir+'planck/'+fn
+		#cmblGen_fn(full_fn, offset = False)
 	
 ##############################################
 ########### mapGens  #########################
@@ -101,13 +111,14 @@ def cmblGen_fn (fn, offset=False, method='nearest'):
 #kmapGen = lambda Wx: WLanalysis.readFits(kSZ_dir+'CFHT/conv/W%i_KS_1.3_lo_sigmaG10.fit'%(Wx))
 
 ############## no z cut ##############
-#ptsrcGen = lambda i: np.load(cmb_dir + 'planck/'+'kappamask_flipper2048_CFHTLS_W%i_map.npy'%(i))
+#ptsrc15Gen = lambda i: np.load(cmb_dir + 'planck/'+'kappamask_flipper2048_CFHTLS_W%i_map.npy'%(i))
+#ptsrc13Gen = lambda i: np.load(cmb_dir + 'planck/'+'kappamask2013_flipper2048_CFHTLS_W%i.npy'%(i))
 #galnGen = lambda Wx: load('/Users/jia/weaklensing/CFHTLenS/catalogue/Me_Mw_galn/W%i_galn_nocut.npy'%(Wx))
 
-############ only need once on local #################
+############# only need once on local #################
 #def maskGen (Wx, sigma_pix=10):
 	#galn = WLanalysis.smooth(galnGen(Wx),PPA512)
-	#galn *= ptsrcGen (Wx)## add point source mask for cmbl
+	#galn *= ptsrc15Gen(Wx)*ptsrc13Gen (Wx)## add point source mask for cmbl
 	#mask = zeros(shape=galn.shape)
 	#mask[10:-10,10:-10] = 1 ## remove edge 10 pixels
 	#idx = where(galn<0.5)
@@ -123,22 +134,27 @@ def cmblGen_fn (fn, offset=False, method='nearest'):
 	##############################################
 	#return mask_smooth#fsky, fsky2#
 #for Wx in range(1,5):
-	#save(cmb_dir+'mask/W%i_mask_noZcut.npy'%(Wx), maskGen(Wx)) 
+	#save(cmb_dir+'mask/W%i_mask1315_noZcut.npy'%(Wx), maskGen(Wx)) 
 
 #a = [sum(maskGen(Wx)**2)/sizes[Wx-1]**2 for Wx in range(1,5)]
 
 #######################################
 
 kmapGen = lambda Wx: np.load(cmb_dir+'cfht/kmap_W%i_sigma10_noZcut.npy'%(Wx))
-maskGen = lambda Wx: np.load(cmb_dir+'mask/W%i_mask_noZcut.npy'%(Wx))
-cmblGen = lambda Wx: np.load(cmb_dir+'planck/dat_kmap_flipper2048_CFHTLS_W%i_map.npy'%(Wx))
+
+maskGen = lambda Wx: np.load(cmb_dir+'mask/W%i_mask1315_noZcut.npy'%(Wx))
+
+if year == 2015:
+	cmblGen = lambda Wx: np.load(cmb_dir+'planck/dat_kmap_flipper2048_CFHTLS_W%i_map.npy'%(Wx))
+elif year == 2013:
+	cmblGen = lambda Wx: np.load(cmb_dir+'planck/COM_CompMap_Lensing_2048_R1.10_kappa_CFHTLS_W%i.npy'%(Wx))
+
 bmapGen = lambda Wx, iseed: load(cmb_dir+'cfht/noise_nocut/W%i_Noise_sigmaG10_%04d.npy'%(Wx, iseed))
 
 ##########################################################
 ######### cross correlate ################################
 ##########################################################
-create_noise_KS = 0
-cross_correlate_cmbl_noise = 1
+
 
 if create_noise_KS:
 	'''
@@ -191,7 +207,7 @@ if cross_correlate_cmbl_noise:
 	p = MPIPool()
 	CC_arr = array(p.map(cmblxNoise, Wx_iseed_list))
 	for Wx in arange(1,5):
-		np.save(cmb_dir+'CC_noZcut/CFHTxPlanck_logbins_lensing_500sim_W%s.npy'%(Wx), CC_arr[(Wx-1)*500:Wx*500])
+		np.save(cmb_dir+'CC_noZcut/CFHTxPlanck%04d_logbins_lensing_500sim_W%s.npy'%(year, Wx), CC_arr[(Wx-1)*500:Wx*500])
 	print 'done cross correlate cmbl x 500 noise.'
 	
 	############# cross with CFHT ####################
@@ -205,6 +221,6 @@ if cross_correlate_cmbl_noise:
 		
 		edges = edgesGen(Wx)
 		CC_signal = WLanalysis.CrossCorrelate(kmap, cmblmap,edges=edges)[1]/fmask2_arr[Wx-1]
-		np.save(cmb_dir+'CC_noZcut/CFHTxPlanck_logbins_lensing_W%s.npy'%(Wx), CC_signal)
+		np.save(cmb_dir+'CC_noZcut/CFHTxPlanck%04d_logbins_lensing_W%s.npy'%(year, Wx), CC_signal)
 
 print 'done!done!done!done!'
