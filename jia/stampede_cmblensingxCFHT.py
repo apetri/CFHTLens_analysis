@@ -11,7 +11,7 @@ from emcee.utils import MPIPool
 
 try:
 	year = int(sys.argv([1]))
-else:
+except Exception:
 	year = 2015
 print 'year', year
 create_noise_KS = 0
