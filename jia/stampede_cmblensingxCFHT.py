@@ -10,7 +10,7 @@ from scipy import interpolate
 from emcee.utils import MPIPool
 
 try:
-	year = int(sys.argv([1]))
+	year = int(sys.argv[1])
 except Exception:
 	year = 2015
 print 'year', year
