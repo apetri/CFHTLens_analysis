@@ -21,8 +21,8 @@ centers = array([[34.5, -7.5], [134.5, -3.25],[214.5, 54.5],[ 332.75, 1.9]])
 sizes = (1330, 800, 1120, 950)
 PPR512=8468.416479647716
 PPA512=2.4633625
-#edgesGen = lambda Wx: linspace(1,50,6)*sizes[Wx-1]/1330.0#linspace(5,80,11)
-edgesGen = lambda Wx: logspace(0,log10(50),7)*sizes[Wx-1]/1330.0#linspace(5,80,11)
+edgesGen = lambda Wx: linspace(1,50,6)*sizes[Wx-1]/1330.0#linspace(5,80,11)
+#edgesGen = lambda Wx: logspace(0,log10(50),7)*sizes[Wx-1]/1330.0#linspace(5,80,11)
 rad2pix=lambda x, size: around(size/2.0-0.5 + x*PPR512).astype(int)
 
 #cmb_dir = '/Users/jia/Documents/weaklensing/cmblensing/'
