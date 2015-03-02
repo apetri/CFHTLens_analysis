@@ -207,7 +207,7 @@ if cross_correlate_cmbl_noise:
 	p = MPIPool()
 	CC_arr = array(p.map(cmblxNoise, Wx_iseed_list))
 	for Wx in arange(1,5):
-		np.save(cmb_dir+'CC_noZcut/CFHTxPlanck%04d_logbins_lensing_500sim_W%s.npy'%(year, Wx), CC_arr[(Wx-1)*500:Wx*500])
+		np.save(cmb_dir+'CC_noZcut/CFHTxPlanck%04d_lensing_500sim_W%s.npy'%(year, Wx), CC_arr[(Wx-1)*500:Wx*500])
 	print 'done cross correlate cmbl x 500 noise.'
 	
 	############# cross with CFHT ####################
@@ -221,6 +221,6 @@ if cross_correlate_cmbl_noise:
 		
 		edges = edgesGen(Wx)
 		CC_signal = WLanalysis.CrossCorrelate(kmap, cmblmap,edges=edges)[1]/fmask2_arr[Wx-1]
-		np.save(cmb_dir+'CC_noZcut/CFHTxPlanck%04d_logbins_lensing_W%s.npy'%(year, Wx), CC_signal)
+		np.save(cmb_dir+'CC_noZcut/CFHTxPlanck%04d_lensing_W%s.npy'%(year, Wx), CC_signal)
 
 print 'done!done!done!done!'
