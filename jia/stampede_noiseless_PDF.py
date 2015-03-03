@@ -14,9 +14,9 @@ cosmo = 'cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800'
 
 KSgen = lambda r, sf: WLanalysis.readFits('/scratch/02977/jialiu/cat/%s/emulator_subfield%i_WL-only_%s_4096xy_%04dr.fit'%(cosmo, sf, cosmo, r))
 
-yxewm_arr = array([ WLanalysis.readFits('/home1/02977/jialiu/KSsim/yxewm_subfield%i_zcut0213.fit'%(sf)).T] for sf in range(1,14))
+yxewm_arr = array([ WLanalysis.readFits('/home1/02977/jialiu/KSsim/yxewm_subfield%i_zcut0213.fit'%(sf)).T for sf in range(1,14)])
 
-mask_arr =  array([WLanalysis.readFits('/home1/02977/jialiu/KSsim/mask/CFHT_mask_ngal5_sigma10_subfield%02d.fits'%(sf))] for sf in range(1,14))
+mask_arr =  array([WLanalysis.readFits('/home1/02977/jialiu/KSsim/mask/CFHT_mask_ngal5_sigma10_subfield%02d.fits'%(sf)) for sf in range(1,14)])
 
 def createPDF(sfr):
 	sf, r = sfr
