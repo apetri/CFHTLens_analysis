@@ -33,8 +33,9 @@ z0, z1 = genfromtxt(cmb_dir+'dndz_CFHT_nocutPeak.txt').T
 ########### colin params ##############
 OmegaM = 0.317 
 H0 = 65.74
-Ptable = genfromtxt(cmb_dir+'P_delta_smith03_revised_colinparams')
+#Ptable = genfromtxt(cmb_dir+'P_delta_smith03_revised_colinparams')
 #Ptable = genfromtxt(cmb_dir+'P_delta_z30')
+
 ############ Hinshaw ##################
 #OmegaM = 0.282
 #H0 = 69.7
@@ -70,16 +71,22 @@ z_ls = 1100 #last scattering
 
 ########## lensing kernel using dndz ##########
 
-#z0 = concatenate([[0,], z0, linspace(z0[-1]*1.2, 1200,100)])
-#z1 = concatenate([[0,], z1, 1e-128*ones(100)])
-#dndz_interp = interpolate.interp1d(z0, z1,kind='cubic')
-#integrand = lambda zs, z: dndz_interp(zs)*(1-DC(z)/DC(zs))
-#W_wl_fcn = lambda z: 1.5*OmegaM*H0**2*(1+z)*H_inv(z)*DC(z)/c*quad(integrand, z, 4.0, args=(z,))[0]
-#z_arr = linspace(1e-5, 4.0, 200)
-#W_wl0 = array(map(W_wl_fcn, z_arr))
-#print 'Done interpolating W_wl'
+z0 = concatenate([[0,], z0, linspace(z0[-1]*1.2, 1200,100)])
+z1 = concatenate([[0,], z1, 1e-128*ones(100)])
+dndz_interp = interpolate.interp1d(z0, z1,kind='cubic')
+integrand = lambda zs, z: dndz_interp(zs)*(1-DC(z)/DC(zs))
+W_wl_fcn = lambda z: 1.5*OmegaM*H0**2*(1+z)*H_inv(z)*DC(z)/c*quad(integrand, z, 4.0, args=(z,))[0]
+#z_arr = linspace(0, 4.0, 200)
+#z_arr, W_wl0 = load(cmb_dir+'Winterp_z_W_colinparams.npy')
+print 'Done interpolating W_wl'
 #W_wl = interpolate.interp1d(z_arr, W_wl0)
 #W_cmb = lambda z: 1.5*OmegaM*H0**2*(1+z)*H_inv(z)*DC(z)/c*(1-DC(z)/DC(z_ls))
+
+#W_wl0 = array(map(W_wl_fcn, z_arr))
+#save(cmb_dir+'Winterp_z_W_colinparams.npy',array([z_arr, W_wl0]))
+z_arr_CH, wl_CH, cmb_CH = genfromtxt('/Users/jia/Documents/weaklensing/cmblensing/Wkappa_gal_CMB_nocutPeak.txt').T
+W_wl = interpolate.interp1d(z_arr_CH, wl_CH)
+W_cmb = interpolate.interp1d(z_arr_CH, cmb_CH)
 
 ##aa = array([1/1.05**i for i in arange(95)]) # scale factor
 #aa = array([1/1.05**i for i in arange(33)])
@@ -89,10 +96,35 @@ z_ls = 1100 #last scattering
 #Z, K = iZ.flatten(), iK.flatten()
 #P_deltas = Ptable[:,1:].flatten()
 
+######### colin P matter table ######
+#zz = linspace(0, 5, 51)[:-1]
+#kk = genfromtxt(cmb_dir+'k_Pk_z/k_Pk_z0.txt').T[0]
+#iZ, iK = meshgrid(zz,kk)
+#Z, K = iZ.flatten(), iK.flatten()
+#Ptable = array([genfromtxt(cmb_dir+'k_Pk_z/k_Pk_z%i.txt'%(i)).T[1] for i in range(50)]).T
+#P_deltas = Ptable.flatten()
+#Pmatter_interp = interpolate.CloughTocher2DInterpolator(array([K, Z]).T, P_deltas)
+#Pmatter = lambda k, z: Pmatter_interp (k/h, z)/h**3
+
+#i=1
+#kk_arr = logspace(-2,1.8,100)
+#for z in linspace(0.1, 3.4, 6):
+	#subplot(3,2,i)
+	#P_arr = array([Pmatter(k, z) for k in kk_arr])
+	#loglog(kk_arr/h, P_arr*h**3)
+	#title('z=%s'%(z))
+	#if i>3:
+		#xlabel('k [h/Mpc]')
+	#if i%2!=0:
+		#ylabel('P[(Mpc/h)^3]')
+	#i+=1
+#show()
+#####################################
+
 #Pmatter_interp = interpolate.CloughTocher2DInterpolator(array([K*h, Z]).T, 2.0*pi**2*P_deltas/(K*h)**3)
 #Pmatter = lambda k, z: Pmatter_interp (k, z)
 
-#Ckk_integrand = lambda z, ell: 1.0/(H_inv(z)*c*DC(z)**2)*W_wl(z)*W_cmb(z)*Pmatter(ell/DC(z), z)
+Ckk_integrand = lambda z, ell: 1.0/(H_inv(z)*c*DC(z)**2)*W_wl(z)*W_cmb(z)*Pmatter(ell/DC(z), z)
 
 #ell_arr = linspace(1e-5, 2000, 200)
 #Ckk_arr = array([quad(Ckk_integrand, 0.002, 3.7 , args=(iell))[0] for iell in ell_arr])#3.7
@@ -102,11 +134,7 @@ z_ls = 1100 #last scattering
 #save(cmb_dir+'model_Hinshaw_nozcutPeak.npy',array([ell_arr, Ckk_arr]))
 
 
-###### colin model #############
-##ell,CH_1h, CH_2h, CH_total, CH_linear = genfromtxt(cmb_dir+'CellkappaCMBkappaCFHTLS_Jia_nocutPeak.txt').T
-##ell_arr = ell
-##Ckk_arr = CH_total/ell_arr
-##################################
+
 
 
 ###################################
@@ -195,8 +223,9 @@ if plot_lensing_kernels:
 	close()
 
 if plot_null_test:
+	print 'null'
 	seed(584)
-	year=2015
+	year=2013
 	ell_arr_data = 40.0*WLanalysis.edge2center(linspace(1,50,6))
 	f=figure(figsize=(8,6))
 	ax=f.add_subplot(111)
@@ -219,7 +248,7 @@ if plot_null_test:
 	ax.set_ylabel(r'$\ell C_{\ell}^{\kappa_{cmb}\kappa_{gal}}(\times10^{-6})$',fontsize=18)
 	ax.tick_params(labelsize=16)
 	#show()
-	ax.text(100, 3, r'$\kappa_{\rm cmb,%s}\times\,\kappa_{\rm gal,rot}$'%(year), color='k', fontsize=20)
+	ax.text(100, 0.3, r'$\kappa_{\rm cmb,%s}\times\,\kappa_{\rm gal,rot}$'%(year), color='k', fontsize=20)
 	savefig(cmb_dir+'paper/CC_null_%s.pdf'%(year))
 	close()
 	
@@ -405,17 +434,35 @@ if plot_data_model:
 #show()
 
 #### (6) compare C with colin
-#ell,CH_1h, CH_2h, CH_total, CH_linear = genfromtxt('/Users/jia/Desktop/cmblensing/CellkappaCMBkappaCFHTLS_Jia.txt.1').T
-#Ckk_arr_JL = array([quad(Ckk_integrand, 0.00502525, 1.98992489 , args=(iell))[0] for iell in ell])
-#plot(ell, Ckk_arr_JL*ell,label='JL')#(use Colin W^cfht)')
-#plot(ell, CH_1h,label='1 halo (Colin)')
-#plot(ell, CH_2h,label='2 halo (Colin)')
-#plot(ell, CH_total,label='Total (Colin)')
-#plot(ell, CH_linear,label='Linear (Colin)')
-#xlabel('ell')
-#ylabel('ell*C')
-#xlim(0,2000)
-#legend(loc=0)
+###### colin model #############
+#ell, CH_1h, CH_2h, CH_total, CH_linear = genfromtxt(cmb_dir+'CellkappaCMBkappaCFHTLS_Jia_nocutPeak.txt')[:37].T
+##################################
+#Ckk_arr_JL = array([quad(Ckk_integrand, 0.005, 4.45 , args=(iell))[0] for iell in ell])
+
+#f=figure()
+#ax=f.add_subplot(2,1,1)
+#ax2=f.add_subplot(2,1,2)
+
+#ax.plot(ell, Ckk_arr_JL*ell,label='JL')#(use Colin W^cfht)')
+#ax.plot(ell, CH_1h,label='1 halo (Colin)')
+#ax.plot(ell, CH_2h,label='2 halo (Colin)')
+#ax.plot(ell, CH_total,label='Total (Colin)')
+#ax.plot(ell, CH_linear,label='Linear (Colin)')
+#ax.set_xlabel('ell')
+#ax.set_ylabel('ell*C')
+#ax.set_yscale('log')
+#ax.set_xscale('log')
+#ax.set_xlim(0,2000)
+#ax.legend(loc=0,fontsize=12)
+
+#ax2.plot(ell, Ckk_arr_JL*ell/CH_linear-1)
+#ax2.plot(ell, zeros(len(ell)),'--')
+#ax2.set_ylabel('C_jia/C_colin (linear) -1')
+#ax2.set_xlabel('ell')
+#ax2.set_xscale('log')
+#ax2.set_xlim(0,2000)
+#ax2.set_ylim(-0.5, 0.5)
+
 #show()
 
 #### (7) check matter power spectrum interpolation 
