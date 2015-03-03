@@ -41,7 +41,7 @@ fsky_all = array([0.839298248291,0.865875244141,0.809467315674,
 		  0.761451721191,0.691867828369,0.711254119873,
 		  0.745429992676])
 
-PDF_sum = sum(fsky_all.reshape(-1,1,1)*all_PDF,axis=0)/sum(fsky_all)
+PDF_sum = sum(fsky_all.reshape(-1,1,1)*PDF_reshaped,axis=0)/sum(fsky_all)
 
 save('PDF_noiseless_%s.npy'%(cosmo), PDF_sum)
 print 'done done done'
