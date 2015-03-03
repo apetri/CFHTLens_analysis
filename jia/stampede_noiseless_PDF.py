@@ -32,7 +32,7 @@ def createPDF(sfr):
 	return PDF_normed
 
 pool = MPIPool()
-PDF_arr = pool.map(createPDF, [[sf, r] for sf in arange(1,14) for r in arange(1,1001)])
+PDF_arr = array(pool.map(createPDF, [[sf, r] for sf in arange(1,14) for r in arange(1,1001)]))
 #np.save('/home1/02977/jialiu/KSsim/PDF_noiseless/PDF_noiseless_50bins_sf%i_%s.npy'%(sf, cosmo), PDF_arr)
 PDF_reshaped = PDF_arr.reshape(13, 1000, 50)
 fsky_all = array([0.839298248291,0.865875244141,0.809467315674,
