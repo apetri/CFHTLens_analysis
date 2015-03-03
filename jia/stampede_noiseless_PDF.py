@@ -4,7 +4,7 @@ import numpy as np
 from scipy import *
 from emcee.utils import MPIPool
 import sys
-sf = int(sys.argv[1])
+#sf = int(sys.argv[1])
 PPA512 = 2.4633625
 edges = linspace(-0.05,0.15,51)
 #cosmo = 'emu1-512b240_Om0.483_Ol0.517_w-1.515_ns0.960_si0.680'
@@ -18,7 +18,8 @@ yxewm_arr = array([ WLanalysis.readFits('/home1/02977/jialiu/KSsim/yxewm_subfiel
 
 mask_arr =  array([WLanalysis.readFits('/home1/02977/jialiu/KSsim/mask/CFHT_mask_ngal5_sigma10_subfield%02d.fits'%(sf))] for sf in range(1,14))
 
-def createPDF(sf, r):
+def createPDF(sfr):
+	sf, r = sfr
 	print sf, r
 	y, x, e1, e2, w, m = yxewm_arr [Wx-1]
 	kappa = KSgen(r, sf).T[0]
