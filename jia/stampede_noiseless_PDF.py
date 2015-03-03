@@ -21,7 +21,7 @@ mask_arr =  array([WLanalysis.readFits('/home1/02977/jialiu/KSsim/mask/CFHT_mask
 def createPDF(sfr):
 	sf, r = sfr
 	print sf, r
-	y, x, e1, e2, w, m = yxewm_arr [Wx-1]
+	y, x, e1, e2, w, m = yxewm_arr [sf-1]
 	kappa = KSgen(r, sf).T[0]
 	kmap, galn = WLanalysis.coords2grid(x, y, array([kappa,]))
 	kmap_smooth = WLanalysis.weighted_smooth(kmap, galn, sigmaG=1.0)
