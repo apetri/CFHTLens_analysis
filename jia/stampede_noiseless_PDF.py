@@ -26,7 +26,7 @@ mask = WLanalysis.readFits('/home1/02977/jialiu/KSsim/mask/CFHT_mask_ngal5_sigma
 
 def createPDF(r):
 	print sf, r
-	kappa = KSgen(r, sf).T[0]
+	kappa = KSgen(r).T[0]
 	kmap, galn = WLanalysis.coords2grid(x, y, array([kappa,]))
 	kmap_smooth = WLanalysis.weighted_smooth(kmap, galn, sigmaG=1.0)
 	all_kappa = kmap_smooth[where(mask>0)]
