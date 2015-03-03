@@ -3,7 +3,7 @@ import WLanalysis
 import numpy as np
 from scipy import *
 from emcee.utils import MPIPool
-import sys
+import sys, os
 sf = int(sys.argv[1])
 PPA512 = 2.4633625
 edges = linspace(-0.05,0.15,51)
