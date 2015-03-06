@@ -35,20 +35,20 @@ def createPDF(r):
 	PDF_normed = PDF/float(len(all_kappa))
 	return PDF_normed
 
-fn = '/home1/02977/jialiu/KSsim/PDF_noiseless/PDF_noiseless_50bins_sf%i_%s.npy'%(sf, cosmo)
-if not os.path.isfile(fn):
+fn = lambda sf: '/home1/02977/jialiu/KSsim/PDF_noiseless/PDF_noiseless_50bins_sf%i_%s.npy'%(sf, cosmo)
+if not os.path.isfile(fn(sf)):
 	pool = MPIPool()
 	PDF_arr = array(pool.map(createPDF, arange(1,1001)))
-	np.save(fn, PDF_arr)
+	np.save(fn(sf), PDF_arr)
 
-#PDF_reshaped = PDF_arr.reshape(13, 1000, 50)
-#fsky_all = array([0.839298248291,0.865875244141,0.809467315674,
-		  #0.864688873291,0.679264068604,0.756385803223,
-		  #0.765892028809,0.747268676758,0.77250289917,
-		  #0.761451721191,0.691867828369,0.711254119873,
-		  #0.745429992676])
+PDF_reshaped = array([load(fn(sf)) for sf in arange(1,14)])
+fsky_all = array([0.839298248291,0.865875244141,0.809467315674,
+		  0.864688873291,0.679264068604,0.756385803223,
+		  0.765892028809,0.747268676758,0.77250289917,
+		  0.761451721191,0.691867828369,0.711254119873,
+		  0.745429992676])
 
-#PDF_sum = sum(fsky_all.reshape(-1,1,1)*PDF_reshaped,axis=0)/sum(fsky_all)
+PDF_sum = sum(fsky_all.reshape(-1,1,1)*PDF_reshaped,axis=0)/sum(fsky_all)
 
-#save('PDF_noiseless_%s.npy'%(cosmo), PDF_sum)
+save('PDF_noiseless_%s.npy'%(cosmo), PDF_sum)
 print 'done done done'

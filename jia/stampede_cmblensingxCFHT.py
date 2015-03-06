@@ -118,7 +118,7 @@ def cmblGen_fn (fn, offset=False, method='nearest'):
 ############# only need once on local #################
 #def maskGen (Wx, sigma_pix=10):
 	#galn = WLanalysis.smooth(galnGen(Wx),PPA512)
-	#galn *= ptsrc15Gen(Wx)*ptsrc13Gen (Wx)## add point source mask for cmbl
+	#galn *= ptsrc13Gen(Wx)#*ptsrc15Gen(Wx)## add point source mask for cmbl
 	#mask = zeros(shape=galn.shape)
 	#mask[10:-10,10:-10] = 1 ## remove edge 10 pixels
 	#idx = where(galn<0.5)
@@ -134,16 +134,16 @@ def cmblGen_fn (fn, offset=False, method='nearest'):
 	##############################################
 	#return mask_smooth#fsky, fsky2#
 #for Wx in range(1,5):
-	#save(cmb_dir+'mask/W%i_mask1315_noZcut.npy'%(Wx), maskGen(Wx)) 
+	#save(cmb_dir+'mask/W%i_mask13_noZcut.npy'%(Wx), maskGen(Wx)) 
 
-#a = [sum(maskGen(Wx)**2)/sizes[Wx-1]**2 for Wx in range(1,5)]
+#a = array([sum(maskGen(Wx)**2)/sizes[Wx-1]**2 for Wx in range(1,5)])
 
 #######################################
 
 kmapGen = lambda Wx: np.load(cmb_dir+'cfht/kmap_W%i_sigma10_noZcut.npy'%(Wx))
 
-maskGen = lambda Wx: np.load(cmb_dir+'mask/W%i_mask1315_noZcut.npy'%(Wx))
-
+#maskGen = lambda Wx: np.load(cmb_dir+'mask/W%i_mask1315_noZcut.npy'%(Wx))
+maskGen = lambda Wx: np.load(cmb_dir+'mask/W%i_mask13_noZcut.npy'%(Wx))
 if year == 2015:
 	cmblGen = lambda Wx: np.load(cmb_dir+'planck/dat_kmap_flipper2048_CFHTLS_W%i_map.npy'%(Wx))
 elif year == 2013:
@@ -207,7 +207,7 @@ if cross_correlate_cmbl_noise:
 	p = MPIPool()
 	CC_arr = array(p.map(cmblxNoise, Wx_iseed_list))
 	for Wx in arange(1,5):
-		np.save(cmb_dir+'CC_noZcut/CFHTxPlanck%04d_lensing_500sim_W%s.npy'%(year, Wx), CC_arr[(Wx-1)*500:Wx*500])
+		np.save(cmb_dir+'CC_noZcut/CFHTxPlanck%04d_lensing_500sim_W%s_mask13.npy'%(year, Wx), CC_arr[(Wx-1)*500:Wx*500])
 	print 'done cross correlate cmbl x 500 noise.'
 	
 	############# cross with CFHT ####################
@@ -221,6 +221,6 @@ if cross_correlate_cmbl_noise:
 		
 		edges = edgesGen(Wx)
 		CC_signal = WLanalysis.CrossCorrelate(kmap, cmblmap,edges=edges)[1]/fmask2_arr[Wx-1]
-		np.save(cmb_dir+'CC_noZcut/CFHTxPlanck%04d_lensing_W%s.npy'%(year, Wx), CC_signal)
+		np.save(cmb_dir+'CC_noZcut/CFHTxPlanck%04d_lensing_W%s_mask13.npy'%(year, Wx), CC_signal)
 
 print 'done!done!done!done!'

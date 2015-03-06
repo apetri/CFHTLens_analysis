@@ -12,34 +12,39 @@ import scipy.optimize as op
 from scipy import interpolate
 import matplotlib.pyplot as plt
 from pylab import *
+import matplotlib.gridspec as gridspec
+from scipy import ndimage as snd
 
 cmb_dir = '/Users/jia/weaklensing/cmblensing/'
 plot_dir = '/Users/jia/Desktop/cmblensing/'
 centers = array([[34.5, -7.5], [134.5, -3.25],[214.5, 54.5],[ 332.75, 1.9]])
 PPA512 = 2.4633625
+conc0 = lambda arr: concatenate([(0,), arr])
 #######################################
 ########## cosmo params ###############
 #######################################
-
+compute_model = 0
 z0, z1 = genfromtxt(cmb_dir+'dndz_CFHT_nocutPeak.txt').T
 #z0, z1 = genfromtxt(cmb_dir+'dndz_CFHT.txt').T
 #z0, z1 = genfromtxt(cmb_dir+'dndz_CFHT_nocut.txt').T
 
 ####### planck 2015 TT, TE, EE + lowP
-#OmegaM = 0.3156
-#H0 = 67.27
-#Ptable = genfromtxt(cmb_dir+'P_delta_smith03_revised')
+OmegaM = 0.3156#0.33138#0.29982##,
+H0 = 67.27
+Ptable = genfromtxt(cmb_dir+'P_delta_Planck15')
+model_fn = 'model_Planck15'
 
 ########### colin params ##############
-OmegaM = 0.317 
-H0 = 65.74
+#OmegaM = 0.317 
+#H0 = 65.74
 #Ptable = genfromtxt(cmb_dir+'P_delta_smith03_revised_colinparams')
-#Ptable = genfromtxt(cmb_dir+'P_delta_z30')
+###Ptable = genfromtxt(cmb_dir+'P_delta_z30')
 
 ############ Hinshaw ##################
 #OmegaM = 0.282
 #H0 = 69.7
 #Ptable = genfromtxt(cmb_dir+'P_delta_Hinshaw')
+#model_fn = 'model_Hinshaw'
 
 ########### WMAP9+BAO #################
 #OmegaM = 0.293
@@ -63,78 +68,42 @@ DC = lambda z: c*quad(H_inv, 0, z)[0] # comoving distance Mpc
 z_ls = 1100 #last scattering
 
 #######################################
-##### find my own curve for dn/dz
+##### modle curve for dn/dz & C
 #######################################
-#dndz_Hand = lambda z: 0.688*(z**0.531+z**(0.531*7.810))/(z**7.810+0.517)
-#dndz_VW = lambda z: 1.5*exp(-(z-0.7)**2/0.32**2)+0.2*exp(-(z-1.2)**2/0.46**2)
-########### my dndz interpolation 
 
 ########## lensing kernel using dndz ##########
+if compute_model == 1:
+	z0 = concatenate([[0,], z0, linspace(z0[-1]*1.2, 1200,100)])
+	z1 = concatenate([[0,], z1, 1e-128*ones(100)])
+	dndz_interp = interpolate.interp1d(z0, z1,kind='cubic')
+	integrand = lambda zs, z: dndz_interp(zs)*(1-DC(z)/DC(zs))
+	W_wl_fcn = lambda z: 1.5*OmegaM*H0**2*(1+z)*H_inv(z)*DC(z)/c*quad(integrand, z, 4.0, args=(z,))[0]
+	z_arr = linspace(0, 4.0, 200)
+	W_cmb = lambda z: 1.5*OmegaM*H0**2*(1+z)*H_inv(z)*DC(z)/c*(1-DC(z)/DC(z_ls))
+	#W_wl0 = array(map(W_wl_fcn, z_arr))
+	#W_wl = interpolate.interp1d(z_arr, W_wl0)
+	W_wl = W_wl_fcn
+	#print 'Done interpolating W_wl'
 
-z0 = concatenate([[0,], z0, linspace(z0[-1]*1.2, 1200,100)])
-z1 = concatenate([[0,], z1, 1e-128*ones(100)])
-dndz_interp = interpolate.interp1d(z0, z1,kind='cubic')
-integrand = lambda zs, z: dndz_interp(zs)*(1-DC(z)/DC(zs))
-W_wl_fcn = lambda z: 1.5*OmegaM*H0**2*(1+z)*H_inv(z)*DC(z)/c*quad(integrand, z, 4.0, args=(z,))[0]
-#z_arr = linspace(0, 4.0, 200)
-#z_arr, W_wl0 = load(cmb_dir+'Winterp_z_W_colinparams.npy')
-print 'Done interpolating W_wl'
-#W_wl = interpolate.interp1d(z_arr, W_wl0)
-#W_cmb = lambda z: 1.5*OmegaM*H0**2*(1+z)*H_inv(z)*DC(z)/c*(1-DC(z)/DC(z_ls))
+	######### interpolate P_matter 
+	aa = array([1/1.05**i for i in arange(33)])
+	zz = 1.0/aa-1 # redshifts
+	kk = Ptable.T[0]
+	iZ, iK = meshgrid(zz,kk)
+	Z, K = iZ.flatten(), iK.flatten()
+	P_deltas = Ptable[:,1:34].flatten()
 
-#W_wl0 = array(map(W_wl_fcn, z_arr))
-#save(cmb_dir+'Winterp_z_W_colinparams.npy',array([z_arr, W_wl0]))
-z_arr_CH, wl_CH, cmb_CH = genfromtxt('/Users/jia/Documents/weaklensing/cmblensing/Wkappa_gal_CMB_nocutPeak.txt').T
-W_wl = interpolate.interp1d(z_arr_CH, wl_CH)
-W_cmb = interpolate.interp1d(z_arr_CH, cmb_CH)
+	Pmatter_interp = interpolate.CloughTocher2DInterpolator(array([K*h, Z]).T, 2.0*pi**2*P_deltas/(K*h)**3)
+	Pmatter = lambda k, z: Pmatter_interp (k, z)
 
-##aa = array([1/1.05**i for i in arange(95)]) # scale factor
-#aa = array([1/1.05**i for i in arange(33)])
-#zz = 1.0/aa-1 # redshifts
-#kk = Ptable.T[0]
-#iZ, iK = meshgrid(zz,kk)
-#Z, K = iZ.flatten(), iK.flatten()
-#P_deltas = Ptable[:,1:].flatten()
+	Ckk_integrand = lambda z, ell: 1.0/(H_inv(z)*c*DC(z)**2)*W_wl(z)*W_cmb(z)*Pmatter(ell/DC(z), z)
 
-######### colin P matter table ######
-#zz = linspace(0, 5, 51)[:-1]
-#kk = genfromtxt(cmb_dir+'k_Pk_z/k_Pk_z0.txt').T[0]
-#iZ, iK = meshgrid(zz,kk)
-#Z, K = iZ.flatten(), iK.flatten()
-#Ptable = array([genfromtxt(cmb_dir+'k_Pk_z/k_Pk_z%i.txt'%(i)).T[1] for i in range(50)]).T
-#P_deltas = Ptable.flatten()
-#Pmatter_interp = interpolate.CloughTocher2DInterpolator(array([K, Z]).T, P_deltas)
-#Pmatter = lambda k, z: Pmatter_interp (k/h, z)/h**3
+	ell_arr = linspace(1e-5, 2000, 200)
+	Ckk_arr = array([quad(Ckk_integrand, 0.002, 3.7 , args=(iell))[0] for iell in ell_arr])#3.7
 
-#i=1
-#kk_arr = logspace(-2,1.8,100)
-#for z in linspace(0.1, 3.4, 6):
-	#subplot(3,2,i)
-	#P_arr = array([Pmatter(k, z) for k in kk_arr])
-	#loglog(kk_arr/h, P_arr*h**3)
-	#title('z=%s'%(z))
-	#if i>3:
-		#xlabel('k [h/Mpc]')
-	#if i%2!=0:
-		#ylabel('P[(Mpc/h)^3]')
-	#i+=1
-#show()
-#####################################
-
-#Pmatter_interp = interpolate.CloughTocher2DInterpolator(array([K*h, Z]).T, 2.0*pi**2*P_deltas/(K*h)**3)
-#Pmatter = lambda k, z: Pmatter_interp (k, z)
-
-Ckk_integrand = lambda z, ell: 1.0/(H_inv(z)*c*DC(z)**2)*W_wl(z)*W_cmb(z)*Pmatter(ell/DC(z), z)
-
-#ell_arr = linspace(1e-5, 2000, 200)
-#Ckk_arr = array([quad(Ckk_integrand, 0.002, 3.7 , args=(iell))[0] for iell in ell_arr])#3.7
-
-#plot(ell_arr, Ckk_arr*ell_arr)
-#show()
-#save(cmb_dir+'model_Hinshaw_nozcutPeak.npy',array([ell_arr, Ckk_arr]))
-
-
-
+	plot(ell_arr, Ckk_arr*ell_arr)
+	show()
+	save(cmb_dir+model_fn,array([ell_arr, Ckk_arr]))
 
 
 ###################################
@@ -144,9 +113,72 @@ plot_sample_gal_cmb_maps = 0
 plot_dndz_peak_PDF = 0
 plot_lensing_kernels = 0
 
-plot_null_test = 1
-plot_data_model = 0
+plot_null_test = 0
+plot_data_model = 1
+plot_model_theory = 0
+plot_model_theory_haloterms = 0
+compute_theory_err = 0
 
+sizes = (1330, 800, 1120, 950)
+edgesGen = lambda Wx: linspace(1,50,6)*sizes[Wx-1]/1330.0
+def find_unique_N (Wx):
+	n = sizes[Wx-1]
+	y, x = np.indices((n,n))
+	center = np.array([(x.max()-x.min())/2.0, (x.max()-x.min())/2.0])
+	if n%2 == 0:
+		center+=0.5
+	r = np.hypot(x - center[0], y - center[1])#distance to center pixel, for each pixel
+	r_sorted = r.flat # the index to sort by r
+
+	# find index that's corresponding to the lower edge of each bin
+	kmin=1.0
+	kmax=n/2.0
+	edges = edgesGen(Wx)		
+	hist_ind = np.histogram(r_sorted,bins = edges)[0]
+	N_indep = hist_ind[1:]
+	return N_indep/2
+
+if compute_theory_err:
+	ell_arr = 40.0*WLanalysis.edge2center(linspace(1,50,6))
+	d_ell = ell_arr[1]-ell_arr[0]
+	edgesGen = lambda Wx: linspace(1,50,6)*sizes[Wx-1]/1330.0
+	sizes = (1330, 800, 1120, 950)
+	sizedeg_arr = array([(sizes[Wx-1]/512.0)**2*12.0 for Wx in range(1,5)])
+	#kmapGen = lambda Wx: np.load(cmb_dir+'cfht/kmap_W%i_sigma10_noZcut.npy'%(Wx))
+	kmapGen = lambda Wx: load(cmb_dir+'W%i_Noise_sigmaG10_0000.npy'%(Wx))
+	maskGen = lambda Wx: np.load(cmb_dir+'mask/W%i_mask1315_noZcut.npy'%(Wx))
+	cmblGen = lambda Wx: np.load(cmb_dir+'planck/COM_CompMap_Lensing_2048_R1.10_kappa_CFHTLS_W%i.npy'%(Wx))
+	#cmblGen = lambda Wx: np.load(cmb_dir+'planck/dat_kmap_flipper2048_CFHTLS_W%i_map.npy'%(Wx))
+	edges_arr = map(edgesGen, range(1,5))
+	mask_arr = map(maskGen, range(1,5))
+	fmask_arr = array([sum(mask_arr[Wx-1])/sizes[Wx-1]**2 for Wx in range(1,5)])
+	fmask2_arr = array([sum(mask_arr[Wx-1]**2)/sizes[Wx-1]**2 for Wx in range(1,5)])
+	fsky_arr = fmask_arr*sizedeg_arr/41253.0
+	factor = 2.0*pi/(ell_arr+1)
+	
+	def theory_err(map1, map2, Wx):	
+		map1*=mask_arr[Wx-1]
+		map2*=mask_arr[Wx-1]
+		map1-=mean(map1)
+		map2-=mean(map2)
+		auto1 = WLanalysis.PowerSpectrum(map1, sizedeg = sizedeg_arr[Wx-1], edges=edges_arr[Wx-1])[-1]/fmask2_arr[Wx-1]*factor
+		auto2 = WLanalysis.PowerSpectrum(map2, sizedeg = sizedeg_arr[Wx-1], edges=edges_arr[Wx-1])[-1]/fmask2_arr[Wx-1]*factor	
+		
+		errNSQ = sqrt(auto1*auto2/fsky_arr[Wx-1]/(2*ell_arr+1)/d_ell)
+		return errNSQ
+	theory_err_all = array([theory_err(kmapGen(Wx), cmblGen(Wx), Wx) for Wx in arange(1,5)])
+	
+	
+	##### sim err
+	CC_signal =lambda Wx: load(cmb_dir+'CC_noZcut/CFHTxPlanck2015_logbins_lensing_W%s.npy'%(Wx))*factor
+	#CC_noise = lambda Wx: std(load(cmb_dir+'CC_noZcut/CFHTxPlanck2015_logbins_lensing_500sim_W%s.npy'%(Wx))*factor,axis=0)
+	CC_noise = lambda Wx: std(load(cmb_dir+'CC_noZcut/CFHTxPlanck2013_logbins_lensing_500sim_W%s.npy'%(Wx))*factor,axis=0)
+	
+	sim_err_all = array([CC_noise(Wx) for Wx in arange(1,5)])
+	print sim_err_all/theory_err_all-1
+	#theory_err_all = array([1.0/sqrt(find_unique_N (Wx)) for Wx in arange(1,5)])
+	
+	
 if plot_sample_gal_cmb_maps:
 	kmap = np.load(cmb_dir+'cfht/kmap_W1_sigma10_noZcut.npy')
 	mask = np.load(cmb_dir+'mask/W1_mask1315_noZcut.npy')
@@ -251,7 +283,16 @@ if plot_null_test:
 	ax.text(100, 0.3, r'$\kappa_{\rm cmb,%s}\times\,\kappa_{\rm gal,rot}$'%(year), color='k', fontsize=20)
 	savefig(cmb_dir+'paper/CC_null_%s.pdf'%(year))
 	close()
-	
+
+theory_err = array([[  3.14634974e-07,   6.43955357e-07,   1.03293813e-06,
+          1.36595187e-06,   1.66554144e-06],
+       [  6.10472430e-07,   1.35343496e-06,   2.03169313e-06,
+          2.70176042e-06,   3.30306721e-06],
+       [  3.49160715e-07,   6.97192464e-07,   1.08642118e-06,
+          1.50176899e-06,   1.89499880e-06],
+       [  5.82311060e-07,   1.22907986e-06,   1.68598711e-06,
+          2.42061439e-06,   2.87222084e-06]])
+
 if plot_data_model:
 
 	year = 2015
@@ -259,9 +300,10 @@ if plot_data_model:
 	
 	ell_arr_data = 40.0*WLanalysis.edge2center(linspace(1,50,6))# 40=512.0/1330.0*360./(sqrt(12.0))
 	
-	ell_arr, Ckk_arr = load(cmb_dir+'model_Hinshaw_nozcutPeak.npy')
+	ell_arr, Ckk_arr = load(cmb_dir+'model_Hinshaw.npy')
+	ell_arr_Planck, Ckk_arr_Planck = load(cmb_dir+'model_Planck15.npy')
 	
-	model_raw = interpolate.interp1d(ell_arr, Ckk_arr)(ell_arr_data)
+	model_raw = interpolate.interp1d(ell_arr_Planck, Ckk_arr_Planck)(ell_arr_data)
 	MM = model_raw*ell_arr_data
 	model_fit = lambda A:  A*concatenate([MM,MM,MM,MM])
 	chisq_model_fcn = lambda A, CC, err: sum((CC-model_fit(A))**2/err**2)
@@ -278,6 +320,7 @@ if plot_data_model:
 		CC_noise_mean = mean(CC_noise,axis=0)
 		CCN_cov = np.cov(CC_noise,rowvar=0)
 		chisq_null = sum(mat(CC_signal)*mat(CCN_cov).I*mat(CC_signal).T)
+		#chisq_null = (CC_signal/theory_err[Wx-1])**2
 		if return_chisq_null:
 			return chisq_null
 		else:
@@ -292,35 +335,39 @@ if plot_data_model:
 		CC_mean = sum(CC_arr*weightK,axis=0)
 		err_mean = sqrt(1.0/sum(1/errK_arr**2, axis=0))
 		A_out = op.minimize(chisq_model_fcn, 1.0, args=(concatenate(CC_arr), concatenate(errK_arr)))
-		A_min = A_out.x#0.61741426
+		
+		A_min = A_out.x
 		chisq_model = A_out.fun
 		chisq_null = sum(array([plot_elems(Wx, return_chisq_null=1, nocut=nocut) for Wx in range(1,5)]))
 		SNR = sqrt(chisq_null-chisq_model)
 		print year, 'A_min, chisq_null, chisq_model, SNR:',A_min, chisq_null, chisq_model, SNR
 		return A_min, SNR, CC_mean, err_mean
 	A_min, SNR, CC_mean, err_mean = find_SNR(CC_arr, errK_arr, nocut=nocut)
-
+	#A_min, SNR, CC_mean, err_mean = find_SNR(CC_arr, theory_err, nocut=nocut)
 
 	f=figure(figsize=(8,6))
 	ax=f.add_subplot(111)
 	ax.bar(ell_arr_data, 2*err_mean*1e6, bottom=(CC_mean-err_mean)*1e6, width=ones(len(ell_arr_data))*80, align='center',ec='brown',fc='none',linewidth=1.5, alpha=1.0)#
-
-	ax.plot(ell_arr, zeros(len(ell_arr)), 'k--', linewidth=1)
+	
+	ax.plot([0,2000], [0,0], 'k--', linewidth=1)
 	seed(584)#good seeds: 6, 16, 25, 41, 53, 128, 502, 584
 	for Wx in range(1,5):
 		cc=rand(3)#colors[Wx-1]
 		ax.errorbar(ell_arr_data+(Wx-2.5)*15, CC_arr[Wx-1]*1e6, errK_arr[Wx-1]*1e6, fmt='o',ecolor=cc,mfc=cc, mec=cc, label=r'$\rm W%i$'%(Wx), linewidth=1.2, capsize=0)
 	ell_arr[0]=0
 	Ckk_arr[0]=0
-	ax.plot(ell_arr ,Ckk_arr*ell_arr*1e6,'k-',linewidth=1.2, label=r'$WMAP+{\rm eCMB+BAO}+H_0$')
+	Ckk_arr_Planck[0]=0
+	ax.plot(ell_arr, Ckk_arr_Planck*ell_arr_Planck*1e6,'-', color=rand(3), linewidth=2.0, label=r'$Planck$')
+	ax.plot(ell_arr ,Ckk_arr*ell_arr*1e6,'k-',linewidth=1.2, label=r'$WMAP$')
+
 	handles, labels = ax.get_legend_handles_labels()
-	handles = [handles[i] for i in (1,2,3,4, 0)]
-	labels = [labels[i] for i in (1,2,3,4, 0)]
+	handles = [handles[i] for i in (2,3, 4,5,0,1)]
+	labels = [labels[i] for i in (2,3,4,5,0, 1)]
 	leg=ax.legend(handles, labels,loc=3,fontsize=14)
 	leg.get_frame().set_visible(False)
 	ax.set_xlabel(r'$\ell$',fontsize=18)
-	ax.set_xlim(1,2000)
-	ax.set_ylim(-4,5)
+	ax.set_xlim(0,2000)
+	ax.set_ylim(-5,5)
 	ax.set_ylabel(r'$\ell C_{\ell}^{\kappa_{cmb}\kappa_{gal}}(\times10^{-6})$',fontsize=18)
 	ax.text(100, 4, r'$\kappa_{\rm cmb,%s}\times\,\kappa_{\rm gal}$'%(year), color='k', fontsize=20)
 	#ax.set_title('%s dn/dz nocutPeak, A=%.2f, SNR=%.2f'%(year, A_min, SNR))#, noZcut
@@ -328,7 +375,94 @@ if plot_data_model:
 	savefig(cmb_dir+'paper/CC_%s.pdf'%(year))
 	close()
 
+if plot_model_theory:
+	
+	models = ('model_Planck15','model_Planck15_hi_om','model_Planck15_lo_om','model_Planck15_hi_si8','model_Planck15_lo_si8')#'model_Hinshaw,model_Planck15'
+	labels = (r'${\rm fiducial}$', r'${\rm +5\%\,\Omega_m}$', r'${\rm -5\%\,\Omega_m}$', r'${\rm +5\%\,\sigma_8}$', r'${\rm -5\%\,\sigma_8}$')
+	
+	gs = gridspec.GridSpec(2,1,height_ratios=[3,1])
+	f=figure(figsize=(8,6))
+	ax=f.add_subplot(gs[0])
+	ax2=f.add_subplot(gs[1],sharex=ax)
+	lss=['-','--','--','-','-']
+	lws=[1, 2, 1, 3, 1]
+	#lws=ones(6)
+	
+	
+	ell, Ckk0 = load(cmb_dir+models[0]+'.npy')
+	ell[0], Ckk0[0]=0,0
+	Ckk0 *=ell*1e6
+	Ckk0 = snd.filters.gaussian_filter1d(Ckk0,1.0)
+	i=0
+	ax.plot(ell,Ckk0,'k-', linewidth=2, label=labels[i])
+	seed(584)
+	colors=rand(5,3)
+	for imodel in models[1:]:
+		i+=1
+		ell, Ckk = load(cmb_dir+imodel+'.npy')
+		Ckk = Ckk*ell*1e6
+		ell[0]=0
+		Ckk[0]=0
+		Ckknew=snd.filters.gaussian_filter1d(Ckk,1.0)
+		ax.plot(ell,Ckknew,linewidth=lws[i],color=colors[i], label=labels[i],linestyle=lss[i])
+		ax2.plot(ell, Ckknew/Ckk0-1,color=colors[i], linewidth=lws[i], label=labels[i],linestyle=lss[i])
+	
+	ax.set_xlim(0,2000)
+	plt.setp(ax.get_xticklabels(), visible=False) 
+	#ax.set_ylim(-5,5)
+	ax.set_ylabel(r'$\ell C_{\ell}^{\kappa_{cmb}\kappa_{gal}}(\times10^{-6})$',fontsize=18)
+	ax.tick_params(labelsize=16)
+	ax.set_ylim(0.43, 1.5)
+	leg=ax.legend(loc=0,fontsize=16)
+	leg.get_frame().set_visible(False)
+	
+	ax2.set_xlabel(r'$\ell$',fontsize=18)
+	ax2.set_ylabel(r'$\Delta C_{\ell}/C_{\ell}$',fontsize=18)
+	ax2.set_ylim(-0.3, 0.3)
+	ax2.set_yticks(array([-0.2,0,0.2]))
+	ax2.plot([0,2000], [0,0], 'k-', linewidth=1.0)
+	ax2.tick_params(labelsize=16)
+	
+	plt.subplots_adjust(hspace=0.0,left=0.15)
+	savefig(cmb_dir+'paper/model_varyingparams.pdf')
+	close()
+	#show()
 
+if plot_model_theory_haloterms:
+	
+	initdata = (genfromtxt(cmb_dir+'CellkappaCMBkappaCFHTLS_Planck2015Jia_nocutPeak.txt')*1e6).T
+	initdata = concatenate([zeros(5).reshape(5,1),initdata],axis=1)
+	CH_ell, CH_1h, CH_2h, CH_total, CH_linear = initdata
+	CH_ell/=1e6
+	
+	ell, Ckk = load(cmb_dir+'model_Planck15.npy')
+	ell[0], Ckk[0]=0,0
+	Ckk0 = snd.filters.gaussian_filter1d(Ckk*ell*1e6,1.0)
+	
+	f=figure(figsize=(8,6))
+	ax=f.add_subplot(111)
+	lss=['-','-','-','--','--']
+	lws=[2,1,1.5,2,1]
+	seed(584)
+	ax.plot(ell, Ckk0,'-', color=rand(3), label=r'${\rm Smith03+Takahashi12}$',lw=2 )
+	ax.plot(CH_ell, CH_1h,color=rand(3),ls='--', label=r'${\rm 1\, halo}$',lw=3)
+	ax.plot(CH_ell, CH_2h,color=rand(3),ls='--', label=r'${\rm 2\, halo}$',lw=1)
+	ax.plot(CH_ell, CH_total,color=rand(3),ls='-',label=r'${\rm 1+2\, halo}$',lw=3)
+	ax.plot(CH_ell, CH_linear,color=rand(3),ls='-', label=r'${\rm linear}$',lw=1)
+	
+	ax.set_xlim(0,2000)
+	#plt.setp(ax.get_xticklabels(), visible=False) 
+	ax.set_ylabel(r'$\ell C_{\ell}^{\kappa_{cmb}\kappa_{gal}}(\times10^{-6})$',fontsize=18)
+	ax.tick_params(labelsize=16)
+	ax.set_ylim(0.0, 1.5)
+	leg=ax.legend(loc=0,fontsize=16)
+	leg.get_frame().set_visible(False)
+	
+	ax.set_xlabel(r'$\ell$',fontsize=18)
+	ax.tick_params(labelsize=16)
+	savefig(cmb_dir+'paper/model_haloterms.pdf')
+	close()
+	#show()	
 ##################################
 ### dN/dz for nocut ##############
 ##################################
@@ -434,10 +568,10 @@ if plot_data_model:
 #show()
 
 #### (6) compare C with colin
-###### colin model #############
-#ell, CH_1h, CH_2h, CH_total, CH_linear = genfromtxt(cmb_dir+'CellkappaCMBkappaCFHTLS_Jia_nocutPeak.txt')[:37].T
+##### colin model #############
+#ell, CH_1h, CH_2h, CH_total, CH_linear = genfromtxt(cmb_dir+'CellkappaCMBkappaCFHTLS_Jia_nocutPeak0227.txt')[:37].T
 ##################################
-#Ckk_arr_JL = array([quad(Ckk_integrand, 0.005, 4.45 , args=(iell))[0] for iell in ell])
+#Ckk_arr_JL = array([quad(Ckk_integrand, 0.01, 3.7 , args=(iell))[0] for iell in ell])
 
 #f=figure()
 #ax=f.add_subplot(2,1,1)
@@ -455,9 +589,11 @@ if plot_data_model:
 #ax.set_xlim(0,2000)
 #ax.legend(loc=0,fontsize=12)
 
-#ax2.plot(ell, Ckk_arr_JL*ell/CH_linear-1)
+#ax2.plot(ell, Ckk_arr_JL*ell/CH_total-1, label='total')
+#ax2.plot(ell, Ckk_arr_JL*ell/CH_linear-1, label='linear')
 #ax2.plot(ell, zeros(len(ell)),'--')
-#ax2.set_ylabel('C_jia/C_colin (linear) -1')
+#ax2.legend(loc=0,fontsize=12)
+#ax2.set_ylabel('C_jia/C_colin -1')
 #ax2.set_xlabel('ell')
 #ax2.set_xscale('log')
 #ax2.set_xlim(0,2000)
