@@ -99,17 +99,21 @@ def cmblGen_fn (fn, offset=False, method='nearest'):
 
 def simGen(Wx, r):
 	simfn = cmb_dir+'planck/sim/sim_%04d_kmap_CFHTLS_W%i.npy'%(r, Wx)
-	if os.path.isfile(simfn):
-		return load(simfn)
-	else:
-		smap = cmblGen_fn(simfn[:-3]+'txt', offset=False)
-		return smap
+	try:
+		if os.path.isfile(simfn):
+			return load(simfn)
+		else:
+			smap = cmblGen_fn(simfn[:-3]+'txt', offset=False)
+			return smap
+	except Exception:
+		print 'Wx, r error', Wx, r
+		return kmapGen(Wx)
 #for fn in os.listdir(cmb_dir+'planck/'):	
 	#if fn[-3:]=='txt':
 		#print fn[:-3]+'npy'
 		#full_fn = cmb_dir+'planck/'+fn
 		#cmblGen_fn(full_fn, offset = False)
-	
+
 ##############################################
 ########### mapGens  #########################
 
