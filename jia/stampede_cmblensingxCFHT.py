@@ -258,7 +258,7 @@ if cross_correlate_plancknoise_CFHT:
 		ell_arr, CC = WLanalysis.CrossCorrelate (smap, kmap,edges=edges)
 		CC = CC/fmask2_arr[Wx-1]
 		return CC
-	Wx_iseed_list = [[Wx, iseed] for Wx in range(1,5) for iseed in range(100)]
+	Wx_iseed_list = [[Wx, iseed] for Wx in range(1,5)[::-1] for iseed in range(100)[::-1]]
 	
 	p = MPIPool()
 	CC_arr = array(p.map(cfhtxNoise, Wx_iseed_list))
