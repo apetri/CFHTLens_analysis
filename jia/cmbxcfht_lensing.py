@@ -23,16 +23,19 @@ conc0 = lambda arr: concatenate([(0,), arr])
 #######################################
 ########## cosmo params ###############
 #######################################
-compute_model = 0
+compute_model = 1
 z0, z1 = genfromtxt(cmb_dir+'dndz_CFHT_nocutPeak.txt').T
-#z0, z1 = genfromtxt(cmb_dir+'dndz_CFHT.txt').T
-#z0, z1 = genfromtxt(cmb_dir+'dndz_CFHT_nocut.txt').T
-
+###z0, z1 = genfromtxt(cmb_dir+'dndz_CFHT.txt').T
+###z0, z1 = genfromtxt(cmb_dir+'dndz_CFHT_nocut.txt').T
+z0 = concatenate([[0,], z0, linspace(z0[-1]*1.2, 1200,100)])
+z1 = concatenate([[0,], z1, 1e-128*ones(100)])
+dndz_interp = interpolate.interp1d(z0, z1,kind='cubic')
+#dndz_interp = lambda z: 13.5*z**2*exp(-3.0*z)
 ####### planck 2015 TT, TE, EE + lowP
 OmegaM = 0.3156#0.33138#0.29982##,
 H0 = 67.27
 Ptable = genfromtxt(cmb_dir+'P_delta_Planck15')
-model_fn = 'model_Planck15'
+model_fn = 'model_Planck15_auto'
 
 ########### colin params ##############
 #OmegaM = 0.317 
@@ -73,17 +76,15 @@ z_ls = 1100 #last scattering
 
 ########## lensing kernel using dndz ##########
 if compute_model == 1:
-	z0 = concatenate([[0,], z0, linspace(z0[-1]*1.2, 1200,100)])
-	z1 = concatenate([[0,], z1, 1e-128*ones(100)])
-	dndz_interp = interpolate.interp1d(z0, z1,kind='cubic')
 	integrand = lambda zs, z: dndz_interp(zs)*(1-DC(z)/DC(zs))
 	W_wl_fcn = lambda z: 1.5*OmegaM*H0**2*(1+z)*H_inv(z)*DC(z)/c*quad(integrand, z, 4.0, args=(z,))[0]
 	z_arr = linspace(0, 4.0, 200)
 	W_cmb = lambda z: 1.5*OmegaM*H0**2*(1+z)*H_inv(z)*DC(z)/c*(1-DC(z)/DC(z_ls))
-	#W_wl0 = array(map(W_wl_fcn, z_arr))
-	#W_wl = interpolate.interp1d(z_arr, W_wl0)
-	W_wl = W_wl_fcn
-	#print 'Done interpolating W_wl'
+	W_wl0 = array(map(W_wl_fcn, z_arr))
+	W_wl = interpolate.interp1d(z_arr, W_wl0)
+	W_cmb_arr = array([W_cmb(z) for z in z_arr])
+	#W_wl = W_wl_fcn
+	print 'Done interpolating W_wl'
 
 	######### interpolate P_matter 
 	aa = array([1/1.05**i for i in arange(33)])
@@ -97,13 +98,14 @@ if compute_model == 1:
 	Pmatter = lambda k, z: Pmatter_interp (k, z)
 
 	Ckk_integrand = lambda z, ell: 1.0/(H_inv(z)*c*DC(z)**2)*W_wl(z)*W_cmb(z)*Pmatter(ell/DC(z), z)
+	#Ckk_integrand = lambda z, ell: 1.0/(H_inv(z)*c*DC(z)**2)*W_wl(z)**2*Pmatter(ell/DC(z), z)
 
-	ell_arr = linspace(1e-5, 2000, 200)
-	Ckk_arr = array([quad(Ckk_integrand, 0.002, 3.7 , args=(iell))[0] for iell in ell_arr])#3.7
+	#ell_arr = linspace(1e-5, 2000, 200)
+	#Ckk_arr = array([quad(Ckk_integrand, 0.002, 3.7 , args=(iell))[0] for iell in ell_arr])#3.7
 
-	plot(ell_arr, Ckk_arr*ell_arr)
-	show()
-	save(cmb_dir+model_fn,array([ell_arr, Ckk_arr]))
+	#plot(ell_arr, Ckk_arr*ell_arr)
+	#show()
+	#save(cmb_dir+model_fn,array([ell_arr, Ckk_arr]))
 
 
 ###################################
@@ -114,7 +116,7 @@ plot_dndz_peak_PDF = 0
 plot_lensing_kernels = 0
 
 plot_null_test = 0
-plot_data_model = 1
+plot_data_model = 0
 plot_model_theory = 0
 plot_model_theory_haloterms = 0
 compute_theory_err = 0
@@ -295,7 +297,7 @@ theory_err = array([[  3.14634974e-07,   6.43955357e-07,   1.03293813e-06,
 
 if plot_data_model:
 
-	year = 2015
+	year,cosmo_params = 2015,'WMAP'
 	nocut = 1
 	
 	ell_arr_data = 40.0*WLanalysis.edge2center(linspace(1,50,6))# 40=512.0/1330.0*360./(sqrt(12.0))
@@ -303,19 +305,23 @@ if plot_data_model:
 	ell_arr, Ckk_arr = load(cmb_dir+'model_Hinshaw.npy')
 	ell_arr_Planck, Ckk_arr_Planck = load(cmb_dir+'model_Planck15.npy')
 	
-	model_raw = interpolate.interp1d(ell_arr_Planck, Ckk_arr_Planck)(ell_arr_data)
+	if cosmo_params == 'planck':
+		model_raw = interpolate.interp1d(ell_arr_Planck, Ckk_arr_Planck)(ell_arr_data)
+	elif cosmo_params =='WMAP':
+		model_raw = interpolate.interp1d(ell_arr, Ckk_arr)(ell_arr_data)
 	MM = model_raw*ell_arr_data
 	model_fit = lambda A:  A*concatenate([MM,MM,MM,MM])
 	chisq_model_fcn = lambda A, CC, err: sum((CC-model_fit(A))**2/err**2)
-
-	def plot_elems (Wx, return_chisq_null = False, nocut=nocut, year=year):
-		factor = 2.0*pi/(ell_arr_data+1)
+	factor = 2.0*pi/(ell_arr_data+1)
+	def plot_elems (Wx, return_chisq_null = False, nocut=nocut, year=year):		
 		if nocut:
 			idir=cmb_dir+'CC_noZcut/'
 		else:
 			idir=cmb_dir+'CC_0213/'
-		CC_noise = load(idir+'CFHTxPlanck%s_logbins_lensing_500sim_W%s.npy'%(year,Wx))*factor
-		CC_signal =load(idir+'CFHTxPlanck%s_logbins_lensing_W%s.npy'%(year,Wx))*factor		
+		#CC_noise = load(idir+'CFHTxPlanck%s_logbins_lensing_500sim_W%s.npy'%(year,Wx))*factor
+		#CC_signal =load(idir+'CFHTxPlanck%s_logbins_lensing_W%s.npy'%(year,Wx))*factor
+		CC_noise = load(idir+'CFHTxPlanck%04d_lensing_500sim_W%s_mask13.npy'%(year, Wx))*factor
+		CC_signal =load(idir+'CFHTxPlanck%04d_lensing_W%s_mask13.npy'%(year, Wx))*factor
 		CC_err = std(CC_noise,axis=0)
 		CC_noise_mean = mean(CC_noise,axis=0)
 		CCN_cov = np.cov(CC_noise,rowvar=0)
@@ -325,11 +331,21 @@ if plot_data_model:
 			return chisq_null
 		else:
 			return CC_signal, CC_err, CC_noise_mean
-
+	
 	datacube = array([plot_elems(Wx, nocut=nocut) for Wx in range(1,5)])
 	CC_arr = datacube[:,0,:]
 	errK_arr = datacube[:,1,:]
-
+	
+	### find A error #####
+	#CC_noise = lambda Wx: load(cmb_dir+'CC_noZcut/CFHTxPlanck%s_logbins_lensing_500sim_W%s.npy'%(year,Wx))*factor
+	#noise_all0 = array(map(CC_noise, arange(1,5)))
+	#noise_all1 = swapaxes(noise_all0, 1,2)
+	#noise_all2 = concatenate(noise_all1,axis=0).T
+	#A_out = lambda i: op.minimize(chisq_model_fcn, 1.0, args=(noise_all2[i], concatenate(errK_arr))).x
+	#allA = map(A_out, range(500))
+	#errA = std(allA)
+	#print cosmo_params, year, errA, float(A_min/SNR)
+	
 	def find_SNR (CC_arr, errK_arr, nocut=1):
 		weightK = 1/errK_arr**2/sum(1/errK_arr**2, axis=0)
 		CC_mean = sum(CC_arr*weightK,axis=0)
@@ -340,11 +356,12 @@ if plot_data_model:
 		chisq_model = A_out.fun
 		chisq_null = sum(array([plot_elems(Wx, return_chisq_null=1, nocut=nocut) for Wx in range(1,5)]))
 		SNR = sqrt(chisq_null-chisq_model)
-		print year, 'A_min, chisq_null, chisq_model, SNR:',A_min, chisq_null, chisq_model, SNR
+		print year, 'A={0:.2f}, chisq_null={1:.2f}, chisq_model={2:.2f}, SNR={3:.2f}'.format(float(A_min), chisq_null, chisq_model, SNR)
 		return A_min, SNR, CC_mean, err_mean
 	A_min, SNR, CC_mean, err_mean = find_SNR(CC_arr, errK_arr, nocut=nocut)
 	#A_min, SNR, CC_mean, err_mean = find_SNR(CC_arr, theory_err, nocut=nocut)
-
+	
+	
 	f=figure(figsize=(8,6))
 	ax=f.add_subplot(111)
 	ax.bar(ell_arr_data, 2*err_mean*1e6, bottom=(CC_mean-err_mean)*1e6, width=ones(len(ell_arr_data))*80, align='center',ec='brown',fc='none',linewidth=1.5, alpha=1.0)#
@@ -372,7 +389,7 @@ if plot_data_model:
 	ax.text(100, 4, r'$\kappa_{\rm cmb,%s}\times\,\kappa_{\rm gal}$'%(year), color='k', fontsize=20)
 	#ax.set_title('%s dn/dz nocutPeak, A=%.2f, SNR=%.2f'%(year, A_min, SNR))#, noZcut
 	ax.tick_params(labelsize=16)
-	savefig(cmb_dir+'paper/CC_%s.pdf'%(year))
+	savefig(cmb_dir+'paper/CC_%s_mask13.pdf'%(year))
 	close()
 
 if plot_model_theory:
@@ -392,7 +409,7 @@ if plot_model_theory:
 	ell, Ckk0 = load(cmb_dir+models[0]+'.npy')
 	ell[0], Ckk0[0]=0,0
 	Ckk0 *=ell*1e6
-	Ckk0 = snd.filters.gaussian_filter1d(Ckk0,1.0)
+	#Ckk0 = snd.filters.gaussian_filter1d(Ckk0,1.0)
 	i=0
 	ax.plot(ell,Ckk0,'k-', linewidth=2, label=labels[i])
 	seed(584)
@@ -403,7 +420,7 @@ if plot_model_theory:
 		Ckk = Ckk*ell*1e6
 		ell[0]=0
 		Ckk[0]=0
-		Ckknew=snd.filters.gaussian_filter1d(Ckk,1.0)
+		Ckknew=Ckk#snd.filters.gaussian_filter1d(Ckk,1.0)
 		ax.plot(ell,Ckknew,linewidth=lws[i],color=colors[i], label=labels[i],linestyle=lss[i])
 		ax2.plot(ell, Ckknew/Ckk0-1,color=colors[i], linewidth=lws[i], label=labels[i],linestyle=lss[i])
 	

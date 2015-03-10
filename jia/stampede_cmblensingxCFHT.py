@@ -14,8 +14,10 @@ try:
 except Exception:
 	year = 2015
 print 'year', year
+
 create_noise_KS = 0
-cross_correlate_cmbl_noise = 1
+cross_correlate_cmbl_noise = 0 # cross noise CFHT with real planck data
+cross_correlate_plancknoise_CFHT = 1 # cross noise planck maps with real CFHT data
 
 centers = array([[34.5, -7.5], [134.5, -3.25],[214.5, 54.5],[ 332.75, 1.9]])
 sizes = (1330, 800, 1120, 950)
@@ -94,6 +96,13 @@ def cmblGen_fn (fn, offset=False, method='nearest'):
 		cmblmap = cmblmap.T
 	np.save(fn[:-3]+'npy', cmblmap)
 
+def simGen(Wx, r):
+	simfn = cmb_dir+'planck/sim/sim_%04d_kmap_CFHTLS_W%i.npy'%(r, Wx)
+	if os.path.isfile(simfn):
+		return load(simfn)
+	else:
+		simMap = cmblGen(simfn[:-3]+'txt', offset=False)
+		return simMap
 #for fn in os.listdir(cmb_dir+'planck/'):	
 	#if fn[-3:]=='txt':
 		#print fn[:-3]+'npy'
@@ -142,8 +151,8 @@ def cmblGen_fn (fn, offset=False, method='nearest'):
 
 kmapGen = lambda Wx: np.load(cmb_dir+'cfht/kmap_W%i_sigma10_noZcut.npy'%(Wx))
 
-#maskGen = lambda Wx: np.load(cmb_dir+'mask/W%i_mask1315_noZcut.npy'%(Wx))
-maskGen = lambda Wx: np.load(cmb_dir+'mask/W%i_mask13_noZcut.npy'%(Wx))
+maskGen = lambda Wx: np.load(cmb_dir+'mask/W%i_mask1315_noZcut.npy'%(Wx))
+#maskGen = lambda Wx: np.load(cmb_dir+'mask/W%i_mask13_noZcut.npy'%(Wx))
 if year == 2015:
 	cmblGen = lambda Wx: np.load(cmb_dir+'planck/dat_kmap_flipper2048_CFHTLS_W%i_map.npy'%(Wx))
 elif year == 2013:
@@ -207,7 +216,7 @@ if cross_correlate_cmbl_noise:
 	p = MPIPool()
 	CC_arr = array(p.map(cmblxNoise, Wx_iseed_list))
 	for Wx in arange(1,5):
-		np.save(cmb_dir+'CC_noZcut/CFHTxPlanck%04d_lensing_500sim_W%s_mask13.npy'%(year, Wx), CC_arr[(Wx-1)*500:Wx*500])
+		np.save(cmb_dir+'CC_noZcut/CFHTxPlanck%04d_lensing_100sim_W%s_mask13.npy'%(year, Wx), CC_arr[(Wx-1)*500:Wx*500])
 	print 'done cross correlate cmbl x 500 noise.'
 	
 	############# cross with CFHT ####################
@@ -223,4 +232,32 @@ if cross_correlate_cmbl_noise:
 		CC_signal = WLanalysis.CrossCorrelate(kmap, cmblmap,edges=edges)[1]/fmask2_arr[Wx-1]
 		np.save(cmb_dir+'CC_noZcut/CFHTxPlanck%04d_lensing_W%s_mask13.npy'%(year, Wx), CC_signal)
 
+if cross_correlate_plancknoise_CFHT:
+	kmap_arr = map(kmapGen, range(1,5))
+	mask_arr = map(maskGen, range(1,5))
+	masked_kmap_arr = [kmap_arr[i]*mask_arr[i] for i in range(4)]
+	def cfhtxNoise(iinput):
+		'''iinput = (Wx, iseed)
+		return the cross power between cmbl and convergence maps, both with smoothed mask.
+		'''
+		Wx, iseed = iinput
+		print 'cmblxNoise', Wx, iseed
+		smap = simGen(Wx, iseed)*mask_arr[Wx-1]
+		kmap = masked_kmap_arr[Wx-1]
+		edges = edgesGen(Wx)
+		
+		### set mean to 0
+		kmap -= mean(kmap)
+		smap -= mean(smap)
+		
+		ell_arr, CC = WLanalysis.CrossCorrelate (smap, kmap,edges=edges)
+		CC = CC/fmask2_arr[Wx-1]
+		return CC
+	Wx_iseed_list = [[Wx, iseed] for Wx in range(1,5) for iseed in range(100)]
+	
+	p = MPIPool()
+	CC_arr = array(p.map(cfhtxNoise, Wx_iseed_list))
+	for Wx in arange(1,5):
+		np.save(cmb_dir+'CC_noZcut/CFHTxPlanck%04d_lensing_planck100sim_W%s_mask1315.npy'%(year, Wx), CC_arr[(Wx-1)*100:Wx*100])
+	print 'done cross correlate cfht x 100 noise.'
 print 'done!done!done!done!'

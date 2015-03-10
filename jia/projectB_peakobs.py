@@ -43,7 +43,7 @@ H0 = 70.0
 h = 0.7
 OmegaM = 0.3#0.25#
 OmegaV = 1.0-OmegaM
-rho_c0 = 9.9e-30#g/cm^3
+#rho_c0 = 9.9e-30#g/cm^3
 M_sun = 1.989e33#gram
 sigmaG_arr = (0.5, 1.0, 1.8, 3.5, 5.3, 8.9)
 ############################################
@@ -66,15 +66,19 @@ cat_gen_old = lambda Wx: np.load(obsPK_dir+'VO06mass/W%s_cat_z0213_ra_dec_redshi
 ##############################################
 
 # growth factor
+Hcgs = lambda z: H0*sqrt(OmegaM*(1+z)**3+OmegaV)*3.24e-20
 H_inv = lambda z: 1.0/(H0*sqrt(OmegaM*(1+z)**3+OmegaV))
 # luminosity distance Mpc
-DL = lambda z: (1+z)*c*quad(H_inv, 0, z)[0]
-# use interpolation instead of actual calculation, so we can operate on an array
+DC_integral = lambda z: c*quad(H_inv, 0, z)[0]
 z_arr = linspace(0.1, 1.4, 1000)
-DL_arr = array([DL(z) for z in z_arr])
-DL_interp = interpolate.interp1d(z_arr, DL_arr)
+DC_arr = array([DC_integral(z) for z in z_arr])
+DC = interpolate.interp1d(z_arr, DC_arr)
+DA = lambda z: DC(z)/(1.0+z)
+DL = lambda z: DC(z)*(1.0+z)
 # find the rest magnitude at the galaxy, from observed magnitude cut
-M_rest_fcn = lambda M_obs, z: M_obs - 5.0*log10(DL_interp(z)) - 25.0
+#M_rest_fcn = lambda M_obs, z: M_obs - 5.0*log10(DL_interp(z)) - 25.0
+##rho_cz = lambda z: rho_c0*(OmegaM*(1+z)**3+(1-OmegaM))#critical density
+rho_cz = lambda z: 0.375*Hcgs(z)**2/pi/Gnewton
 
 ##############################################
 ##################### MAG_z to M100 ##########
@@ -84,7 +88,6 @@ datagrid_VO = np.load(obsPK_dir+'Mhalo_interpolator_VO.npy')#Mag_z, r-z, M100, r
 Minterp = interpolate.CloughTocher2DInterpolator(datagrid_VO[:,:2],datagrid_VO[:,2])
 #usage: Minterp(MAGz_arr, r-z_arr)
 
-rho_cz = lambda z: rho_c0*(OmegaM*(1+z)**3+(1-OmegaM))#critical density
 Rvir_fcn = lambda M, z: (M*M_sun/(4.0/3.0*pi*200*rho_cz(z)))**0.3333#in cm
 rad2arcmin = lambda distance: degrees(distance)*60.0
 
@@ -139,26 +142,23 @@ def Gx_fcn (x, cNFW):#=5.0):
 
 f = 1.043
 c0, beta = 11, 0.13 # lin & kilbinger2014
-def kappa_proj (Mvir, Rvir, z_fore, x_fore, y_fore, DL_fore, z_back, x_back, y_back, DL_back, cNFW=5.0):
+def kappa_proj (Mvir, z_fore, x_fore, y_fore, z_back, x_back, y_back, cNFW=5.0):
 	'''return a function, for certain foreground halo, 
 	calculate the projected mass between a foreground halo and a background galaxy pair.
 	'''
 	######## updated next 2 lines to have a variable cNFW
-	cNFW = c0/(1+z_back)*(Mvir/1e13)**(-beta)
+	#cNFW = c0/(1+z_back)*(Mvir/1e13)**(-beta)
 	f=1.0/(log(1.0+cNFW)-cNFW/(1.0+cNFW))# = 1.043 with cNFW=5.0
-	
+	Rvir = Rvir_fcn(Mvir, z_fore)
 	two_rhos_rs = Mvir*M_sun*f*cNFW**2/(2*pi*Rvir**2)#cgs, see LK2014 footnote
-	Dl = DL_fore/(1+z_fore)**2
-	Dl_cm = 3.08567758e24*Dl # D_angular = D_luminosity/(1+z)**2
-	theta_vir = Rvir/Dl_cm	
-	Ds = DL_back/(1+z_back)**2
-	#Ds_cm = 3.08567758e24*Ds### 
-	Dls = (Ds - Dl)/(1+z_back)
-	DDs = Ds/(Dl*Dls)/3.08567758e24# 3e24 = 1Mpc/1cm
-	SIGMAc = 1.07e+27*DDs#(c*1e5)**2/4.0/pi/Gnewton=1.0716311756473212e+27
-	#x_rad, y_rad = xy_fcn(array([ra_back, dec_back]))
+	
+	Dl_cm = 3.08567758e24*DA(z_fore)
+	##3.08567758e24cm/Mpc### 	
+	#SIGMAc = 1.07163e+27/DlDlsDs#(c*1e5)**2/4.0/pi/Gnewton=1.0716311756473212e+27
+	##347.2916311625792=1.07163e+27/3.08567758e24
+	SIGMAc = 347.29163*DC(z_back)*(1+z_fore)/(DC(z_fore)*(DC(z_back)-DC(z_fore)))
 	theta = sqrt((x_fore-x_back)**2+(y_fore-y_back)**2)
-	x = cNFW*theta/theta_vir
+	x = cNFW*theta/Rvir*Dl_cm
 	Gx = Gx_fcn(x, cNFW)
 	kappa_p = two_rhos_rs/SIGMAc*Gx
 	return kappa_p
@@ -293,7 +293,7 @@ if make_kappa_predict:
 #########################################################
 make_predict_maps = 0
 plot_predict_maps = 0
-peak_proj_vs_lensing = 1
+peak_proj_vs_lensing = 0
 cross_correlate = 0
 
 #kmap_predict_Gen = lambda Wx, sigmaG: np.load(obsPK_dir+'maps/r20arcmin_varyingcNFW_VO06/kmap_W%i_predict_sigmaG%02d.npy'%(Wx, sigmaG*10))
