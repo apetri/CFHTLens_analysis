@@ -95,14 +95,15 @@ def cmblGen_fn (fn, offset=False, method='nearest'):
 	if offset:
 		cmblmap = cmblmap.T
 	np.save(fn[:-3]+'npy', cmblmap)
+	return cmblmap
 
 def simGen(Wx, r):
 	simfn = cmb_dir+'planck/sim/sim_%04d_kmap_CFHTLS_W%i.npy'%(r, Wx)
 	if os.path.isfile(simfn):
 		return load(simfn)
 	else:
-		cmblGen_fn(simfn[:-3]+'txt', offset=False)
-		return load(simfn)
+		smap = cmblGen_fn(simfn[:-3]+'txt', offset=False)
+		return smap
 #for fn in os.listdir(cmb_dir+'planck/'):	
 	#if fn[-3:]=='txt':
 		#print fn[:-3]+'npy'
