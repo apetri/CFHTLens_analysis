@@ -101,8 +101,8 @@ def simGen(Wx, r):
 	if os.path.isfile(simfn):
 		return load(simfn)
 	else:
-		simMap = cmblGen_fn(simfn[:-3]+'txt', offset=False)
-		return simMap
+		cmblGen_fn(simfn[:-3]+'txt', offset=False)
+		return load(simfn)
 #for fn in os.listdir(cmb_dir+'planck/'):	
 	#if fn[-3:]=='txt':
 		#print fn[:-3]+'npy'
