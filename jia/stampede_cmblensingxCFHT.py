@@ -17,7 +17,7 @@ print 'year', year
 
 create_noise_KS = 0
 cross_correlate_cmbl_noise = 0 # cross noise CFHT with real planck data
-cross_correlate_plancknoise_CFHT = 1 # cross noise planck maps with real CFHT data
+cross_correlate_plancknoise_CFHT = 0 # cross noise planck maps with real CFHT data
 
 centers = array([[34.5, -7.5], [134.5, -3.25],[214.5, 54.5],[ 332.75, 1.9]])
 sizes = (1330, 800, 1120, 950)
@@ -114,6 +114,9 @@ def simGen(Wx, r):
 		#full_fn = cmb_dir+'planck/'+fn
 		#cmblGen_fn(full_fn, offset = False)
 
+simfn_fcn = lambda r: cmblGen_fn(cmb_dir+'planck/sim/sim_%04d_kmap_CFHTLS_W%i.txt'%(r, 1),, offset=False)
+p = MPIPool()
+p.map(simfn_fcn, arange(32, 100))
 ##############################################
 ########### mapGens  #########################
 
