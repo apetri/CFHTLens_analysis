@@ -17,7 +17,7 @@ print 'year', year
 
 create_noise_KS = 0
 cross_correlate_cmbl_noise = 0 # cross noise CFHT with real planck data
-cross_correlate_plancknoise_CFHT = 0 # cross noise planck maps with real CFHT data
+cross_correlate_plancknoise_CFHT = 1 # cross noise planck maps with real CFHT data
 
 centers = array([[34.5, -7.5], [134.5, -3.25],[214.5, 54.5],[ 332.75, 1.9]])
 sizes = (1330, 800, 1120, 950)
@@ -98,24 +98,25 @@ def cmblGen_fn (fn, offset=False, method='nearest'):
 	return cmblmap
 
 def simGen(Wx, r):
-	simfn = cmb_dir+'planck/sim/sim_%04d_kmap_CFHTLS_W%i.npy'%(r, Wx)
-	try:
-		if os.path.isfile(simfn):
-			return load(simfn)
-		else:
-			smap = cmblGen_fn(simfn[:-3]+'txt', offset=False)
-			return smap
-	except Exception:
-		print 'Wx, r error', Wx, r
-		return kmapGen(Wx)
+	#simfn = cmb_dir+'planck/sim/sim_%04d_kmap_CFHTLS_W%i.npy'%(r, Wx)
+	#try:
+	if os.path.isfile(simfn):
+		return load(simfn)
+	else:
+		print 'smap not created', Wx, r
+		smap = cmblGen_fn(simfn[:-3]+'txt', offset=False)
+		return smap
+	#except Exception:
+		#print 'Wx, r error', Wx, r
+		#return kmapGen(Wx)
 #for fn in os.listdir(cmb_dir+'planck/'):	
 	#if fn[-3:]=='txt':
 		#print fn[:-3]+'npy'
 		#full_fn = cmb_dir+'planck/'+fn
 		#cmblGen_fn(full_fn, offset = False)
 
-def simfn_fcn(r): 
-	cmblGen_fn(cmb_dir+'planck/sim/sim_%04d_kmap_CFHTLS_W%i.txt'%(r, 1), offset=False)
+#def simfn_fcn(r): 
+	#cmblGen_fn(cmb_dir+'planck/sim/sim_%04d_kmap_CFHTLS_W%i.txt'%(r, 1), offset=False)
 #p = MPIPool()
 #p.map(simfn_fcn, arange(32, 100))
 ##############################################
