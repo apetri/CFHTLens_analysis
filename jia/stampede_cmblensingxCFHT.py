@@ -7,7 +7,7 @@ from pylab import *
 import os, sys
 import WLanalysis
 from scipy import interpolate
-from emcee.utils import MPIPool
+#from emcee.utils import MPIPool
 
 try:
 	year = int(sys.argv[1])
