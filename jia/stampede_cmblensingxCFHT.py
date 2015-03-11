@@ -114,7 +114,8 @@ def simGen(Wx, r):
 		#full_fn = cmb_dir+'planck/'+fn
 		#cmblGen_fn(full_fn, offset = False)
 
-simfn_fcn = lambda r: cmblGen_fn(cmb_dir+'planck/sim/sim_%04d_kmap_CFHTLS_W%i.txt'%(r, 1), offset=False)
+def simfn_fcn(r): 
+	cmblGen_fn(cmb_dir+'planck/sim/sim_%04d_kmap_CFHTLS_W%i.txt'%(r, 1), offset=False)
 p = MPIPool()
 p.map(simfn_fcn, arange(32, 100))
 ##############################################
