@@ -24,18 +24,21 @@ conc0 = lambda arr: concatenate([(0,), arr])
 ########## cosmo params ###############
 #######################################
 compute_model = 1
-z0, z1 = genfromtxt(cmb_dir+'dndz_CFHT_nocutPeak.txt').T
-###z0, z1 = genfromtxt(cmb_dir+'dndz_CFHT.txt').T
-###z0, z1 = genfromtxt(cmb_dir+'dndz_CFHT_nocut.txt').T
-z0 = concatenate([[0,], z0, linspace(z0[-1]*1.2, 1200,100)])
-z1 = concatenate([[0,], z1, 1e-128*ones(100)])
-dndz_interp = interpolate.interp1d(z0, z1,kind='cubic')
+#z0, z1 = load(cmb_dir+'dndz_weighted_nocut.npy')
+#z0, z1 = genfromtxt(cmb_dir+'dndz_CFHT_nocutPeak.txt').T
+####z0, z1 = genfromtxt(cmb_dir+'dndz_CFHT.txt').T
+#z0, z1 = genfromtxt(cmb_dir+'dndz_CFHT_nocut.txt').T
+#z0 = concatenate([[0,], z0, linspace(z0[-1]*1.2, 1200,100)])
+#z1 = concatenate([[0,], z1, 1e-128*ones(100)])
+#dndz_interp = interpolate.interp1d(z0, z1,kind='cubic')
 #dndz_interp = lambda z: 13.5*z**2*exp(-3.0*z)
+abcA = array([ 0.55295047,  7.81173223,  0.61659035,  0.58076769])# no nocutPeak
+dndz_interp = lambda z0: abcA[3]*(z0**abcA[0]+z0**(abcA[0]*abcA[1]))/(z0**abcA[1]+abcA[2])
 ####### planck 2015 TT, TE, EE + lowP
 OmegaM = 0.3156#0.33138#0.29982##,
 H0 = 67.27
 Ptable = genfromtxt(cmb_dir+'P_delta_Planck15')
-model_fn = 'model_Planck15_auto'
+model_fn = 'model_Planck15_dndzWeighted'
 
 ########### colin params ##############
 #OmegaM = 0.317 
@@ -98,10 +101,13 @@ if compute_model == 1:
 	Pmatter = lambda k, z: Pmatter_interp (k, z)
 
 	Ckk_integrand = lambda z, ell: 1.0/(H_inv(z)*c*DC(z)**2)*W_wl(z)*W_cmb(z)*Pmatter(ell/DC(z), z)
-	#Ckk_integrand = lambda z, ell: 1.0/(H_inv(z)*c*DC(z)**2)*W_wl(z)**2*Pmatter(ell/DC(z), z)
-
-	#ell_arr = linspace(1e-5, 2000, 200)
-	#Ckk_arr = array([quad(Ckk_integrand, 0.002, 3.7 , args=(iell))[0] for iell in ell_arr])#3.7
+	
+	####### auto power spectrum
+	####Ckk_integrand = lambda z, ell: 1.0/(H_inv(z)*c*DC(z)**2)*W_wl(z)**2*Pmatter(ell/DC(z), z)
+	###########################
+	
+	ell_arr = linspace(1e-5, 2000, 200)
+	Ckk_arr = array([quad(Ckk_integrand, 0.002, 3.7 , args=(iell))[0] for iell in ell_arr])#3.7
 
 	#plot(ell_arr, Ckk_arr*ell_arr)
 	#show()
@@ -174,7 +180,8 @@ if compute_theory_err:
 	##### sim err
 	CC_signal =lambda Wx: load(cmb_dir+'CC_noZcut/CFHTxPlanck2015_logbins_lensing_W%s.npy'%(Wx))*factor
 	#CC_noise = lambda Wx: std(load(cmb_dir+'CC_noZcut/CFHTxPlanck2015_logbins_lensing_500sim_W%s.npy'%(Wx))*factor,axis=0)
-	CC_noise = lambda Wx: std(load(cmb_dir+'CC_noZcut/CFHTxPlanck2013_logbins_lensing_500sim_W%s.npy'%(Wx))*factor,axis=0)
+	#CC_noise = lambda Wx: std(load(cmb_dir+'CC_noZcut/CFHTxPlanck2013_logbins_lensing_500sim_W%s.npy'%(Wx))*factor,axis=0)
+	CC_noise = lambda Wx: std(load(cmb_dir+'CC_noZcut/CFHTxPlanck%s_lensing_planck100sim_W%i_mask1315.npy'%(2015,Wx))*factor,axis=0)
 	
 	sim_err_all = array([CC_noise(Wx) for Wx in arange(1,5)])
 	print sim_err_all/theory_err_all-1
@@ -311,17 +318,20 @@ if plot_data_model:
 		model_raw = interpolate.interp1d(ell_arr, Ckk_arr)(ell_arr_data)
 	MM = model_raw*ell_arr_data
 	model_fit = lambda A:  A*concatenate([MM,MM,MM,MM])
-	chisq_model_fcn = lambda A, CC, err: sum((CC-model_fit(A))**2/err**2)
+	#chisq_model_fcn = lambda A, CC, err: sum((CC-model_fit(A))**2/err**2)
+	chisq_model_fcn = lambda A, CC, covI: sum(mat(CC-model_fit(A))*covI*mat(CC-model_fit(A)).T)
 	factor = 2.0*pi/(ell_arr_data+1)
-	def plot_elems (Wx, return_chisq_null = False, nocut=nocut, year=year):		
+	def plot_elems (Wx, return_chisq_null = 0, return_covI = 0, nocut=nocut, year=year):		
 		if nocut:
 			idir=cmb_dir+'CC_noZcut/'
 		else:
 			idir=cmb_dir+'CC_0213/'
 		#CC_noise = load(idir+'CFHTxPlanck%s_logbins_lensing_500sim_W%s.npy'%(year,Wx))*factor
-		#CC_signal =load(idir+'CFHTxPlanck%s_logbins_lensing_W%s.npy'%(year,Wx))*factor
-		CC_noise = load(idir+'CFHTxPlanck%04d_lensing_500sim_W%s_mask13.npy'%(year, Wx))*factor
-		CC_signal =load(idir+'CFHTxPlanck%04d_lensing_W%s_mask13.npy'%(year, Wx))*factor
+		CC_noise = load(idir+'CFHTxPlanck%s_lensing_planck100sim_W%i_mask1315.npy'%(year,Wx))*factor
+		CC_signal =load(idir+'CFHTxPlanck%s_logbins_lensing_W%s.npy'%(year,Wx))*factor
+		
+		##CC_noise = load(idir+'CFHTxPlanck%04d_lensing_500sim_W%s_mask13.npy'%(year, Wx))*factor
+		##CC_signal =load(idir+'CFHTxPlanck%04d_lensing_W%s_mask13.npy'%(year, Wx))*factor
 		CC_err = std(CC_noise,axis=0)
 		CC_noise_mean = mean(CC_noise,axis=0)
 		CCN_cov = np.cov(CC_noise,rowvar=0)
@@ -329,12 +339,18 @@ if plot_data_model:
 		#chisq_null = (CC_signal/theory_err[Wx-1])**2
 		if return_chisq_null:
 			return chisq_null
+		elif return_covI:
+			return mat(CCN_cov).I
 		else:
 			return CC_signal, CC_err, CC_noise_mean
 	
 	datacube = array([plot_elems(Wx, nocut=nocut) for Wx in range(1,5)])
 	CC_arr = datacube[:,0,:]
 	errK_arr = datacube[:,1,:]
+	covI_arr = [plot_elems(Wx, nocut=nocut, return_covI=1) for Wx in range(1,5)]
+	covI = mat(zeros(shape=(20, 20)))
+	for i in arange(4):
+		covI[i*5:(i+1)*5, i*5:(i+1)*5] = covI_arr[i]
 	
 	### find A error #####
 	#CC_noise = lambda Wx: load(cmb_dir+'CC_noZcut/CFHTxPlanck%s_logbins_lensing_500sim_W%s.npy'%(year,Wx))*factor
@@ -350,8 +366,9 @@ if plot_data_model:
 		weightK = 1/errK_arr**2/sum(1/errK_arr**2, axis=0)
 		CC_mean = sum(CC_arr*weightK,axis=0)
 		err_mean = sqrt(1.0/sum(1/errK_arr**2, axis=0))
-		A_out = op.minimize(chisq_model_fcn, 1.0, args=(concatenate(CC_arr), concatenate(errK_arr)))
 		
+		#A_out = op.minimize(chisq_model_fcn, 1.0, args=(concatenate(CC_arr), concatenate(errK_arr)))
+		A_out = op.minimize(chisq_model_fcn, 1.0, args=(concatenate(CC_arr), covI))
 		A_min = A_out.x
 		chisq_model = A_out.fun
 		chisq_null = sum(array([plot_elems(Wx, return_chisq_null=1, nocut=nocut) for Wx in range(1,5)]))
@@ -389,7 +406,7 @@ if plot_data_model:
 	ax.text(100, 4, r'$\kappa_{\rm cmb,%s}\times\,\kappa_{\rm gal}$'%(year), color='k', fontsize=20)
 	#ax.set_title('%s dn/dz nocutPeak, A=%.2f, SNR=%.2f'%(year, A_min, SNR))#, noZcut
 	ax.tick_params(labelsize=16)
-	savefig(cmb_dir+'paper/CC_%s_mask13.pdf'%(year))
+	savefig(cmb_dir+'paper/CC_%s_plancksim.pdf'%(year))
 	close()
 
 if plot_model_theory:
@@ -516,8 +533,12 @@ if plot_model_theory_haloterms:
 	#diff = sum(abs(dndz - z1))
 	#return diff
 #abcA_guess = (0.531, 7.810, 0.517, 0.688)
-#out = op.minimize(chisq_dndz_JL, abcA_guess)r
-#abcA_JL = [ 0.28391205,  6.79531638,  0.73779074,  0.65322337]
+#z0, z1 = genfromtxt(cmb_dir+'dndz_CFHT_nocutPeak.txt').T
+#z0 = concatenate([[0,], z0])
+#z1 = concatenate([[0,], z1])
+##out = op.minimize(chisq_dndz_JL, abcA_guess).x
+#abcA = array([ 0.55295047,  7.81173223,  0.61659035,  0.58076769])# no nocutPeak
+#dndz = lambda z0: abcA[3]*(z0**abcA[0]+z0**(abcA[0]*abcA[1]))/(z0**abcA[1]+abcA[2])
 ####### do interpolation directly
 
 ########## (3) calculate  W_wl ##################

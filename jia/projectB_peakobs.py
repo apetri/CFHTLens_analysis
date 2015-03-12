@@ -19,7 +19,7 @@ from scipy.integrate import quad
 import scipy.optimize as op
 import sys, os
 
-make_kappa_predict = 0
+make_kappa_predict = 1
 if make_kappa_predict:
 	######## for stampede #####
 	from emcee.utils import MPIPool
@@ -38,7 +38,7 @@ centers = array([[34.5, -7.5], [134.5, -3.25],[214.5, 54.5],[ 332.75, 1.9]])
 PPR512=8468.416479647716
 PPA512=2.4633625
 c = 299792.458#km/s
-Gnewton = 6.674e-8#cgs cm^3/g/s
+Gnewton = 6.674e-8#cgs cm^3/g/s^2
 H0 = 70.0
 h = 0.7
 OmegaM = 0.3#0.25#
@@ -84,8 +84,8 @@ rho_cz = lambda z: 0.375*Hcgs(z)**2/pi/Gnewton
 ##################### MAG_z to M100 ##########
 ##############################################
 
-datagrid_VO = np.load(obsPK_dir+'Mhalo_interpolator_VO.npy')#Mag_z, r-z, M100, residual
-Minterp = interpolate.CloughTocher2DInterpolator(datagrid_VO[:,:2],datagrid_VO[:,2])
+#datagrid_VO = np.load(obsPK_dir+'Mhalo_interpolator_VO.npy')#Mag_z, r-z, M100, residual
+#Minterp = interpolate.CloughTocher2DInterpolator(datagrid_VO[:,:2],datagrid_VO[:,2])
 #usage: Minterp(MAGz_arr, r-z_arr)
 
 Rvir_fcn = lambda M, z: (M*M_sun/(4.0/3.0*pi*200*rho_cz(z)))**0.3333#in cm
