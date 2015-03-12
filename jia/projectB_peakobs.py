@@ -75,6 +75,7 @@ DC_arr = array([DC_integral(z) for z in z_arr])
 DC = interpolate.interp1d(z_arr, DC_arr)
 DA = lambda z: DC(z)/(1.0+z)
 DL = lambda z: DC(z)*(1.0+z)
+DL_interp = DL
 # find the rest magnitude at the galaxy, from observed magnitude cut
 #M_rest_fcn = lambda M_obs, z: M_obs - 5.0*log10(DL_interp(z)) - 25.0
 ##rho_cz = lambda z: rho_c0*(OmegaM*(1+z)**3+(1-OmegaM))#critical density
