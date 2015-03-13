@@ -57,8 +57,8 @@ kmapGen = lambda Wx, zcut, sigmaG: WLanalysis.readFits('/Users/jia/CFHTLenS/obsP
 
 bmodeGen = lambda Wx, zcut, sigmaG: WLanalysis.readFits('/Users/jia/CFHTLenS/obsPK/maps/W%i_Bmode_%s_sigmaG%02d.fit'%(Wx, zcut, sigmaG))*maskGen(Wx, zcut, sigmaG)
 
-cat_gen = lambda Wx: np.load(obsPK_dir+'W%s_cat_z0213_ra_dec_redshift_weight_MAGi_Mvir_Rvir_DL.npy'%(Wx))
-cat_gen_old = lambda Wx: np.load(obsPK_dir+'VO06mass/W%s_cat_z0213_ra_dec_redshift_weight_MAGi_Mvir_Rvir_DL.npy'%(Wx))
+cat_gen = lambda Wx: np.load(obsPK_dir+'W%s_cat_z0213_ra_dec_redshift_weight_MAGi_Mvir_Rvir_DC.npy'%(Wx))
+cat_gen_old = lambda Wx: np.load(obsPK_dir+'junk/W%s_cat_z0213_ra_dec_redshift_weight_MAGi_Mvir_Rvir_DL.npy'%(Wx))
 #columns: ra, dec, redshift, weight, i, Mhalo, Rvir, DL
 
 ##############################################
@@ -142,21 +142,20 @@ def Gx_fcn (x, cNFW):#=5.0):
 
 f = 1.043
 c0, beta = 11, 0.13 # lin & kilbinger2014
-def kappa_proj (Mvir, z_fore, x_fore, y_fore, z_back, x_back, y_back, cNFW=5.0):
+def kappa_proj (Mvir, Rvir, z_fore, x_fore, y_fore, z_back, x_back, y_back, DC_fore, DC_back, cNFW=5.0):
 	'''return a function, for certain foreground halo, 
 	calculate the projected mass between a foreground halo and a background galaxy pair.
 	'''
 	######## updated next 2 lines to have a variable cNFW
 	#cNFW = c0/(1+z_back)*(Mvir/1e13)**(-beta)
 	f=1.0/(log(1.0+cNFW)-cNFW/(1.0+cNFW))# = 1.043 with cNFW=5.0
-	Rvir = Rvir_fcn(Mvir, z_fore)
 	two_rhos_rs = Mvir*M_sun*f*cNFW**2/(2*pi*Rvir**2)#cgs, see LK2014 footnote
 	
-	Dl_cm = 3.08567758e24*DA(z_fore)
+	Dl_cm = 3.08567758e24*DC_fore/(1.0+z_fore)
 	##3.08567758e24cm/Mpc### 	
 	#SIGMAc = 1.07163e+27/DlDlsDs#(c*1e5)**2/4.0/pi/Gnewton=1.0716311756473212e+27
 	##347.2916311625792=1.07163e+27/3.08567758e24
-	SIGMAc = 347.29163*DC(z_back)*(1+z_fore)/(DC(z_fore)*(DC(z_back)-DC(z_fore)))
+	SIGMAc = 347.29163*DC_back*(1+z_fore)/(DC_fore*(DC_back-DC_fore))
 	theta = sqrt((x_fore-x_back)**2+(y_fore-y_back)**2)
 	x = cNFW*theta/Rvir*Dl_cm
 	Gx = Gx_fcn(x, cNFW)
@@ -184,17 +183,19 @@ def kappa_proj (Mvir, z_fore, x_fore, y_fore, z_back, x_back, y_back, cNFW=5.0):
 		#Mhalo_arr[idx] = Mhalo_fcn(Mstar_arr[idx])
 	#return Mhalo_arr
 	
-#for Wx in (4,):#range(1,5):
+#for Wx in range(1,5):
 	#print Wx
 	#icat = cat_gen_old(Wx).T
 	#ra, dec, redshift, weight, MAGi, Mhalo, Rvir, DL = icat.copy()
-	#idx = WLanalysis.update_values_by_RaDec(ra, dec, master_ra, master_dec)
-	#iM_star = M_star[idx]
-	#Mhalo_L12 = 10**Mstar2Mhalo(iM_star, redshift)
-	#icat[5] = Mhalo_L12
-	#icat[6] = Rvir_fcn(Mhalo_L12, redshift)
-	#icat[7] = DL_interp(redshift)
-	#save(obsPK_dir+'W%s_cat_z0213_ra_dec_redshift_weight_MAGi_Mvir_Rvir_DL.npy'%(Wx), icat[:,iM_star>-99].T)
+	####idx = WLanalysis.update_values_by_RaDec(ra, dec, master_ra, master_dec)
+	####iM_star = M_star[idx]
+	####Mhalo_L12 = 10**Mstar2Mhalo(iM_star, redshift)
+	####icat[5] = Mhalo_L12
+	####icat[6] = Rvir_fcn(Mhalo_L12, redshift)
+	####icat[7] = DL_interp(redshift)
+	#icat[-2] = Rvir_fcn(Mhalo, redshift)
+	#icat[-1] = DC(redshift)
+	#save(obsPK_dir+'W%s_cat_z0213_ra_dec_redshift_weight_MAGi_Mvir_Rvir_DC.npy'%(Wx), icat.T)#[:,iM_star>-99]
 	
 ############### halo mass using Guo 2010 ###############
 #M0 = 10**11.4
@@ -236,7 +237,7 @@ if make_kappa_predict:
 	center = centers[Wx-1]
 	icat = cat_gen(Wx).T
 
-	ra, dec, redshift, weight, MAGi, Mhalo, Rvir, DL = icat
+	ra, dec, redshift, weight, MAGi, Mhalo, Rvir, DC = icat
 	## varying DL
 	#Mhalo[Mhalo>2e15] = 2e15#prevent halos to get crazy mass
 	f_Wx = WLanalysis.gnom_fun(center)#turns to radians
@@ -253,15 +254,15 @@ if make_kappa_predict:
 		print i
 		iidx_fore = array(kdt.query_ball_point(xy_back[i], r))	
 		x_back, y_back = xy_back[i]
-		z_back, DL_back = redshift[idx_back][i], DL[idx_back][i]
+		z_back, DC_back = redshift[idx_back][i], DC[idx_back][i]
 		ikappa = 0
 		for jj in iidx_fore:
 			x_fore, y_fore = xy[jj]
-			jMvir, jRvir, z_fore, DL_fore = Mhalo[jj], Rvir[jj], redshift[jj], DL[jj]
+			jMvir, jRvir, z_fore, DC_fore = Mhalo[jj], Rvir[jj], redshift[jj], DL[jj]
 			if z_fore >= z_back:
 				kappa_temp = 0
 			else:
-				kappa_temp = kappa_proj (jMvir, z_fore, x_fore, y_fore, z_back, x_back, y_back, cNFW=5.0)
+				kappa_temp = kappa_proj (jMvir, jRvir, z_fore, x_fore, y_fore, z_back, x_back, y_back, DC_fore, DC_back, cNFW=5.0)
 				if isnan(kappa_temp):
 					kappa_temp = 0
 			ikappa += kappa_temp
