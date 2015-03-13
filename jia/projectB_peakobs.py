@@ -71,8 +71,8 @@ H_inv = lambda z: 1.0/(H0*sqrt(OmegaM*(1+z)**3+OmegaV))
 # luminosity distance Mpc
 DC_integral = lambda z: c*quad(H_inv, 0, z)[0]
 z_arr = linspace(0.1, 1.4, 1000)
-DC_arr = array([DC_integral(z) for z in z_arr])
-DC = interpolate.interp1d(z_arr, DC_arr)
+DC_arr0 = array([DC_integral(z) for z in z_arr])
+DC = interpolate.interp1d(z_arr, DC_arr0)
 DA = lambda z: DC(z)/(1.0+z)
 DL = lambda z: DC(z)*(1.0+z)
 # find the rest magnitude at the galaxy, from observed magnitude cut
@@ -237,7 +237,7 @@ if make_kappa_predict:
 	center = centers[Wx-1]
 	icat = cat_gen(Wx).T
 
-	ra, dec, redshift, weight, MAGi, Mhalo, Rvir, DC = icat
+	ra, dec, redshift, weight, MAGi, Mhalo, Rvir, DC_arr = icat
 	## varying DL
 	#Mhalo[Mhalo>2e15] = 2e15#prevent halos to get crazy mass
 	f_Wx = WLanalysis.gnom_fun(center)#turns to radians
@@ -254,11 +254,11 @@ if make_kappa_predict:
 		print i
 		iidx_fore = array(kdt.query_ball_point(xy_back[i], r))	
 		x_back, y_back = xy_back[i]
-		z_back, DC_back = redshift[idx_back][i], DC[idx_back][i]
+		z_back, DC_back = redshift[idx_back][i], DC_arr[idx_back][i]
 		ikappa = 0
 		for jj in iidx_fore:
 			x_fore, y_fore = xy[jj]
-			jMvir, jRvir, z_fore, DC_fore = Mhalo[jj], Rvir[jj], redshift[jj], DL[jj]
+			jMvir, jRvir, z_fore, DC_fore = Mhalo[jj], Rvir[jj], redshift[jj], DC_arr[jj]
 			if z_fore >= z_back:
 				kappa_temp = 0
 			else:
