@@ -183,7 +183,8 @@ def pca(cmd_args):
 	#Draw a line at 3 components
 	ax[0].plot(3*np.ones(100),np.linspace(1.0e-10,1.0e2,100),color="black",linestyle="--")
 	ax[1].plot(3*np.ones(100),np.linspace(0.9,1.01,100),color="black",linestyle="--")
-	ax[1].set_ylim(0.9,1.01)
+	ax[1].set_ylim(0.98,1.001)
+	ax[1].set_xscale("log")
 
 	#Legend
 	ax[0].legend()
@@ -198,6 +199,7 @@ def pca(cmd_args):
 	ax[1].set_ylabel(r"$\Sigma_{i=0}^n\Sigma^2_i/\Sigma^2_{tot}$",fontsize=18)
 
 	#Save figure
+	fig.tight_layout()
 	fig.savefig("pca_components.{0}".format(cmd_args.type))
 
 ##################################################################################################################################################
