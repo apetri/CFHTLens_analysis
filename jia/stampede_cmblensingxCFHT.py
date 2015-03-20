@@ -98,7 +98,7 @@ def cmblGen_fn (fn, offset=False, method='nearest'):
 	return cmblmap
 
 def simGen(Wx, r):
-	simfn = cmb_dir+'planck/sim13/sim_%04d_kmap_CFHTLS_W%i.npy'%(r, Wx)
+	simfn = cmb_dir+'planck/sim%02d/sim_%04d_kmap_CFHTLS_W%i.npy'%(year-2000, r, Wx)
 	#simfn = cmb_dir+'planck/sim/sim_%04d_kmap_CFHTLS_W%i.npy'%(r, Wx)
 	#try:
 	if os.path.isfile(simfn):
@@ -118,7 +118,7 @@ def simGen(Wx, r):
 
 def simfn_fcn(Wxr):
 	Wx, r = Wxr
-	cmblGen_fn(cmb_dir+'planck/sim/sim_%04d_kmap_CFHTLS_W%i.txt'%(r, Wx), offset=False)
+	cmblGen_fn(cmb_dir+'planck/sim%02d/sim_%04d_kmap_CFHTLS_W%i.txt'%(year-2000,r, Wx), offset=False)
 p = MPIPool()
 Wx_iseed_list = [[Wx, iseed] for Wx in range(1,5) for iseed in range(100)[::-1]]
 p.map(simfn_fcn, Wx_iseed_list)
