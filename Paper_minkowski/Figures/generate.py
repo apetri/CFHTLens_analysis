@@ -11,7 +11,10 @@ from lenstools.contours import ContourPlot
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 from matplotlib import rc
+from mpl_toolkits.axes_grid1 import host_subplot
+import mpl_toolkits.axisartist as AA
 
 axes_facecolor = rc.func_globals["rcParams"]["axes.facecolor"]
 
@@ -130,7 +133,7 @@ def emulatorAccuracy(cmd_args,descriptors_in_plot=single[:-1]):
 	smoothing_scale = 1.0
 
 	#Ready to plot
-	fig,ax = plt.subplots(figsize=(8,8))
+	ax = host_subplot(111, axes_class=AA.Axes)
 	for n,descr in enumerate(descriptors_in_plot):
 
 		predicted = np.load(os.path.join(root_dir,"troubleshoot","fiducial_from_interpolator_{0}--{1:.1f}.npy".format(descr,smoothing_scale)))
@@ -145,15 +148,33 @@ def emulatorAccuracy(cmd_args,descriptors_in_plot=single[:-1]):
 
 		ax.plot(np.abs(measured-predictedOther)/np.sqrt(covariance.diagonal()),color=brew_colors[n],linestyle="--")
 
-	#Plot labels
-	ax.set_xlabel(r"$i$",fontsize=22)
+	#Rename the ticks
+	tk = ax.get_xticks()
+	new_tk = np.zeros(len(tk))
+	for n in range(len(tk)):
+		new_tk[n] = -0.04 + ((0.12+0.04)/(len(tk)-1))*n
+	ax.set_xticklabels(["{0:.2f}".format(t) for t in new_tk])
+	ax.set_xlabel(r"$\kappa$",fontsize=22)
 	ax.set_ylabel(r"$(E-M)/\sqrt{C_{MM}}$",fontsize=22)
+
+	#Set a top axis too
+	axT = ax.twin()
+	tk = axT.get_xticks()
+	new_tk = np.zeros(len(tk))
+	for n in range(len(tk)):
+		new_tk[n] = 300.0 + ((5000.0-300.0)/(len(tk)-1))*n
+	axT.set_xticklabels(["{0}".format(int(new_tk[0]))] + ["{0}".format(int(t/1000)*1000) for t in new_tk[1:]])
+	axT.set_yticks([])
+	axT.set_xlabel(r"$l$",fontsize=22)
+
+	
 	ax.set_yscale("log")
-	ax.set_ylim(1.0e-3,10.0)
+	ax.set_ylim(1.0e-3,20.0)
 	ax.legend(loc="lower left")
 
 	#Save the figure
-	fig.savefig("emulator_accuracy.{0}".format(cmd_args.type))
+	plt.tight_layout()
+	plt.savefig("emulator_accuracy.{0}".format(cmd_args.type))
 
 
 ##############################################################################################################################################

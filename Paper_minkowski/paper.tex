@@ -24,7 +24,7 @@
 \begin{document}
 
 %ZH: changed title a bit
-\title{Emulating the CFHTLenS Weak Lensing data:  Cosmological Constraints from Moments and Minkowski Functionals}
+\title{Emulating the CFHTLenS Weak Lensing data:  Cosmological Constraints from moments and Minkowski functionals}
 
 \author{Andrea Petri}
 \email{apetri@phys.columbia.edu}
@@ -57,12 +57,12 @@ non--Gaussian features potentially containing the majority of the
 information. We examine constraints on the parameter triplet
 $(\Omega_m,w,\sigma_8)$ from non-Gaussian features of the weak lensing
 convergence field, including a set of moments (up to $4^{\rm th}$
-order) and Minkowski Functionals, using publicly available data from
+order) and Minkowski functionals, using publicly available data from
 the 154\,deg$^2$ CFHTLenS survey. We utilize a suite of ray--tracing
 N-body simulations spanning 91 points in $(\Omega_m,w,\sigma_8)$
 parameter space, replicating the galaxy sky positions, redshifts and
 shape noise in the CFHTLenS catalogs. We then build an emulator that
-interpolates the simulated features as a function of
+interpolates the simulated descriptors as a function of
 $(\Omega_m,w,\sigma_8)$, and use it to compute the likelihood function
 and parameter constraints. We employ a principal component analysis to
 reduce dimensionality and to help stabilize the constraints with
@@ -70,11 +70,11 @@ respect to the number of bins used to construct each statistic. Using
 the full set of statistics, we find
 $\Sigma_8\equiv\sigma_8(\Omega_m/0.27)^{0.55}=0.75\pm0.04$ (68\%
 C.L.), in agreement with previous values. We find that constraints on
-the $(\Omega_m,\sigma_8)$ doublet from the Minkowski Functionals
+the $(\Omega_m,\sigma_8)$ doublet from the Minkowski functionals
 suffer a strong bias. However, high-order moments break the
 $(\Omega_m,\sigma_8)$ degeneracy and provide a tight constraint on
 these parameters with no apparent bias.  The main contribution comes
-from quartic moments of gradients.
+from quartic moments of derivatives.
 \end{abstract}
 
 
@@ -109,7 +109,7 @@ of a catalog of $\approx$4.2 million galaxies, combined with a suite
 of ray-tracing simulations in 91 different cosmological models to
 derive constraints on the cosmological parameters $\Omega_m$,
 $\sigma_8$ and the dark energy (DE) equation of state $w$.  The
-statistics we consider in this work are the Minkowski Functionals
+statistics we consider in this work are the Minkowski functionals
 (MFs) and the low--order moments (LM) of the convergence field.
 %ZH: I moved this here from the simulation section. Fits better here.
 Cosmological parameter inferences from CFHTLenS have been obtained
@@ -120,7 +120,8 @@ three--point correlations as an additional probe for cosmology, and
 found modest ($10-20\%$) improvements over the 2PCF.  Liu et
 al.~\citep{Companion} have found a more significant ($50-60\%$)
 tightening of the $\Omega$ and $\sigma_8$ constraints, utilizing the
-abundance of WL peaks.
+abundance of WL peaks. Cosmological constraints using WL peaks in CFHTLenS Stripe82 data
+have also been investigated by Liu et. al.~\citep{Stripe82}. 
 %ZH: We should also cite the CFHT Stripe82 paper by the Chinese, using peak counts, here.
 Finally, closest to the present paper, Shirasaki \&
 Yoshida~\citep{CFHTMasato} investigated constraints from Minkowski
@@ -131,7 +132,7 @@ formalism, assuming linear dependence on cosmological parameters. Our
 study utilizes a suite of simulations sampling the cosmological
 parameter space, mapping out the non-linear parameter-dependence of
 each descriptor.  Second, we include the LMs as a set of new
-descriptors; these yield to the tightest and least biased constraints.
+descriptors; these yield the tightest and least biased constraints.
 
 
 This paper is organized as follows: we first give an overview of the
@@ -139,7 +140,7 @@ CFHTLenS catalogs, and summarize the adopted data reduction
 techniques. Next, we give a description of our simulation pipeline,
 including the ray--tracing algorithm, and the procedure used to sample
 the parameter space. We call the statistical weak lensing observables
--- the Power Spectrum, Minkowski Functionals, and Moments --
+-- the power spectrum, Minkowski functionals, and moments --
 "descriptors" throughout the paper. We discuss the calculation of the
 descriptors, including dimensional reduction using a principal
 component analysis, and the statistical inference framework we
@@ -237,7 +238,7 @@ non--linear dependence of the descriptors (in this work, Minkowski
 Functionals and moments of the $\kappa$ field) on the parameter
 triplet $\mathbf{p}=(\Omega_m,w,\sigma_8)$, while keeping the other
 relevant parameters $(h,\Omega_b,n_s)$ fixed to the values (0.7,
-0.046, 0.96). 
+0.046, 0.96) (see \citep{WMAP9}).
 %ZH: cite WMAP9 paper here for the parameter choices.
 We sampled the $D$--dimensional ($D=3$ in this case) parameter space
 using an irregularly spaced grid. The grid was designed with a method
@@ -421,7 +422,15 @@ A(\chi_s;\pmb{\theta}) = (1-\kappa(\chi_s;\pmb{\theta}))\pmb{I} - \gamma^1(\chi_
 \end{equation}  
 %
 where $\pmb{I}$ is the $2\times2$ identity and $\sigma^{1,3}$ are the
-first and third Pauli matrices. The convergence $\kappa$ is related to
+first and third Pauli matrices. 
+
+Randomly rotating and periodically translating each of the N--body
+data cubes along the three axes before ray--tracing, we are able to generate
+different realizations of the weak lensing fields $\kappa,\gamma_{1,2}$. We use 
+these different random realizations to estimate the covariance matrices of our
+descriptors. 
+
+The convergence $\kappa$ is related to
 the magnification, while the two components of the complex shear
 $\pmb{\gamma}=\gamma^1 + i\gamma^2$ are related to the apparent
 ellipticity of the source. Given a source with intrinsic complex
@@ -576,7 +585,7 @@ used in this work are summarized in Table \ref{desctable}.
 %
 \begin{table}
 \begin{tabular}{c|c|c} \hline
-Descriptor & Details & $N_b$ \\ \hline
+Descriptor & Details & $N_b$ (linear spacing) \\ \hline
 $V_0,V_1,V_2$ (MF) & $\kappa_0\in[-0.04,0.12]$ & 50 \\
 Power Spectrum (PS) & $l \in [300,5000]$ & 50 \\
 Moments (LM) & -- & 9 \\
@@ -598,9 +607,8 @@ hence rely on the value of every pixel in the map. Although
 sophisticated schemes to interpolate over the masked regions have been
 studied (see for example \citep{VplasInterpolation}), for the sake of
 simplicity, we here insert the value $\kappa=0$ in each masked pixel.
-Given the typical angular size of the masked regions we consider, this
-will have little effect on the power spectrum at the range of
-multipoles in Table \ref{desctable}. 
+Given the uniform spatial distribution of the masked regions in the data, we expect that masks have a little effect on the power spectrum at the range of
+multipoles in Table \ref{desctable}, except for an overall normalization which will be the same both in the data and the simulations.  
 %ZH: can you be more specific above and say what you mean by the angular scales?  Masks are much smaller than
 %    the scales over which moments are defined?   Or much bigger?
 Likewise, we believe that the way we deal with masked sky regions --
@@ -609,12 +617,13 @@ apply the same masks to our simulations and the data, they are
 unlikely to introduce biases in the resulting constraints.  Masks, of
 course, can still affect the sensitivity and weaken constraints. The
 impact of the masks and their treatment has been evaluated for the
-MFs, obtained from CFHTLenS, by ref.~\citep{CFHTMasato}.
+MFs, obtained from CFHTLenS, by ref.~\citep{CFHTMasato}, in which the authors find that the masked regions 
+are not a dominant source of systematic effects in the CFHTLenS data. 
 %ZH:  I think we need to state here something on what they found. 
 
 
 %AP: Stressed the fact that we apply the same mask to the simulations; added reference to Yoshida/Shirasaki 
-%AP: I do not think the discussion on masked pixels is misleading: I just wanted to say that the estimators for MF and Moments are well defined also in the presence of masked pixels, while the PS estimator is not
+%AP: I do not think the discussion on masked pixels is misleading: I just wanted to say that the estimators for MF and moments are well defined also in the presence of masked pixels, while the PS estimator is not
 %ZH:  OK, I rewrote above to say this.  I think what you mean to say here is that our results will not be biased,
 %     since we apply the same masking to the data and the sims.   But there's still a separate question of loosing
 %     sensitivity, which I noted above.
@@ -628,15 +637,12 @@ make use of the MFs and LMs, as well as the power spectrum, as
 discussed in the previous section. We refer to $M_i^r(\mathbf{p})$ as
 the descriptor measured from a realization $r$ of one of our
 simulations with a choice of cosmological parameters $\mathbf{p}$
-(i.e. from one of the $R=1000$ maps in this cosmology), and to $D_i$
+(i.e. from one of the $R=1000$ map realizations in this cosmology), and to $D_i$
 as the descriptor measured from the CFHTLenS data.
-%ZH: Important: we never describe that we have R=1000 realization of
-%    each model, by random rotations and shifts of the single N-body run.
-%    This should be added above, where the simulations and the ray-tracing is discussed.
 In this notation, $i$ is an index that refers to the particular bin on
 which the descriptor is evaluated (for example $i$ can range from 0 to
 9 for the LM statistic and from 0 to $N_b-1$ for a MF measured in
-$N_b$ different $\kappa$ bins).
+$N_b$ different, linearly spaced $\kappa$ bins, as indicated in Table \ref{desctable}).
 %on $N_b$ different excursion sets.
 %ZH: Similarly: we should insert 2-3 sentence above, where we discuss the descriptors,
 %    to state what binning we used (and indicate the actual kappa values of the bin boundaries).
@@ -763,33 +769,33 @@ implement a more sophisticated interpolation
 scheme~\footnote{Following ref.~\citep{coyote2}, we have experimented
   with interpolations using a Gaussian Process, but did not find a
   significant improvement in accuracy over the much simpler polynomial
-  scheme; this is in agreement with earlier results.}.
+  scheme; this is in agreement with earlier results (see for example \citep{KnoxGP})}.
 %ZH: we should add citation of Lloyd Knox's paper http://adsabs.harvard.edu/abs/2011ApJ...728..137S
 %    which said GP is not worth the hassle....
 
 
-\begin{figure}
+\begin{figure*}
 \begin{center}
-\includegraphics[scale=0.45]{Figures/emulator_accuracy.eps}
+\includegraphics[scale=0.4]{Figures/emulator_accuracy.eps}
 \end{center}
 %ZH:  It would be really nice to show ``kappa'' and ``ell'' instead (or in addition) to ``i'' on the x axis.
 %     Maybe use the top of the figure to label kappa's and ell's?  Or at least state the kappa and ell ranges in words.
 \caption{Accuracy of the emulator based on the \texttt{CFHTemu1}
-  simulations. The figure shows the difference between the descriptor
+  simulations. The figure shows the absolute difference between the descriptor
   interpolated at the fiducial parameter setting, and the descriptor
-  expected from the \texttt{CFHTcov} simulations. The descriptors are
+  expected from the \texttt{CFHTcov} simulations (these are the absoulte values of differences which oscillate around zero). The descriptors are
   shown in units of the standard deviation in each bin $i$ (determined
   from the diagonal elements of the \texttt{CFHTcov} covariance
   matrix). We show the accuracy results for the power spectrum (red)
-  and the three Minkowski Functionals $V_0$ (green), $V_1$ (blue) and
+  and the three Minkowski functionals $V_0$ (green), $V_1$ (blue) and
   $V_2$ (black). For reference, we also show, using dashed lines, the
   difference between the expected \texttt{CFHTcov} descriptors and the
-  interpolated descriptor at the non--fiducial point $\mathbf{p}=(0.8,-1.0,0.5)$.}
+  interpolated descriptor at the non--fiducial point $\mathbf{p}=(0.8,-1.0,0.5)$. This non--fiducial point lies beyond the LM $1\sigma$ contour from the simulations shown in Figure \ref{contours3single} right panel, and corresponds to the target accuracy we wish to achieve}
 %ZH: This last one is chosen to lie along our 1 (or 2?) sigma contour, right?
 %    We should then state this, and make the point that this is the interpolation accuracy we care about,
 %    and our accuracy is indeed better than this.
 \label{emulatorAccuracy}
-\end{figure}  
+\end{figure*}  
 
 \subsection{Dimensionality reduction}
 \label{pcasection}
@@ -824,10 +830,8 @@ cosmological parameters at the $N=91$ points listed in Table
 matrix $M_{pi}=M_i(\mathbf{p})$. Note that this is a rectangular
 (non-square) matrix. Following a standard procedure (see, e.g.,
 ref.~\citep{astroMLText}), we derive the {\it whitened} model matrix
-$\tilde{M}_{pi}$, defined by subtracting the mean (over the $R=1000$
-realizations) of each matrix element,
-%ZH: you wrote ``bin'' here, but I changed it to matrix element. All NxN_bin entries are whitened, presumably.
-and normalizing it by its variance. Next we proceed with a singular
+$\tilde{M}_{pi}$, defined by subtracting the mean (over the $N=91$ models) of each bin,
+and normalizing it by its variance (always over thw $N=91$ models). Next we proceed with a singular
 value decomposition (SVD) of $\mathbf{\tilde{M}}$,
 \begin{equation}
 \label{svd}
@@ -893,9 +897,9 @@ future work.
 This section describes our main results, and is organized as follows.
 We begin by showing the cosmological constraints from the CFHTLenS
 data for the triplet $(\Omega_m,\sigma_8,w)$, as well as for an
-alternative parameterization, $(\Sigma_8,\alpha,w)$, with
-$\Sigma_8(\alpha)\equiv \sigma_8(\Omega_m/0.27)^\alpha$.  We then use
-our simulations to perform a robustness analysis of the parameter
+alternative parameterization, $(\Omega_m,\Sigma_8,w)$, with
+$\Sigma_8(\alpha)\equiv \sigma_8(\Omega_m/0.27)^\alpha$. In the latter we give a justification on why we fix $\alpha$ to a value of $0.55$. 
+We then use our simulations to perform a robustness analysis of the parameter
 confidence intervals with respect to the number of PCA components used
 in the projection.
 %We first use our simulations to perform a robustness analysis
@@ -958,7 +962,7 @@ expectation values
 \end{equation}
 %
 and minimizing the ratio $\sqrt{\mathds{V}}/\mathds{E}$ with respect
-to $\alpha$. 
+to $\alpha$. The expectation values are taken over the entire parameter box. 
 %ZH: Is this done at fixed Omega_m=0.27, or is the averaging above over all Omega_m and sigma8 (and w) ?
 %    Let's make it clear.
 %    I think either is fine (as long as we make it clear), but I think usually, people fix Omega_m.
@@ -971,7 +975,7 @@ statistical descriptors that we consider,
 %    principle, the minimization procedure above, done over the 1000 realizations, must give an error bar).
 %    and also to give an indication of (A) how much alpha varies for different descriptors, and (B) how much
 %    it depends on Omega_m, sigma8, and w.
-consistent with what is found in the literature.
+consistent with what is found in the literature (see \citep{CFHTKilbinger} for example). Although $\alpha$ can mildly depend on the type of descriptor considered, we choose to keep it fixed, knowing that the width of the $\Sigma_8$ likelihood cannot vary significantly with different choices of $\alpha$.  
 %ZH:  We should give references, if we say the above.
 We show the probability distribution of the best-constrained parameter
 $\Sigma_8$ (marginalized over $\Omega_m$ and $w$) in Figure
@@ -987,7 +991,8 @@ We discuss the results of this section in \S~\ref{discussion} below.
 The cosmological constraints should in principle be insensitive to
 $N_b$, once a sufficient number of bins are used, but inaccuracies in
 the covariance (due to a limited number of realizations) can introduce
-an $N_b$ dependence.  Here we show that the cosmological constraints
+an $N_b$ dependence. Our binning choices are summarized in Table \ref{desctable}.  
+Here we show that the cosmological constraints
 derived in this paper are numerically robust, i.e. they are reasonably
 stable, once we consider a large enough number $n$ of Principal
 Components. 
@@ -1018,8 +1023,8 @@ from contributing to the parameter confidence levels.
 \end{center}
 \caption{$1\sigma$ (68\% CL) constraints on the $(\Omega_m,\sigma_8)$
   parameter doublet using the power spectrum (red), the three
-  Minkowski Functionals ($V_0$: green, $V_1$: blue, $V_2$: black) and
-  the Moments (orange). We show the constraints from the data (left
+  Minkowski functionals ($V_0$: green, $V_1$: blue, $V_2$: black) and
+  the moments (orange). We show the constraints from the data (left
   panel) and from a mock observation constructed using the mean of
   1000 realizations in the \texttt{CFHTcov} simulation suite (right
   panel). The contours are calculated from the parameter likelihood
@@ -1035,7 +1040,7 @@ from contributing to the parameter confidence levels.
 \includegraphics[scale=0.45]{Figures/contours_momentsOmega_m-sigma8smooth.eps}
 \end{center}
 \caption{$1\sigma$ (68\% CL) constraints on the $(\Omega_m,\sigma_8)$
-  parameter doublet using Moments, with different colors corresponding
+  parameter doublet using moments, with different colors corresponding
   to different moment combinations (see eq.~\ref{momentestimator} for
   their definitions). We show the results from the one--point moments
   $\sigma_0^2,S_0,K_0$ (black curves; both left and right panels). In
@@ -1051,12 +1056,12 @@ from contributing to the parameter confidence levels.
 \end{center}
 \caption{$1\sigma$ (68\% C.L.) constraints on the $(w,\Sigma_8)$
   parameter doublet from the CFHTLenS data, obtained with the power
-  spectrum (red), the three Minkowski Functionals ($V_0$: green,
-  $V_1$: blue, $V_2$: black) and the Moments (orange).
+  spectrum (red), the three Minkowski functionals ($V_0$: green,
+  $V_1$: blue, $V_2$: black) and the moments (orange).
 %ZH: You had V0=blue and V1=green here, but the figure label shows the opposite. 
 %  I assume figure label was correct, but please double-check:
 %%%% $V_0$ (blue), $V_1$ (green), $V_2$ (black) and
-%  Moments (orange) statistics. 
+%  moments (orange) statistics. 
    The contours are calculated from the parameter likelihood function
    $\mathcal{L}$ marginalized over $\Omega_m$, and the parentheses
    near the descriptor label refer to the number of principal
@@ -1071,12 +1076,12 @@ from contributing to the parameter confidence levels.
 \caption{The likelihood of the best-constrained parameter combination
   $\Sigma_8(\alpha)\equiv\sigma_8(\Omega_m/0.27)^\alpha$ from the
   CFHTLenS data, obtained with the power spectrum (red), the three
-  Minkowski Functionals ($V_0$: green, $V_1$: blue, $V_2$: black) and
-  the Moments (orange).
+  Minkowski functionals ($V_0$: green, $V_1$: blue, $V_2$: black) and
+  the moments (orange).
 %ZH: Again, you had V0=blue and V1=green here, but the figure label shows the opposite. 
 %  I assume figure label was correct, but please double-check:
-%%%%  the Power Spectrum (red), $V_0$ (blue), $V_1$ (green),
-%%%%  $V_2$ (black) and Moments (orange) statistics. 
+%%%%  the power spectrum (red), $V_0$ (blue), $V_1$ (green),
+%%%%  $V_2$ (black) and moments (orange) statistics. 
   The likelihood was computed with a constant optimized $\alpha=0.55$,
   but marginalized over both $\Omega_m$ and $w$. 
 %ZH: so we should make clear what we did - I think you fixed alpha, but marginalized over Omega and w
@@ -1091,7 +1096,7 @@ from contributing to the parameter confidence levels.
 \begin{tabular}{c|c|c||c}
 Parameters & Descriptors & Short description & Relevant Figures \\ \hline \hline
 $(\Omega_m,\sigma_8)$ & PS(3),$V_0(5),V_1(20),V_2(20)$,LM(9) &\pbox{20cm}{$1\sigma$ constraints from CFHTLenS \\ and mock observations}  & \ref{contours3single},\ref{contours3single}b \\ \hline
-$(\Omega_m,\sigma_8)$ & $(\sigma_i^2,S_i,K_i)$ & \pbox{20cm}{$1\sigma$ constraints from CFHTLenS \\ using $\kappa$ Moments \\ combined at different $\theta_G$}  & \ref{contoursMoments},\ref{contoursMoments}b \\ \hline
+$(\Omega_m,\sigma_8)$ & $(\sigma_i^2,S_i,K_i)$ & \pbox{20cm}{$1\sigma$ constraints from CFHTLenS \\ using $\kappa$ moments \\ combined at different $\theta_G$}  & \ref{contoursMoments},\ref{contoursMoments}b \\ \hline
 $(w,\Sigma_8)$ & PS(3),$V_0(10),V_1(10),V_2(10)$,LM(9) & contours from CFHTLenS & \ref{contours3singleRep} \\ \hline 
 $\Sigma_8$ & PS(3),$V_0(10),V_1(10),V_2(10)$,LM(9) & $\mathcal{L}(\Sigma_8)$ from CFHTLenS & \ref{likelihoodSi8single} \\ \hline
 - & PS,$V_0,V_1,V_2$,LM & PCA eigenvalues  & \ref{pcafig} \\ \hline
@@ -1119,12 +1124,12 @@ $\Sigma_8$ & PS(3)$\times V_0(10)\times V_1(10)\times V_2(10)\times$LM(9) & \pbo
 %    You should either cut the figure and restrict it to n<10 or n<15,
 %    or else maybe make the x axis logarithmic, to show the n<5 points better.
 \caption{Results from the Principal Components Analysis (PCA) of the
-  binned power spectrum (red), the three Minkowski Functionals ($V_0$:
-  green, $V_1$: blue, $V_2$: black) and the Moments (orange).
+  binned power spectrum (red), the three Minkowski functionals ($V_0$:
+  green, $V_1$: blue, $V_2$: black) and the moments (orange).
 %ZH: Again, you had V0=blue and V1=green here, but the figure label shows the opposite. 
 %  I assume figure label was correct, but please double-check:
-%%% the Power Spectrum(red), $V_0$
-%%%  (blue), $V_1$ (green), $V_2$ (black) and the Moments (orange)
+%%% the power spectrum(red), $V_0$
+%%%  (blue), $V_1$ (green), $V_2$ (black) and the moments (orange)
   The left panel shows the magnitudes of the PCA eigenvalues $S_i^2$
   and the right panel shows their cumulative sum, normalized to
   unity. A dashed vertical (black) line has marks $n=3$ for
@@ -1141,7 +1146,7 @@ $\Sigma_8$ & PS(3)$\times V_0(10)\times V_1(10)\times V_2(10)\times$LM(9) & \pbo
   obtained from a mock observation constructed with the
   \texttt{CFHTcov} simulations. The different panels refer to the
   different descriptors (from left to right, top to bottom) $V_0$,
-  $\partial V_0$(PDF), $V_1$, $V_2$, power spectrum and Moments.  The
+  $\partial V_0$(PDF), $V_1$, $V_2$, power spectrum and moments.  The
   labels in each panel show the number of PCA components included to
   obtain contour with different colors.}
 \label{robustnessfig}
@@ -1189,8 +1194,8 @@ Different statistics can include complementary cosmological
 information, allowing their combinations to tighten the
 constraints. Previous work using multiple lensing descriptors in
 CFHTLenS alone included combining the power spectrum and peak
-counts~\citep{Companion}, and combining quadratic (2PCF) statistics
-with the skewness of the CFHTLenS $\kappa$ field~\citep{CFHTFu}.
+counts~\citep{Companion}, combining the power spectrum and Minkowski functionals ~\citep{CFHTMasato} ,and combining quadratic (2PCF) statistics
+with cubic statistics derived from the 3PCF of the CFHTLenS $\kappa$ field~\citep{CFHTFu}.
 %ZH: This was on the 3PCF, not the skewness -- right?  And didn't Shirasaki+Yoshida also combine PS+MF ?
 %    Please check and fix/complete these citations as necessary.
 
@@ -1247,7 +1252,7 @@ for the other descriptors. In particular, we find that $n\geq5$
 components are necessary for $V_0$, and $n\geq20$ components for $V_1$
 and $V_2$, in order for the $(\Omega_m,\sigma_8)$ contours to be
 stable at the $\sim$5\% level. All nine moments need to be included
-for the Moments contours to be stable to this accuracy.
+for the moments contours to be stable to this accuracy.
 
 These results are slightly different when we study the $(w,\Sigma_8)$
 constraints (with $\alpha$ fixed at $\alpha=0.55$ as discussed
@@ -1265,12 +1270,12 @@ high--$\Omega_m$ region. Here and throughout the remainder of this
 paper, by "biased" (or "unbiased") we refer to being incompatible (or
 compatible) with the concordance fiducial values at $1\sigma$ obtained
 in other experiments. For example, the current best-fit values of
-$(\Omega_m,\sigma_8)=(...,...)$ from cosmic microwave background
-anisotropies measured by the Planck
+$(\Omega_m,\sigma_8)=(0.32,0.83),(0.28,0.82)$ from cosmic microwave background
+anisotropies measured respectively by the Planck
 %ZH: Let's give the actual numbers here.  I would also quote WMAP9
 %    for these numbers -- there's currently a sigma8-discrepancy that
 %    needs to be resolved between these two (and my suspicion is that WMAP is correct :)
-satellite~\citep{PlanckXVI2013} lie beyond the 99\% likelihood
+~\citep{PlanckXVI2013} and WMAP~\citep{WMAP9} satellites lie beyond the 99\% likelihood
 contours obtained from the three MFs (not shown).
 
 This discrepancy may be due to uncorrected systematics in the CFHTLenS
@@ -1292,15 +1297,15 @@ likelihood of this happening is very small ($\lesssim1\%$).
 
 %Added that  the reason we think MFs are biased is that the best current values of Om, s8 lie beyond the 99% likelihood contours for MFs. Changed "We believe that this is due to uncorrected systematics" to "This may be due to"  .  Added that bias is amplified by degeneracy.  Morgan 2/16/2015
 
-We observe that the Moments give the tightest constraint on
+We observe that the moments give the tightest constraint on
 $(\Omega_m,\sigma_8)$.  Furthermore, this constraint is unbiased, in
 the sense defined above: it includes the current concordance values
 for these parameters within 1$\sigma$.  This leads us to conclude that
 the bias in the constraints from the MFs is due to systematic errors,
 rather than the rare statistical fluctuations found above.
 %ZH:  I guess the natural question: if you look at those ~10 realizations which give biased best-fits from the MFs,
-%     do they also give biased fits from the Moments?  I would guess so.
-The fact that the Moments are useful for deriving unbiased
+%     do they also give biased fits from the moments?  I would guess so.
+The fact that the moments are useful for deriving unbiased
 cosmological constraints has been noted in previous work, which
 examined the biases caused by spurious shear
 errors~\citep{PetriSpurious}.
@@ -1313,11 +1318,11 @@ moments to the descriptor set. Since we are constraining 3
 cosmological parameters, we start by considering the set of the three
 traditional one--point moments which do not involve gradients,
 i.e. the variance, skewness, and kurtosis $(\sigma_0^2,S_0,K_0)$. We
-then add the remaining six moments of gradients one by one, starting
+then add the remaining six moments of derivatives one by one, starting
 from the quadratic moments. 
 
 Figure \ref{contoursMoments} shows that the biggest improvement on the
-parameter bounds comes from including quartic moments of gradients
+parameter bounds comes from including quartic moments of derivatives
 (i.e. $K_i$ with $i\ge1$) in the descriptor set. This might explain
 why \citep{CFHTFu} find only relatively weak contour tightening
 ($\sim10\%$) when adding three--point correlations to quadratic
@@ -1325,7 +1330,7 @@ statistics, since the main improvement comes from higher moments of
 $\kappa$ derivatives. Ref.~\citep{CFHTFu} consider one--point,
 third--order moments, combined for multiple smoothing scales. Figure
 \ref{contoursMoments} explicitly shows, however, that smoothing scale
-combinations are not as effective as moments of gradients in
+combinations are not as effective as moments of derivatives in
 constraining the $(\Omega_m,\sigma_8)$ doublet. Our results agree with
 an early prediction \citep{moments4} that the kurtosis of the shear
 field can help in breaking degeneracies between $\Omega_m$ and
@@ -1358,10 +1363,9 @@ assumption of linear cosmology-parameter dependence of the
 descriptors.  
 %
 Although the right panel in Figure
-\ref{contours3combined} shows that the Moments confine $w$ to isolated
-regions in parameter space, we note that $w=-1$, the value favored by
-several other existing experiments, is excluded at the $1\sigma$
-level. The $2\sigma$ contours (not shown in the figure) close, and
+\ref{contours3combined} shows that the moments confine $w$ to isolated
+regions in parameter space, we note that $w=-1$, the value favored by other existing experiments, is excluded at the $1\sigma$
+level. The $2\sigma$ contours (not shown in the figure) join, and
 include $w=-1$.
 %ZH: Added above.  OK?
 
@@ -1383,16 +1387,16 @@ descriptors can help in tightening the cosmological constraints. We
 show the effects of some of these combinations in Figures
 \ref{contours3combined} and \ref{likelihoodSi8cross}. The left panel
 of Figure \ref{contours3combined} shows that, although combining the
-power spectrum with the Minkowski Functionals and Moments helps
+power spectrum and the moments with the Minkowski functionals helps
 tighten the $(\Omega_m,\sigma_8)$ constraints, it does not help in
-reducing the inherent parameter bias. The right panel of Figure
+reducing the inherent parameter bias of the MFs. The right panel of Figure
 \ref{contours3combined} shows that even with these statistics
 combined, $w$ remains essentially unconstrained. Figure
 \ref{likelihoodSi8cross} shows that the $\Sigma_8$ combination is
 already well constrained by any of the descriptors alone, without the
 need of combining different descriptors.
 %ZH: added this
-This further clarifies that the non-quadratic descriptor mainly help
+This further clarifies that the non--quadratic descriptors mainly help
 to break degeneracies, tightening contours along the
 degenerate direction.
 
@@ -1406,14 +1410,14 @@ In this final section we summarize the main conclusions of this work:
 
 \begin{itemize}
 
-\item We find that the power spectrum, combined with the Moments of
+\item We find that the power spectrum, combined with the moments of
   the $\kappa$ field provides the tightest constraint on the
   $(\Omega_m,\sigma_8)$ doublet from the CFHTLenS survey data. The
   tightness of these constraints comes mainly from the
-  Moments. Evidence of the unbiased nature of constraints from the
-  Moments has been found in \citep{PetriSpurious}. We further find
+  moments. Evidence of the unbiased nature of constraints from the
+  moments has been found in \citep{PetriSpurious}. We further find
   that the largest improvement on parameter bounds is achieved when we
-  include the quartic moments of gradients in the descriptor set. This
+  include the quartic moments of derivatives in the descriptor set. This
   level of improvement cannot be achieved by combining one-point
   moments at different smoothing scales.
 
@@ -1429,7 +1433,7 @@ In this final section we summarize the main conclusions of this work:
   found to be unimportant when constraining cosmology with the power
   spectrum alone, we find that these systematics need to be corrected
   to obtain unbiased constraints on the $(\Omega_m,\sigma_8)$ doublet
-  using the Minkowski Functionals.
+  using the Minkowski functionals.
 
 \item For the CFHTLenS data set, Minkowski functionals can effectively
   constrain the non-degenerate direction in parameter space,
@@ -1451,8 +1455,7 @@ CFHTLenS constraints with different cosmological probes from
 large-scales structures and the CMB. The latter can help in breaking
 the $\Omega_m,\sigma_8$ degeneracy, and allow improvements in the the
 constraints on $w$.  The techniques developed here can be applied to
-larger, soon-forthcoming survey data sets.
-%ZH: we should cite the dark energy survey (DES), and Subaru, and maybe also WFIRST and LSST here.
+larger, soon-forthcoming survey data sets, such as the Dark Energy Survey (DES)~\citep{DES}, Subaru~\citep{Subaru}, WFIRST~\citep{WFIRST} and LSST~\citep{LSST}.  
 
 %%%%%%%%%%%%%%%%%%%%%%%%%% ACKNOWLEDGMENTS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  
@@ -1462,9 +1465,7 @@ larger, soon-forthcoming survey data sets.
 The simulations in this work were performed at the NSF Extreme Science
 and Engineering Discovery Environment (XSEDE), supported by grant
 number ACI-1053575, at the Yeti computing cluster at Columbia
-University,
-%ZH: added Yeti
-and at the New York Center for Computational Sciences, a cooperative
+University, and at the New York Center for Computational Sciences, a cooperative
 effort between Brookhaven National Laboratory and Stony Brook
 University, supported in part by the State of New York. This work was
 supported in part by the U.S. Department of Energy under Contract
