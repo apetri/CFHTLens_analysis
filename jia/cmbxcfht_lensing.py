@@ -23,22 +23,27 @@ conc0 = lambda arr: concatenate([(0,), arr])
 #######################################
 ########## cosmo params ###############
 #######################################
-compute_model = 1
-#z0, z1 = load(cmb_dir+'dndz_weighted_nocut.npy')
+compute_model = 0
+
+z0, z1 = load(cmb_dir+'dndz_weighted_nocut.npy')
+#z0, z1 = load(cmb_dir+'dndz_weighted_nocutPeak.npy')
 #z0, z1 = genfromtxt(cmb_dir+'dndz_CFHT_nocutPeak.txt').T
 ####z0, z1 = genfromtxt(cmb_dir+'dndz_CFHT.txt').T
 #z0, z1 = genfromtxt(cmb_dir+'dndz_CFHT_nocut.txt').T
-#z0 = concatenate([[0,], z0, linspace(z0[-1]*1.2, 1200,100)])
-#z1 = concatenate([[0,], z1, 1e-128*ones(100)])
-#dndz_interp = interpolate.interp1d(z0, z1,kind='cubic')
+z0 = concatenate([[0,], z0, linspace(z0[-1]*1.2, 1200,100)])
+z1 = concatenate([[0,], z1, 1e-128*ones(100)])
+dndz_interp = interpolate.interp1d(z0, z1,kind='cubic')
+
+##### do a fit to dndz
 #dndz_interp = lambda z: 13.5*z**2*exp(-3.0*z)
-abcA = array([ 0.55295047,  7.81173223,  0.61659035,  0.58076769])# no nocutPeak
-dndz_interp = lambda z0: abcA[3]*(z0**abcA[0]+z0**(abcA[0]*abcA[1]))/(z0**abcA[1]+abcA[2])
+#abcA = array([ 0.55295047,  7.81173223,  0.61659035,  0.58076769])# no nocutPeak
+#dndz_interp = lambda z0: abcA[3]*(z0**abcA[0]+z0**(abcA[0]*abcA[1]))/(z0**abcA[1]+abcA[2])
+
 ####### planck 2015 TT, TE, EE + lowP
-OmegaM = 0.3156#0.33138#0.29982##,
+OmegaM = 0.3156#,0.29982##0.33138#
 H0 = 67.27
 Ptable = genfromtxt(cmb_dir+'P_delta_Planck15')
-model_fn = 'model_Planck15_dndzWeighted'
+model_fn = 'model_Planck15_dndzWeighted_auto'#Peak
 
 ########### colin params ##############
 #OmegaM = 0.317 
@@ -100,18 +105,20 @@ if compute_model == 1:
 	Pmatter_interp = interpolate.CloughTocher2DInterpolator(array([K*h, Z]).T, 2.0*pi**2*P_deltas/(K*h)**3)
 	Pmatter = lambda k, z: Pmatter_interp (k, z)
 
-	Ckk_integrand = lambda z, ell: 1.0/(H_inv(z)*c*DC(z)**2)*W_wl(z)*W_cmb(z)*Pmatter(ell/DC(z), z)
+	####### cross power spectrum
+	#Ckk_integrand = lambda z, ell: 1.0/(H_inv(z)*c*DC(z)**2)*W_wl(z)*W_cmb(z)*Pmatter(ell/DC(z), z)
 	
 	####### auto power spectrum
-	####Ckk_integrand = lambda z, ell: 1.0/(H_inv(z)*c*DC(z)**2)*W_wl(z)**2*Pmatter(ell/DC(z), z)
+	Ckk_integrand = lambda z, ell: 1.0/(H_inv(z)*c*DC(z)**2)*W_wl(z)**2*Pmatter(ell/DC(z), z)
+
 	###########################
 	
 	ell_arr = linspace(1e-5, 2000, 200)
 	Ckk_arr = array([quad(Ckk_integrand, 0.002, 3.7 , args=(iell))[0] for iell in ell_arr])#3.7
-
+	plot(ell_arr, Ckk_arr*ell_arr**2/2.0/pi)
 	#plot(ell_arr, Ckk_arr*ell_arr)
-	#show()
-	#save(cmb_dir+model_fn,array([ell_arr, Ckk_arr]))
+	show()
+	save(cmb_dir+model_fn,array([ell_arr, Ckk_arr]))
 
 
 ###################################
@@ -124,7 +131,7 @@ plot_lensing_kernels = 0
 plot_null_test = 0
 plot_data_model = 0
 plot_model_theory = 0
-plot_model_theory_haloterms = 0
+plot_model_theory_haloterms = 1
 compute_theory_err = 0
 
 sizes = (1330, 800, 1120, 950)
@@ -227,8 +234,12 @@ if plot_dndz_peak_PDF:
 	rand(3)
 	f=figure(figsize=(8,6))
 	ax=f.add_subplot(111)
-	zcenter_long, zPDF_long = load(cmb_dir+'dndz_CFHT_nocut.npy')
-	zcenter_peak, zpeaks = genfromtxt(cmb_dir+'dndz_CFHT_nocutPeak.txt').T
+	zcenter_long, zPDF_long = load(cmb_dir+'dndz_weighted_nocut.npy')
+	zcenter_peak, zpeaks = load(cmb_dir+'dndz_weighted_nocutPeak.npy')
+	zcenter_long = concatenate([[0,], zcenter_long])
+	zcenter_peak = concatenate([[0,], zcenter_peak])
+	zPDF_long = concatenate([[0,], zPDF_long])
+	zpeaks = concatenate([[0,], zpeaks])
 	ax.plot(zcenter_long, zPDF_long, color=rand(3),drawstyle='steps-mid',linewidth=2, label=r'${\rm sum\;of\; PDF}$')
 	ax.plot(zcenter_peak, zpeaks,color=rand(3),drawstyle='steps-mid',linewidth=1.2, label=r'${\rm best-fit}$')
 	#ax.plot((-5,4),(0,0),'-k')
@@ -411,7 +422,8 @@ if plot_data_model:
 
 if plot_model_theory:
 	
-	models = ('model_Planck15','model_Planck15_hi_om','model_Planck15_lo_om','model_Planck15_hi_si8','model_Planck15_lo_si8')#'model_Hinshaw,model_Planck15'
+	#models = ('model_Planck15','model_Planck15_hi_om','model_Planck15_lo_om','model_Planck15_hi_si8','model_Planck15_lo_si8')#'model_Hinshaw,model_Planck15'
+	models = ('model_Planck15_dndzWeighted','model_Planck15_dndzWeighted_hi_om','model_Planck15_dndzWeighted_lo_om','model_Planck15_dndzWeighted_hi_si8','model_Planck15_dndzWeighted_lo_si8')
 	labels = (r'${\rm fiducial}$', r'${\rm +5\%\,\Omega_m}$', r'${\rm -5\%\,\Omega_m}$', r'${\rm +5\%\,\sigma_8}$', r'${\rm -5\%\,\sigma_8}$')
 	
 	gs = gridspec.GridSpec(2,1,height_ratios=[3,1])
@@ -426,7 +438,8 @@ if plot_model_theory:
 	ell, Ckk0 = load(cmb_dir+models[0]+'.npy')
 	ell[0], Ckk0[0]=0,0
 	Ckk0 *=ell*1e6
-	#Ckk0 = snd.filters.gaussian_filter1d(Ckk0,1.0)
+	###
+	Ckk0 = snd.filters.gaussian_filter1d(Ckk0,0.8)
 	i=0
 	ax.plot(ell,Ckk0,'k-', linewidth=2, label=labels[i])
 	seed(584)
@@ -437,39 +450,42 @@ if plot_model_theory:
 		Ckk = Ckk*ell*1e6
 		ell[0]=0
 		Ckk[0]=0
-		Ckknew=Ckk#snd.filters.gaussian_filter1d(Ckk,1.0)
+		Ckknew=snd.filters.gaussian_filter1d(Ckk,0.8)#Ckk#
 		ax.plot(ell,Ckknew,linewidth=lws[i],color=colors[i], label=labels[i],linestyle=lss[i])
 		ax2.plot(ell, Ckknew/Ckk0-1,color=colors[i], linewidth=lws[i], label=labels[i],linestyle=lss[i])
 	
-	ax.set_xlim(0,2000)
+	
 	plt.setp(ax.get_xticklabels(), visible=False) 
 	#ax.set_ylim(-5,5)
 	ax.set_ylabel(r'$\ell C_{\ell}^{\kappa_{cmb}\kappa_{gal}}(\times10^{-6})$',fontsize=18)
 	ax.tick_params(labelsize=16)
-	ax.set_ylim(0.43, 1.5)
+	ax.set_ylim(0.43, 1.8)
 	leg=ax.legend(loc=0,fontsize=16)
 	leg.get_frame().set_visible(False)
+	ax.set_xscale('log')
+	ax2.set_xscale('log')
 	
 	ax2.set_xlabel(r'$\ell$',fontsize=18)
 	ax2.set_ylabel(r'$\Delta C_{\ell}/C_{\ell}$',fontsize=18)
 	ax2.set_ylim(-0.3, 0.3)
 	ax2.set_yticks(array([-0.2,0,0.2]))
-	ax2.plot([0,2000], [0,0], 'k-', linewidth=1.0)
+	ax2.plot(ell, zeros(len(ell)), 'k-', linewidth=1.0)
 	ax2.tick_params(labelsize=16)
 	
 	plt.subplots_adjust(hspace=0.0,left=0.15)
+	ax.set_xlim(0,2000)
 	savefig(cmb_dir+'paper/model_varyingparams.pdf')
 	close()
 	#show()
 
 if plot_model_theory_haloterms:
 	
-	initdata = (genfromtxt(cmb_dir+'CellkappaCMBkappaCFHTLS_Planck2015Jia_nocutPeak.txt')*1e6).T
+	initdata = (genfromtxt(cmb_dir+'CellkappaCMBkappaCFHTLS_Planck2015Jia_nocutweighted.txt')*1e6).T
 	initdata = concatenate([zeros(5).reshape(5,1),initdata],axis=1)
 	CH_ell, CH_1h, CH_2h, CH_total, CH_linear = initdata
 	CH_ell/=1e6
 	
-	ell, Ckk = load(cmb_dir+'model_Planck15.npy')
+	ell, Ckk = load(cmb_dir+'model_Planck15_dndzWeighted.npy')
 	ell[0], Ckk[0]=0,0
 	Ckk0 = snd.filters.gaussian_filter1d(Ckk*ell*1e6,1.0)
 	
@@ -488,7 +504,7 @@ if plot_model_theory_haloterms:
 	#plt.setp(ax.get_xticklabels(), visible=False) 
 	ax.set_ylabel(r'$\ell C_{\ell}^{\kappa_{cmb}\kappa_{gal}}(\times10^{-6})$',fontsize=18)
 	ax.tick_params(labelsize=16)
-	ax.set_ylim(0.0, 1.5)
+	ax.set_ylim(0.0, 1.6)
 	leg=ax.legend(loc=0,fontsize=16)
 	leg.get_frame().set_visible(False)
 	

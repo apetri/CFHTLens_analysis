@@ -12,7 +12,7 @@ from emcee.utils import MPIPool
 try:
 	year = int(sys.argv[1])
 except Exception:
-	year = 2015
+	year = 2013
 print 'year', year
 
 create_noise_KS = 0
@@ -98,7 +98,8 @@ def cmblGen_fn (fn, offset=False, method='nearest'):
 	return cmblmap
 
 def simGen(Wx, r):
-	simfn = cmb_dir+'planck/sim/sim_%04d_kmap_CFHTLS_W%i.npy'%(r, Wx)
+	simfn = cmb_dir+'planck/sim13/sim_%04d_kmap_CFHTLS_W%i.npy'%(r, Wx)
+	#simfn = cmb_dir+'planck/sim/sim_%04d_kmap_CFHTLS_W%i.npy'%(r, Wx)
 	#try:
 	if os.path.isfile(simfn):
 		return load(simfn)
