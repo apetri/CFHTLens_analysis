@@ -47,8 +47,8 @@ cat_dir = '/Users/jia/weaklensing/CFHTLenS/catalogue/'
 #textfile = genfromtxt(cat_dir+'CFHTLenS_downloads/CFHTLens_2015-02-25T04-54-07.tsv')#374M
 #save(cat_dir+'CFHTLenS_downloads/All_RA_Dec_e12_w_z_m_c.npy', textfile.astype(float32))
 
-#textfile = load(cat_dir+'CFHTLenS_downloads/All_RA_Dec_e12_w_z_m_c.npy')[1:]
-#RA, DEC, e1, e2, weight, zB, m, c2 = textfile.T
+textfile = load(cat_dir+'CFHTLenS_downloads/All_RA_Dec_e12_w_z_m_c.npy')[1:]
+RA, DEC, e1, e2, weight, zB, m, c2 = textfile.T
 
 ####################################
 
@@ -62,15 +62,15 @@ def list2coords(radeclist, Wx):
 	#xy = array(map(f_Wx, radeclist))#in radians
 	return xy
 
-def construct_kmap (Wx, sigmaG=1.0):
+def construct_kmap (Wx, sigmaG=1.0, append = 'zcut13'):
 	
 	isize=sizes[Wx-1]
 	iRA0, iRA1 = RAs[Wx-1]
-	idx = where((RA<iRA1) & (RA>iRA0))[0]
+	idx = where((RA<iRA1) & (RA>iRA0) & (zB<1.3))[0]
 	
 	print Wx, len(idx)
 	
-	iRA, iDEC, e1, e2, w, zB, m, c2 = textfile[idx].T
+	iRA, iDEC, e1, e2, w, izB, m, c2 = textfile[idx].T
 	e2 -= c2
 	
 	radeclist = array([iRA, iDEC]).T
@@ -78,20 +78,21 @@ def construct_kmap (Wx, sigmaG=1.0):
 	y, x = xy
 	
 	k = array([e1*w, e2*w, (1+m)*w])
+
 	A, galn = WLanalysis.coords2grid(x, y, k, size=isize)
-	save(cat_dir+'Me_Mw_galn/W%i_Me1w_nocut.npy'%(Wx), A[0])
-	save(cat_dir+'Me_Mw_galn/W%i_Me2w_nocut.npy'%(Wx), A[1])
-	save(cat_dir+'Me_Mw_galn/W%i_Mwm_nocut.npy'%(Wx), A[2])
-	save(cat_dir+'Me_Mw_galn/W%i_galn_nocut.npy'%(Wx), galn)
-	
 	Me1, Me2, Mw = A
 	Me1_smooth = WLanalysis.weighted_smooth(Me1, Mw, PPA=PPA512, sigmaG=sigmaG)
 	Me2_smooth = WLanalysis.weighted_smooth(Me2, Mw, PPA=PPA512, sigmaG=sigmaG)
 	kmap = WLanalysis.KSvw(Me1_smooth, Me2_smooth)
-	save(cat_dir+'kmap_W%i_sigma%02d_noZcut.npy'%(Wx, sigmaG*10), kmap)
+		
+	save(cat_dir+'Me_Mw_galn/W%i_Me1w_%s.npy'%(Wx, append), A[0])
+	save(cat_dir+'Me_Mw_galn/W%i_Me2w_%s.npy'%(Wx, append), A[1])
+	save(cat_dir+'Me_Mw_galn/W%i_Mwm_%s.npy'%(Wx, append), A[2])
+	save(cat_dir+'Me_Mw_galn/W%i_galn_%s.npy'%(Wx, append), galn)
+	save(cat_dir+'kmap_W%i_sigma%02d_%s.npy'%(Wx, sigmaG*10, append), kmap)
 	
-#map(construct_kmap, range(1,5))
-kmapGen = lambda Wx: load(cat_dir+'kmap_W%i_sigma10_noZcut.npy'%(Wx))
+map(construct_kmap, range(1,5))
+#kmapGen = lambda Wx: load(cat_dir+'kmap_W%i_sigma10_noZcut.npy'%(Wx))
 
 ##########################
 #### galn x cmb lensing ##
@@ -99,8 +100,9 @@ kmapGen = lambda Wx: load(cat_dir+'kmap_W%i_sigma10_noZcut.npy'%(Wx))
 ############# galaxies only ########
 ####textfile = genfromtxt(cat_dir+'CFHTLenS_downloads/CFHTLens_2015-02-26T02:54:49.tsv')
 ####save(cat_dir+'CFHTLenS_downloads/CFHTLens_2015-02-26T02:54:49.npy', textfile.astype(float32))
-galntextfile = load (cat_dir+'CFHTLenS_downloads/CFHTLens_2015-02-26T02:54:49.npy')[1:]
-RA, DEC, w, zB, MAG_i = galntextfile.T
+
+#galntextfile = load (cat_dir+'CFHTLenS_downloads/CFHTLens_2015-02-26T02:54:49.npy')[1:]
+#RA, DEC, w, zB, MAG_i = galntextfile.T
 
 def construct_galn (Wx, sigmaG=1.0):
 	print Wx
@@ -116,4 +118,4 @@ def construct_galn (Wx, sigmaG=1.0):
 	galn_smooth = WLanalysis.smooth(galn, PPA512)
 	save('/Users/jia/weaklensing/cmblensing/OmoriHolder_galn_W%i.npy'%(Wx),galn)
 	save('/Users/jia/weaklensing/cmblensing/OmoriHolder_galnSmooth_W%i.npy'%(Wx),galn_smooth)
-map(construct_galn, range(1,5))
+#map(construct_galn, range(1,5))

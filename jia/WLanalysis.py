@@ -255,7 +255,7 @@ def InterpPDF (x1, P, x2, edges=None):
 	newP /= sum(newP)
 	return newP
 
-def DrawFromPDF (x, P, n):
+def DrawFromPDF_junk (x, P, n):
 	'''
 	Given a discrete PDF (x, P), draw n random numbers out from x.
 	Example:
@@ -268,6 +268,14 @@ def DrawFromPDF (x, P, n):
 	rndx = lambda R: x[R]
 	return rndx(R)
 
+def DrawFromPDF(P, n=2):
+	'''
+	Given a discrete PDF x (the probability), 1 number from x.
+	'''
+	P /= sum(P) # normalize P
+	custm = stats.rv_discrete(name='custm', values=(arange(len(P)), P))
+	R = custm.rvs(size=n) 
+	return R
 ########## begin: CFHT catalogue to smoothed shear maps #########
 PPR512=8468.416479647716#pixels per radians
 PPA512=2.4633625#pixels per arcmin, PPR/degrees(1)/60
@@ -643,3 +651,52 @@ def update_values_by_RaDec (new_ra, new_dec, master_ra, master_dec):
 	unique_iradec, idx_inverse = unique(iradec, return_inverse=True)
 	newidx = idx[argsort(iRADEC)][idx_inverse]
 	return newidx
+
+############## CFHT specific operations ############
+centers = array([[34.5, -7.5], [134.5, -3.25],[214.5, 54.5],[ 332.75, 1.9]])
+sizes = (1330, 800, 1120, 950)
+rad2pix=lambda x, size: around(size/2.0-0.5 + x*PPR512).astype(int)
+def list2coords(radeclist, Wx, offset=False):
+	'''For a list of radec, return their pixelized position for Wx field.
+	'''
+	size=sizes[Wx-1]
+	xy = zeros(shape = radeclist.shape)
+	if offset:
+		center = 0.5*(amin(radeclist,axis=0)+amax(radeclist, axis=0))
+	else:
+		center = centers[Wx-1]
+	f_Wx = gnom_fun(center)
+	xy = array(map(f_Wx,radeclist))
+	xy_pix = rad2pix(xy, size)
+	return xy_pix
+
+def interpGridpoints (xy, values, newxy, method='nearest'):
+	newvalues = interpolate.griddata(xy, values, newxy, method=method)
+	return newvalues
+
+def txt2map_fcn (fn, offset=False, method='nearest'):
+	'''put values to grid, similar to cmblGen, except take in the file name.
+	'''
+	npy_fn = fn[:-3]+'npy'
+	if os.path.isfile(npy_fn):
+		return load(npy_fn)
+	else:
+		Wx = int(fn[fn.index('W')+1])
+		print 'Wx, fn:', Wx, fn
+		size=sizes[Wx-1]
+		cmblCoord = genfromtxt(fn)
+		radeclist = cmblCoord[:,:-1]
+		values = cmblCoord.T[-1]
+		xy = list2coords(radeclist, Wx, offset=offset)
+		X,Y=meshgrid(range(size),range(size))
+		X=X.ravel()
+		Y=Y.ravel()
+		newxy=array([X,Y]).T
+		newvalues = interpGridpoints (xy, values, newxy,method=method)
+		cmblmap = zeros(shape=(size,size))
+		cmblmap[Y,X]=newvalues	
+		cmblmap[isnan(cmblmap)]=0.0
+		if offset:
+			cmblmap = cmblmap.T
+		np.save(fn[:-3]+'npy', cmblmap)
+		return cmblmap
