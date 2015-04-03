@@ -81,7 +81,7 @@ SIMfn = lambda i, cosmo, R: sim_dir+'%s/emulator_subfield%i_WL-only_%s_4096xy_%0
 Mask_bad_fn = lambda i, sigmaG: WLanalysis.readFits(backup_dir+'mask/BAD_CFHT_mask_ngal5_sigma%02d_subfield%02d.fits'%(sigmaG*10, i))
 Mask_all_fn = lambda i, sigmaG: WLanalysis.readFits(backup_dir+'mask/CFHT_mask_ngal5_sigma%02d_subfield%02d.fits'%(sigmaG*10, i))
 Mw_fcn = lambda i: WLanalysis.readFits(backup_dir+'SIM_Mw_subfield%i.fit'%(i))
-yxewm_fcn = lambda i: WLanalysis.readFits(KS_dir+'yxewm_subfield%i_zcut0213.fit'%(i))
+yxewm_fcn = lambda i: WLanalysis.readFits(backup_dir+'yxewm_subfield%i_zcut0213.fit'%(i))
 ######### next 4 lines for 1 subfield only
 Mw = Mw_fcn(i)
 y, x, e1, e2, w, m = yxewm_fcn(i).T
