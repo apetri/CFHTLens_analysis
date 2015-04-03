@@ -1,8 +1,8 @@
 #!python
 ############# edite this block ###########
 ############# maybe also want to edit run time below #####
-errfn = 'massSIM' # error file name, will append variable automatically
-program_name = 'stampede_massSIM.py' #program name
+errfn = 'massSIM_noiseless' # error file name, will append variable automatically
+program_name = 'stampede_massSIM_noiseless.py' #program name
 N = 2 # number of nodes
 
 ##################
