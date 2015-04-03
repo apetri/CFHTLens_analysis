@@ -20,10 +20,11 @@ import sys
 ########## define constants ############
 ########################################
 i = int(sys.argv[1]) # subfield count, to reduce computing memory burdun
-KS_dir = '/scratch/02977/jialiu/KSsim/'
+backup_dir = '/work/02977/jialiu/backup/'
+KS_dir = '/work/02977/jialiu/KSsim/'
 sim_dir = '/home1/02977/jialiu/cat/'
 cosmo_arr = os.listdir(sim_dir)
-params = genfromtxt(KS_dir+'cosmo_params.txt')
+params = genfromtxt('/home1/02977/jialiu/work/backup/cosmo_params.txt')
 kmin = -0.04 # lower bound of kappa bin = -2 SNR
 kmax = 0.12 # higher bound of kappa bin = 6 SNR
 bins = 25#600 # for peak counts
@@ -45,7 +46,9 @@ i_arr = range(1,14)
 
 #SIMfn = lambda i, cosmo, R: '/home1/02977/jialiu/cov_cat/emulator_subfield%i_WL-only_cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800_4096xy_%04dr.fit'%(i, R)
 
-KSfn = lambda i, cosmo, R, sigmaG: '/home1/02977/jialiu/KSsim/cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800/subfield%i/sigma%02d/SIM_KS_sigma%02d_subfield%i_WL-only_cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800_4096xy_%04dr.fit'%(i, sigmaG*10, sigmaG*10, i, R)
+#KSfn = lambda i, cosmo, R, sigmaG: '/home1/02977/jialiu/KSsim/cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800/subfield%i/sigma%02d/SIM_KS_sigma%02d_subfield%i_WL-only_cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800_4096xy_%04dr.fit'%(i, sigmaG*10, sigmaG*10, i, R)
+
+KSfn = lambda i, cosmo, R, sigmaG: KS_dir+'%s/subfield%i/sigma%02d/SIM_KS_sigma%02d_subfield%i_%s_%04dr.npy'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo,R)
 
 ########## file names ##################################################
 ########## (cov 1) comment this block for cov matrix simulations #####
@@ -60,26 +63,24 @@ peaks_sum_fn = lambda cosmo, sigmaG, BG: KS_dir+'peaks_sum/SIM_peaks_sigma%02d_%
 powspec_sum_fn = lambda cosmo, sigmaG, BG: KS_dir+'powspec_sum/SIM_powspec_sigma%02d_%s_%s.npy'%(sigmaG*10, cosmo, BG)
 
 ########## maps, fits file
-SIMfn0 = lambda i, cosmo, R: sim_dir+'%s/emulator_subfield%i_WL-only_%s_4096xy_%04dr.fit'%(cosmo, i, cosmo, R)
+SIMfn = lambda i, cosmo, R: sim_dir+'%s/emulator_subfield%i_WL-only_%s_4096xy_%04dr.fit'%(cosmo, i, cosmo, R)
 
 ############ this is to fix the corrupted files ##################
-def SIMfn (i, cosmo, R):
-	if cosmo == 'emu1-512b240_Om0.380_Ol0.620_w-2.424_ns0.960_si0.199' and R in (216, 285, 299, 294) and i == 7:
-		return '/home1/02977/jialiu/KSsim/corruptfiles/emulator_subfield%i_WL-only_%s_4096xy_%04dr.fit'%(i, cosmo, R)
-	else:
-		return SIMfn0(i, cosmo, R)
+#def SIMfn (i, cosmo, R):
+	#if cosmo == 'emu1-512b240_Om0.380_Ol0.620_w-2.424_ns0.960_si0.199' and R in (216, 285, 299, 294) and i == 7:
+		#return '/home1/02977/jialiu/KSsim/corruptfiles/emulator_subfield%i_WL-only_%s_4096xy_%04dr.fit'%(i, cosmo, R)
+	#else:
+		#return SIMfn0(i, cosmo, R)
 ##################################################################
 
-#KSfn = lambda i, cosmo, R, sigmaG: KS_dir+'%s/subfield%i/sigma%02d/SIM_KS_sigma%02d_subfield%i_%s_%04dr.fit'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo,R)
-	
 
 ##########################################
 ######### functions ######################
 ##########################################
 
-Mask_bad_fn = lambda i, sigmaG: WLanalysis.readFits(KS_dir+'mask/BAD_CFHT_mask_ngal5_sigma%02d_subfield%02d.fits'%(sigmaG*10, i))
-Mask_all_fn = lambda i, sigmaG: WLanalysis.readFits(KS_dir+'mask/CFHT_mask_ngal5_sigma%02d_subfield%02d.fits'%(sigmaG*10, i))
-Mw_fcn = lambda i: WLanalysis.readFits(KS_dir+'SIM_Mw_subfield%i.fit'%(i))
+Mask_bad_fn = lambda i, sigmaG: WLanalysis.readFits(backup_dir+'mask/BAD_CFHT_mask_ngal5_sigma%02d_subfield%02d.fits'%(sigmaG*10, i))
+Mask_all_fn = lambda i, sigmaG: WLanalysis.readFits(backup_dir+'mask/CFHT_mask_ngal5_sigma%02d_subfield%02d.fits'%(sigmaG*10, i))
+Mw_fcn = lambda i: WLanalysis.readFits(backup_dir+'SIM_Mw_subfield%i.fit'%(i))
 yxewm_fcn = lambda i: WLanalysis.readFits(KS_dir+'yxewm_subfield%i_zcut0213.fit'%(i))
 ######### next 4 lines for 1 subfield only
 Mw = Mw_fcn(i)
@@ -128,29 +129,19 @@ def KSmap_massproduce(iiRcosmo):
 	create_kmap = 0
 	for sigmaG in sigmaG_arr:
 		KS_fn = KSfn(i, cosmo, R, sigmaG)
-		if not WLanalysis.TestFitsComplete(KS_fn):
+		if not os.path.isfile(KS_fn):
 			create_kmap = 1
 			break
 	if create_kmap:
 		print 'Mass Produce, creating KS: ', i, R, cosmo
-		try:
-			Me1, Me2 = fileGen(i, R, cosmo)
-			for sigmaG in sigmaG_arr:
-				KS_fn = KSfn(i, cosmo, R, sigmaG)
-				if not WLanalysis.TestFitsComplete(KS_fn):
-				
-					Me1_smooth = WLanalysis.weighted_smooth(Me1, Mw, PPA=PPA512, sigmaG=sigmaG)
-					Me2_smooth = WLanalysis.weighted_smooth(Me2, Mw, PPA=PPA512, sigmaG=sigmaG)
-					kmap = WLanalysis.KSvw(Me1_smooth, Me2_smooth)
-					try:
-						WLanalysis.writeFits(kmap, KS_fn)
-					except Exception: #prob don't need try here.
-						os.remove(KS_fn)
-						WLanalysis.writeFits(kmap, KS_fn)
-						pass
-		except Exception:
-			print 'corrupted file', iiRcosmo
-			pass
+		Me1, Me2 = fileGen(i, R, cosmo)
+		for sigmaG in sigmaG_arr:
+			KS_fn = KSfn(i, cosmo, R, sigmaG)	
+			Me1_smooth = WLanalysis.weighted_smooth(Me1, Mw, PPA=PPA512, sigmaG=sigmaG)
+			Me2_smooth = WLanalysis.weighted_smooth(Me2, Mw, PPA=PPA512, sigmaG=sigmaG)
+			kmap = WLanalysis.KSvw(Me1_smooth, Me2_smooth)
+			np.save(KS_fn, kmap)
+
 		
 
 def KSmap_single(i, R, cosmo, sigmaG):
@@ -163,14 +154,13 @@ def KSmap_single(i, R, cosmo, sigmaG):
 	KS inverted map
 	'''
 	KS_fn = KSfn(i, cosmo, R, sigmaG)
-	isfile, kmap = WLanalysis.TestFitsComplete(KS_fn, return_file = True)
-	if isfile == False:
+	if not os.path.isfile(KS_fn):
 		Me1, Me2 = fileGen(i, R, cosmo)
 		#Mw = Mw_fcn(i)
 		Me1_smooth = WLanalysis.weighted_smooth(Me1, Mw, PPA=PPA512, sigmaG=sigmaG)
 		Me2_smooth = WLanalysis.weighted_smooth(Me2, Mw, PPA=PPA512, sigmaG=sigmaG)
 		kmap = WLanalysis.KSvw(Me1_smooth, Me2_smooth)
-		WLanalysis.writeFits(kmap, KS_fn)
+		np.save(KS_fn, kmap)
 	return kmap
 
 def create_ps (iiRcosmoSigma):
@@ -219,10 +209,10 @@ pool = MPIPool()
 ######################################################
 ### (1)create KS map, uncomment next 4 lines #########
 ######################################################
-#iRcosmo = [[i, R, cosmo] for R in R_arr for cosmo in cosmo_arr]
-#pool.map(KSmap_massproduce, iRcosmo)
+iRcosmo = [[i, R, cosmo] for cosmo in cosmo_arr for R in R_arr]
+pool.map(KSmap_massproduce, iRcosmo)
 
-### (cov 1) this block is for covariance cosmology 
+## (cov 1) this block is for covariance cosmology 
 #cosmo='WL-only_cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800'
 #iRcosmo = [[i, R, cosmo] for i in range(1,14)[::-1] for R in R_arr]# for cosmo in cosmo_arr]
 #cosmo_arr = [cosmo,]
