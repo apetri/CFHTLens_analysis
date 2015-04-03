@@ -21,8 +21,7 @@ import sys
 ########################################
 i = int(sys.argv[1]) # subfield count, to reduce computing memory burdun
 backup_dir = '/work/02977/jialiu/backup/'
-KS_dir = '/work/02977/jialiu/KSsim/'
-#KS_dir = '/work/02977/jialiu/KSsim_noiseless/'
+KS_dir = '/work/02977/jialiu/KSsim_noiseless/'
 sim_dir = '/home1/02977/jialiu/cat/'
 cosmo_arr = os.listdir(sim_dir)
 params = genfromtxt('/home1/02977/jialiu/work/backup/cosmo_params.txt')
@@ -109,11 +108,7 @@ def fileGen(i, R, cosmo):
 	'''
 	#y, x, e1, e2, w, m = yxewm_arr[i-1].T
 	s1, s2 = (WLanalysis.readFits(SIMfn(i,cosmo,R)).T)[[1,2]]
-	s1 *= (1+m)
-	s2 *= (1+m)
-	eint1, eint2 = WLanalysis.rndrot(e1, e2, iseed=R)#random rotation	
-	e1red, e2red = s1+eint1, s2+eint2
-	A, galn = WLanalysis.coords2grid(x, y, array([e1red*w, e2red*w]))
+	A, galn = WLanalysis.coords2grid(x, y, array([s1*w, s2*w]))
 	Ms1, Ms2 = A
 	return Ms1, Ms2
 
