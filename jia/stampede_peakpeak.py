@@ -13,11 +13,12 @@ import sys
 
 ############### constants #################
 bins = 25
-KS_dir = '/scratch/02977/jialiu/KSsim/'
+KS_dir = '/work/02977/jialiu/KSsim/'
 sim_dir = '/home1/02977/jialiu/cat/'
-peaks_corr_dir = KS_dir+'peaks_corr_sum/'
+peaks_corr_dir = '/work/02977/jialiu/peaks_corr/'
+backup_dir = '/work/02977/jialiu/backup/'
 cosmo_arr = os.listdir(sim_dir)
-params = genfromtxt(KS_dir+'cosmo_params.txt')
+params = genfromtxt(backup_dir+'cosmo_params.txt')
 sigmaG_arr = array([1, 1.8, 3.5, 5.3, 8.9])#0.5,
 R_arr = arange(1,1001)
 PPA512 = 2.4633625
@@ -25,19 +26,19 @@ i_arr = range(1,14)
 #edges = logspace(log10(5),log10(512*sqrt(2)),bins+1)
 edges = linspace (5, 512, bins+1)
 
-kmapGen = lambda i, cosmo, R, sigmaG: WLanalysis.readFits(KS_dir+'%s/subfield%i/sigma%02d/SIM_KS_sigma%02d_subfield%i_%s_%04dr.fit'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo,R))
+kmapGen = lambda i, cosmo, R, sigmaG: np.load(KS_dir+'%s/subfield%i/sigma%02d/SIM_KS_sigma%02d_subfield%i_%s_%04dr.npy'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo,R))
 
-maskGen = lambda i, sigmaG: WLanalysis.readFits(KS_dir+'mask/CFHT_mask_ngal5_sigma%02d_subfield%02d.fits'%(sigmaG*10, i))
+maskGen = lambda i, sigmaG: WLanalysis.readFits(backup_dir+'mask/CFHT_mask_ngal5_sigma%02d_subfield%02d.fits'%(sigmaG*10, i))
 
 ########## bash command to create directories #########
-#for i in *
-#do for sigmaG in 05 10 18 35 53 89
-#do mkdir -pv -m 750 /scratch/02977/jialiu/KSsim/peaks_corr_single/${i}/sigma${sigmaG}
-#done
-#done
+##for i in *
+##do for sigmaG in 05 10 18 35 53 89
+##do mkdir -pv -m 750 /work/02977/jialiu/peaks_corr/peaks_corr_single/${i}/sigma${sigmaG}
+##done
+##done
 ########################################################
 
-ipeaklist_fn = lambda cosmo, R, sigmaG: KS_dir+'peaks_corr_single/%s/sigma%02d/Peaklist_sigma%02d_%s_%04dr.npy'%(cosmo, sigmaG*10, sigmaG*10, cosmo, R)
+ipeaklist_fn = lambda cosmo, R, sigmaG: peaks_corr_dir+'peaks_corr_single/%s/sigma%02d/Peaklist_sigma%02d_%s_%04dr.npy'%(cosmo, sigmaG*10, sigmaG*10, cosmo, R)
 
 mask_all_arr = array([[maskGen(i, sigmaG) for sigmaG in sigmaG_arr]for i in i_arr])
 #i, R, cosmo, sigmaG = 1, 99, cosmo_arr[5], 8.9
@@ -89,17 +90,13 @@ pool = MPIPool()
 for cosmo in cosmo_arr:
 	for sigmaG in sigmaG_arr:
 		print cosmo, sigmaG
-		fn_kappa = peaks_corr_dir+'Corr_kappa_sigma%02d_%s.npy'%(sigmaG*10, cosmo)
-		fn_counts = peaks_corr_dir+'Corr_counts_sigma%02d_%s.npy'%(sigmaG*10, cosmo)
+		fn_kappa = peaks_corr_dir+'sum/Corr_kappa_sigma%02d_%s.npy'%(sigmaG*10, cosmo)
+		fn_counts = peaks_corr_dir+'sum/Corr_counts_sigma%02d_%s.npy'%(sigmaG*10, cosmo)
 		if os.path.isfile(fn_kappa) and os.path.isfile(fn_counts):
 			continue
 		else:
-			try:
-				RcosmosigmaG = [[R, cosmo, sigmaG] for R in R_arr]
-				peakpeak_arr = array(pool.map(single_corr, RcosmosigmaG))#1000 x 2 x 25
-				save(fn_kappa, peakpeak_arr[:,0,:])
-				save(fn_counts, peakpeak_arr[:,1,:])
-			except Exception:
-				continue
-	
+			RcosmosigmaG = [[R, cosmo, sigmaG] for R in R_arr]
+			peakpeak_arr = array(pool.map(single_corr, RcosmosigmaG))#1000 x 2 x 25
+			save(fn_kappa, peakpeak_arr[:,0,:])
+			save(fn_counts, peakpeak_arr[:,1,:])
 print 'Done-Done-Done-Done!!!'
