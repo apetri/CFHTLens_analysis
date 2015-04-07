@@ -20,7 +20,7 @@ init_mask = 0
 HM857 = 0 # step 1
 yx857 = 0 # step 2
 kx857 = 0 # step 3
-cc_yxk = 0 # step 4
+cc_yxk = 1 # step 4
 
 tSZ_dir = '/Users/jia/weaklensing/tSZxCFHT/'
 plot_dir = tSZ_dir+'plot/'
@@ -28,6 +28,8 @@ centers = array([[34.5, -7.5], [134.5, -3.25],[214.5, 54.5],[ 332.75, 1.9]])
 PPA512 = 2.4633625
 sizes = (1330, 800, 1120, 950)
 sizedeg_arr = array([(sizes[Wx-1]/512.0)**2*12.0 for Wx in range(1,5)])
+prefix_arr = ('nilc_ymap', 'milca_ymap', 'GARY_ymap', 'JCH_ymap50')
+sigmaG_arr = array([4.246, 4.246, 0, 4.246])*PPA512 #smoothing for the 4 maps
 
 ####### create maps, and plot them out ######
 if create_maps:
@@ -58,8 +60,6 @@ if create_maps:
 
 ########### cross correlation	
 cat_dir = '/Users/jia/weaklensing/CFHTLenS/catalogue/'
-
-prefix_arr = ('nilc_ymap', 'milca_ymap', 'GARY_ymap', 'JCH_ymap50')
 
 kmapGen = lambda i: load(cat_dir+'kmap_W%i_sigma10_zcut13.npy'%(i))
 
@@ -185,11 +185,16 @@ if cc_yxk:
 		#print i*4, (i+1)*4, iarr.shape
 		#save(tSZ_dir+'cc_yxk_%s.npy'%(prefix_arr[i]), iarr)
 	i = 0
-	factor=2.0/(1+ell_arr)
+	
+	ell_JCH, halo1, halo2, C_tot = genfromtxt(tSZ_dir+'CellykappaCFHTLS_WMAP9_Jiadndz_zcut13.txt').T#CellykappaCFHTLS_Planck15_Jiadndz_zcut13.txt
 	for ip in range(4):
+		b_ell_tSZ = exp(-ell_arr**2*radians(sigmaG_arr[ip]/60)**2/2.0)
+		b_ell_kappa = exp(-ell_arr**2*radians(1.0/60)**2/2.0)
+		factor=2.0*pi/(1+ell_arr)/b_ell_tSZ/b_ell_kappa*1e11
 		chisq=0
-		f=figure(figsize=(8,4))
+		f=figure(figsize=(8,5))
 		ax=f.add_subplot(111)
+		ax.plot(ell_JCH, C_tot*1e11)
 		for Wx in arange(1,5):
 			cc, err = all_cc[i]
 			i+=1
@@ -200,8 +205,9 @@ if cc_yxk:
 		ax.plot((0,2000),(0,0),'k--')
 		ax.set_xlabel(r'$\ell$')
 		#ax.set_ylabel(r'$\ell(\ell+1)\rm{P(\ell)/2\pi}$')
-		ax.set_ylabel(r'$\ell\rm{P(\ell)/\pi}$')
+		ax.set_ylabel(r'$\ell\rm{C(\ell)} \times 10^{11}$')#/\pi
 		ax.set_title(prefix_arr[ip])
-		#ax.set_ylim(-1e-8,1e-8)
-		savefig(plot_dir+'phi_crosscorr_%s.jpg'%(prefix_arr[ip]))
+		ax.set_xlim(0,2000)
+		
+		savefig(plot_dir+'phi_model_crosscorr_%s.jpg'%(prefix_arr[ip]))
 		close()
