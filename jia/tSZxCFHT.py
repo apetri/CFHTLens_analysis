@@ -17,10 +17,10 @@ from scipy import ndimage as snd
 
 create_maps = 0
 init_mask = 0
-HM857 = 0 # step 1
-yx857 = 0 # step 2
-kx857 = 0 # step 3
-cc_yxk = 1 # step 4
+HM857 = 1 # step 1 CIB^2
+yx857 = 1 # step 2 Y x CIB
+kx857 = 1 # step 3 CFHT x CIB
+cc_yxk = 1 # step 4 Y x CFHT
 
 tSZ_dir = '/Users/jia/weaklensing/tSZxCFHT/'
 plot_dir = tSZ_dir+'plot/'
@@ -29,7 +29,7 @@ PPA512 = 2.4633625
 sizes = (1330, 800, 1120, 950)
 sizedeg_arr = array([(sizes[Wx-1]/512.0)**2*12.0 for Wx in range(1,5)])
 prefix_arr = ('nilc_ymap', 'milca_ymap', 'GARY_ymap', 'JCH_ymap50')
-sigmaG_arr = array([4.246, 4.246, 0, 4.246])*PPA512 #smoothing for the 4 maps
+sigmaG_arr = array([4.246, 4.246, 0, 4.246, 1.97]) #smoothing for the 4 maps, last number is for CIB maps
 
 ####### create maps, and plot them out ######
 if create_maps:
@@ -66,6 +66,8 @@ kmapGen = lambda i: load(cat_dir+'kmap_W%i_sigma10_zcut13.npy'%(i))
 PSmaskGen = lambda i: np.load(tSZ_dir+'planck/PSmaskHFIall_flipper2048_CFHTLS_W%i.npy'%(i))
 
 JCHPSmaskGen = lambda i: load(tSZ_dir+'planck/yJCHmask50_flipper2048_CFHTLS_W%i.npy'%(i))
+
+CIBGen = lambda i: load(tSZ_dir+'planck/Planck857_full_CFHTLS_W%i.npy'%(i))
 
 def maskGen_init (Wx, sigma_pix=10, JCH=0):
 	galn = WLanalysis.smooth(load(cat_dir+'Me_Mw_galn/W%i_galn_zcut13.npy'%(Wx)),PPA512)
@@ -106,30 +108,78 @@ JCHmaskGen = lambda i: load(tSZ_dir+'mask/W%i_JCHmask.npy'%(i))
 
 tmapGen = lambda prefix, i: load(tSZ_dir+'planck/%s_CFHTLS_W%i.npy'%(prefix, i))
 
-edgesGen = lambda Wx: linspace(1, 50, 8)*sizes[Wx-1]/1330.0
+#edgesGen = lambda Wx: linspace(1, 50, 8)*sizes[Wx-1]/1330.0
+ell_arr=array([53,114,187,320,502,684,890,1158,1505,1956,2649])
+ell_edges=array([23,84,145,229,411,592,774,1006,1308,1701,2211,3085])
+edgesGen = lambda Wx: ell_edges*sqrt(sizedeg_arr[Wx-1])/360
 
-ell_arr = 40.0*WLanalysis.edge2center(linspace(1,50,8))
-d_ell = ell_arr[1]-ell_arr[0]
-b_ell = exp(-ell_arr**2*radians(1.0/60)**2/2.0)
+#ell_arr = 40.0*WLanalysis.edge2center(linspace(1,50,8))
+d_ell = ell_edges[1:]-ell_edges[:-1]
+#b_ell = exp(-ell_edges**2*radians(amax(sigmaG_arr)/60)**2/2.0)
 
-def theory_err(map1, map2, Wx, fmask2, fsky):
+def theory_err(map1, map2, Wx, fmask2, fsky, sigmaG1, sigmaG2):
 	'''compute theoretical err, assume map1 map2 are already set 0 mean.
 	'''	
-	auto1 = WLanalysis.PowerSpectrum(map1, sizedeg = sizedeg_arr[Wx-1], edges=edgesGen(Wx))[-1]/fmask2
-	auto2 = WLanalysis.PowerSpectrum(map2, sizedeg = sizedeg_arr[Wx-1], edges=edgesGen(Wx))[-1]/fmask2
+	auto1 = WLanalysis.PowerSpectrum(map1, sizedeg = sizedeg_arr[Wx-1], edges=edgesGen(Wx), sigmaG=sigmaG1)[-1]/fmask2
+	auto2 = WLanalysis.PowerSpectrum(map2, sizedeg = sizedeg_arr[Wx-1], edges=edgesGen(Wx), sigmaG=sigmaG2)[-1]/fmask2
 	err = sqrt(auto1*auto2/fsky/(2*ell_arr+1)/d_ell)
 	return err
 #fmask2_arr = array([sum(maskGen(Wx)**2)/sizes[Wx-1]**2 for Wx in range(1,5)])
 fmask2_arr = array([ 0.69965629,  0.57894277,  0.62390033,  0.44137115])
+#fsky_arr = array([sum(maskGen(Wx))/sizes[Wx-1]**2*sizedeg_arr[Wx-1]/41253.0 for Wx in range(1,5)])
+fsky_arr = array([ 0.001473  ,  0.00047671,  0.00094933,  0.00049676])
 
+def plot_cc_err (cc_arr, title, theorycurve = 0):	
+	'''cc_arr has shape(4, 2, 11)'''
+	cc_arr = cc_arr[:,:,:-1]
+	factor=2.0*pi/(1+ell_arr[:-1])
+	chisq=0
+	f=figure(figsize=(8,5))
+	ax=f.add_subplot(111)
+	for Wx in arange(1,5):
+		cc, err = cc_arr[Wx-1]
+		ax.errorbar(ell_arr[:-1]+5.0*(Wx-3), cc*factor, err*factor, label='W%i'%(Wx), fmt='o')
+		chisq+=sum((cc/err)**2)
+	if type(theorycurve) != int:
+		plot(theorycurve[0], theorycurve[1], label='theory')
+	SNR = sqrt(chisq)
+	print SNR
+	ax.plot((0,2000),(0,0),'k--')
+	ax.set_xlabel(r'$\ell$')
+	ax.set_ylabel(r'$\ell\rm{C(\ell)}$')
+	ax.set_xlim(0,2000)
+	legend(fontsize=10)
+	#ax.set_ylim(-1e-5,1e-5)
+	ax.set_title('%s (SNR=%.2f)'%(title, SNR))
+	savefig(plot_dir+'crosscorr_%s.jpg'%(title))
+	close()
+	
 if HM857:
-	cc_857 = array([WLanalysis.CrossCorrelate(load(tSZ_dir+'planck/Planck857_HM1_CFHTLS_W%i.npy'%(Wx))*maskGen(Wx), load(tSZ_dir+'planck/Planck857_HM2_CFHTLS_W%i.npy'%(Wx))*maskGen(Wx), edges=edgesGen(Wx))[1]/fmask2_arr[Wx-1] for Wx in range(1,5)])
-	save(tSZ_dir+'cc_857.npy', cc_857)
-
+	print 'HM857'
+	fn = tSZ_dir+'cc_857.npy'
+	def HM857_fcn (Wx):
+		mask=maskGen(Wx)
+		sigmaG1=sigmaG_arr[-1]
+		sigmaG2=sigmaG_arr[-1]
+		fmask2=fmask2_arr[Wx-1]
+		fsky=fsky_arr[Wx-1]
+		map1=load(tSZ_dir+'planck/Planck857_HM1_CFHTLS_W%i.npy'%(Wx))*mask
+		map2=load(tSZ_dir+'planck/Planck857_HM2_CFHTLS_W%i.npy'%(Wx))*mask
+		cc_857 = WLanalysis.CrossCorrelate(map1, map2, edges=edgesGen(Wx), sigmaG1=sigmaG1, sigmaG2=sigmaG2)[1]/fmask2
+		err_857 = sqrt(2)*theory_err(map1, map2, Wx, fmask2, fsky, sigmaG1, sigmaG2)
+		return cc_857, err_857
+	#cc_857 = array(map(HM857_fcn, range(1,5)))#cc_857.shape=(4, 2, 11)
+	#save(fn, cc_857)
+	cc_arr = load(fn)
+	plot_cc_err (cc_arr, 'Cell_857')
+	
 if yx857:
+	print 'yx857'
 	for ip in range(4):
 		def yx857_ip(Wx):
-			CIBmap = load(tSZ_dir+'planck/Planck857_full_CFHTLS_W%i.npy'%(Wx))
+			sigmaG1=sigmaG_arr[-1]
+			sigmaG2=sigmaG_arr[ip]
+			CIBmap = CIBGen(Wx)
 			tmap = tmapGen(prefix_arr[ip], Wx)
 			if ip==3:
 				tmap[abs(tmap)>1.0]=0
@@ -141,73 +191,60 @@ if yx857:
 			tmap-=mean(tmap)
 			CIBmap-=mean(CIBmap)
 			fmask2 = sum(mask**2)/sizes[Wx-1]**2
-			icc_yx857 = WLanalysis.CrossCorrelate(CIBmap, tmap, edges=edgesGen(Wx))[1]/fmask2
-			return icc_yx857
-		cc_yx857 = map(yx857_ip, range(1,5))
-		save(tSZ_dir+'cc_yx857_%s.npy'%(prefix_arr[ip]), cc_yx857)
-
+			fsky=sum(mask)/sizes[Wx-1]**2*sizedeg_arr[Wx-1]/41253.0
+			icc_yx857 = WLanalysis.CrossCorrelate(CIBmap, tmap, edges=edgesGen(Wx), sigmaG1=sigmaG1, sigmaG2=sigmaG2)[1]/fmask2
+			ierr_yx857 = theory_err(CIBmap, tmap, Wx, fmask2, fsky, sigmaG1, sigmaG2)
+			return icc_yx857, ierr_yx857
+		
+		fn = tSZ_dir+'cc_yx857_%s.npy'%(prefix_arr[ip])
+		#cc_yx857 = array(map(yx857_ip, range(1,5)))
+		#save(fn, cc_yx857)
+		cc_arr = load(fn)
+		plot_cc_err (cc_arr, 'Cell_y_857_%s'%(prefix_arr[ip]))
+	
+		
 if kx857:
-	cc_kx857 = array([WLanalysis.CrossCorrelate(load(tSZ_dir+'planck/Planck857_full_CFHTLS_W%i.npy'%(Wx))*maskGen(Wx), kmapGen(Wx)*maskGen(Wx), edges=edgesGen(Wx))[1]/fmask2_arr[Wx-1] for Wx in range(1,5)])
-	save(tSZ_dir+'cc_kx857.npy', cc_kx857)
+	print 'kx857'
+	def kx857_fcn (Wx):
+		mask=maskGen(Wx)
+		sigmaG1=1.0
+		sigmaG2=sigmaG_arr[-1]
+		fmask2=fmask2_arr[Wx-1]
+		fsky=fsky_arr[Wx-1]
+		map1=kmapGen(Wx)*mask
+		map2=CIBGen(Wx)*mask
+		cc = WLanalysis.CrossCorrelate(map1, map2, edges=edgesGen(Wx), sigmaG1=sigmaG1, sigmaG2=sigmaG2)[1]/fmask2
+		err = theory_err(map1, map2, Wx, fmask2, fsky, sigmaG1, sigmaG2)
+		return cc, err
+	fn = tSZ_dir+'cc_kx857.npy'
+	#cc_kx857 = array(map(kx857_fcn, range(1,5)))
+	#save(fn, cc_kx857)
+	cc_arr = load(fn)
+	plot_cc_err (cc_arr, 'Cell_kappa_857')
 	
 if cc_yxk:
-	def txk (ipWx):
-		'''ip = 0..3 counts the prefix
-		Wx = 1..4 
-		return the cross correlation
-		'''
-		ip, Wx = ipWx
-		print prefix_arr[ip], Wx
-		tmap = tmapGen(prefix_arr[ip], Wx)
-		if ip==3:
-			tmap[abs(tmap)>1.0]=0
-			mask = JCHmaskGen(Wx)
-		else:
-			mask = maskGen(Wx)
-		kmap = kmapGen(Wx)*mask
-		tmap *=mask		
-		## set mean to 0
-		kmap -= mean(kmap)
-		tmap -= mean(tmap)
-		
-		fmask2 = sum(mask**2)/sizes[Wx-1]**2
-		fsky = sum(mask)/sizes[Wx-1]**2*sizedeg_arr[Wx-1]/41253.0
-		edges = edgesGen(Wx)
-		CC_signal = WLanalysis.CrossCorrelate(kmap, tmap, edges=edges)[1]/fmask2
-		CC_err = theory_err (kmap, tmap, Wx, fmask2, fsky)
-		return CC_signal, CC_err
-	ipWx_arr = [[ip, Wx] for ip in range(4) for Wx in arange(1,5)]
-	#all_cc = array(map(txk, ipWx_arr))
-	#save(tSZ_dir+'all_cc.npy',all_cc)
-	all_cc = load(tSZ_dir+'all_cc.npy')
-	#for i in range(4):		
-		#iarr=all_cc[i*4:(i+1)*4]
-		#print i*4, (i+1)*4, iarr.shape
-		#save(tSZ_dir+'cc_yxk_%s.npy'%(prefix_arr[i]), iarr)
-	i = 0
-	
+	print 'yxk'
 	ell_JCH, halo1, halo2, C_tot = genfromtxt(tSZ_dir+'CellykappaCFHTLS_WMAP9_Jiadndz_zcut13.txt').T#CellykappaCFHTLS_Planck15_Jiadndz_zcut13.txt
 	for ip in range(4):
-		b_ell_tSZ = exp(-ell_arr**2*radians(sigmaG_arr[ip]/60)**2/2.0)
-		b_ell_kappa = exp(-ell_arr**2*radians(1.0/60)**2/2.0)
-		factor=2.0*pi/(1+ell_arr)/b_ell_tSZ/b_ell_kappa*1e11
-		chisq=0
-		f=figure(figsize=(8,5))
-		ax=f.add_subplot(111)
-		ax.plot(ell_JCH, C_tot*1e11)
-		for Wx in arange(1,5):
-			cc, err = all_cc[i]
-			i+=1
-			errorbar(ell_arr+20.0*(Wx-3), cc*factor, err*factor, label='W%i'%(Wx))
-			chisq+=sum((cc/err)**2)
-		SNR = sqrt(chisq)
-		print prefix_arr[ip], SNR
-		ax.plot((0,2000),(0,0),'k--')
-		ax.set_xlabel(r'$\ell$')
-		#ax.set_ylabel(r'$\ell(\ell+1)\rm{P(\ell)/2\pi}$')
-		ax.set_ylabel(r'$\ell\rm{C(\ell)} \times 10^{11}$')#/\pi
-		ax.set_title(prefix_arr[ip])
-		ax.set_xlim(0,2000)
-		
-		savefig(plot_dir+'phi_model_crosscorr_%s.jpg'%(prefix_arr[ip]))
-		close()
+		def txk (Wx):
+			sigmaG1=sigmaG_arr[Wx]
+			sigmaG2=1.0
+			tmap = tmapGen(prefix_arr[ip], Wx)
+			if ip==3:
+				tmap[abs(tmap)>1.0]=0
+				mask = JCHmaskGen(Wx)
+			else:
+				mask = maskGen(Wx)
+			kmap = kmapGen(Wx)*mask
+			tmap *=mask
+			fmask2 = sum(mask**2)/sizes[Wx-1]**2
+			fsky = sum(mask)/sizes[Wx-1]**2*sizedeg_arr[Wx-1]/41253.0
+			edges = edgesGen(Wx)
+			CC_signal = WLanalysis.CrossCorrelate(tmap, kmap, edges=edges, sigmaG1=sigmaG1, sigmaG2=sigmaG2)[1]/fmask2
+			CC_err = theory_err (tmap, kmap, Wx, fmask2, fsky, sigmaG1, sigmaG2)
+			return CC_signal, CC_err
+		fn = tSZ_dir+'cc_yxk_%s.npy'%(prefix_arr[ip])
+		#cc_all = array(map(txk, range(1,5)))
+		#save(fn, cc_all)
+		cc_arr = load(fn)
+		plot_cc_err (cc_arr, 'Cell_kappa_y_%s'%(prefix_arr[ip]), theorycurve=[ell_JCH, C_tot])

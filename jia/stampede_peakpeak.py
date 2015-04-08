@@ -31,11 +31,12 @@ kmapGen = lambda i, cosmo, R, sigmaG: np.load(KS_dir+'%s/subfield%i/sigma%02d/SI
 maskGen = lambda i, sigmaG: WLanalysis.readFits(backup_dir+'mask/CFHT_mask_ngal5_sigma%02d_subfield%02d.fits'%(sigmaG*10, i))
 
 ########## bash command to create directories #########
-##for i in *
-##do for sigmaG in 05 10 18 35 53 89
-##do mkdir -pv -m 750 /work/02977/jialiu/peaks_corr/peaks_corr_single/${i}/sigma${sigmaG}
-##done
-##done
+####cd /home1/02977/jialiu/cat/
+####for i in *
+####do for sigmaG in 05 10 18 35 53 89
+####do mkdir -pv -m 750 /work/02977/jialiu/peaks_corr_single/${i}/sigma${sigmaG}
+####done
+####done
 ########################################################
 
 ipeaklist_fn = lambda cosmo, R, sigmaG: peaks_corr_dir+'peaks_corr_single/%s/sigma%02d/Peaklist_sigma%02d_%s_%04dr.npy'%(cosmo, sigmaG*10, sigmaG*10, cosmo, R)

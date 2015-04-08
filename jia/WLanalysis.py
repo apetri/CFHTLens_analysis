@@ -455,6 +455,17 @@ def eobs_fun (g1, g2, k, e1, e2):
 	return real(eobs), imag(eobs)
 
 ########## begin: power spectrum ############################
+def bell_2D (size, sigma):
+	'''return a b_ell matrix, smoothing scale simag in unit of pixels.
+	b_ell = exp(-ell**2*sigmaG**2/2.0), where sigmaG in unit of radians.'''
+	y, x = np.indices((size, size))
+	center = np.array([(x.max()-x.min())/2.0, (x.max()-x.min())/2.0])
+	if size%2 == 0:
+		center+=0.5
+	r = np.hypot(x - center[0], y - center[1])
+	bell_mat = exp(-(r*sigma*2*pi/size)**2/2.0)
+	return bell_mat
+	
 def azimuthalAverage(image, center = None, edges = None, logbins = True, bins = 50):
 	"""
 	Calculate the azimuthally averaged radial profile.
@@ -505,12 +516,13 @@ def azimuthalAverage(image, center = None, edges = None, logbins = True, bins = 
 
 edge2center = lambda x: x[:-1]+0.5*(x[1:]-x[:-1])
 
-def PowerSpectrum(img, sizedeg = 12.0, edges = None, logbins = True):#edges should be pixels
+def PowerSpectrum(img, sizedeg = 12.0, edges = None, logbins = True, sigmaG=0):#edges should be pixels
 	'''Calculate the power spectrum for a square image, with normalization.
 	Input:
 	img = input square image in numpy array.
 	sizedeg = image real size in deg^2
 	edges = ell bin edges, length = nbin + 1, if not provided, then do 1000 bins.
+	sigmaG = smoothing scale in arcmin
 	Output:
 	powspec = the power at the bins
 	ell_arr = lower bound of the binedges
@@ -520,6 +532,8 @@ def PowerSpectrum(img, sizedeg = 12.0, edges = None, logbins = True):#edges shou
 	#F = fftpack.fftshift(fftpack.fft2(img))
 	F = fftshift(fftpack.fft2(img))
 	psd2D = np.abs(F)**2
+	## correct for b_ell
+	psd2D /= bell_2D(size, sigmaG*PPA512)**2
 	ell_arr, psd1D = azimuthalAverage(psd2D, center=None, edges = edges,logbins = logbins)
 	ell_arr = edge2center(ell_arr)
 	ell_arr *= 360./sqrt(sizedeg)# normalized to our current map size
@@ -556,7 +570,7 @@ def PowerSpectrum_Pell_binning(img, sizedeg = 12.0, edges = None, logbins = True
 ########## end: power spectrum ############################
 
 
-def CrossCorrelate(img1, img2, edges = None, logbins = True):#edges should be pixels
+def CrossCorrelate(img1, img2, edges = None, logbins = True, sigmaG1=0, sigmaG2=0):#edges should be pixels
 	'''Calculate the power spectrum for a square image, with normalization.
 	Input:
 	img1, img2 = input square image in numpy array.
@@ -573,6 +587,7 @@ def CrossCorrelate(img1, img2, edges = None, logbins = True):#edges should be pi
 	F1 = fftshift(fftpack.fft2(img1))
 	F2 = fftshift(fftpack.fft2(img2))
 	psd2D = np.conj(F1)*F2#calculate cross correlation
+	psd2D /= bell_2D(size, sigmaG1*PPA512)*bell_2D(size, sigmaG2*PPA512)
 	ell_arr, psd1D = azimuthalAverage(psd2D, center=None, edges = edges,logbins = logbins)
 	ell_arr = edge2center(ell_arr)
 	ell_arr *= 360./sqrt(sizedeg)# normalized to our current map size
