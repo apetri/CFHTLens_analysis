@@ -17,10 +17,11 @@ from scipy import ndimage as snd
 
 create_maps = 0
 init_mask = 0
-HM857 = 1 # step 1 CIB^2
-yx857 = 1 # step 2 Y x CIB
-kx857 = 1 # step 3 CFHT x CIB
-cc_yxk = 1 # step 4 Y x CFHT
+HM857 = 0 # step 1 CIB^2
+yx857 = 0 # step 2 Y x CIB
+kx857 = 0 # step 3 CFHT x CIB
+cc_yxk = 0 # step 4 Y x CFHT
+SNR_calc = 1
 
 tSZ_dir = '/Users/jia/weaklensing/tSZxCFHT/'
 plot_dir = tSZ_dir+'plot/'
@@ -248,3 +249,36 @@ if cc_yxk:
 		#save(fn, cc_all)
 		cc_arr = load(fn)
 		plot_cc_err (cc_arr, 'Cell_kappa_y_%s'%(prefix_arr[ip]), theorycurve=[ell_JCH, C_tot])
+
+if SNR_calc:
+	ell_JCH0, halo1, halo2, C_tot0 = genfromtxt(tSZ_dir+'CellykappaCFHTLS_WMAP9_Jiadndz_zcut13.txt').T
+	ell_JCH = concatenate([[0,],ell_JCH0,[1e6,]])
+	C_tot = concatenate([[0,],C_tot0,[0,]])
+	Cinterp = interpolate.interp1d(ell_JCH, C_tot)
+	def theoryGen(Wx):
+		size = sizes[Wx-1]
+		y, x = np.indices((size, size))
+		center = np.array([(x.max()-x.min())/2.0, (x.max()-x.min())/2.0])
+		center+=0.5
+		r = np.hypot(x - center[0], y - center[1])
+		r *= 360./sqrt(sizedeg_arr[Wx-1])
+		Cmat = Cinterp(r)
+		Cth = WLanalysis.azimuthalAverage(Cmat, edges = edgesGen(Wx))[1][:-1]
+		return Cth
+	theory_all = concatenate(map(theoryGen, range(1,5)))
+	chisq_model_fcn = lambda A, CC, err: sum((CC-A*theory_all)**2/err**2)
+	for ip in range(4):
+		factor=2.0*pi/(1+ell_arr[:-1])
+		factors=concatenate(repeat(factor,4).reshape(-1,4).T)
+		ell_arr4 = concatenate(repeat(ell_arr[:-1],4).reshape(-1,4).T)
+		fn = tSZ_dir+'cc_yxk_%s.npy'%(prefix_arr[ip])
+		cc_arr = concatenate(load(fn)[:,0,:-1])*factors
+		err_arr = concatenate(load(fn)[:,1,:-1])*factors
+		A_out = op.minimize(chisq_model_fcn, 1.0, args=(cc_arr, err_arr))
+		A_min = A_out.x
+		chisq_model = A_out.fun
+		chisq_null = sum(sqrt((cc_arr/err_arr)**2))
+		SNR = sqrt(chisq_null-chisq_model)
+		print '{4} A={0:.2f}, chisq_null={1:.2f}, chisq_model={2:.2f}, SNR={3:.2f}'.format(float(A_min), chisq_null, chisq_model, SNR, prefix_arr[ip])
+		
+		

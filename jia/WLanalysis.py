@@ -715,3 +715,22 @@ def txt2map_fcn (fn, offset=False, method='nearest'):
 			cmblmap = cmblmap.T
 		np.save(fn[:-3]+'npy', cmblmap)
 		return cmblmap
+
+def extrap1d(interpolator):
+	'''interpolate for values within the interpolator range, extrapolate for outside regions.
+	'''
+	xs = interpolator.x
+	ys = interpolator.y
+
+	def pointwise(x):
+		if x < xs[0]:
+			return ys[0]+(x-xs[0])*(ys[1]-ys[0])/(xs[1]-xs[0])
+		elif x > xs[-1]:
+			return ys[-1]+(x-xs[-1])*(ys[-1]-ys[-2])/(xs[-1]-xs[-2])
+		else:
+			return interpolator(x)
+
+	def ufunclike(xs):
+		return array(map(pointwise, array(xs)))
+
+	return ufunclike

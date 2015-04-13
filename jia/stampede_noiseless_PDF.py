@@ -4,25 +4,20 @@ import numpy as np
 from scipy import *
 from emcee.utils import MPIPool
 import sys, os
-sf = int(sys.argv[1])
+
+sigmaG = 1.0
 PPA512 = 2.4633625
 edges = linspace(-0.05,0.15,51)
-#cosmo = 'emu1-512b240_Om0.483_Ol0.517_w-1.515_ns0.960_si0.680'
-cosmo = 'cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800'
+sim_dir = '/home1/02977/jialiu/cat/'
+cosmo_arr = os.listdir(sim_dir)
 
-#KSgen = lambda r: WLanalysis.readFits('/home1/02977/jialiu/cov_cat/emulator_subfield%i_WL-only_cfhtcov-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.800_4096xy_%04dr.fit'%(sf, r))
+KS_dir = '/work/02977/jialiu/KSsim_noiseless/'
 
-KSgen = lambda r: WLanalysis.readFits('/scratch/02977/jialiu/cat/%s/emulator_subfield%i_WL-only_%s_4096xy_%04dr.fit'%(cosmo, sf, cosmo, r))
+kmapGen = lambda i, cosmo, R: np.load(KS_dir+'%s/subfield%i/sigma%02d/SIM_KS_sigma%02d_subfield%i_%s_%04dr.npy'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo,R))
 
-#yxewm_arr = array([ WLanalysis.readFits('/home1/02977/jialiu/KSsim/yxewm_subfield%i_zcut0213.fit'%(sf)).T for sf in range(1,14)])
+maskGen = lambda i: WLanalysis.readFits(backup_dir+'mask/CFHT_mask_ngal5_sigma%02d_subfield%02d.fits'%(sigmaG*10, i))
 
-#mask_arr =  array([WLanalysis.readFits('/home1/02977/jialiu/KSsim/mask/CFHT_mask_ngal5_sigma10_subfield%02d.fits'%(sf)) for sf in range(1,14)])
-
-#y, x, e1, e2, w, m = yxewm_arr [sf-1]
-
-y, x, e1, e2, w, m = WLanalysis.readFits('/home1/02977/jialiu/KSsim/yxewm_subfield%i_zcut0213.fit'%(sf)).T
-
-mask = WLanalysis.readFits('/home1/02977/jialiu/KSsim/mask/CFHT_mask_ngal5_sigma10_subfield%02d.fits'%(sf))
+mask_arr = array(map(maskGen, range(1,14)))
 
 def createPDF(r):
 	print sf, r
