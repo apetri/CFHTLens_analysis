@@ -88,7 +88,7 @@ def single_corr(iRcosmosigmaG, edges = edges):
 	return out_Corr, out_DDRR
 
 pool = MPIPool()
-for cosmo in cosmo_arr:
+for cosmo in cosmo_arr[::-1]:
 	for sigmaG in sigmaG_arr:
 		print cosmo, sigmaG
 		fn_kappa = peaks_corr_dir+'sum/Corr_kappa_sigma%02d_%s.npy'%(sigmaG*10, cosmo)
