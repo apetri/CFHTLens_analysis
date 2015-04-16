@@ -90,32 +90,31 @@ def single_corr(iRcosmosigmaG, edges = edges):
 
 pool = MPIPool()
 
-cosmosigmaG_arr = [[cosmo, sigmaG] for sigmaG in sigmaG_arr[::-1] for cosmo in cosmo_arr]
-def create_peakpeak_arr (cosmosigmaG):
-	cosmo, sigmaG = cosmosigmaG
-	fn_kappa = peaks_corr_dir+'sum/Corr_kappa_sigma%02d_%s.npy'%(sigmaG*10, cosmo)
-	fn_counts = peaks_corr_dir+'sum/Corr_counts_sigma%02d_%s.npy'%(sigmaG*10, cosmo)
-	if os.path.isfile(fn_kappa) and os.path.isfile(fn_counts):
-		return None
-	else:
-		RcosmosigmaG = [[R, cosmo, sigmaG] for R in R_arr]
-		peakpeak_arr = array(map(single_corr, RcosmosigmaG))
-		save(fn_kappa, peakpeak_arr[:,0,:])
-		save(fn_counts, peakpeak_arr[:,1,:])
-		return None
-pool.map(create_peakpeak_arr, cosmosigmaG_arr)
+#cosmosigmaG_arr = [[cosmo, sigmaG] for sigmaG in sigmaG_arr[::-1] for cosmo in cosmo_arr]
+#def create_peakpeak_arr (cosmosigmaG):
+	#cosmo, sigmaG = cosmosigmaG
+	#fn_kappa = peaks_corr_dir+'sum/Corr_kappa_sigma%02d_%s.npy'%(sigmaG*10, cosmo)
+	#fn_counts = peaks_corr_dir+'sum/Corr_counts_sigma%02d_%s.npy'%(sigmaG*10, cosmo)
+	#if os.path.isfile(fn_kappa) and os.path.isfile(fn_counts):
+		#return None
+	#else:
+		#RcosmosigmaG = [[R, cosmo, sigmaG] for R in R_arr]
+		#peakpeak_arr = array(map(single_corr, RcosmosigmaG))
+		#save(fn_kappa, peakpeak_arr[:,0,:])
+		#save(fn_counts, peakpeak_arr[:,1,:])
+		#return None
+#pool.map(create_peakpeak_arr, cosmosigmaG_arr)
 
-#for cosmo in cosmo_arr[::-1]:
-	#for sigmaG in sigmaG_arr:
-		##print cosmo, sigmaG
-		#fn_kappa = peaks_corr_dir+'sum/Corr_kappa_sigma%02d_%s.npy'%(sigmaG*10, cosmo)
-		#fn_counts = peaks_corr_dir+'sum/Corr_counts_sigma%02d_%s.npy'%(sigmaG*10, cosmo)
-		#if os.path.isfile(fn_kappa) and os.path.isfile(fn_counts):
-			#continue
-		#else:
-			#RcosmosigmaG = [[R, cosmo, sigmaG] for R in R_arr]
-			#peakpeak_arr = array(pool.map(single_corr, RcosmosigmaG))#1000 x 2 x 25
-			#try:
-				#save(fn_kappa, peakpeak_arr[:,0,:])
-				#save(fn_counts, peakpeak_arr[:,1,:])
+for cosmo in cosmo_arr:
+	for sigmaG in (1.0,):#sigmaG_arr:
+		#print cosmo, sigmaG
+		fn_kappa = peaks_corr_dir+'sum/Corr_kappa_sigma%02d_%s.npy'%(sigmaG*10, cosmo)
+		fn_counts = peaks_corr_dir+'sum/Corr_counts_sigma%02d_%s.npy'%(sigmaG*10, cosmo)
+		if os.path.isfile(fn_kappa) and os.path.isfile(fn_counts):
+			continue
+		else:
+			RcosmosigmaG = [[R, cosmo, sigmaG] for R in R_arr]
+			peakpeak_arr = array(pool.map(single_corr, RcosmosigmaG))#1000 x 2 x 25
+			save(fn_kappa, peakpeak_arr[:,0,:])
+			save(fn_counts, peakpeak_arr[:,1,:])
 print 'Done-Done-Done-Done!!!'
