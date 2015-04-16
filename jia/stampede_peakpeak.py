@@ -41,6 +41,8 @@ maskGen = lambda i, sigmaG: WLanalysis.readFits(backup_dir+'mask/CFHT_mask_ngal5
 
 ipeaklist_fn = lambda cosmo, R, sigmaG: peaks_corr_dir+'peaks_corr_single/%s/sigma%02d/Peaklist_sigma%02d_%s_%04dr.npy'%(cosmo, sigmaG*10, sigmaG*10, cosmo, R)
 
+icorr_fn = lambda cosmo, R, sigmaG: peaks_corr_dir+'peaks_corr_single/%s/sigma%02d/Corrlist_sigma%02d_%s_%04dr.npy'%(cosmo, sigmaG*10, sigmaG*10, cosmo, R)
+
 mask_all_arr = array([[maskGen(i, sigmaG) for sigmaG in sigmaG_arr]for i in i_arr])
 #i, R, cosmo, sigmaG = 1, 99, cosmo_arr[5], 8.9
 def single_peaklist(i, cosmo, R, sigmaG):
@@ -73,19 +75,35 @@ def single_corr(iRcosmosigmaG, edges = edges):
 	'''	
 	R, cosmo, sigmaG = iRcosmosigmaG
 	
-	fn = ipeaklist_fn(cosmo, R, sigmaG)
+	fn = icorr_fn(cosmo, R, sigmaG)
 	if not os.path.isfile(fn):
-		ipeaklist =  concatenate([single_peaklist(i, cosmo, R, sigmaG) for i in i_arr], axis=-1)
-		save(fn, ipeaklist)
+		if not ipeaklist_fn(cosmo, R, sigmaG):
+			ipeaklist =  concatenate([single_peaklist(i, cosmo, R, sigmaG) for i in i_arr], axis=-1)
+			save(fn, ipeaklist)
+		else:
+			ipeaklist = load(ipeaklist_fn(cosmo, R, sigmaG))
+		out_DDRR = zeros(len(edges)-1)
+		out_Corr = zeros(len(edges)-1)
+		for i in range(len(edges)-1):
+			idx = where( (ipeaklist[0]>edges[i]) & (ipeaklist[0]<edges[i+1]))[0]
+			out_DDRR[i] = len(idx)
+			out_Corr[i] = mean(ipeaklist[1,idx]*ipeaklist[2,idx])
+		save(fn, [out_Corr, out_DDRR])
 	else:
-		ipeaklist = load(fn)
-	out_DDRR = zeros(len(edges)-1)
-	out_Corr = zeros(len(edges)-1)
-	for i in range(len(edges)-1):
-		idx = where( (ipeaklist[0]>edges[i]) & (ipeaklist[0]<edges[i+1]))[0]
-		out_DDRR[i] = len(idx)
-		out_Corr[i] = mean(ipeaklist[1,idx]*ipeaklist[2,idx])
-	print R, sigmaG, ipeaklist.shape, out_Corr.shape, out_DDRR.shape, cosmo
+		out_Corr, out_DDRR = load(fn)
+	#fn = ipeaklist_fn(cosmo, R, sigmaG)
+	#if not os.path.isfile(fn):
+		#ipeaklist =  concatenate([single_peaklist(i, cosmo, R, sigmaG) for i in i_arr], axis=-1)
+		#save(fn, ipeaklist)
+	#else:
+		#ipeaklist = load(fn)
+	#out_DDRR = zeros(len(edges)-1)
+	#out_Corr = zeros(len(edges)-1)
+	#for i in range(len(edges)-1):
+		#idx = where( (ipeaklist[0]>edges[i]) & (ipeaklist[0]<edges[i+1]))[0]
+		#out_DDRR[i] = len(idx)
+		#out_Corr[i] = mean(ipeaklist[1,idx]*ipeaklist[2,idx])
+	print R, sigmaG, out_Corr.shape, out_DDRR.shape, cosmo
 	return out_Corr, out_DDRR
 
 pool = MPIPool()
