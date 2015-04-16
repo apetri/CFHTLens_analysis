@@ -216,8 +216,8 @@ def pca(cmd_args):
 	#Labels
 	ax[0].set_xlabel(r"$i$",fontsize=18)
 	ax[1].set_xlabel(r"$n$",fontsize=18)
-	ax[0].set_ylabel(r"$\Sigma^2_i$",fontsize=18)
-	ax[1].set_ylabel(r"$\Sigma_{i=0}^n\Sigma^2_i/\Sigma^2_{tot}$",fontsize=18)
+	ax[0].set_ylabel(r"$S^2_i$",fontsize=18)
+	ax[1].set_ylabel(r"$\Sigma_{i=0}^n S^2_i/S^2_{tot}$",fontsize=18)
 
 	#Save figure
 	fig.tight_layout()
