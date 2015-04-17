@@ -90,7 +90,10 @@ def single_corr(iRcosmosigmaG, edges = edges):
 			out_Corr[i] = mean(ipeaklist[1,idx]*ipeaklist[2,idx])
 		save(fn, [out_Corr, out_DDRR])
 	else:
-		out_Corr, out_DDRR = load(fn)
+		try:
+			out_Corr, out_DDRR = load(fn)
+		except Exception:
+			print '!!!!!!!', R, cosmo, sigmaG
 	#fn = ipeaklist_fn(cosmo, R, sigmaG)
 	#if not os.path.isfile(fn):
 		#ipeaklist =  concatenate([single_peaklist(i, cosmo, R, sigmaG) for i in i_arr], axis=-1)
