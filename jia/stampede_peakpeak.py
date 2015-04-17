@@ -140,7 +140,7 @@ def create_peakpeak_arr (cosmosigmaG):
 		return None
 	else:
 		RcosmosigmaG = [[R, cosmo, sigmaG] for R in R_arr]
-		peakpeak_arr = array(p.map(single_corr, RcosmosigmaG))
+		peakpeak_arr = array(pool.map(single_corr, RcosmosigmaG))
 		save(fn_kappa, peakpeak_arr[:,0,:])
 		save(fn_counts, peakpeak_arr[:,1,:])
 		return None
