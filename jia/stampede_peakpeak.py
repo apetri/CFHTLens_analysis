@@ -95,6 +95,7 @@ def single_corr(iRcosmosigmaG, edges = edges):
 			test = load(fn)
 		except Exception:
 			ierror = 1
+			test = zeros(5,5)
 		if test.shape[0] != 2 or test.shape[1] != 25 or ierror:
 			print '!!! error', R, sigmaG, cosmo
 			
