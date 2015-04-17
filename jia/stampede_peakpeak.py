@@ -4,7 +4,7 @@
 # Cluster: XSEDE Stampede
 
 import WLanalysis
-#from emcee.utils import MPIPool
+from emcee.utils import MPIPool
 import os
 import numpy as np
 from scipy import *
