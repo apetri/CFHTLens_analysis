@@ -93,6 +93,7 @@ def single_corr(iRcosmosigmaG, edges = edges):
 		print fn
 		test = load(fn)
 		if test.shape[0] != 2:
+			print '!!! error', R, sigmaG, cosmo
 			ipeaklist = load(ipeaklist_fn(cosmo, R, sigmaG))
 			out_DDRR = zeros(len(edges)-1)
 			out_Corr = zeros(len(edges)-1)
