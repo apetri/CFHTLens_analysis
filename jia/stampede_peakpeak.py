@@ -103,7 +103,7 @@ def single_corr(iRcosmosigmaG, edges = edges):
 				out_Corr[i] = mean(ipeaklist[1,idx]*ipeaklist[2,idx])
 			save(fn, [out_Corr, out_DDRR])
 		else:
-			out_Corr, out_DDRR = load(fn)
+			out_Corr, out_DDRR = test
 			
 	#fn = ipeaklist_fn(cosmo, R, sigmaG)
 	#if not os.path.isfile(fn):
@@ -122,7 +122,7 @@ def single_corr(iRcosmosigmaG, edges = edges):
 		
 	return out_Corr, out_DDRR
 
-#pool = MPIPool()
+pool = MPIPool()
 
 cosmosigmaG_arr = [[cosmo, sigmaG] for sigmaG in sigmaG_arr[::-1] for cosmo in cosmo_arr]
 def create_peakpeak_arr (cosmosigmaG):
