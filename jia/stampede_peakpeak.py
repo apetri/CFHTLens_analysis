@@ -95,7 +95,7 @@ def single_corr(iRcosmosigmaG, edges = edges):
 			test = load(fn)
 		except IOError:
 			ierror = 1
-		if test.shape[0] != 2 or test.shape[1] != 25, or ierror:
+		if test.shape[0] != 2 or test.shape[1] != 25 or ierror:
 			print '!!! error', R, sigmaG, cosmo
 			
 			ipeaklist =  concatenate([single_peaklist(i, cosmo, R, sigmaG) for i in i_arr], axis=-1)
