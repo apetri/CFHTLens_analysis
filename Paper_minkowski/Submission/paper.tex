@@ -404,9 +404,8 @@ $\mathbf{g}\approx\pmb{\gamma}$ and $\mathbf{e}\approx
 \mathbf{e}_s+\pmb{\gamma}$. We also add the multiplicative shear
 corrections by replacing $\pmb{\gamma}$ with $(1+m)\pmb{\gamma}$. We
 note that the observed ellipticity for a particular galaxy already
-contains the lensing shear by large scale structure, but the random
-rotation makes this contribution second order in $\kappa$. Consistent
-with the weak lensing approximation, the lensing signal from the
+contains the lensing shear by large scale structure \textbf{(LSS)}, but the random
+rotation makes this contribution \textbf{at least} second order in $\kappa$ \textbf{by destropying the shape spatial correlations induced by lensing from LSS}. Consistent with the weak lensing approximation, the lensing signal from the
 simulations is first order in $\kappa$ and hence the randomly rotated
 observed ellipticities can be safely considered as intrinsic
 ellipticities. 
@@ -1036,6 +1035,19 @@ $\Sigma_8$ & PS(3)$\times V_0(10)\times V_1(10)\times V_2(10)\times$LM(9) & \pbo
 \label{likelihoodSi8cross}
 \end{figure}
 
+\begin{table*}
+\begin{tabular}{c|c}
+Descriptor & $\Sigma_8=\sigma_8\Omega_m^{0.55}$ \\ \hline \hline
+PS(3) & $0.84^{+0.06}_{-0.09}$\\
+PS(3) $\times$ Moments(9) & $0.86^{+0.02}_{-0.09}$ \\
+$V_0(10)\times V_1(10) \times V_2(10)$  & $0.75^{+0.07}_{-0.04}$ \\
+PS(3) $\times V_0(10)\times V_1(10) \times V_2(10)$ & $0.76^{+0.04}_{-0.05}$ \\
+PS(3) $\times V_0(10)\times V_1(10) \times V_2(10) \times$ Moments(9) & $0.76^{+0.06}_{-0.04}$ \\ \hline
+\end{tabular}
+\caption{Tabulated values of $1\sigma$ constraints on $\Sigma_8$ corresponding to Figure \ref{likelihoodSi8cross}}
+\label{Sigma8Table}
+\end{table*}
+
 \subsection{Combining statistics}
 
 Different statistics can include complementary cosmological
@@ -1062,8 +1074,7 @@ descriptors.
 We show constraints from different descriptor combinations in the
 $(\Omega_m,\sigma_8)$ and $(w,\Sigma_8)$ planes in Figure
 \ref{contours3combined}, and on the best-constrained parameter
-$\Sigma_8$ in Figure \ref{likelihoodSi8cross}. We discuss these
-findings in the next section.
+$\Sigma_8$ in Figure \ref{likelihoodSi8cross}. \textbf{We also provide a tabulated version of the $\Sigma_8$ constraints ($1\sigma$) in Table \ref{Sigma8Table}}. We discuss these findings in the next section.
 
 
 
@@ -1257,7 +1268,7 @@ In this final section we summarize the main conclusions of this work:
   found to be unimportant when constraining cosmology with the power
   spectrum alone, we find that these systematics need to be corrected
   to obtain unbiased constraints on the $(\Omega_m,\sigma_8)$ doublet
-  using the Minkowski functionals.
+  using the Minkowski functionals. \textbf{We are aware that, when trying to explain the discrepancy between weak lensing and CMB constraints using the Minkowski functionals, there might be other effects to be considered, namely non--Gaussian error correlations in the descriptors and inaccuracies of the simulations on small scales. These inaccuracies could in principle affect the excursion set reconstruction at high $\kappa_0$ thresholds. We will investigate these additional sources of error in future work.}
 
 \item For the CFHTLenS data set, Minkowski functionals can effectively
   constrain the non-degenerate direction in parameter space,

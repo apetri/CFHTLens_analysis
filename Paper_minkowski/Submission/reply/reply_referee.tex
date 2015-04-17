@@ -29,7 +29,7 @@ We thank the referee for the interesting and insightful comments, which we addre
 \item \textit{Some cited papers do not match the description}: the desctiptions and references have been updated. The suggested references have been added.
 \item \textit{Missing reference to Simon et. al.}: the reference has been added.
 \item \textit{Explain the $\dot{\beta}$ notation and the meaning of $\dot{\beta}=0$}: the derivative is taken with respect to the comoving distance $\chi$; an initial condition for the derivative is required to make the Caucky problem well defined. The appropriate explanation has been added to the text.
-
+\item \textit{Explain why the random rotations of galaxies make the lensing signal $O(\kappa^2)$}: the galaxy shapes measured by CFHTLenS contain both contributions from the original galaxy shape and lensing contributions from LSS. The lensing contributions are spatially correlated and the spatial correlations are $O(\psi)$ where $\psi$ is the lensing potential ($\kappa=O(\psi)$ also). When we rotate each galaxy randomly, we destroy these spatial correlations, which will not be $O(\psi)$ anymore, but $O(\psi^2)$ or smaller (if not zero at all). We do not assign intrinsic galaxy shapes drawing from $\mathcal{N}(0,\sigma_\epsilon)$ because we refrained from making any assumption on the distribution of intrinsic galaxy shape, choosing to use the shape distribution measured by CFHTLenS instead.  
 \item \textit{Definition of $\Theta$ and $\delta_D$}: the definitions of the $\Theta$ and $\delta_D$ functions have been added in the appropriate section
 \item \textit{Cubic and quartic moments notations}: we are aware that the definitions of $S_i,K_i$ we adopt are different than the ones provided in [38,39]. Within our statistical framework, these definition mismatches do not matter as they are related to each other via a constant lineat transformation that drops out in the likelihood calculations. The typo $K_4\leftrightarrow K_3$ has been corrected. 
 \item \textit{Confusion between $R=1000$ and the 50 independent $N$--body runs in \texttt{CFHTcov}}: the covariance matrices are always estimated from the $R=1000$ lensing field realizations. We believe that the $R$ realizations in the \texttt{CFHTcov} ensemble are more independen than the ones in the \texttt{CFHTemu1} ensemble due to the fact that \texttt{CFHTcov} is bases on 50 independent $N$--body runs. An appropriate explanation has been added to the text. 
@@ -37,12 +37,23 @@ We thank the referee for the interesting and insightful comments, which we addre
 \item \textit{"For this reason, the normalization constant in equation (12) is also model–independent"}: the sentence has been deleted
 \item \textit{Accuracy vs relative error}: the wording "accuracy" has been changed to "relative error". The relative error of the PS emulator at low $l$ has been correctly updated to 20\%
 \item \textit{Confusion deriving from the $p$ index suppression}: the $p$ index in equation (21) has been reinstated. The sentence "we suppressed the first index of $M(n)$ for notational simplicity" has been deleted  
-
+\item \textit{Figure 3, right panel}: the reason why the the $1\sigma$ contour is not centered on the input model is that $\mathcal{L}(\Omega_m,\sigma_8)$ is skewed towards low $\Omega_m$ and high $\sigma_8$, as can be seen in Figure \ref{mock}
+%
+\begin{figure}
+\begin{center}
+\includegraphics[scale=0.6]{moments_mock.eps}
+\end{center}
+\caption{$(\Omega_m,\sigma_8)$ likelihood function (along with its $1,2,3\sigma$ contours) from the moments (corresponding to the right panel of Figure 3 in the manuscript)}
+\label{mock}
+\end{figure}
+%
 \item \textit{Comment of the large number of components needed in the PCA}: the referee is correct, one of the reasons why large numbers of PCA components are needed might be due to how the PCA is performed. Taking into account the correlation between errors in different bins (i.e. including the covariance matrix due to cosmic variance) will likely reduce the number of components needed. Unfortunately the standard PCA formalism does not allow for such generality. We are currently exploring different extensions to the PCA formalism, whose results will be included in future work
-
+\item \textit{Tabulated version of Figure 10}: the table has been added to the manuscript
 \item \textit{Citation to Heymans et al. (2013) for tomographic lensing constraints}: the citation has been addded
-
+\item \textit{Possible tension between CFHTLenS and Planck}: we agree with the referee that the comparison between cosmological constraints from weak lensing and CMB is an important point. In this work, however, we refrain from quantifying the precise amount of the discrepancy between CFHTLenS and Planck because we aware that the comparison will not be completely fair. Planck published constraints are marginalized over $H_0,\Omega_b,n_s$, which we keep fixed throughout our simulation effort. We are currently developing new simulation suites that will map this additional parameter space dependence of our descriptors.  
 \item \textit{Logic and context of the sentence "We thus attribute this bias to the assumption of linear cosmology-parameter dependence"}: the Fisher matrix formalism is the linear order approximation of our emulator. Using the Fisher matrix in our case would be an oversimplification. A clarifying sentence has been added in the appropriate section 
+\item \textit{Conclusions}: we added a couple of sentences that discuss other possible causes of the tension between CFHTLenS and Planck constraints
+\item \textit{The "bias" wording}: we included a sentence "Here and throughout the remainder of this paper, by 'biased' (or 'unbiased') we refer to being incompatible (or compatible) with the concordance fiducial values at $1\sigma$ obtained in other experiments" to clarify the usage of the word "bias" in the context of this manuscript
 
 \end{itemize}
 
