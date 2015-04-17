@@ -130,7 +130,7 @@ def single_corr(iRcosmosigmaG, edges = edges):
 	return out_Corr, out_DDRR
 
 
-
+pool = MPIPool()
 cosmosigmaG_arr = [[cosmo, sigmaG] for sigmaG in sigmaG_arr[::-1] for cosmo in cosmo_arr]
 def create_peakpeak_arr (cosmosigmaG):
 	cosmo, sigmaG = cosmosigmaG
@@ -140,12 +140,12 @@ def create_peakpeak_arr (cosmosigmaG):
 		return None
 	else:
 		RcosmosigmaG = [[R, cosmo, sigmaG] for R in R_arr]
-		peakpeak_arr = array(map(single_corr, RcosmosigmaG))
+		peakpeak_arr = array(p.map(single_corr, RcosmosigmaG))
 		save(fn_kappa, peakpeak_arr[:,0,:])
 		save(fn_counts, peakpeak_arr[:,1,:])
 		return None
-pool = MPIPool()
-pool.map(create_peakpeak_arr, cosmosigmaG_arr)
+
+map(create_peakpeak_arr, cosmosigmaG_arr)
 
 #for cosmo in cosmo_arr:
 	#for sigmaG in (1.0,):#sigmaG_arr:
