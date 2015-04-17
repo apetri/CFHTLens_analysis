@@ -90,6 +90,7 @@ def single_corr(iRcosmosigmaG, edges = edges):
 			out_Corr[i] = mean(ipeaklist[1,idx]*ipeaklist[2,idx])
 		save(fn, [out_Corr, out_DDRR])
 	else:
+		print fn
 		test = load(fn)
 		print test.shape
 		
