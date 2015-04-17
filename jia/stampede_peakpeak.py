@@ -76,14 +76,13 @@ def single_corr(iRcosmosigmaG, edges = edges):
 	R, cosmo, sigmaG = iRcosmosigmaG
 	
 	fn = icorr_fn(cosmo, R, sigmaG)
-	if not os.path.isfile(fn) or not os.path.isfile(ipeaklist_fn(cosmo, R, sigmaG)):
-		if not os.path.isfile(ipeaklist_fn(cosmo, R, sigmaG)):
-			ipeaklist =  concatenate([single_peaklist(i, cosmo, R, sigmaG) for i in i_arr], axis=-1)
-			save(fn, ipeaklist)
-		else:
-			ipeaklist = load(ipeaklist_fn(cosmo, R, sigmaG))
+	if not os.path.isfile(fn):
+		ipeaklist =  concatenate([single_peaklist(i, cosmo, R, sigmaG) for i in i_arr], axis=-1)
+		save(ipeaklist_fn(cosmo, R, sigmaG), ipeaklist)
+		
 		out_DDRR = zeros(len(edges)-1)
 		out_Corr = zeros(len(edges)-1)
+		
 		for i in range(len(edges)-1):
 			idx = where( (ipeaklist[0]>edges[i]) & (ipeaklist[0]<edges[i+1]))[0]
 			out_DDRR[i] = len(idx)
@@ -94,7 +93,10 @@ def single_corr(iRcosmosigmaG, edges = edges):
 		test = load(fn)
 		if test.shape[0] != 2 or test.shape[1] != 25:
 			print '!!! error', R, sigmaG, cosmo
-			ipeaklist = load(ipeaklist_fn(cosmo, R, sigmaG))
+			
+			ipeaklist =  concatenate([single_peaklist(i, cosmo, R, sigmaG) for i in i_arr], axis=-1)
+			save(ipeaklist_fn(cosmo, R, sigmaG), ipeaklist)
+		
 			out_DDRR = zeros(len(edges)-1)
 			out_Corr = zeros(len(edges)-1)
 			for i in range(len(edges)-1):
