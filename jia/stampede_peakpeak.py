@@ -106,7 +106,7 @@ def single_corr(iRcosmosigmaG, edges = edges):
 	print R, sigmaG, out_Corr.shape, out_DDRR.shape, cosmo
 	return out_Corr, out_DDRR
 
-pool = MPIPool()
+#pool = MPIPool()
 
 cosmosigmaG_arr = [[cosmo, sigmaG] for sigmaG in sigmaG_arr[::-1] for cosmo in cosmo_arr]
 def create_peakpeak_arr (cosmosigmaG):

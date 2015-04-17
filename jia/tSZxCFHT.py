@@ -267,18 +267,51 @@ if SNR_calc:
 		return Cth
 	theory_all = concatenate(map(theoryGen, range(1,5)))
 	chisq_model_fcn = lambda A, CC, err: sum((CC-A*theory_all)**2/err**2)
+	figure(figsize=(16,10))
 	for ip in range(4):
-		factor=2.0*pi/(1+ell_arr[:-1])
+		factor=2.0*pi/(1+ell_arr)[:-1]
 		factors=concatenate(repeat(factor,4).reshape(-1,4).T)
-		ell_arr4 = concatenate(repeat(ell_arr[:-1],4).reshape(-1,4).T)
+		ell_arr4 = concatenate(repeat(ell_arr,4).reshape(-1,4).T)
 		fn = tSZ_dir+'cc_yxk_%s.npy'%(prefix_arr[ip])
 		cc_arr = concatenate(load(fn)[:,0,:-1])*factors
 		err_arr = concatenate(load(fn)[:,1,:-1])*factors
 		A_out = op.minimize(chisq_model_fcn, 1.0, args=(cc_arr, err_arr))
 		A_min = A_out.x
 		chisq_model = A_out.fun
-		chisq_null = sum(sqrt((cc_arr/err_arr)**2))
+		chisq_null = sum((cc_arr/err_arr)**2)
 		SNR = sqrt(chisq_null-chisq_model)
-		print '{4} A={0:.2f}, chisq_null={1:.2f}, chisq_model={2:.2f}, SNR={3:.2f}'.format(float(A_min), chisq_null, chisq_model, SNR, prefix_arr[ip])
+		temp = r'{4}: A={0:.2f}, $\chi^2_0$={1:.2f}, $\chi^2_A$={2:.2f}, SNR={3:.2f}'.format(float(A_min), chisq_null, chisq_model, SNR, prefix_arr[ip])
+		print temp
+		
+		subplot(2,2,ip+1)
+		#errorbar(range(40), cc_arr, err_arr, label='data')
+		#plot(range(40), theory_all, label='theory (A=1)')
+		#plot(range(40), theory_all*A_min, label='theory (A=%.2f)'%(A_min))
+		#for aa in (9.5, 19.5, 29.5):
+			#plot([aa,aa],[-amax(cc_arr)*1.2, amax(cc_arr)*1.2],'k-')
+
+		
+		######## inverse weighted
+		errK_arr = err_arr.reshape(4,-1)
+		CC_arr = cc_arr.reshape(4,-1)
+		Cth_arr = theory_all.reshape(4,-1)
+		weightK = 1/errK_arr**2/sum(1/errK_arr**2, axis=0)
+		CC_mean = sum(CC_arr*weightK,axis=0)
+		err_mean = sqrt(1.0/sum(1/errK_arr**2, axis=0))
+		Cth_mean = sum(Cth_arr*weightK,axis=0)
+		errorbar(ell_arr[:-1], CC_mean, err_mean, label='data')
+		plot(ell_arr[:-1], Cth_mean, label='theory (A=1)')
+		plot(ell_arr[:-1], Cth_mean*A_min, label='theory (A=%.2f)'%(A_min))
+
+		plot((0,2000),zeros(2),'k--')
+		title(temp)
+		legend(fontsize=10)
+		ylabel('ell*C')
+		if ip>1:
+			xlabel('ell')
+	savefig(plot_dir+'fitmodel_data_inverseSum.jpg')
+	close()
+	
+	
 		
 		
