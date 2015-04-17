@@ -144,8 +144,8 @@ def create_peakpeak_arr (cosmosigmaG):
 		save(fn_kappa, peakpeak_arr[:,0,:])
 		save(fn_counts, peakpeak_arr[:,1,:])
 		return None
-#pool = MPIPool()
-#pool.map(create_peakpeak_arr, cosmosigmaG_arr)
+pool = MPIPool()
+pool.map(create_peakpeak_arr, cosmosigmaG_arr)
 
 #for cosmo in cosmo_arr:
 	#for sigmaG in (1.0,):#sigmaG_arr:
