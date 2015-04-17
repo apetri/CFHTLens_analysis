@@ -92,8 +92,18 @@ def single_corr(iRcosmosigmaG, edges = edges):
 	else:
 		print fn
 		test = load(fn)
-		print test.shape
-		
+		if test.shape[0] != 2:
+			ipeaklist = load(ipeaklist_fn(cosmo, R, sigmaG))
+			out_DDRR = zeros(len(edges)-1)
+			out_Corr = zeros(len(edges)-1)
+			for i in range(len(edges)-1):
+				idx = where( (ipeaklist[0]>edges[i]) & (ipeaklist[0]<edges[i+1]))[0]
+				out_DDRR[i] = len(idx)
+				out_Corr[i] = mean(ipeaklist[1,idx]*ipeaklist[2,idx])
+			save(fn, [out_Corr, out_DDRR])
+		else:
+			out_Corr, out_DDRR = load(fn)
+			
 	#fn = ipeaklist_fn(cosmo, R, sigmaG)
 	#if not os.path.isfile(fn):
 		#ipeaklist =  concatenate([single_peaklist(i, cosmo, R, sigmaG) for i in i_arr], axis=-1)
@@ -106,7 +116,7 @@ def single_corr(iRcosmosigmaG, edges = edges):
 		#idx = where( (ipeaklist[0]>edges[i]) & (ipeaklist[0]<edges[i+1]))[0]
 		#out_DDRR[i] = len(idx)
 		#out_Corr[i] = mean(ipeaklist[1,idx]*ipeaklist[2,idx])
-		out_Corr, out_DDRR = load(fn)
+		
 		print R, sigmaG, out_Corr.shape, out_DDRR.shape, cosmo
 		
 	return out_Corr, out_DDRR
