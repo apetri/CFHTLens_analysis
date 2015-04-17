@@ -106,8 +106,9 @@ def single_corr(iRcosmosigmaG, edges = edges):
 		#idx = where( (ipeaklist[0]>edges[i]) & (ipeaklist[0]<edges[i+1]))[0]
 		#out_DDRR[i] = len(idx)
 		#out_Corr[i] = mean(ipeaklist[1,idx]*ipeaklist[2,idx])
-		print R, sigmaG, out_Corr.shape, out_DDRR.shape, cosmo
 		out_Corr, out_DDRR = load(fn)
+		print R, sigmaG, out_Corr.shape, out_DDRR.shape, cosmo
+		
 	return out_Corr, out_DDRR
 
 #pool = MPIPool()
