@@ -9,12 +9,16 @@ import os
 import WLanalysis
 import sys
 
-########## comment out if use on laptop
-#from emcee.utils import MPIPool
-nn = int(sys.argv[1])#range from 0 to 10 for idx_arr
-#print nn # nn=0 (2pk+ps), 1 (2pk), 8 (ps, pass & ell cut)
-#test_dir = '/home1/02977/jialiu/chisq_cube/'
-test_dir = '/Users/jia/Documents/weaklensing/CFHTLenS/emulator/test_ps_bug/'
+stampede = 1
+if stampede:
+	from emcee.utils import MPIPool
+	test_dir = '/work/02977/jialiu/chisq_cube/'
+
+else:
+	test_dir = '/Users/jia/Documents/weaklensing/CFHTLenS/emulator/test_ps_bug/'
+	nn = int(sys.argv[1])#range from 0 to 10 for idx_arr
+	#print nn # nn=0 (2pk+ps), 1 (2pk), 8 (ps, pass & ell cut)
+
 
 fsky_all = 10.010646820070001
 fsky_pass= 7.6645622253410002
@@ -38,16 +42,18 @@ si8_arr = linspace(0,1.6,ll)#original
 #s=(im/0.27)**alpha*s
 
 
-ps_CFHT0 = concatenate(array([np.load(test_dir+fn) for fn in ('PASS_ps_CFHT.npy', 'ALL_pk_CFHT_sigmaG10.npy', 'ALL_pk_CFHT_sigmaG18.npy', 'ALL_pk_CFHT_sigmaG35.npy', 'ALL_pk_CFHT_sigmaG53.npy', 'ALL_ps_CFHT.npy','PASS_pk_CFHT_sigmaG10.npy')]),axis=-1)
+ps_CFHT0 = concatenate(array([np.load(test_dir+fn) for fn in ('PASS_ps_CFHT.npy', 'ALL_pk_CFHT_sigmaG10.npy', 'ALL_pk_CFHT_sigmaG18.npy', 'ALL_pk_CFHT_sigmaG35.npy', 'ALL_pk_CFHT_sigmaG53.npy', 'ALL_ps_CFHT.npy','PASS_pk_CFHT_sigmaG10.npy', 'Corr_counts_sigma10_CFHT.npy', 'Corr_counts_sigma18_CFHT.npy ', 'Corr_kappa_sigma10_CFHT.npy', 'Corr_kappa_sigma18_CFHT.npy ')]),axis=-1)
 ps_fidu_mat0 = concatenate([np.load(test_dir+fn) for fn in ('SIM_powspec_sigma05_emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765_PASS.npy',
  'SIM_peaks_sigma10_emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765_025bins_ALL.npy',
  'SIM_peaks_sigma18_emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765_025bins_ALL.npy',
  'SIM_peaks_sigma35_emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765_025bins_ALL.npy',
  'SIM_peaks_sigma53_emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765_025bins_ALL.npy',
  'SIM_powspec_sigma05_emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765_ALL.npy',
- 'SIM_peaks_sigma10_emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765_025bins_PASS.npy')],axis=-1)
+ 'SIM_peaks_sigma10_emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765_025bins_PASS.npy', 'Corr_counts_sigma10_emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765.npy', 'Corr_counts_sigma18_emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765.npy',
+ 'Corr_kappa_sigma10_emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765.npy',
+ 'Corr_kappa_sigma18_emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765.npy')],axis=-1)
 ps_avg0 = concatenate([np.load(test_dir+fn) for fn in ('PASS_ps_avg.npy','ALL_pk_avg_sigmaG10.npy',
-'ALL_pk_avg_sigmaG18.npy', 'ALL_pk_avg_sigmaG35.npy','ALL_pk_avg_sigmaG53.npy','ALL_ps_avg.npy','PASS_pk_avg_sigmaG10.npy')], axis=-1)
+'ALL_pk_avg_sigmaG18.npy', 'ALL_pk_avg_sigmaG35.npy','ALL_pk_avg_sigmaG53.npy','ALL_ps_avg.npy','PASS_pk_avg_sigmaG10.npy','peakpeak_counts_avg_10.npy','peakpeak_counts_avg_18.npy', 'peakpeak_kappa_avg_10.npy', 'peakpeak_kappa_avg_18.npy')], axis=-1)
 
 ####### 0:50 pass ps; 
 ####### 50:75 peak 10; 
@@ -80,9 +86,15 @@ idx_psAll7000 = arange(161,200-12)
 idx_pk10PASS = arange(200,225)
 #### 11) referee test: pk_10 PASS (1/15/2015)
 idx_ps_cut = idx_psPass[:-2]
+#### 12) idx
+idx_peakpeak_counts10 = arange(225, 250)
+idx_peakpeak_counts18 = arange(250, 275)
+idx_peakpeak_kappa10 = arange(275, 300)
+idx_peakpeak_kappa18 = arange(300, 325)
 
-idx_arr = [idx_full, idx_pk2, idx_pk10, idx_pk18, idx_pk35, idx_pk53, idx_psPass, idx_psAll, idx_psPass7000, idx_psAll7000, idx_pk10PASS, idx_ps_cut]
-fn_arr = ['idx_psPass7000_pk2smoothing', 'pk2smoothing', 'pk10', 'pk18', 'pk35', 'pk53', 'psPass', 'psAll', 'psPass7000', 'psAll7000','idx_pk10PASS', 'idx_ps_cut']
+
+idx_arr = [idx_full, idx_pk2, idx_pk10, idx_pk18, idx_pk35, idx_pk53, idx_psPass, idx_psAll, idx_psPass7000, idx_psAll7000, idx_pk10PASS, idx_ps_cut, idx_peakpeak_counts10, idx_peakpeak_counts18, idx_peakpeak_kappa10 , idx_peakpeak_kappa18 ]
+fn_arr = ['idx_psPass7000_pk2smoothing', 'pk2smoothing', 'pk10', 'pk18', 'pk35', 'pk53', 'psPass', 'psAll', 'psPass7000', 'psAll7000','idx_pk10PASS', 'idx_ps_cut', 'idx_peakpeak_counts10', 'idx_peakpeak_counts18', 'idx_peakpeak_kappa10' , 'idx_peakpeak_kappa18']
 
 def return_interp_cosmo_for_idx (idx):
 	ps_CFHT_test = ps_CFHT0[idx]

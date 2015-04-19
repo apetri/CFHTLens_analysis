@@ -65,6 +65,8 @@ def writeFits (data, filename, rewrite = False):
 	else:
 		hdu.writeto(filename)
 	
+ell2arcmin = lambda ell: 360.0*60.0/ell
+arcmin2ell = lambda arcmin: 360.0*60.0/arcmin
 
 def TestFitsComplete (fn, return_file = False):
 	'''Input: fn
