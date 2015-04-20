@@ -1,9 +1,9 @@
 #!python
 ############# edite this block ###########
 ############# maybe also want to edit run time below #####
-errfn = 'massSIM' # error file name, will append variable automatically
-program_name = 'stampede_massSIM.py' #program name
-N = 2 # number of nodes
+errfn = 'chisq_cube' # error file name, will append variable automatically
+program_name = 'test_chisq_cube_MPI.py' #program name
+N = 1 # number of nodes
 
 ##################
 
@@ -24,5 +24,5 @@ ibrun python /home1/02977/jialiu/CFHTLens_analysis/jia/{1} {2}'''.format(errfn, 
 	f.write(content)
 	f.close()
 
-for variable in range(1,14):
+for variable in range(12,16):
 	write_file(errfn, program_name, variable)
