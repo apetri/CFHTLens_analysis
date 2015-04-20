@@ -12,11 +12,12 @@ import sys
 stampede = 1
 if stampede:
 	from emcee.utils import MPIPool
+	nn = int(sys.argv[1])
 	test_dir = '/work/02977/jialiu/chisq_cube/'
 
 else:
 	test_dir = '/Users/jia/Documents/weaklensing/CFHTLenS/emulator/test_ps_bug/'
-	nn = int(sys.argv[1])#range from 0 to 10 for idx_arr
+	#range from 0 to 10 for idx_arr
 	#print nn # nn=0 (2pk+ps), 1 (2pk), 8 (ps, pass & ell cut)
 
 
