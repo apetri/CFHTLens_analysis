@@ -268,20 +268,20 @@ def plot_heat_map_w (values):
 ###########################################################
 ############ operation ####################################
 ##########################################################
-#pool=MPIPool()
-#print 'boo'
-#idx = idx_arr[nn]
+pool=MPIPool()
+print 'boo'
+idx = idx_arr[nn]
 
-#interp_cosmo, cov_mat, cov_inv, ps_CFHT = return_interp_cosmo_for_idx (idx)
-#print 'boo2'
-#values = [[w, idx, interp_cosmo, cov_inv, ps_CFHT] for w in w_arr]
+interp_cosmo, cov_mat, cov_inv, ps_CFHT = return_interp_cosmo_for_idx (idx)
+print 'boo2'
+values = [[w, idx, interp_cosmo, cov_inv, ps_CFHT] for w in w_arr]
 
-#pool.map(plot_heat_map_w, values)
+pool.map(plot_heat_map_w, values)
 
-#cube = array([load('/home1/02977/jialiu/chisq_cube/test/chisqcube_%s_w%s.npy'%(fn_arr[nn], w)) for w in w_arr])
+cube = array([load('/work/02977/jialiu/chisq_cube/test/chisqcube_%s_w%s.npy'%(fn_arr[nn], w)) for w in w_arr])
 
-#save(test_dir+'covmat_%s.npy'%(fn_arr[nn]), cov_mat)
-#save(test_dir+'chisqcube_%s.npy'%(fn_arr[nn]), cube)
+save(test_dir+'covmat_%s.npy'%(fn_arr[nn]), cov_mat)
+save(test_dir+'chisqcube_%s.npy'%(fn_arr[nn]), cube)
 
 ############### junk below
 #def chisq2P(chisq_mat):#(idx=idx_full,w=-1):#aixs 0-w, 1-om, 2-si8
