@@ -108,7 +108,7 @@ using the 2PCF~\citep{CFHTKilbinger}, and a number of authors have
 investigated the constraining power of CFHTLenS using statistics that
 go beyond the usual quadratic ones. Fu et al.~\citep{CFHTFu} used
 three--point correlations as an additional probe for cosmology, and
-found modest ($10-20\%$) improvements over the 2PCF. \textbf{These results rely on the third order statistics systematic tests performed by Simon et al. \citep{CFHTSimon}}.  
+found modest ($10-20\%$) improvements over the 2PCF. \textbf{\color{blue} These results rely on the third order statistics systematic tests performed by Simon et al. \citep{CFHTSimon}}.  
 
 Liu et al.~\citep{Companion} have found a more significant ($50-60\%$)
 tightening of the $\Omega$ and $\sigma_8$ constraints, utilizing the
@@ -362,10 +362,10 @@ originated, knowing it comes from a redshift $z_s$. To answer this
 question we need to integrate equation (\ref{raytrajectory}) with the
 initial condition $\pmb{\beta}(0;\pmb{\theta})=\pmb{\theta}$ up to a distance
 $\chi_s=\chi(z_s)$ to obtain the source angular position
-$\pmb{\beta}(\chi_s;\pmb{\theta})$. \textbf{Since light rays travel undeflected from the observer to the first lens plane, the derivative initial condition in the Cauchy problem (\ref{raytrajectory}) reads $\dot{\pmb{\beta}}(0;\pmb{\theta})=0$. We indicate the derivative of $\pmb{\beta}$ with respect to $\chi$ as $\dot{\pmb{\beta}}$.} 
+$\pmb{\beta}(\chi_s;\pmb{\theta})$. \textbf{\color{blue} Since light rays travel undeflected from the observer to the first lens plane, the derivative initial condition in the Cauchy problem (\ref{raytrajectory}) reads $\dot{\pmb{\beta}}(0;\pmb{\theta})=0$. We indicate the derivative of $\pmb{\beta}$ with respect to $\chi$ as $\dot{\pmb{\beta}}$.} 
 %
 We use our proprietary implementation Inspector Gadget~(see, e.g., \cite{KHM2010}) to solve
-for the light ray trajectories based \textbf{on a discretized version of equation (\ref{raytrajectory}) that is based on the multi--lens--plane algorithm (see \citep{RayTracingHartlap} for example).
+for the light ray trajectories based \textbf{\color{blue} on a discretized version of equation (\ref{raytrajectory}) that is based on the multi--lens--plane algorithm (see \citep{RayTracingHartlap} for example).
 Applying random periodical shifts and rotations to the $N$--body simulation data cubes, we generate $R=1000$ pseudo--independent realizations of the lens plane system used to solve (\ref{raytrajectory}).} 
 %
 Once we obtain the light ray trajectories, we infer the relevant weak
@@ -378,7 +378,7 @@ shear components $(\gamma^1,\gamma^2)$,
 A(\chi_s;\pmb{\theta}) = (1-\kappa(\chi_s;\pmb{\theta}))\pmb{I} - \gamma^1(\chi_s;\pmb{\theta})\sigma^3 - \gamma^2(\chi_s;\pmb{\theta})\sigma^1
 \end{equation}  
 where $\pmb{I}$ is the $2\times2$ identity and $\sigma^{1,3}$ are the
-first and third Pauli matrices. \textbf{We perform this procedure for each of the $R$ realizations of the lens planes and we obtain $R$ pseudo--independent realizations of the $\pmb{\gamma}$ weak lensing field.} We use these different random realizations to estimate the means \textbf{(from the \texttt{CFHTemu1} simulations)} and covariance matrices \textbf{(from the \texttt{CFHTcov} simulations)} of our descriptors. \textbf{Since the random box rotations and translations that make up the \texttt{CFHTcov} simulations are based on 50 independent $N$--body runs, we believe the covariance matrices measured from this set to be more accurate than the ones measured from the \texttt{CFHTemu1} set.} 
+first and third Pauli matrices. \textbf{\color{blue} We perform this procedure for each of the $R$ realizations of the lens planes and we obtain $R$ pseudo--independent realizations of the $\pmb{\gamma}$ weak lensing field.} We use these different random realizations to estimate the means \textbf{\color{blue} (from the \texttt{CFHTemu1} simulations)} and covariance matrices \textbf{\color{blue} (from the \texttt{CFHTcov} simulations)} of our descriptors. \textbf{\color{blue} Since the random box rotations and translations that make up the \texttt{CFHTcov} simulations are based on 50 independent $N$--body runs, we believe the covariance matrices measured from this set to be more accurate than the ones measured from the \texttt{CFHTemu1} set.} 
 
 The convergence $\kappa$ is related to
 the magnification, while the two components of the complex shear
@@ -404,8 +404,8 @@ $\mathbf{g}\approx\pmb{\gamma}$ and $\mathbf{e}\approx
 \mathbf{e}_s+\pmb{\gamma}$. We also add the multiplicative shear
 corrections by replacing $\pmb{\gamma}$ with $(1+m)\pmb{\gamma}$. We
 note that the observed ellipticity for a particular galaxy already
-contains the lensing shear by large scale structure \textbf{(LSS)}, but the random
-rotation makes this contribution \textbf{at least} second order in $\kappa$ \textbf{by destropying the shape spatial correlations induced by lensing from LSS}. Consistent with the weak lensing approximation, the lensing signal from the
+contains the lensing shear by large scale structure \textbf{\color{blue} (LSS)}, but the random
+rotation makes this contribution \textbf{\color{blue} at least} second order in $\kappa$ \textbf{\color{blue} by destroying the shape spatial correlations induced by lensing from LSS}. Consistent with the weak lensing approximation, the lensing signal from the
 simulations is first order in $\kappa$ and hence the randomly rotated
 observed ellipticities can be safely considered as intrinsic
 ellipticities. 
@@ -453,7 +453,7 @@ V_2(\kappa_0)=\frac{1}{2\pi A}\int_A\delta_D(\kappa(\pmb{\theta})-\kappa_0)\frac
 \end{equation*}
 Here $A$ is the total area of the field of view and $\kappa_{x,y}$
 denotes gradients of the $\kappa$ field, which we evaluate using
-finite differences. \textbf{In this notation $\Theta(x)$ is the Heaviside function}
+finite differences. \textbf{\color{blue} In this notation $\Theta(x)$ is the Heaviside function}
 %
 \begin{equation}
 \Theta(x) = 
@@ -463,7 +463,7 @@ finite differences. \textbf{In this notation $\Theta(x)$ is the Heaviside functi
 \end{cases}
 \end{equation}
 %
-\textbf{and $\delta_D(x)$ is the Dirac delta function.}
+\textbf{\color{blue} and $\delta_D(x)$ is the Dirac delta function.}
 The first Minkowski functional, $V_0$, is
 equivalent to the cumulative one--point PDF of the $\kappa$ field,
 while $V_1,V_2$ are sensitive to the correlations between nearby
@@ -614,7 +614,7 @@ usual assumption that the data likelihood $\mathcal{L}_d(D_i\vert
 We assume, for simplicity, that the covariance matrix $\mathbf{C}$ in
 equation~(\ref{datalikelihood}) is $\mathbf{p}$--independent and
 coincides with $\mathbf{C}(\mathbf{p}_0)$. The simulated descriptors $\mathbf{M(p)}$ are
-measured from an average over the $R=1000$ realizations \textbf{in the \texttt{CFHTemu1} ensemble}  
+measured from an average over the $R=1000$ realizations \textbf{\color{blue} in the \texttt{CFHTemu1} ensemble}  
 \begin{equation}
 M_i(\mathbf{p}) = \frac{1}{R}\sum_{r=1}^R M_i^r .
 \end{equation}
@@ -623,7 +623,7 @@ The covariance matrix
 \label{datacov}
 C_{ij} = \frac{1}{R-1} \sum_{r=1}^R [M_i^r(\mathbf{p}_0)-M_i(\mathbf{p}_0)][M_j^r(\mathbf{p}_0)-M_j(\mathbf{p}_0)]
 \end{equation}
-is measured from the \textbf{$R=1000$} realizations \textbf{in the \texttt{CFHTcov} ensemble}.
+is measured from the \textbf{\color{blue} $R=1000$} realizations \textbf{\color{blue} in the \texttt{CFHTcov} ensemble}.
 While eq.~(\ref{datacov}) gives an unbiased estimator of the
 covariance matrix, its inverse is not an unbiased estimator of
 $\mathbf{C}^{-1}$ (e.g. ref.~\citep{RayTracingHartlap}). Given that in
@@ -678,9 +678,9 @@ descriptors to the fiducial parameter setting
 $(\Omega_m,w,\sigma_8)=(0.26,-1.0,0.8)$ and comparing the result to
 the one expected from the \texttt{CFHTcov}
 simulations. Figure~\ref{emulatorAccuracy} shows that our power
-spectrum emulator has a \textbf{relative error} smaller than 20\% for the lower
+spectrum emulator has a \textbf{\color{blue} relative error} smaller than 20\% for the lower
 multipoles ($l<500$), and comparable to 1\% for the higher multipoles. The MF
-emulator has a \textbf{relative error} $\lesssim$10\% for the first 30 bins (which
+emulator has a \textbf{\color{blue} relative error} $\lesssim$10\% for the first 30 bins (which
 correspond to $\kappa$ values in $[-0.04,0.08]$) and deteriorates due
 to numerical noise for the remaining 20 bins. We eliminate the
 residual impact of these inaccuracies using a dimensionality reduction
@@ -690,7 +690,7 @@ conclusions. Figure~\ref{emulatorAccuracy} demonstrates that our
 emulator is able to distinguish a non--fiducial model from the
 fiducial one within numerical errors.  We thus found no need to
 implement a more sophisticated interpolation
-scheme~\footnote{Following ref.~\citep{coyote2}, we have experimented with interpolations using a Gaussian Process, but did not find a significant improvement in \textbf{relative error} over the much simpler polynomial scheme; this is in agreement with earlier results (see for example \citep{KnoxGP})}.
+scheme~\footnote{Following ref.~\citep{coyote2}, we have experimented with interpolations using a Gaussian Process, but did not find a significant improvement in \textbf{\color{blue} relative error} over the much simpler polynomial scheme; this is in agreement with earlier results (see for example \citep{KnoxGP})}.
 
 
 \begin{figure*}
@@ -807,7 +807,7 @@ This section describes our main results, and is organized as follows.
 We begin by showing the cosmological constraints from the CFHTLenS
 data for the triplet $(\Omega_m,\sigma_8,w)$, as well as for an
 alternative parameterization, $(\Omega_m,\Sigma_8,w)$, with
-$\Sigma_8(\alpha)\equiv \sigma_8(\Omega_m/0.27)^\alpha$. \textbf{In the next section} we give a justification on why we fix $\alpha$ to a value of $0.55$. 
+$\Sigma_8(\alpha)\equiv \sigma_8(\Omega_m/0.27)^\alpha$. \textbf{\color{blue} In the next section} we give a justification on why we fix $\alpha$ to a value of $0.55$. 
 We then use our simulations to perform a robustness analysis of the parameter
 confidence intervals with respect to the number of PCA components used
 in the projection.
@@ -1074,7 +1074,7 @@ descriptors.
 We show constraints from different descriptor combinations in the
 $(\Omega_m,\sigma_8)$ and $(w,\Sigma_8)$ planes in Figure
 \ref{contours3combined}, and on the best-constrained parameter
-$\Sigma_8$ in Figure \ref{likelihoodSi8cross}. \textbf{We also provide a tabulated version of the $\Sigma_8$ constraints ($1\sigma$) in Table \ref{Sigma8Table}}. We discuss these findings in the next section.
+$\Sigma_8$ in Figure \ref{likelihoodSi8cross}. \textbf{\color{blue} We also provide a tabulated version of the $\Sigma_8$ constraints ($1\sigma$) in Table \ref{Sigma8Table}}. We discuss these findings in the next section.
 
 
 
@@ -1202,7 +1202,7 @@ CFHTLenS~\citep{CFHTKilbinger,CFHTFu,Companion,CFHTMasato}.  We also
 note that ref.~\citep{CFHTMasato} obtained the best-fit value of
 $w\approx -2$ (but with large errors that include $w=-1$ at
 1$\sigma$).  We found a similar result when using a Fisher matrix to
-compute confidence levels. \textbf{Since the Fisher matrix formalism is equivalent to a linear approximation of our emulator (in which all cosmological parameter dependencies are assumed to be linear interpolations between the fiducial cosmology and its variations)}, we thus attribute this bias to the \textbf{oversimplifying} assumption of linear cosmology-parameter dependence of the descriptors.  
+compute confidence levels. \textbf{\color{blue} Since the Fisher matrix formalism is equivalent to a linear approximation of our emulator (in which all cosmological parameter dependencies are assumed to be linear)}, we thus attribute this bias to the \textbf{\color{blue} oversimplifying} assumption of linear cosmology-parameter dependence of the descriptors.  
 Although the right panel in Figure
 \ref{contours3combined} shows that the moments confine $w$ to isolated
 regions in parameter space, we note that $w=-1$, the value favored by other existing experiments, is excluded at the $1\sigma$
@@ -1229,7 +1229,7 @@ power spectrum and the moments with the Minkowski functionals helps
 tighten the $(\Omega_m,\sigma_8)$ constraints, it does not help in
 reducing the inherent parameter bias of the MFs. The right panel of Figure
 \ref{contours3combined} shows that even with these statistics
-combined, $w$ remains essentially unconstrained. \textbf{\citep{CFHTHeymansTomo} found that even weak lensing tomography alone is unable to constrain $w$ sensibly}. 
+combined, $w$ remains essentially unconstrained. \textbf{\color{blue} \citep{CFHTHeymansTomo} found that even weak lensing tomography alone is unable to constrain $w$ sensibly}. 
 Figure \ref{likelihoodSi8cross} shows that the $\Sigma_8$ combination is
 already well constrained by any of the descriptors alone, without the
 need of combining different descriptors.
@@ -1268,7 +1268,7 @@ In this final section we summarize the main conclusions of this work:
   found to be unimportant when constraining cosmology with the power
   spectrum alone, we find that these systematics need to be corrected
   to obtain unbiased constraints on the $(\Omega_m,\sigma_8)$ doublet
-  using the Minkowski functionals. \textbf{We are aware that, when trying to explain the discrepancy between weak lensing and CMB constraints using the Minkowski functionals, there might be other effects to be considered, namely non--Gaussian error correlations in the descriptors and inaccuracies of the simulations on small scales. These inaccuracies could in principle affect the excursion set reconstruction at high $\kappa_0$ thresholds. We will investigate these additional sources of error in future work.}
+  using the Minkowski functionals. \textbf{\color{blue} We are aware that, when trying to explain the discrepancy between weak lensing and CMB constraints using the Minkowski functionals, there might be other effects to be considered, namely non--Gaussian error correlations in the descriptors and inaccuracies of the simulations on small scales. These inaccuracies could in principle affect the excursion set reconstruction at high $\kappa_0$ thresholds. We will investigate these additional sources of error in future work.}
 
 \item For the CFHTLenS data set, Minkowski functionals can effectively
   constrain the non-degenerate direction in parameter space,
