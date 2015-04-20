@@ -26,6 +26,7 @@ contour_ps_fieldselect = 0
 contour_peaks_powspec = 0
 contour_including_w = 0
 contour_peaks_powspec_covariance = 0
+contour_peakpeak = 1 # added 4/19/2015
 
 good_bad_powspec = 0
 interp_2D_plane = 0
@@ -44,7 +45,7 @@ om_arr = linspace(0,1.2,l)[om0:om1]
 si8_arr = linspace(0,1.6,ll)[si80:si81]
 w_arr = linspace(0,-3,101)#[w0:w1]
 sigmaG_arr = [1.0, 1.8, 3.5, 5.3]
-fn_arr = ['idx_psPass7000_pk2smoothing', 'pk2smoothing', 'pk10', 'pk18', 'pk35', 'pk53', 'psPass', 'psAll', 'psPass7000', 'psAll7000', 'idx_psPass7000_pk2smoothing_SIMGA', 'pk2smoothing_SIMGA', 'psPass7000_SIGMA']
+fn_arr = ['idx_psPass7000_pk2smoothing', 'pk2smoothing', 'pk10', 'pk18', 'pk35', 'pk53', 'psPass', 'psAll', 'psPass7000', 'psAll7000', 'idx_psPass7000_pk2smoothing_SIMGA', 'pk2smoothing_SIMGA', 'psPass7000_SIGMA', 'idx_peakpeak_counts10', 'idx_peakpeak_counts18', 'idx_peakpeak_kappa10' , 'idx_peakpeak_kappa18']
 
 cube_arr = array([load(test_dir+'chisqcube_%s.npy'%(fn)) for fn in fn_arr])
 
@@ -111,6 +112,19 @@ if contour_peaks_smoothing:
 	labels.append(r'$\rm{1.0+1.8\, arcmin}$')
 	icube_arr = cube_arr[[2,3,4,5,1]]
 	fn = 'contour_peaks_smoothing'
+	nlev = 1
+	official_contour (icube_arr, labels, nlev, fn, colors, lws, lss)
+	
+
+if contour_peakpeak:
+	colors = ['r','b','g','m','k']
+	lws = [4,4,2,2,4]
+	lss =('dotted', 'dashed', 'solid', 'dashed', 'solid')
+	#labels = [r'$\rm{%.1f\, arcmin}$'%(sigmaG) for sigmaG in sigmaG_arr]
+	#labels.append(r'$\rm{1.0+1.8\, arcmin}$')
+	labels = ['peaks', 'count10', 'count18', 'kappa10', 'kappa18']
+	icube_arr = cube_arr[[2,13,14,15,16]]
+	fn = 'contour_peakpeak'
 	nlev = 1
 	official_contour (icube_arr, labels, nlev, fn, colors, lws, lss)
 	
@@ -298,7 +312,7 @@ if sample_points:
 	ax.text(9.2,400,r'$[\rm{1.0\, arcmin}]$',color='k',fontsize=16)
 	ax.text(28,1100,r'$[\rm{1.8\, arcmin}]$',color='k',fontsize=16)
 	ax.set_title(r'$\rm{CFHTLenS}$',fontsize=24)
-	fn=plot_dir'peaks_fit.pdf'
+	fn=plot_dir+'peaks_fit.pdf'
 	savefig(fn)	
 	close()
 	
