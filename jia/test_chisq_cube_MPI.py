@@ -43,7 +43,7 @@ si8_arr = linspace(0,1.6,ll)#original
 #s=(im/0.27)**alpha*s
 
 
-ps_CFHT0 = concatenate(array([np.load(test_dir+fn) for fn in ('PASS_ps_CFHT.npy', 'ALL_pk_CFHT_sigmaG10.npy', 'ALL_pk_CFHT_sigmaG18.npy', 'ALL_pk_CFHT_sigmaG35.npy', 'ALL_pk_CFHT_sigmaG53.npy', 'ALL_ps_CFHT.npy','PASS_pk_CFHT_sigmaG10.npy', 'Corr_counts_sigma10_CFHT.npy', 'Corr_counts_sigma18_CFHT.npy ', 'Corr_kappa_sigma10_CFHT.npy', 'Corr_kappa_sigma18_CFHT.npy ')]),axis=-1)
+ps_CFHT0 = concatenate(array([np.load(test_dir+fn) for fn in ('PASS_ps_CFHT.npy', 'ALL_pk_CFHT_sigmaG10.npy', 'ALL_pk_CFHT_sigmaG18.npy', 'ALL_pk_CFHT_sigmaG35.npy', 'ALL_pk_CFHT_sigmaG53.npy', 'ALL_ps_CFHT.npy','PASS_pk_CFHT_sigmaG10.npy', 'Corr_counts_sigma10_CFHT.npy', 'Corr_counts_sigma18_CFHT.npy', 'Corr_kappa_sigma10_CFHT.npy', 'Corr_kappa_sigma18_CFHT.npy')]),axis=-1)
 ps_fidu_mat0 = concatenate([np.load(test_dir+fn) for fn in ('SIM_powspec_sigma05_emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765_PASS.npy',
  'SIM_peaks_sigma10_emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765_025bins_ALL.npy',
  'SIM_peaks_sigma18_emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765_025bins_ALL.npy',
