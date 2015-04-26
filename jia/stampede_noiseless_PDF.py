@@ -24,7 +24,9 @@ maskGen = lambda i: WLanalysis.readFits(backup_dir+'mask/CFHT_mask_ngal5_sigma%0
 mask_arr = array(map(maskGen, range(1,14)))
 mask_arr[mask_arr==0] = nan
 
-def PDFGen(cosmo, R):
+def PDFGen(cosmoR):
+	cosmo, R = cosmoR
+	print cosmo, R
 	kmaps = array([(kmapGen(i, cosmo, R)*mask_arr[i-1]) for i in range(1,14)])
 	all_kappa = kmaps[~isnan(kmaps)]
 	PDF = histogram(all_kappa, bins=edges)[0]
@@ -35,7 +37,8 @@ pool = MPIPool()
 for cosmo in cosmo_arr:
 	print cosmo
 	if not os.path.isfile(fn(cosmo)):
-		PDF_arr = array([PDFGen(cosmo, R) for R in range(1,1001)])
+		cosmoR_arr = [(cosmo, R) for R in range(1,1001)]
+		PDF_arr = array(pool.map(PDFGen, cosmoR_arr))
 		np.save(fn(cosmo), PDF_arr)
 
 #fsky_all = array([0.839298248291,0.865875244141,0.809467315674,
