@@ -35,7 +35,7 @@ pool = MPIPool()
 for cosmo in cosmo_arr:
 	print cosmo
 	if not os.path.isfile(fn(cosmo)):
-		PDF_arr = array([PDFGen(cosmo, R) for R in range(1000)])
+		PDF_arr = array([PDFGen(cosmo, R) for R in range(1,1001)])
 		np.save(fn(cosmo), PDF_arr)
 
 #fsky_all = array([0.839298248291,0.865875244141,0.809467315674,
