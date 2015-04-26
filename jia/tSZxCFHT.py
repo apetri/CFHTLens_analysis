@@ -21,7 +21,8 @@ HM857 = 0 # step 1 CIB^2
 yx857 = 0 # step 2 Y x CIB
 kx857 = 0 # step 3 CFHT x CIB
 cc_yxk = 0 # step 4 Y x CFHT
-SNR_calc = 1
+SNR_calc = 0
+y_auto = 1
 
 tSZ_dir = '/Users/jia/weaklensing/tSZxCFHT/'
 plot_dir = tSZ_dir+'plot/'
@@ -173,6 +174,63 @@ if HM857:
 	#save(fn, cc_857)
 	cc_arr = load(fn)
 	plot_cc_err (cc_arr, 'Cell_857')
+
+def inverse_sum(CC_arr, errK_arr):
+	'''both array has shape (4, 11)'''
+	weightK = 1/errK_arr**2/sum(1/errK_arr**2, axis=0)
+	CC_mean = sum(CC_arr*weightK,axis=0)
+	err_mean = sqrt(1.0/sum(1/errK_arr**2, axis=0))
+	return CC_mean, err_mean
+
+if y_auto:
+	print 'y auto'
+	f=figure(figsize=(12,8))
+		
+	for ip in range(4):
+		print ip
+		ax=f.add_subplot(2,2,ip+1)
+		def y_auto_ip(Wx):
+			sigmaG2=sigmaG_arr[ip]
+			tmap = tmapGen(prefix_arr[ip], Wx)
+			if ip==3:
+				tmap[abs(tmap)>1.0]=0
+				mask = JCHmaskGen(Wx)
+			else:
+				mask = maskGen(Wx)
+			tmap*=mask
+			tmap-=mean(tmap)
+			
+			fmask2 = sum(mask**2)/sizes[Wx-1]**2
+			
+			fsky=sum(mask)/sizes[Wx-1]**2*sizedeg_arr[Wx-1]/41253.0
+			
+			ps = WLanalysis.PowerSpectrum(tmap, edges=edgesGen(Wx), sigmaG=sigmaG2)[1]/fmask2
+			
+			err = sqrt(2)*theory_err(tmap, tmap, Wx, fmask2, fsky, sigmaG2, sigmaG2)
+			return ps, err
+		ps_arr = array(map(y_auto_ip, range(1,5)))
+		
+		CC_arr = ps_arr[:,0,:]
+		errK_arr = ps_arr[:,1,:]
+		CC_mean, err_mean = inverse_sum(CC_arr, errK_arr)
+		factor=1.0#2.0*pi/(1+ell_arr)
+		
+		
+		for Wx in arange(1,5):
+			cc, err = ps_arr[Wx-1]
+			ax.errorbar((ell_arr+5.0*(Wx-3))[:-1], (cc*factor)[:-1], (err*factor)[:-1], label='W%i'%(Wx), fmt='o')
+	
+		#ax.bar(ell_arr, CC_mean*factor, bottom=0.5*err_mean*factor, width=ones(len(ell_arr))*80, align='center',ec='brown',fc='none',linewidth=1.5, alpha=1.0)
+		plot((0,2000),zeros(2),'k--')
+		ax.set_title(prefix_arr[ip])
+		ax.set_yscale('log')
+		
+		legend(fontsize=10, loc=0)
+		ax.set_ylabel('ell^2/2pi*C')
+		if ip>1:
+			xlabel('ell')
+	savefig(plot_dir+'y_auto.jpg')
+	close()
 	
 if yx857:
 	print 'yx857'

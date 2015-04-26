@@ -23,9 +23,17 @@ conc0 = lambda arr: concatenate([(0,), arr])
 #######################################
 ########## cosmo params ###############
 #######################################
-compute_model = 1
+compute_model = 0
 
 z0, z1 = load(cmb_dir+'dndz_weighted_nocut.npy')
+
+############ crazy test for dndz ####
+#idx = where(z0>1.3)[0]
+#z1[idx]=0
+#z1[:idx[0]] *= 20/sum(z1[:idx[0]])
+#model_fn = 'model_Planck15_dndzCFHT_rm13_spreadout'
+
+
 #z0, z1 = load(cmb_dir+'dndz_nocutCFHT.npy')
 #z0, z1 = load(cmb_dir+'dndz_rand2.npy')
 #z0, z1 = load(cmb_dir+'dndz_weighted_nocutPeak.npy')
@@ -46,7 +54,6 @@ OmegaM = 0.3156#,0.29982##0.33138#
 H0 = 67.27
 Ptable = genfromtxt(cmb_dir+'P_delta_Planck15')
 model_fn = 'model_Planck15_dndzWeighted'#Peak
-#model_fn = 'model_Planck15_dndzCFHT'
 ########### colin params ##############
 #OmegaM = 0.317 
 #H0 = 65.74
@@ -85,7 +92,7 @@ z_ls = 1100 #last scattering
 #######################################
 
 ########## lensing kernel using dndz ##########
-if compute_model == 0:
+if compute_model:
 	integrand = lambda zs, z: dndz_interp(zs)*(1-DC(z)/DC(zs))
 	
 	W_wl_fcn = lambda z: 1.5*OmegaM*H0**2*(1+z)*H_inv(z)*DC(z)/c*quad(integrand, z, 4.0, args=(z,))[0]
@@ -116,12 +123,12 @@ if compute_model == 0:
 
 	###########################
 	
-	#ell_arr = linspace(1e-5, 2000, 200)
-	#Ckk_arr = array([quad(Ckk_integrand, 0.002, 3.7 , args=(iell))[0] for iell in ell_arr])#3.7
-	##plot(ell_arr, Ckk_arr*ell_arr**2/2.0/pi)
-	#plot(ell_arr, Ckk_arr*ell_arr)
-	#show()
-	#save(cmb_dir+model_fn,array([ell_arr, Ckk_arr]))
+	ell_arr = linspace(1e-5, 2000, 200)
+	Ckk_arr = array([quad(Ckk_integrand, 0.002, 3.7 , args=(iell))[0] for iell in ell_arr])#3.7
+	#plot(ell_arr, Ckk_arr*ell_arr**2/2.0/pi)
+	plot(ell_arr, Ckk_arr*ell_arr)
+	show()
+	save(cmb_dir+model_fn,array([ell_arr, Ckk_arr]))
 
 
 ###################################
@@ -131,8 +138,8 @@ plot_sample_gal_cmb_maps = 0
 plot_dndz_peak_PDF = 0
 plot_lensing_kernels = 0
 
-plot_null_test = 0
-plot_data_model = 1
+plot_null_test = 1
+plot_data_model = 0
 plot_model_theory = 0
 plot_model_theory_haloterms = 0
 compute_theory_err = 0
@@ -302,24 +309,27 @@ if plot_null_test:
 	chisq_null = dN*covI*dN.T
 	print float(chisq_null), year, Nsim
 	########### plotting #################
-	#f=figure(figsize=(8,6))
-	#ax=f.add_subplot(111)	
-	#ax.bar(ell_arr_data, 2*err_mean*1e6, bottom=(CC_mean-err_mean)*1e6, width=ones(len(ell_arr_data))*80, align='center',ec='brown',fc='none',linewidth=1.5, alpha=1.0)
-	#for Wx in range(1,5):
-		#cc=rand(3)#colors[Wx-1]
-		#ax.errorbar(ell_arr_data+(Wx-2.5)*15, CC_arr[Wx-1]*1e6, errK_arr[Wx-1]*1e6, fmt='o',ecolor=cc,mfc=cc, mec=cc, label=r'$\rm W%i$'%(Wx), linewidth=1.2, capsize=0)
-	#ax.plot([0,2000], [0,0], 'k--', linewidth=1)
-	#leg=ax.legend(loc=3,fontsize=16,ncol=1)
-	#leg.get_frame().set_visible(False)
-	#ax.set_xlabel(r'$\ell$',fontsize=18)
-	#ax.set_xlim(1,2000)
-	#ax.set_ylabel(r'$\ell C_{\ell}^{\kappa_{cmb}\kappa_{gal}}(\times10^{-6})$',fontsize=18)
-	#ax.tick_params(labelsize=16)
-	##show()
-	##ax.text(100, 0.3, r'$\kappa_{\rm cmb,%s}\times\,\kappa_{\rm gal,rot}$'%(year), color='k', fontsize=20)
-	#ax.text(100, 0.6, r'$\kappa_{\rm cmb,%s}^{\rm noise}\times\,\kappa_{\rm gal}$'%(year), color='k', fontsize=20)
-	#savefig(cmb_dir+'paper/CC_plancknoise_%s.pdf'%(year))
-	#close()
+	f=figure(figsize=(8,6))
+	ax=f.add_subplot(111)	
+	ax.bar(ell_arr_data, 2*err_mean*1e6, bottom=(CC_mean-err_mean)*1e6, width=ones(len(ell_arr_data))*80, align='center',ec='brown',fc='none',linewidth=1.5, alpha=1.0)
+	for Wx in range(1,5):
+		cc=rand(3)#colors[Wx-1]
+		ax.errorbar(ell_arr_data+(Wx-2.5)*15, CC_arr[Wx-1]*1e6, errK_arr[Wx-1]*1e6, fmt='o',ecolor=cc,mfc=cc, mec=cc, label=r'$\rm W%i$'%(Wx), linewidth=1.2, capsize=0)
+	ax.plot([0,2000], [0,0], 'k-', linewidth=1)
+	leg=ax.legend(loc=3,fontsize=16,ncol=1)
+	leg.get_frame().set_visible(False)
+	ax.set_xlabel(r'$\ell$',fontsize=18)
+	ax.set_xlim(1,2000)
+	ax.set_ylabel(r'$\ell C_{\ell}^{\kappa_{cmb}\kappa_{gal}}(\times10^{-6})$',fontsize=18)
+	ax.tick_params(labelsize=16)
+	if Nsim == 500:
+		ax.text(100, 0.22, r'$\kappa_{\rm cmb,%s}\times\,\kappa_{\rm gal,rot}$'%(year), color='k', fontsize=20)
+		savefig(cmb_dir+'paper/CC_rot_%s.pdf'%(year))
+	elif Nsim == 100:
+		ax.text(100, 0.4, r'$\kappa_{\rm cmb,%s}^{\rm noise}\times\,\kappa_{\rm gal}$'%(year), color='k', fontsize=20)
+		savefig(cmb_dir+'paper/CC_plancknoise_%s.pdf'%(year))
+	
+	close()
 	
 
 theory_err = array([[  3.14634974e-07,   6.43955357e-07,   1.03293813e-06,
@@ -338,7 +348,7 @@ if plot_data_model:
 	
 	ell_arr_data = 40.0*WLanalysis.edge2center(linspace(1,50,6))# 40=512.0/1330.0*360./(sqrt(12.0))
 	b_ell = exp(-ell_arr_data**2*radians(1.0/60)**2/2.0)
-	factor = 2.0*pi/(ell_arr_data+1)#/b_ell
+	factor = 2.0*pi/(ell_arr_data+1)/b_ell
 	ell_arr, Ckk_arr = load(cmb_dir+'model_Hinshaw_dndzWeighted.npy')
 	ell_arr_Planck, Ckk_arr_Planck = load(cmb_dir+'model_Planck15_dndzWeighted.npy')
 	
@@ -413,7 +423,7 @@ if plot_data_model:
 	ax=f.add_subplot(111)
 	ax.bar(ell_arr_data, 2*err_mean*1e6, bottom=(CC_mean-err_mean)*1e6, width=ones(len(ell_arr_data))*80, align='center',ec='brown',fc='none',linewidth=1.5, alpha=1.0)#
 	
-	ax.plot([0,2000], [0,0], 'k--', linewidth=1)
+	ax.plot([0,2000], [0,0], 'k-', linewidth=1)
 	seed(584)#good seeds: 6, 16, 25, 41, 53, 128, 502, 584
 	for Wx in range(1,5):
 		cc=rand(3)#colors[Wx-1]
@@ -423,10 +433,13 @@ if plot_data_model:
 	Ckk_arr_Planck[0]=0
 	ax.plot(ell_arr, Ckk_arr_Planck*ell_arr_Planck*1e6,'-', color=rand(3), linewidth=2.0, label=r'$Planck$')
 	ax.plot(ell_arr ,Ckk_arr*ell_arr*1e6,'k-',linewidth=1.2, label=r'$WMAP$')
-
+	if year == 2013:
+		ax.plot(ell_arr, 0.44*Ckk_arr_Planck*ell_arr_Planck*1e6,'--', color=rand(3), linewidth=2.0, label=r'${\rm best-fit}$')
+	elif year == 2015:
+		ax.plot(ell_arr, 0.48*Ckk_arr_Planck*ell_arr_Planck*1e6,'--', color=rand(3), linewidth=2.0, label=r'${\rm best-fit}$')
 	handles, labels = ax.get_legend_handles_labels()
-	handles = [handles[i] for i in (2,3, 4,5,0,1)]
-	labels = [labels[i] for i in (2,3,4,5,0, 1)]
+	handles = [handles[i] for i in (3, 4,5,6,0,1, 2)]
+	labels = [labels[i] for i in (3,4,5,6,0,1, 2)]
 	leg=ax.legend(handles, labels,loc=3,fontsize=14)
 	leg.get_frame().set_visible(False)
 	ax.set_xlabel(r'$\ell$',fontsize=18)
@@ -436,7 +449,7 @@ if plot_data_model:
 	ax.text(100, 4, r'$\kappa_{\rm cmb,%s}\times\,\kappa_{\rm gal}$'%(year), color='k', fontsize=20)
 	#ax.set_title('%s dn/dz nocutPeak, A=%.2f, SNR=%.2f'%(year, A_min, SNR))#, noZcut
 	ax.tick_params(labelsize=16)
-	#savefig(cmb_dir+'paper/CC_%s_plancksim.pdf'%(year))
+	savefig(cmb_dir+'paper/CC_%s_plancksim.pdf'%(year))
 	close()
 
 if plot_model_theory:

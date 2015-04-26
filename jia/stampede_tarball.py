@@ -6,14 +6,14 @@ inDIR_arr = ['/scratch/02977/jialiu/KSsim_noiseless/', '/scratch/02977/jialiu/KS
 
 outDIR_arr = ['/scratch/02977/jialiu/ranch_archive/KSsim_noiseless/', '/scratch/02977/jialiu/ranch_archive/KSsim/']
 
-for outDIR in outDIR_arr:
-	subprocess.check_call('lfs setstripe -c 4 %s' %(outDIR))
+#for outDIR in outDIR_arr:
+	#subprocess.check_call('lfs setstripe -c 4 %s'%(outDIR))
 
 pool = MPIPool()
 
 def create_tarball (FNs):
 	inFN, outFN = FNs
-	subprocess.check_call('tar -cfv %s.tar %s'%(outFN, inFN))
+	subprocess.check_call('tar cfv %s.tar %s'%(outFN, inFN))
 
 for i in range(len(inDIR_arr)):
 	cosmo_arr = os.listdir(inDIR_arr[i])
