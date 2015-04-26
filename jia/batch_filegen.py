@@ -1,10 +1,11 @@
 #!python
 ############# edite this block ###########
 ############# maybe also want to edit run time below #####
-errfn = 'tarball' # error file name, will append variable automatically
-program_name = 'stampede_tarball.py' #program name
-N = 1 # number of nodes
-hrs = 20 # number of hours requested
+errfn = 'kappaPDF' # error file name, will append variable automatically
+program_name = 'stampede_noiseless_PDF.py' #program name
+N = 4 # number of nodes
+hrs = 2 # number of hours requested
+variable_arr = (0,1)
 ##################
 
 n = N*16
@@ -24,5 +25,5 @@ ibrun python /home1/02977/jialiu/CFHTLens_analysis/jia/{1} {2}'''.format(errfn, 
 	f.write(content)
 	f.close()
 
-for variable in (1,):
+for variable in variable_arr:
 	write_file(errfn, program_name, variable)

@@ -11,11 +11,16 @@ edges = linspace(-0.05,0.15,51)
 sim_dir = '/home1/02977/jialiu/cat/'
 cosmo_arr = os.listdir(sim_dir)
 backup_dir = '/work/02977/jialiu/backup/'
-KS_dir = '/work/02977/jialiu/KSsim_noiseless/'
-fn = lambda cosmo: '/work/02977/jialiu/kappaPDF/PDF_noiseless_%s.npy'%(cosmo)
 
-#KS_dir = '/work/02977/jialiu/KSsim/'
-#fn = lambda cosmo: '/work/02977/jialiu/kappaPDF/PDF_noisy_%s.npy'%(cosmo)
+noise = int(sys.argv[1])
+if noise:
+	KS_dir = '/work/02977/jialiu/KSsim/'
+	fn = lambda cosmo: '/work/02977/jialiu/kappaPDF/PDF_noisy_%s.npy'%(cosmo)
+else:
+	KS_dir = '/work/02977/jialiu/KSsim_noiseless/'
+	fn = lambda cosmo: '/work/02977/jialiu/kappaPDF/PDF_noiseless_%s.npy'%(cosmo)
+
+
 	
 kmapGen = lambda i, cosmo, R: np.load(KS_dir+'%s/subfield%i/sigma%02d/SIM_KS_sigma%02d_subfield%i_%s_%04dr.npy'%(cosmo, i, sigmaG*10, sigmaG*10, i, cosmo,R))
 
