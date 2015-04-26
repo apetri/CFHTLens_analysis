@@ -10,7 +10,7 @@ PPA512 = 2.4633625
 edges = linspace(-0.05,0.15,51)
 sim_dir = '/home1/02977/jialiu/cat/'
 cosmo_arr = os.listdir(sim_dir)
-
+backup_dir = '/work/02977/jialiu/backup/'
 KS_dir = '/work/02977/jialiu/KSsim_noiseless/'
 fn = lambda cosmo: '/work/02977/jialiu/kappaPDF/PDF_noiseless_%s.npy'%(cosmo)
 
