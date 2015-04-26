@@ -26,7 +26,7 @@ mask_arr[mask_arr==0] = nan
 
 def PDFGen(cosmo, R):
 	kmaps = array([(kmapGen(i, cosmo, R)*mask_arr[i-1]) for i in range(1,14)])
-	all_kappa = kmap[~isnan(kmaps)]
+	all_kappa = kmaps[~isnan(kmaps)]
 	PDF = histogram(all_kappa, bins=edges)[0]
 	PDF_normed = PDF/float(len(all_kappa))
 	return PDF_normed
