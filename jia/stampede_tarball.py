@@ -16,7 +16,7 @@ def create_tarball (FNs):
 pool = MPIPool()
 for i in (1,):#range(len(inDIR_arr)):
 	cosmo_arr = os.listdir(inDIR_arr[i])
-	FNs_arr = [['%s%s'%(inDIR_arr[i], cosmo),'%s%s'%(outDIR_arr[i], cosmo)] for cosmo in cosmo_arr[59:]]
+	FNs_arr = [['%s%s'%(inDIR_arr[i], cosmo),'%s%s'%(outDIR_arr[i], cosmo_arr[j])] for j in range(45, 59)]
 	pool.map(create_tarball, FNs_arr)
 	
 	
