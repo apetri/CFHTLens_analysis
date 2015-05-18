@@ -38,8 +38,8 @@ contour_ps_fieldselect = 0
 
 ######## tests ##############
 bad_pointings = 1
-ps_replaced_with_pk = 0
-combined_smoothing_scale = 1
+ps_replaced_with_pk = 1
+combined_smoothing_scale = 0
 
 compare_pk_contour_andrea = 0
 chisq_heat_map = 0

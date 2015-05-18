@@ -26,6 +26,7 @@ contour_ps_fieldselect = 0
 contour_peaks_powspec = 0
 contour_including_w = 0
 contour_peaks_powspec_covariance = 0
+contour_peakpeak = 1 # added 4/19/2015
 
 good_bad_powspec = 0
 interp_2D_plane = 0
@@ -44,7 +45,7 @@ om_arr = linspace(0,1.2,l)[om0:om1]
 si8_arr = linspace(0,1.6,ll)[si80:si81]
 w_arr = linspace(0,-3,101)#[w0:w1]
 sigmaG_arr = [1.0, 1.8, 3.5, 5.3]
-fn_arr = ['idx_psPass7000_pk2smoothing', 'pk2smoothing', 'pk10', 'pk18', 'pk35', 'pk53', 'psPass', 'psAll', 'psPass7000', 'psAll7000']
+fn_arr = ['idx_psPass7000_pk2smoothing', 'pk2smoothing', 'pk10', 'pk18', 'pk35', 'pk53', 'psPass', 'psAll', 'psPass7000', 'psAll7000', 'idx_psPass7000_pk2smoothing_SIMGA', 'pk2smoothing_SIMGA', 'psPass7000_SIGMA', 'idx_peakpeak_counts10', 'idx_peakpeak_counts18', 'idx_peakpeak_kappa10' , 'idx_peakpeak_kappa18']
 
 cube_arr = array([load(test_dir+'chisqcube_%s.npy'%(fn)) for fn in fn_arr])
 
@@ -55,11 +56,12 @@ lws = (4,4,2,2,4,4,2,2,4,4,2,2)
 
 ############################################
 
-def cube2P(chisq_cube, axis=0):#aixs 0-w, 1-om, 2-si8
-	if axis==0:
-		chisq_cube = chisq_cube[w0:w1,om0:om1,si80:si81]
-	else:
-		chisq_cube = chisq_cube[:,om0:om1,si80:si81]
+def cube2P(chisq_cube, axis=0, nocut = 0):#aixs 0-w, 1-om, 2-si8
+	if nocut==0:	
+		if axis==0:
+			chisq_cube = chisq_cube[w0:w1,om0:om1,si80:si81]
+		else:
+			chisq_cube = chisq_cube[:,om0:om1,si80:si81]
 	P = sum(exp(-chisq_cube/2),axis=axis)
 	P /= sum(P)
 	return P
@@ -88,17 +90,17 @@ def official_contour (cube_arr, labels, nlev, fn, colors, lws, lss, include_w = 
 			lines.append(CS.collections[0])
 		if nlev == 2:
 			CS2 = ax.contour(X, Y, P.T, levels=[V[1],], alpha=0.7, origin='lower', extent=extents, colors=colors[i], linewidths=lws[i], linestyles=lss[i])
-
 	
 	if include_w:
 		ax.set_ylabel(r'$\rm{\Omega_m}$',fontsize=20)
 		ax.set_xlabel(r'$\rm{w}$',fontsize=20)
 	else:
 		leg=ax.legend(lines, labels, ncol=1, labelspacing=0.3, prop={'size':20},loc=0)
+		leg.get_frame().set_visible(False)
 		ax.tick_params(labelsize=16)
 		ax.set_xlabel(r'$\rm{\Omega_m}$',fontsize=20)
 		ax.set_ylabel(r'$\rm{\sigma_8}$',fontsize=20)
-		leg.get_frame().set_visible(False)
+		
 	savefig(plot_dir+fn+'.pdf')
 	close()
 
@@ -113,20 +115,35 @@ if contour_peaks_smoothing:
 	nlev = 1
 	official_contour (icube_arr, labels, nlev, fn, colors, lws, lss)
 	
+
+if contour_peakpeak:
+	colors = ['r','b','g','m','k']
+	lws = [4,4,2,2,4]
+	lss =('dotted', 'dashed', 'solid', 'dashed', 'solid')
+	#labels = [r'$\rm{%.1f\, arcmin}$'%(sigmaG) for sigmaG in sigmaG_arr]
+	#labels.append(r'$\rm{1.0+1.8\, arcmin}$')
+	labels = ['peaks', 'count10', 'count18', 'kappa10', 'kappa18']
+	icube_arr = cube_arr[[2,13,14,15,16]]
+	fn = 'contour_peakpeak'
+	nlev = 1
+	official_contour (icube_arr, labels, nlev, fn, colors, lws, lss)
+	
 if contour_ps_fieldselect:
-	colors = ['c','b','g','r','k']
+	colors = ['m','k','g','b']
 	lws = [2,2,4,4]
-	lss =( 'dashed', 'solid', 'dashed', 'solid')
+	lss =( 'solid', 'dashed', 'solid', 'dashed')
+	#lss =( 'solid', 'solid', 'solid', 'solid')
 	labels = [r'$\rm{pass\, fields}$', r'$\rm{all\, fields}$', r'$\rm{pass\, fields(\ell<7,000)}$', r'$\rm{all\, fields(\ell<7,000)}$']
 	icube_arr = cube_arr[[6, 7, 8, 9]]
 	fn = 'contour_powspec_fieldselect'
 	nlev = 1
 	official_contour (icube_arr, labels, nlev, fn, colors, lws, lss)
+	#official_contour (icube_arr, labels, 2, fn, colors, lws, lss)
 	
 if contour_peaks_powspec:
 	colors = ['g','m','k']
-	lws = [4,2,4]
-	lss =('dashed', 'solid', 'solid')
+	lws = [4,2,4]#[2,3,4]#
+	lss =('dashed', 'solid', 'solid')# ('solid',)*3
 	labels = [r'$\rm{power\, spectrum}$', r'$\rm{peaks\, (1.0 + 1.8\,arcmin)}$', r'$\rm{power\, spectrum + peaks}$']
 	icube_arr = cube_arr[[8, 1, 0]]
 	fn = 'contour_peaks_powspec'
@@ -137,10 +154,10 @@ if contour_peaks_powspec:
 	
 if contour_peaks_powspec_covariance:
 	colors = ['k','r']
-	lws = [2,4]
-	lss =('solid', 'dashed')
+	lws = [2,3]
+	lss =('solid', 'solid')
 	labels = [r'$\rm{with\, covariance}$', r'$\rm{without\, covariance}$']
-	icube_arr = [cube_arr[0], cube_arr[1]+cube_arr[-2]]
+	icube_arr = [cube_arr[0], cube_arr[1]+cube_arr[8]]
 	fn = 'contour_peaks_powspec_covariance'
 	nlev = 2
 	official_contour (icube_arr, labels, nlev, fn, colors, lws, lss)
@@ -203,8 +220,104 @@ if good_bad_powspec:
 	ax.set_ylim(1e-5, 1e-2)
 	savefig(fn)	
 	close()
-	
+
 if SIGMA_contour:
+	Pcomb, Ppk, Pps = [cube2P(cube, axis=1, nocut=0) for cube in cube_arr[-3:]]
+	#Pcomb, Ppk, Pps = [exp(-0.5*load(test_dir+'test/chisqcube_SIGMA_%s_w-1.npy'%(ifn))) for ifn in ('idx_psPass7000_pk2smoothing','pk2smoothing','psPass7000')]
+
+	#for i in arange(len(w_arr)):
+		#print i
+	#Pcomb, Ppk, Pps = [exp(-0.5*icube[i]) for icube in cube_arr[-3:]]
+	
+	Pps_marg = sum(Pps, axis=0)/sum(Pps)
+	Ppk_marg = sum(Ppk, axis=0)/sum(Ppk)	
+	Pcomb_marg = sum(Pcomb, axis=0)/sum(Pcomb)
+	S_arr = linspace(0.4, 1.2, ll)[si80:si81]
+	def findlevel1D (prob, xvalues):
+		idx = argmax(prob)
+		bestfit = xvalues[idx]
+		sortprob = sort(prob)[::-1]
+		tolprob = cumsum(sortprob)
+		idx = where(abs(tolprob-0.68) == sort(abs(tolprob-0.68))[0])
+		val = sortprob[idx]
+		left,right=xvalues[where(prob>val)][[0,-1]]-bestfit
+		print 'bestfit, left, right', bestfit, left, right
+		return bestfit, left, right
+
+	findlevel1D(Pps_marg, S_arr)
+	findlevel1D(Ppk_marg, S_arr)
+	findlevel1D(Pcomb_marg, S_arr)
+	
+	f = figure(figsize=(8,6))
+	ax=f.add_subplot(111)
+	ax.plot(S_arr, Pps_marg,'g--', label=r'$\rm{power\,spectrum}\,(\alpha=0.64)$',linewidth=2)
+	ax.plot(S_arr, Ppk_marg,'m-',label=r'$\rm{peaks}\,(\alpha=0.60)$',linewidth=1)
+	ax.plot(S_arr, Pcomb_marg, 'k-',label=r'$\rm{power\, spectrum + peaks}\,(\alpha=0.63)$',linewidth=2)
+	leg=ax.legend(ncol=1, labelspacing=0.3, prop={'size':16},loc=0)
+	leg.get_frame().set_visible(False)
+	ax.set_xlabel(r'$\rm{\Sigma_8=\sigma_8(\Omega_m/0.27)^\alpha}$',fontsize=20)
+	ax.set_ylabel(r'$\rm{Probability}$',fontsize=20)
+	ax.set_xlim(0.5, 1.2)
+	ax.set_ylim(0.0, 0.07)
+	#ax.set_title('w=%s'%(w_arr[i]))
+	#savefig(plot_dir+'SIGMA_marg_prob_w%s.pdf'%(w_arr[i]))
+	savefig(plot_dir+'SIGMA_marg_prob.pdf')
+	close()
+
+if sample_points:
+	kappa_center=WLanalysis.edge2center(linspace(-.04,.12,26))
+	ell_arr_labels = array(['%.3f'%(i) for i in list(kappa_center.copy())*2])
+	best_fit_arr = ([0.44, -0.78, 0.62],[0.42, -0.87, 0.67],[0.30, -0.78, 0.82])
+	
+	import test_chisq_cube_MPI as tcs
+	interp_cosmo, cov_mat, cov_inv, ps_CFHT = tcs.return_interp_cosmo_for_idx (tcs.idx_pk2)
+
+	f=figure(figsize=(10,8))
+	ax=f.add_subplot(gs[0])
+	ax2=f.add_subplot(gs[1],sharex=ax)
+	
+	fidu_std = sqrt(diag(cov_mat))
+	fidu_avg = tcs.ps_avg0[tcs.idx_pk2]
+	
+	ax.errorbar(ell_arr, ps_CFHT, fidu_std, color='k', linewidth=lw)
+	ax.plot(ell_arr, ps_CFHT, 'k-', label=r'$\rm{CFHTLenS}$',linewidth=lw)	
+	ax2.errorbar(ell_arr, zeros(len(ell_arr)),fidu_std/fidu_avg, color='k', linewidth=lw)
+	ax2.plot(ell_arr, zeros(len(ell_arr)), 'k-', label=r'$\rm{pass\, fields}$',linewidth=lw)
+	i=0
+	for best_fit in best_fit_arr:
+		ps_interp = interp_cosmo(best_fit)
+		del_N = np.mat(ps_interp - ps_CFHT)
+		chisq = del_N*cov_inv*del_N.T
+		chisq /= (len(ps_interp)-4)
+		ilabel= r'$[{\rm\Omega_m},\,\rm{w},\,{\rm\sigma_8}] = [%.2f,\,%.2f,\,%.2f],\,\chi^2/dof=%.2f$' % (best_fit[0],best_fit[1],best_fit[2], chisq)
+		ax.plot(ell_arr, ps_interp, lss3[i],color=colors[i], label=ilabel, linewidth=2)
+		ax2.plot(ell_arr, ps_interp/ps_CFHT-1, lss3[i], color=colors[i], linewidth=2)
+		i+=1
+	leg=ax.legend(ncol=1, labelspacing=0.3, prop={'size':16},loc=0)
+	leg.get_frame().set_visible(False)
+
+	plt.subplots_adjust(hspace=0.0,left=0.15)
+	plt.setp(ax.get_xticklabels(), visible=False) 
+	ax.set_xlim(ell_arr[0],ell_arr[-1])
+	ax.tick_params(labelsize=16)
+	ax2.tick_params(labelsize=16)
+	
+	ax.set_ylabel(r'$\rm{peak\, counts\, N(\kappa)}$',fontsize=20)
+	ax2.set_ylabel(r'$\rm{{\Delta}N/N}$',fontsize=20)
+	ax2.set_xlabel('$\kappa$',fontsize=20)
+	ax2.set_ylim(-0.3, 0.3)
+	ax2.set_yticks(linspace(-0.2,0.2,3))
+	ax.set_ylim(-1,2700)
+	ax.set_xticklabels(ell_arr_labels)
+	ax.text(9.2,400,r'$[\rm{1.0\, arcmin}]$',color='k',fontsize=16)
+	ax.text(28,1100,r'$[\rm{1.8\, arcmin}]$',color='k',fontsize=16)
+	ax.set_title(r'$\rm{CFHTLenS}$',fontsize=24)
+	fn=plot_dir+'peaks_fit.pdf'
+	savefig(fn)	
+	close()
+	
+SIGMA_contour_junk = 0
+if SIGMA_contour_junk:
 	# quote delta Sigma = simga_8*(omega_m/0.26)^0.6
 	# steps: 
 	# 1) find alpha

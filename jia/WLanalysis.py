@@ -65,6 +65,8 @@ def writeFits (data, filename, rewrite = False):
 	else:
 		hdu.writeto(filename)
 	
+ell2arcmin = lambda ell: 360.0*60.0/ell
+arcmin2ell = lambda arcmin: 360.0*60.0/arcmin
 
 def TestFitsComplete (fn, return_file = False):
 	'''Input: fn
@@ -137,7 +139,10 @@ def gnom_fun(center):
 	ra0 = ra0*pi/180
 	dec0 = dec0*pi/180
 	def gnom(radec):
-		ra,dec = radec[0].copy(), radec[1].copy()
+		if len(radec)>2:
+			ra, dec = (array(radec).copy()).T
+		else:
+			ra,dec = radec[0].copy(), radec[1].copy()
 		ra -= 180
 		ra = ra*pi/180
 		dec = dec*pi/180
@@ -252,7 +257,7 @@ def InterpPDF (x1, P, x2, edges=None):
 	newP /= sum(newP)
 	return newP
 
-def DrawFromPDF (x, P, n):
+def DrawFromPDF_junk (x, P, n):
 	'''
 	Given a discrete PDF (x, P), draw n random numbers out from x.
 	Example:
@@ -265,6 +270,14 @@ def DrawFromPDF (x, P, n):
 	rndx = lambda R: x[R]
 	return rndx(R)
 
+def DrawFromPDF(P, n=2):
+	'''
+	Given a discrete PDF x (the probability), 1 number from x.
+	'''
+	P /= sum(P) # normalize P
+	custm = stats.rv_discrete(name='custm', values=(arange(len(P)), P))
+	R = custm.rvs(size=n) 
+	return R
 ########## begin: CFHT catalogue to smoothed shear maps #########
 PPR512=8468.416479647716#pixels per radians
 PPA512=2.4633625#pixels per arcmin, PPR/degrees(1)/60
@@ -444,6 +457,17 @@ def eobs_fun (g1, g2, k, e1, e2):
 	return real(eobs), imag(eobs)
 
 ########## begin: power spectrum ############################
+def bell_2D (size, sigma):
+	'''return a b_ell matrix, smoothing scale simag in unit of pixels.
+	b_ell = exp(-ell**2*sigmaG**2/2.0), where sigmaG in unit of radians.'''
+	y, x = np.indices((size, size))
+	center = np.array([(x.max()-x.min())/2.0, (x.max()-x.min())/2.0])
+	if size%2 == 0:
+		center+=0.5
+	r = np.hypot(x - center[0], y - center[1])
+	bell_mat = exp(-(r*sigma*2*pi/size)**2/2.0)
+	return bell_mat
+	
 def azimuthalAverage(image, center = None, edges = None, logbins = True, bins = 50):
 	"""
 	Calculate the azimuthally averaged radial profile.
@@ -494,12 +518,13 @@ def azimuthalAverage(image, center = None, edges = None, logbins = True, bins = 
 
 edge2center = lambda x: x[:-1]+0.5*(x[1:]-x[:-1])
 
-def PowerSpectrum(img, sizedeg = 12.0, edges = None, logbins = True):#edges should be pixels
+def PowerSpectrum(img, sizedeg = 12.0, edges = None, logbins = True, sigmaG=0):#edges should be pixels
 	'''Calculate the power spectrum for a square image, with normalization.
 	Input:
 	img = input square image in numpy array.
 	sizedeg = image real size in deg^2
 	edges = ell bin edges, length = nbin + 1, if not provided, then do 1000 bins.
+	sigmaG = smoothing scale in arcmin
 	Output:
 	powspec = the power at the bins
 	ell_arr = lower bound of the binedges
@@ -509,6 +534,8 @@ def PowerSpectrum(img, sizedeg = 12.0, edges = None, logbins = True):#edges shou
 	#F = fftpack.fftshift(fftpack.fft2(img))
 	F = fftshift(fftpack.fft2(img))
 	psd2D = np.abs(F)**2
+	## correct for b_ell
+	psd2D /= bell_2D(size, sigmaG*PPA512)**2
 	ell_arr, psd1D = azimuthalAverage(psd2D, center=None, edges = edges,logbins = logbins)
 	ell_arr = edge2center(ell_arr)
 	ell_arr *= 360./sqrt(sizedeg)# normalized to our current map size
@@ -545,7 +572,7 @@ def PowerSpectrum_Pell_binning(img, sizedeg = 12.0, edges = None, logbins = True
 ########## end: power spectrum ############################
 
 
-def CrossCorrelate(img1, img2, edges = None, logbins = True):#edges should be pixels
+def CrossCorrelate(img1, img2, edges = None, logbins = True, sigmaG1=0, sigmaG2=0):#edges should be pixels
 	'''Calculate the power spectrum for a square image, with normalization.
 	Input:
 	img1, img2 = input square image in numpy array.
@@ -562,6 +589,7 @@ def CrossCorrelate(img1, img2, edges = None, logbins = True):#edges should be pi
 	F1 = fftshift(fftpack.fft2(img1))
 	F2 = fftshift(fftpack.fft2(img2))
 	psd2D = np.conj(F1)*F2#calculate cross correlation
+	psd2D /= bell_2D(size, sigmaG1*PPA512)*bell_2D(size, sigmaG2*PPA512)
 	ell_arr, psd1D = azimuthalAverage(psd2D, center=None, edges = edges,logbins = logbins)
 	ell_arr = edge2center(ell_arr)
 	ell_arr *= 360./sqrt(sizedeg)# normalized to our current map size
@@ -628,3 +656,83 @@ def findlevel (H):
 	v99 = float(H.flat[idx[idx99]])
 	V = [v68, v95, v99]
 	return V
+
+def update_values_by_RaDec (new_ra, new_dec, master_ra, master_dec):
+	'''For a list of [new_ra, new_dec], find index in [master_ra, master_dec].
+	requires all values in master are unique, and new ra dec all in master list.
+	'''
+	RADEC = master_ra+1.0j*master_dec
+	iradec = new_ra+1.0j*new_dec
+	idx = where(in1d(RADEC, iradec)==True)[0]
+	iRADEC = RADEC[idx]
+	unique_iradec, idx_inverse = unique(iradec, return_inverse=True)
+	newidx = idx[argsort(iRADEC)][idx_inverse]
+	return newidx
+
+############## CFHT specific operations ############
+centers = array([[34.5, -7.5], [134.5, -3.25],[214.5, 54.5],[ 332.75, 1.9]])
+sizes = (1330, 800, 1120, 950)
+rad2pix=lambda x, size: around(size/2.0-0.5 + x*PPR512).astype(int)
+def list2coords(radeclist, Wx, offset=False):
+	'''For a list of radec, return their pixelized position for Wx field.
+	'''
+	size=sizes[Wx-1]
+	xy = zeros(shape = radeclist.shape)
+	if offset:
+		center = 0.5*(amin(radeclist,axis=0)+amax(radeclist, axis=0))
+	else:
+		center = centers[Wx-1]
+	f_Wx = gnom_fun(center)
+	xy = array(map(f_Wx,radeclist))
+	xy_pix = rad2pix(xy, size)
+	return xy_pix
+
+def interpGridpoints (xy, values, newxy, method='nearest'):
+	newvalues = interpolate.griddata(xy, values, newxy, method=method)
+	return newvalues
+
+def txt2map_fcn (fn, offset=False, method='nearest'):
+	'''put values to grid, similar to cmblGen, except take in the file name.
+	'''
+	npy_fn = fn[:-3]+'npy'
+	if os.path.isfile(npy_fn):
+		return load(npy_fn)
+	else:
+		Wx = int(fn[fn.index('W')+1])
+		print 'Wx, fn:', Wx, fn
+		size=sizes[Wx-1]
+		cmblCoord = genfromtxt(fn)
+		radeclist = cmblCoord[:,:-1]
+		values = cmblCoord.T[-1]
+		xy = list2coords(radeclist, Wx, offset=offset)
+		X,Y=meshgrid(range(size),range(size))
+		X=X.ravel()
+		Y=Y.ravel()
+		newxy=array([X,Y]).T
+		newvalues = interpGridpoints (xy, values, newxy,method=method)
+		cmblmap = zeros(shape=(size,size))
+		cmblmap[Y,X]=newvalues	
+		cmblmap[isnan(cmblmap)]=0.0
+		if offset:
+			cmblmap = cmblmap.T
+		np.save(fn[:-3]+'npy', cmblmap)
+		return cmblmap
+
+def extrap1d(interpolator):
+	'''interpolate for values within the interpolator range, extrapolate for outside regions.
+	'''
+	xs = interpolator.x
+	ys = interpolator.y
+
+	def pointwise(x):
+		if x < xs[0]:
+			return ys[0]+(x-xs[0])*(ys[1]-ys[0])/(xs[1]-xs[0])
+		elif x > xs[-1]:
+			return ys[-1]+(x-xs[-1])*(ys[-1]-ys[-2])/(xs[-1]-xs[-2])
+		else:
+			return interpolator(x)
+
+	def ufunclike(xs):
+		return array(map(pointwise, array(xs)))
+
+	return ufunclike

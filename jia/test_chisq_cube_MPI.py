@@ -9,35 +9,52 @@ import os
 import WLanalysis
 import sys
 
-#comment out if use on laptop
-#from emcee.utils import MPIPool
-nn = 0#int(sys.argv[1])#range from 0 to 10 for idx_arr
-print nn
-#test_dir = '/home1/02977/jialiu/chisq_cube/'
+stampede = 1
+if stampede:
+	from emcee.utils import MPIPool
+	nn = int(sys.argv[1])
+	test_dir = '/work/02977/jialiu/chisq_cube/'
+
+else:
+	test_dir = '/Users/jia/Documents/weaklensing/CFHTLenS/emulator/test_ps_bug/'
+	#range from 0 to 10 for idx_arr
+	#print nn # nn=0 (2pk+ps), 1 (2pk), 8 (ps, pass & ell cut)
 
 
 fsky_all = 10.010646820070001
 fsky_pass= 7.6645622253410002
 
-test_dir = '/Users/jia/Documents/weaklensing/CFHTLenS/emulator/test_ps_bug/'
 cosmo_params = genfromtxt(test_dir+'cosmo_params.txt')
 im, iw, s = cosmo_params.T
 
-#w_arr = linspace(0,-3, 3)
-#l, ll = 50,50
 w_arr = linspace(0,-3,101)
 l,ll =  100,102
 om_arr = linspace(0,1.2,l)
-si8_arr = linspace(0,1.6,ll)
 
-ps_CFHT0 = concatenate(array([np.load(test_dir+fn) for fn in ('PASS_ps_CFHT.npy', 'ALL_pk_CFHT_sigmaG10.npy', 'ALL_pk_CFHT_sigmaG18.npy', 'ALL_pk_CFHT_sigmaG35.npy', 'ALL_pk_CFHT_sigmaG53.npy', 'ALL_ps_CFHT.npy')]),axis=-1)
+# for SIGMA8, change params to [om, w, SIGMA]
+si8_arr = linspace(0,1.6,ll)#original
+#si8_arr = linspace(0.4, 1.2, ll)
+#if nn==0:
+	#alpha = 0.63#ps+2pk
+#elif nn==1:
+	#alpha = 0.6#2pk
+#elif nn==8:
+	#alpha = 0.64#ps
+#s=(im/0.27)**alpha*s
+
+
+ps_CFHT0 = concatenate(array([np.load(test_dir+fn) for fn in ('PASS_ps_CFHT.npy', 'ALL_pk_CFHT_sigmaG10.npy', 'ALL_pk_CFHT_sigmaG18.npy', 'ALL_pk_CFHT_sigmaG35.npy', 'ALL_pk_CFHT_sigmaG53.npy', 'ALL_ps_CFHT.npy','PASS_pk_CFHT_sigmaG10.npy', 'Corr_counts_sigma10_CFHT.npy', 'Corr_counts_sigma18_CFHT.npy', 'Corr_kappa_sigma10_CFHT.npy', 'Corr_kappa_sigma18_CFHT.npy')]),axis=-1)
 ps_fidu_mat0 = concatenate([np.load(test_dir+fn) for fn in ('SIM_powspec_sigma05_emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765_PASS.npy',
- 'SIM_peaks_sigma10_emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765_025bins_ALL.npy', 'SIM_peaks_sigma18_emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765_025bins_ALL.npy',
+ 'SIM_peaks_sigma10_emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765_025bins_ALL.npy',
+ 'SIM_peaks_sigma18_emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765_025bins_ALL.npy',
  'SIM_peaks_sigma35_emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765_025bins_ALL.npy',
  'SIM_peaks_sigma53_emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765_025bins_ALL.npy',
- 'SIM_powspec_sigma05_emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765_ALL.npy')],axis=-1)
+ 'SIM_powspec_sigma05_emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765_ALL.npy',
+ 'SIM_peaks_sigma10_emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765_025bins_PASS.npy', 'Corr_counts_sigma10_emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765.npy', 'Corr_counts_sigma18_emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765.npy',
+ 'Corr_kappa_sigma10_emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765.npy',
+ 'Corr_kappa_sigma18_emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765.npy')],axis=-1)
 ps_avg0 = concatenate([np.load(test_dir+fn) for fn in ('PASS_ps_avg.npy','ALL_pk_avg_sigmaG10.npy',
-'ALL_pk_avg_sigmaG18.npy', 'ALL_pk_avg_sigmaG35.npy','ALL_pk_avg_sigmaG53.npy','ALL_ps_avg.npy',)], axis=-1)
+'ALL_pk_avg_sigmaG18.npy', 'ALL_pk_avg_sigmaG35.npy','ALL_pk_avg_sigmaG53.npy','ALL_ps_avg.npy','PASS_pk_avg_sigmaG10.npy','peakpeak_counts_avg_10.npy','peakpeak_counts_avg_18.npy', 'peakpeak_kappa_avg_10.npy', 'peakpeak_kappa_avg_18.npy')], axis=-1)
 
 ####### 0:50 pass ps; 
 ####### 50:75 peak 10; 
@@ -66,11 +83,21 @@ idx_psAll = arange(161,200)
 idx_psPass7000 = arange(11,50-12)
 #### 10) ps all ell26
 idx_psAll7000 = arange(161,200-12)
+#### 11) referee test: pk_10 PASS (1/15/2015)
+idx_pk10PASS = arange(200,225)
+#### 11) referee test: pk_10 PASS (1/15/2015)
+idx_ps_cut = idx_psPass[:-2]
+#### 12) idx
+idx_peakpeak_counts10 = arange(225, 250)
+idx_peakpeak_counts18 = arange(250, 275)
+idx_peakpeak_kappa10 = arange(275, 300)
+idx_peakpeak_kappa18 = arange(300, 325)
 
-idx_arr = [idx_full, idx_pk2, idx_pk10, idx_pk18, idx_pk35, idx_pk53, idx_psPass, idx_psAll, idx_psPass7000, idx_psAll7000]
-fn_arr = ['idx_psPass7000_pk2smoothing', 'pk2smoothing', 'pk10', 'pk18', 'pk35', 'pk53', 'psPass', 'psAll', 'psPass7000', 'psAll7000']
 
-def return_interp_cosmo_for_idx (idx, alpha = 0):
+idx_arr = [idx_full, idx_pk2, idx_pk10, idx_pk18, idx_pk35, idx_pk53, idx_psPass, idx_psAll, idx_psPass7000, idx_psAll7000, idx_pk10PASS, idx_ps_cut, idx_peakpeak_counts10, idx_peakpeak_counts18, idx_peakpeak_kappa10 , idx_peakpeak_kappa18 ]
+fn_arr = ['idx_psPass7000_pk2smoothing', 'pk2smoothing', 'pk10', 'pk18', 'pk35', 'pk53', 'psPass', 'psAll', 'psPass7000', 'psAll7000','idx_pk10PASS', 'idx_ps_cut', 'idx_peakpeak_counts10', 'idx_peakpeak_counts18', 'idx_peakpeak_kappa10' , 'idx_peakpeak_kappa18']
+
+def return_interp_cosmo_for_idx (idx):
 	ps_CFHT_test = ps_CFHT0[idx]
 	idx = idx[where(ps_CFHT_test>0)[0]]#rid of zero bins
 	
@@ -83,23 +110,16 @@ def return_interp_cosmo_for_idx (idx, alpha = 0):
 	spline_interps = list()
 	for ibin in range(ps_avg.shape[-1]):
 		ps_model = ps_avg[:,ibin]
-		if alpha:#for Sigma8 compute
-			iinterp = interpolate.Rbf((im/0.27)**alpha*s, iw, ps_model)
-		else:
-			iinterp = interpolate.Rbf(im, iw, s, ps_model)
+		iinterp = interpolate.Rbf(im, iw, s, ps_model)
 		spline_interps.append(iinterp)
 
-	def interp_cosmo (params, method = 'multiquadric',alpha = alpha):
+	def interp_cosmo (params, method = 'multiquadric'):
 		'''Interpolate the powspec for certain param.
 		Params: list of 3 parameters = (om, w, si8)
 		Method: "multiquadric" for spline (default), and "GP" for Gaussian process.
 		'''
-		if alpha:
-			ss, wm = params
-			gen_ps = lambda ibin: spline_interps[ibin](ss, wm)
-		else:
-			im, wm, sm = params
-			gen_ps = lambda ibin: spline_interps[ibin](im, wm, sm)
+		mm, wm, sm = params
+		gen_ps = lambda ibin: spline_interps[ibin](mm, wm, sm)
 		ps_interp = array(map(gen_ps, range(ps_avg.shape[-1])))
 		ps_interp = ps_interp.reshape(-1,1).squeeze()
 		return ps_interp
@@ -107,6 +127,7 @@ def return_interp_cosmo_for_idx (idx, alpha = 0):
 
 def plot_heat_map_w (values):
 	w, idx, interp_cosmo, cov_inv, ps_CFHT = values
+	fn = test_dir+'test/chisqcube_SIGMA_%s_w%s.npy'%(fn_arr[nn], w)
 	fn = test_dir+'test/chisqcube_%s_w%s.npy'%(fn_arr[nn], w)
 	if os.path.isfile(fn) == False:
 		print 'w=',w 
@@ -118,30 +139,152 @@ def plot_heat_map_w (values):
 				del_N = np.mat(ps_interp - ps_CFHT)
 				chisq = float(del_N*cov_inv*del_N.T)
 				heatmap[i,j] = chisq
-		save(fn, heatmap)
+			save(fn, heatmap)
 	else:
 		print 'w=', w, 'done'
-	#return heatmap
+	return heatmap
+
+#cov_mat = cov(ps_fidu_mat0[:,arange(10,100)],rowvar=0)
+#X, Y = np.meshgrid(sqrt(diag(cov_mat)), sqrt(diag(cov_mat)))
+
+#imshow(cov_mat / (X*Y), origin='lower', interpolation='nearest',vmin=-0.25,vmax=0.3,extent=(1,90,1,90))
+#colorbar()
+##xlabel(r'${\rm i}$',fontsize=20)
+##ylabel(r'${\rm j}$',fontsize=20)
+#savefig('/Users/jia/Documents/weaklensing/CFHTLenS/paper_all/CFHTpaper/CorrCoeff.pdf')
+#close()
+#####################01/15/2014 ############
+#### referee continued, get cube for Sigma8
+############################################
+#pool=MPIPool()
+#idx = idx_arr[nn]
+#interp_cosmo, cov_mat, cov_inv, ps_CFHT = return_interp_cosmo_for_idx (idx)
+#values = [[w, idx, interp_cosmo, cov_inv, ps_CFHT] for w in w_arr]
+
+
+#pool.map(plot_heat_map_w, values)
+
+#cube = array([load('/home1/02977/jialiu/chisq_cube/test/chisqcube_SIGMA_%s_w%s.npy'%(fn_arr[nn], w)) for w in w_arr])
+
+#save(test_dir+'covmat_%s_SIGMA.npy'%(fn_arr[nn]), cov_mat)
+#save(test_dir+'chisqcube_%s_SIGMA.npy'%(fn_arr[nn]), cube)
+
+#####################01/15/2014 ############
+#### referee report tests ##################
+############################################
+#def idx2P (idx):
+	#'''quick test, for certain idx, return probability plan (2D), with w=-1'''
+	#interp_cosmo, cov_mat, cov_inv, ps_CFHT = return_interp_cosmo_for_idx (idx)
+	#values = [-1.0, idx, interp_cosmo, cov_inv, ps_CFHT]
+	#heatmap = plot_heat_map_w (values)
+	#P = exp(-heatmap/2)
+	#P /= sum(P)
+	#V = WLanalysis.findlevel(P)
+	#return P, V
+
+## 1) pass pk
+#P_pk10ALL, V_pk10ALL = idx2P (idx_pk10)
+#P_pk10PAS, V_pk10PAS = idx2P (idx_pk10PASS)
+
+## 2) ell cut at 2e5
+##P_psPASS, V_psPASS = idx2P (idx_psPass)
+##P_psCut,  V_psCut = idx2P (idx_ps_cut)
+
+#X, Y = np.meshgrid(om_arr, si8_arr)
+
+#f=figure()
+#ax=f.add_subplot(111)
+#lines=[]
+############# peaks
+#CS=ax.contour(X, Y, P_pk10ALL.T, levels=V_pk10ALL[:-1], origin='lower', colors='r')
+#lines.append(CS.collections[0])
+#CS=ax.contour(X, Y, P_pk10PAS.T, levels=V_pk10PAS[:-1], origin='lower', colors='b')
+#lines.append(CS.collections[0])
+#labels=('peaks 1 arcmin (all)', 'peaks 1 arcmin (pass)')
+############# power spectrum
+##CS=ax.contour(X, Y, P_psPASS.T, levels=V_psPASS[:-1], origin='lower', colors='r')
+##lines.append(CS.collections[0])
+##CS=ax.contour(X, Y, P_psCut.T, levels=V_psCut[:-1], origin='lower', colors='b')
+##lines.append(CS.collections[0])
+##labels=('all ell', 'ell < 20193')
+
+#leg=ax.legend(lines, labels, ncol=1, labelspacing=0.3, prop={'size':20},loc=0)
+#leg.get_frame().set_visible(False)
+#xlim(0,0.8)
+#ylim(0.3,1.3)
+#xlabel(r'$\rm{\Omega_m}$',fontsize=20)
+#ylabel(r'$\rm{\sigma_8}$',fontsize=20)
+#show()
+
+#####################12/25/2014 ############
+#### test alpha as function of SNR cut #####
+############################################
+#kappa_arr = linspace(-0.0368,0.1168,25)
+#repeat_elem = lambda aP: (repeat(aP[0], aP[1]*1e5).reshape(2,-1)).T
+#X, Y = np.meshgrid(om_arr, si8_arr)
+#all_points = array([X.flatten(),Y.flatten()]).T
+#alpha_arr = linspace(0.4,0.8,301)
+#def findalpha(idxcut=20):
+	#idx_pk10high = arange(50+idxcut,75)# 16th bin = 0.066, 20th bin = 0.091
+	#interp_cosmo, cov_mat, cov_inv, ps_CFHT = return_interp_cosmo_for_idx (idx_pk10high)
+	#w = -1
+	#values = (w, idx_pk10high, interp_cosmo, cov_inv, ps_CFHT)
+	#heatmap = plot_heat_map_w (values)
+	#P = exp(-heatmap/2.0)
+	#P[67:,85:]=0
+	#P[:,:20]=0
+	#P/=sum(P)
+	
+	#all_prob0 = (P.T).flatten()#/amax(P)
+	#idx = where(all_prob0*1e4>2)[0]#only care about points with larger prob.
+	#iall_points, all_prob = all_points[idx], all_prob0[idx]
+	#samples = concatenate(map(repeat_elem, array([iall_points,all_prob]).T),axis=0)
+	#Sigma8 = lambda alpha: std((samples.T[0]/0.27)**alpha*samples.T[1])
+	#Sigma8_arr = array(map(Sigma8, alpha_arr))
+	#alpha = alpha_arr[argmin(Sigma8_arr)]
+	#SNR = kappa_arr[idxcut]/0.033
+	#print idxcut, SNR, alpha
+	#return P, SNR, alpha
+#a=map(findalpha,(0,16, 18, 20))
+#f = figure(figsize=(8,6))
+#ax=f.add_subplot(111)
+#lines=[]
+#labels=['SNR > %.1f, alpha = %.2f'%(a[i][1], a[i][2]) for i in arange(len(a))]
+#extents = (om_arr[0], om_arr[-1], si8_arr[0], si8_arr[-1])
+#i=0
+#icolors = ('r','b','m','g','k','g','r','c','b','g','m','k')
+#for ia in a:
+	#iP, inu, ialpha = ia
+	#V = WLanalysis.findlevel(iP)
+	#CS = ax.contour(X[20:85, 0:67], Y[20:85, 0:67], iP[0:67,20:85].T, levels=[V[0],], colors=icolors[i], origin='lower', extent=extents, linewidths=2)
+	#lines.append(CS.collections[0])
+	#i+=1
+#leg=ax.legend(lines, labels, ncol=1, labelspacing=0.3, prop={'size':12},loc=0)
+#ax.set_xlabel('Omega_m',fontsize=20)
+#ax.set_ylabel('sigma_8',fontsize=20)
+#show()
+############################################
+
 
 ###########################################################
 ############ operation ####################################
 ##########################################################
-#pool=MPIPool()
-#print 'boo'
-#idx = idx_arr[nn]
+pool=MPIPool()
+print 'boo'
+idx = idx_arr[nn]
 
-#interp_cosmo, cov_mat, cov_inv, ps_CFHT = return_interp_cosmo_for_idx (idx)
-#print 'boo2'
-#values = [[w, idx, interp_cosmo, cov_inv, ps_CFHT] for w in w_arr]
+interp_cosmo, cov_mat, cov_inv, ps_CFHT = return_interp_cosmo_for_idx (idx)
+print 'boo2'
+values = [[w, idx, interp_cosmo, cov_inv, ps_CFHT] for w in w_arr]
 
-#pool.map(plot_heat_map_w, values)
+pool.map(plot_heat_map_w, values)
 
-#cube = array([load('/home1/02977/jialiu/chisq_cube/test/chisqcube_%s_w%s.npy'%(fn_arr[nn], w)) for w in w_arr])
+cube = array([load('/work/02977/jialiu/chisq_cube/test/chisqcube_%s_w%s.npy'%(fn_arr[nn], w)) for w in w_arr])
 
-#save(test_dir+'covmat_%s.npy'%(fn_arr[nn]), cov_mat)
-#save(test_dir+'chisqcube_%s.npy'%(fn_arr[nn]), cube)
+save(test_dir+'covmat_%s.npy'%(fn_arr[nn]), cov_mat)
+save(test_dir+'chisqcube_%s.npy'%(fn_arr[nn]), cube)
 
-############### junk
+############### junk below
 #def chisq2P(chisq_mat):#(idx=idx_full,w=-1):#aixs 0-w, 1-om, 2-si8
 	##chisq_mat = plot_heat_map_w (idx=idx_full,w=-1)
 	#P = exp(-(chisq_mat-amin(chisq_mat))/2)
