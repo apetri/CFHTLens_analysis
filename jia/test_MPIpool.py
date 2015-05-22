@@ -7,7 +7,7 @@ from emcee.utils import MPIPool
 import numpy as np
 from scipy import *
 from multiprocessing import Pool
-from scoop import futures
+#from scoop import futures
 
 print 'start'
 

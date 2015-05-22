@@ -57,6 +57,14 @@ def PDFGen(cosmoR):
 		  #0.745429992676])
 
 PDF92 = mean(array([load(fn(cosmo)) for cosmo in cosmo_arr]), axis=1)
-plot(PDF92)
+for iPDF in PDF92:
+	plot(WLanalysis.edge2center(edges), iPDF)
+if noise:
+	title('noisy')
+else:
+	title('noiseless')
+xlabel('kappa')
+ylabel('PDF')
+	
 show()
 print 'done done done'
