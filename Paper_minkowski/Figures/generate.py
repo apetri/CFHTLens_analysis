@@ -416,7 +416,7 @@ def contours_combine(cmd_args,descriptors_in_plot=["power_spectrum"]+multiple,pa
 			print("Likelihood with {0} is maximum at {1}".format(descr,maximum))
 
 			#Get levels
-			contour.getLikelihoodValues(levels=levels)
+			contour.getLikelihoodValues(levels=levels,precision=0.1)
 
 			#Plot contours
 			contour.plotContours(colors=[brew_colors[n]],fill=False,display_maximum=False,display_percentages=False,alpha=1.0)
@@ -425,8 +425,7 @@ def contours_combine(cmd_args,descriptors_in_plot=["power_spectrum"]+multiple,pa
 			
 			p,l,pmax,p0 = contour.marginal(select,levels=[0.684])
 			print(pmax,p0)
-			ax.plot(p,l,color=brew_colors[n],label=contour_labels[-1])		
-			
+			ax.plot(p,l,color=brew_colors[n],label=contour_labels[-1])	
 
 	
 	if marginalize_over=="me":
@@ -457,81 +456,83 @@ def contours_combine(cmd_args,descriptors_in_plot=["power_spectrum"]+multiple,pa
 			figname += "c{0}".format(int(levels[0]*100))
 		fig.savefig(figname+".{0}".format(cmd_args.type))
 
+	return fig,ax	
+
 ##################################################################################################################################################
 
 def contours_single(cmd_args):
 
-	contours_combine(cmd_args,descriptors_in_plot=single,cross_label="single")
+	return contours_combine(cmd_args,descriptors_in_plot=single,cross_label="single")
 
 ##################################################################################################################################################
 
 def contours_single_2sigma(cmd_args):
 
-	contours_combine(cmd_args,descriptors_in_plot=single,cross_label="single",levels=[0.954],appendSigma=True)
+	return contours_combine(cmd_args,descriptors_in_plot=single,cross_label="single",levels=[0.954],appendSigma=True)
 
 def contours_single_3sigma(cmd_args):
 
-	contours_combine(cmd_args,descriptors_in_plot=single,cross_label="single",levels=[0.997],appendSigma=True)	
+	return contours_combine(cmd_args,descriptors_in_plot=single,cross_label="single",levels=[0.997],appendSigma=True)	
 
 ##################################################################################################################################################
 
 def contours_single_mock(cmd_args):
 
-	contours_combine(cmd_args,descriptors_in_plot=single,cross_label="single",mock=True)
+	return contours_combine(cmd_args,descriptors_in_plot=single,cross_label="single",mock=True)
 
 ##################################################################################################################################################
 
 def contours_single_reparametrize(cmd_args):
 
-	contours_combine(cmd_args,descriptors_in_plot=single,cross_label="single",parameter_axes={"Omega_m":0,"w":1,"Sigma8Om0.55":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","Sigma8Om0.55":r"$\Sigma_8$"},select="Omega_m")
+	return contours_combine(cmd_args,descriptors_in_plot=single,cross_label="single",parameter_axes={"Omega_m":0,"w":1,"Sigma8Om0.55":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","Sigma8Om0.55":r"$\Sigma_8$"},select="Omega_m")
 
 ##################################################################################################################################################
 
 def contours_single_mock_reparametrize(cmd_args):
 
-	contours_combine(cmd_args,descriptors_in_plot=single,cross_label="single",parameter_axes={"Omega_m":0,"w":1,"Sigma8Om0.55":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","Sigma8Om0.55":r"$\Sigma_8$"},select="Omega_m",mock=True)
+	return contours_combine(cmd_args,descriptors_in_plot=single,cross_label="single",parameter_axes={"Omega_m":0,"w":1,"Sigma8Om0.55":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","Sigma8Om0.55":r"$\Sigma_8$"},select="Omega_m",mock=True)
 
 ##################################################################################################################################################
 
 def Si8_likelihood_single(cmd_args):
 
-	contours_combine(cmd_args,descriptors_in_plot=single,cross_label="single",parameter_axes={"Omega_m":0,"w":1,"Sigma8Om0.55":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","Sigma8Om0.55":r"$\Sigma_8$"},select="Sigma8Om0.55",marginalize_over="others")
+	return contours_combine(cmd_args,descriptors_in_plot=single,cross_label="single",parameter_axes={"Omega_m":0,"w":1,"Sigma8Om0.55":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","Sigma8Om0.55":r"$\Sigma_8$"},select="Sigma8Om0.55",marginalize_over="others")
 
 ##################################################################################################################################################
 
 def contours_combine_reparametrize(cmd_args):
 
-	contours_combine(cmd_args,parameter_axes={"Omega_m":0,"w":1,"Sigma8Om0.55":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","Sigma8Om0.55":r"$\Sigma_8$"},select="Omega_m")
+	return contours_combine(cmd_args,parameter_axes={"Omega_m":0,"w":1,"Sigma8Om0.55":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","Sigma8Om0.55":r"$\Sigma_8$"},select="Omega_m")
 
 ##################################################################################################################################################
 
 def contours_combine_mock(cmd_args):
 
-	contours_combine(cmd_args,mock=True)
+	return contours_combine(cmd_args,mock=True)
 
 ##################################################################################################################################################
 
 def contours_combine_mock_reparametrize(cmd_args):
 
-	contours_combine(cmd_args,parameter_axes={"Omega_m":0,"w":1,"Sigma8Om0.55":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","Sigma8Om0.55":r"$\sigma_8(\Omega_m/0.27)^{0.55}$"},select="Omega_m",mock=True)
+	return contours_combine(cmd_args,parameter_axes={"Omega_m":0,"w":1,"Sigma8Om0.55":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","Sigma8Om0.55":r"$\sigma_8(\Omega_m/0.27)^{0.55}$"},select="Omega_m",mock=True)
 
 ###################################################################################################################################################
 
 def w_likelihood_combine(cmd_args):
 
-	contours_combine(cmd_args,marginalize_over="others")
+	return contours_combine(cmd_args,marginalize_over="others")
 
 ###################################################################################################################################################
 
 def w_mock_likelihood_combine(cmd_args):
 
-	contours_combine(cmd_args,marginalize_over="others",mock=True)
+	return contours_combine(cmd_args,marginalize_over="others",mock=True)
 
 ###################################################################################################################################################
 
 def Si8_likelihood_combine(cmd_args):
 
-	contours_combine(cmd_args,parameter_axes={"Omega_m":0,"w":1,"Sigma8Om0.55":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","Sigma8Om0.55":r"$\Sigma_8$"},select="Sigma8Om0.55",marginalize_over="others")
+	return contours_combine(cmd_args,parameter_axes={"Omega_m":0,"w":1,"Sigma8Om0.55":2},cosmo_labels={"Omega_m":r"$\Omega_m$","w":r"$w$","Sigma8Om0.55":r"$\Sigma_8$"},select="Sigma8Om0.55",marginalize_over="others")
 
 
 ##################################################################################################################################################
@@ -730,6 +731,7 @@ if __name__=="__main__":
 		sys.exit(0)
 
 	#Generate all figures specified in input
+	fig = list()
 	for fig_n in cmd_args.figure_numbers:
-		figure_method[fig_n](cmd_args)
+		fig.append(figure_method[fig_n](cmd_args))
 
