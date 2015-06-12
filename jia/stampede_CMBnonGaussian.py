@@ -62,7 +62,7 @@ ell300 = array([227.50923759,     261.33948696,     300.20023877,
         116484.72964502,  133805.8173255 ,  153702.52225084,
         176557.83446844,  202811.69401573])
 
-def PDFGen(kmap):
+def PDFGen(kmap, PDF_bins):
 	all_kappa = kmap[~isnan(kmap)]
 	PDF = histogram(all_kappa, bins=PDF_bins)[0]
 	PDF_normed = PDF/float(len(all_kappa))
