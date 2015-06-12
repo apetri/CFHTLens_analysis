@@ -62,8 +62,8 @@ ell300 = array([227.50923759,     261.33948696,     300.20023877,
 
 def PDFGen(kmap, PDF_bins):
 	all_kappa = kmap[~isnan(kmap)]
-	PDF = histogram(all_kappa, bins=PDF_bins, normed=1)[0]
-	#PDF_normed = PDF/float(len(all_kappa))
+	PDF = histogram(all_kappa, bins=PDF_bins)[0]
+	PDF_normed = PDF/float(len(all_kappa))
 	return PDF_normed, mean(kmap), std(kmap)
 	
 def compute_PDF_ps (fnsizedeg):
