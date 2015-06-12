@@ -89,6 +89,7 @@ for j in range(len(sigmaG_arr)):
 	save(CMBlensing_dir+'mean600%02d.npy'%(sigmaG_arr[j]*10),mean600)
 	save(CMBlensing_dir+'std600%02d.npy'%(sigmaG_arr[j]*10),std600)
 
+
 out300 = pool.map(compute_PDF_ps, [(fn, 1.7**2) for fn in glob.glob(b600_dir+'*.fits')])
 ps300 = array([out300[i][1] for i in range(len(out300))])
 save(CMBlensing_dir+'ps300.npy',ps300)
