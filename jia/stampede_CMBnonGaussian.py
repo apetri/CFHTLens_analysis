@@ -11,10 +11,8 @@ from emcee.utils import MPIPool
 CMBlensing_dir = '/work/02977/jialiu/CMBnonGaussian/'
 
 #PDF_bins = linspace(-0.3, 0.5, 51)
-PDFbin_arr = [linspace(-0.2, 0.55, 51),
-	    linspace(-1.13, 0.33, 51),
-	    linspace(-0.08, 0.20, 51),
-	    linspace(-0.03, 0.10, 51)]
+ends = [0.7, 0.6, 0.5, 0.4]
+PDFbin_arr = [linspace(-end, end, 101) for end in ends]
 
 sigmaG_arr = (0.5, 1.0, 2.0, 5.0)
 
@@ -80,18 +78,18 @@ def compute_PDF_ps (fnsizedeg):
 	
 pool = MPIPool()
 
-#out600 = pool.map(compute_PDF_ps, [(fn, 3.5**2) for fn in glob.glob(b600_dir+'*.fits')])
-#save(CMBlensing_dir+'out600.npy',out600)
+out600 = pool.map(compute_PDF_ps, [(fn, 3.5**2) for fn in glob.glob(b600_dir+'*.fits')])
+save(CMBlensing_dir+'out600.npy',out600)
 
-#ps600 = array([out600[i][1] for i in range(len(out600))])
-#save(CMBlensing_dir+'ps600.npy',ps600)
-#for j in range(len(sigmaG_arr)):
-	#PDF600 = array([out600[i][0][j][0] for i in range(len(out600))])
-	#mean600 = array([out600[i][0][j][1] for i in range(len(out600))])
-	#std600 = array([out600[i][0][j][2] for i in range(len(out600))])
-	#save(CMBlensing_dir+'PDF600_sigmaG%02d.npy'%(sigmaG_arr[j]*10),PDF600)
-	#save(CMBlensing_dir+'mean600%02d.npy'%(sigmaG_arr[j]*10),mean600)
-	#save(CMBlensing_dir+'std600%02d.npy'%(sigmaG_arr[j]*10),std600)
+ps600 = array([out600[i][1] for i in range(len(out600))])
+save(CMBlensing_dir+'ps600.npy',ps600)
+for j in range(len(sigmaG_arr)):
+	PDF600 = array([out600[i][0][j][0] for i in range(len(out600))])
+	mean600 = array([out600[i][0][j][1] for i in range(len(out600))])
+	std600 = array([out600[i][0][j][2] for i in range(len(out600))])
+	save(CMBlensing_dir+'PDF600%02d.npy'%(sigmaG_arr[j]*10),PDF600)
+	save(CMBlensing_dir+'mean600%02d.npy'%(sigmaG_arr[j]*10),mean600)
+	save(CMBlensing_dir+'std600%02d.npy'%(sigmaG_arr[j]*10),std600)
 
 
 out300 = pool.map(compute_PDF_ps, [(fn, 1.7**2) for fn in glob.glob(b300_dir+'*.fits')])
@@ -106,5 +104,49 @@ for j in range(len(sigmaG_arr)):
 	save(CMBlensing_dir+'PDF300%02d.npy'%(sigmaG_arr[j]*10),PDF300)
 	save(CMBlensing_dir+'mean300%02d.npy'%(sigmaG_arr[j]*10),mean300)
 	save(CMBlensing_dir+'std300%02d.npy'%(sigmaG_arr[j]*10),std300)
-	
+
 print 'DONE-DONE-DONE'
+
+###### local laptop plotting ##########
+#import matplotlib.pyplot as plt
+#from pylab import *
+
+#ell_arr = [ell600, ell300]
+#plot_dir = '/Users/jia/Desktop/CMBnonGaussian/plot/'
+#i=0
+#gaussian = lambda x, mu, sig: np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.)))/sig/sqrt(2.0*pi)
+
+#for res in ('600','300'):
+	#res_dir = '/Users/jia/Desktop/CMBnonGaussian/b%s/'%(res)
+	#ps = load(res_dir+'ps%s.npy'%(res))
+	#f=figure(figsize=(8,6))
+	#ax=f.add_subplot(111)
+	#ax.errorbar(ell_arr[i], mean(ps,axis=0),std(ps,axis=0))
+	#ax.set_xscale('log')
+	#ax.set_yscale('log')
+	#ax.set_xlabel(r'$\ell$')
+	#ax.set_ylabel(r'$\ell(\ell+1)\rm{P(\ell)/2\pi}$')
+	#savefig(plot_dir+'ps_b%s.jpg'%(res))
+	#close()
+	
+	#f=figure(figsize=(8,6))
+	#for j in range(4):
+		#ax=f.add_subplot(2,2,j+1)
+		#sigmaG = sigmaG_arr[j]
+		#iPDF = load(res_dir+'PDF%s%02d.npy'%(res,sigmaG_arr[j]*10))
+		#imean =mean(load(res_dir+'mean%s%02d.npy'%(res,sigmaG_arr[j]*10)))
+		#istd = mean(load(res_dir+'std%s%02d.npy'%(res,sigmaG_arr[j]*10)))
+		#PDF_center = WLanalysis.edge2center(PDFbin_arr[j])
+		#norm = 1.0/(PDF_center[-1]-PDF_center[-2])
+		#ax.errorbar(PDF_center, mean(iPDF,axis=0)*norm, std(iPDF,axis=0)*norm)
+		
+		#xbins = linspace(PDFbin_arr[j][0],PDFbin_arr[j][-1], 100)
+		#ax.plot(xbins, gaussian(xbins, imean, istd))
+		#ax.set_yscale('log')
+		
+		#ax.set_xlabel(r'$\kappa$')
+		#ax.set_ylabel('PDF')
+	#savefig(plot_dir+'PDF_b%s.jpg'%(res))
+	#close()
+	#i+=1
+	
