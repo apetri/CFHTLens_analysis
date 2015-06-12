@@ -71,7 +71,7 @@ def PDFGen(kmap):
 def compute_PDF_ps (fnsizedeg):
 	'''for a convergence map with filename fn, compute the PDF and the power spectrum. sizedeg = 3.5**2, or 1.7**2'''
 	fn, sizedeg = fnsizedeg
-	prin fn, sizedeg
+	print fn, sizedeg
 	kmap = WLanalysis.readFits(fn)
 	PPA = 2048.0/(sqrt(sizedeg)*60.0) #pixels per arcmin
 	PDF10 = [PDFGen(WLanalysis.smooth(kmap, PPA*sigmaG_arr[i]), PDFbin_arr[i]) for i in range(len(sigmaG_arr))]
