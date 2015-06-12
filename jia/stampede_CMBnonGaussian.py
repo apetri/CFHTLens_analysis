@@ -81,20 +81,28 @@ def compute_PDF_ps (fnsizedeg):
 pool = MPIPool()
 
 out600 = pool.map(compute_PDF_ps, [(fn, 3.5**2) for fn in glob.glob(b600_dir+'*.fits')])
+save(CMBlensing_dir+'out600.npy',out600)
+
 ps600 = array([out600[i][1] for i in range(len(out600))])
 save(CMBlensing_dir+'ps600.npy',ps600)
 for j in range(len(sigmaG_arr)):
-	PDF600, mean600, std600 = array([out600[i][j] for i in range(len(out600))])
+	PDF600 = array([out600[i][0][j][0] for i in range(len(out600))])
+	mean600 = array([out600[i][0][j][1] for i in range(len(out600))])
+	std600 = array([out600[i][0][j][2] for i in range(len(out600))])
 	save(CMBlensing_dir+'PDF600_sigmaG%02d.npy'%(sigmaG_arr[j]*10),PDF600)
 	save(CMBlensing_dir+'mean600%02d.npy'%(sigmaG_arr[j]*10),mean600)
 	save(CMBlensing_dir+'std600%02d.npy'%(sigmaG_arr[j]*10),std600)
 
 
 out300 = pool.map(compute_PDF_ps, [(fn, 1.7**2) for fn in glob.glob(b600_dir+'*.fits')])
+save(CMBlensing_dir+'out300.npy',out300)
+
 ps300 = array([out300[i][1] for i in range(len(out300))])
 save(CMBlensing_dir+'ps300.npy',ps300)
 for j in range(len(sigmaG_arr)):
-	PDF300, mean300, std300 = array([out300[i][j] for i in range(len(out300))])
+	PDF300 = array([out300[i][0][j][0] for i in range(len(out300))])
+	mean300 = array([out300[i][0][j][1] for i in range(len(out300))])
+	std300 = array([out300[i][0][j][2] for i in range(len(out300))])
 	save(CMBlensing_dir+'PDF300%02d.npy'%(sigmaG_arr[j]*10),PDF300)
 	save(CMBlensing_dir+'mean300%02d.npy'%(sigmaG_arr[j]*10),mean300)
 	save(CMBlensing_dir+'std300%02d.npy'%(sigmaG_arr[j]*10),std300)
