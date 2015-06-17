@@ -1,6 +1,6 @@
 #!python
 # Jia Liu 2015/03/23
-# This code calculates the model for tSZ x weak lensing
+# This code calculates the model for kSZ x weak lensing
 
 import WLanalysis
 import os
