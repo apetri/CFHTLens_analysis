@@ -14,7 +14,7 @@ def write_file(ic):
 #############Directives###################
 ##########################################
 
-#SBATCH -J Gadget2_ic{0}
+#SBATCH -J Gadget2_3ic{0}
 
 #SBATCH -o /work/02977/jialiu/lenstools_home/Logs/gadget_3ic{0}_%j.err
 #SBATCH -e /work/02977/jialiu/lenstools_home/Logs/gadget_3ic{0}_%j.err
