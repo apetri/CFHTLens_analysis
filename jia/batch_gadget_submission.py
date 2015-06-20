@@ -95,3 +95,5 @@ def write_ngenic_submission():
 			f.write(newline)
 		f.write('wait\n')	
 	f.close()
+
+write_ngenic_submission()
