@@ -92,7 +92,7 @@ def write_ngenic_submission():
 	f.write('\n')
 	for i in range(14,501)[::8]:
 		for j in range(8):
-			newline = 'ibrun -n 16 -o %s /work/02977/jialiu/IG_Pipeline_0.1/N-GenIC/N-GenIC /work/02977/jialiu/lenstools_home/Om0.300_Ol0.700/512b240/ic%s/ngenic.param  &\n'%(j*8, i+j)
+			newline = 'ibrun -n 16 -o %s /work/02977/jialiu/IG_Pipeline_0.1/N-GenIC/N-GenIC /work/02977/jialiu/lenstools_home/Om0.300_Ol0.700/512b240/ic%s/ngenic.param  &\n'%(j*16, i+j)
 			f.write(newline)
 		f.write('wait\n')	
 	f.close()
