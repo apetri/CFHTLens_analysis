@@ -46,4 +46,4 @@ wait'''.format(ic, ic+1, ic+2)
 	f.close()
 
 
-map(write_file, range(334,430)[::3])
+map(write_file, range(3,101)[::3])
