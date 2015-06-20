@@ -1,5 +1,5 @@
 #!python
-def write_file(ic):
+def write_gadget_submission(ic):
 	f = open('/work/02977/jialiu/lenstools_home/Jobs/gadget_3ic{0}.sh'.format(ic), 'w')
 	content = '''#!/bin/bash
 
@@ -46,4 +46,52 @@ wait'''.format(ic, ic+1, ic+2)
 	f.close()
 
 
-map(write_file, range(3,101)[::3])
+#map(write_gadget_submission, range(3,101)[::3])
+
+def write_ngenic_submission():
+	f = open('/work/02977/jialiu/lenstools_home/Jobs/ngenic500.sh', 'w')
+	content = '''#!/bin/bash
+
+################################
+######Allocation ID#############
+################################
+
+#SBATCH -A TG-AST140041
+
+
+##########################################
+#############Directives###################
+##########################################
+
+#SBATCH -J NGenIC
+
+#SBATCH -o /work/02977/jialiu/lenstools_home/Logs/ngenic.%j.err
+#SBATCH -e /work/02977/jialiu/lenstools_home/Logs/ngenic.%j.err
+
+
+#SBATCH -p development
+#SBATCH -t 02:00:00
+
+#SBATCH --mail-user=jia@astro.columbia.edu
+#SBATCH --mail-type=all
+
+
+##########################################
+#############Resources####################
+##########################################
+
+#SBATCH -n 128
+#SBATCH -N 16
+
+###################################################
+#################Execution#########################
+###################################################'''
+	f.write(content)
+	f.close()
+	f = open('/work/02977/jialiu/lenstools_home/Jobs/ngenic500.sh', 'a')
+	for for i in range(14,501)[::16]:
+		for j in range(16):
+			newline = 'ibrun -n 16 -o %s /work/02977/jialiu/IG_Pipeline_0.1/N-GenIC/N-GenIC /work/02977/jialiu/lenstools_home/Om0.300_Ol0.700/512b240/ic%s/ngenic.param  &\n'%(j*16, i+j)
+			f.write(newline)
+		f.write('wait\n')	
+	f.close()
