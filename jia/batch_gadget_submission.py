@@ -1,6 +1,6 @@
 #!python
 def write_gadget_submission(ic):
-	f = open('/work/02977/jialiu/lenstools_home/Jobs/gadget_3ic{0}.sh'.format(ic), 'w')
+	f = open('/work/02977/jialiu/lenstools_home/Jobs/gadget_5ic{0}.sh'.format(ic), 'w')
 	content = '''#!/bin/bash
 
 ################################
@@ -16,12 +16,12 @@ def write_gadget_submission(ic):
 
 #SBATCH -J Gadget2_3ic{0}
 
-#SBATCH -o /work/02977/jialiu/lenstools_home/Logs/gadget_3ic{0}_%j.err
-#SBATCH -e /work/02977/jialiu/lenstools_home/Logs/gadget_3ic{0}_%j.err
+#SBATCH -o /work/02977/jialiu/lenstools_home/Logs/gadget_5ic{0}_%j.err
+#SBATCH -e /work/02977/jialiu/lenstools_home/Logs/gadget_5ic{0}_%j.err
 
 
 #SBATCH -p normal
-#SBATCH -t 05:00:00
+#SBATCH -t 10:00:00
 
 #SBATCH --mail-user=jia@astro.columbia.edu
 #SBATCH --mail-type=all
@@ -31,22 +31,33 @@ def write_gadget_submission(ic):
 #############Resources####################
 ##########################################
 
-#SBATCH -n 768
-#SBATCH -N 48
+#SBATCH -n 1280
+#SBATCH -N 80
 
 ###################################################
 #################Execution#########################
 ###################################################
 
 ibrun -n 256 -o 0 /work/02977/jialiu/IG_Pipeline_0.1/Gadget2/Gadget2 1 256 /work/02977/jialiu/lenstools_home/Om0.300_Ol0.700/512b240/ic{0}/gadget2.param &
+
 ibrun -n 256 -o 256 /work/02977/jialiu/IG_Pipeline_0.1/Gadget2/Gadget2 1 256 /work/02977/jialiu/lenstools_home/Om0.300_Ol0.700/512b240/ic{1}/gadget2.param &
+
 ibrun -n 256 -o 512 /work/02977/jialiu/IG_Pipeline_0.1/Gadget2/Gadget2 1 256 /work/02977/jialiu/lenstools_home/Om0.300_Ol0.700/512b240/ic{2}/gadget2.param &
-wait'''.format(ic, ic+1, ic+2)
+
+ibrun -n 256 -o 512 /work/02977/jialiu/IG_Pipeline_0.1/Gadget2/Gadget2 1 256 /work/02977/jialiu/lenstools_home/Om0.300_Ol0.700/512b240/ic{3}/gadget2.param &
+
+ibrun -n 256 -o 512 /work/02977/jialiu/IG_Pipeline_0.1/Gadget2/Gadget2 1 256 /work/02977/jialiu/lenstools_home/Om0.300_Ol0.700/512b240/ic{4}/gadget2.param &
+
+wait'''.format(ic, ic+1, ic+2, ic+3, ic+4)
 	f.write(content)
 	f.close()
 
 
-#map(write_gadget_submission, range(3,101)[::3])
+map(write_gadget_submission, range(5,501)[::5]+[4,])
+
+#########################################
+################# N-GenIC ###############
+#########################################
 
 def write_ngenic_submission():
 	f = open('/work/02977/jialiu/lenstools_home/Jobs/ngenic500.sh', 'w')
@@ -97,4 +108,4 @@ def write_ngenic_submission():
 		f.write('wait\n')	
 	f.close()
 
-write_ngenic_submission()
+#write_ngenic_submission()
