@@ -21,7 +21,7 @@ def write_gadget_submission(ic):
 
 
 #SBATCH -p normal
-#SBATCH -t 10:00:00
+#SBATCH -t 4:00:00
 
 #SBATCH --mail-user=jia@astro.columbia.edu
 #SBATCH --mail-type=all
