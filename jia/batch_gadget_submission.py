@@ -1,5 +1,6 @@
 #!python
 import glob
+from scipy import *
 def write_gadget_submission(ic):
 	f = open('/work/02977/jialiu/lenstools_home/Jobs/gadget_5ic{0}.sh'.format(ic), 'w')
 	content = '''#!/bin/bash
