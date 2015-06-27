@@ -1,6 +1,10 @@
 #!python
 import glob
 from scipy import *
+
+cosmo_arr = glob.glob('/home1/02977/jialiu/work/CMB_batch/O*')
+
+
 def write_gadget_submission(ic):
 	f = open('/work/02977/jialiu/lenstools_home/Jobs/gadget_5ic{0}.sh'.format(ic), 'w')
 	content = '''#!/bin/bash
@@ -55,7 +59,6 @@ wait'''.format(ic, ic+1, ic+2, ic+3, ic+4)
 	f.close()
 
 
-#map(write_gadget_submission, range(5,501)[::5])
 
 #########################################
 ################# N-GenIC ###############
@@ -110,7 +113,62 @@ def write_ngenic_submission():
 		f.write('wait\n')	
 	f.close()
 
-#write_ngenic_submission()
+def write_ngenic_CMB1024_submission():
+	fn = '/work/02977/jialiu/CMB_batch/Jobs/ngenic.sh'
+	f = open(fn, 'w')
+	content = '''#!/bin/bash
+
+################################
+######Allocation ID#############
+################################
+
+#SBATCH -A TG-AST140041
+
+
+##########################################
+#############Directives###################
+##########################################
+
+#SBATCH -J NGenIC
+
+#SBATCH -o /work/02977/jialiu/CMB_batch/Logs/ngenic.%j.err
+#SBATCH -e /work/02977/jialiu/CMB_batch/Logs/ngenic.%j.err
+
+
+#SBATCH -p development
+#SBATCH -t 02:00:00
+
+#SBATCH --mail-user=jia@astro.columbia.edu
+#SBATCH --mail-type=all
+
+
+##########################################
+#############Resources####################
+##########################################
+
+#SBATCH -n 128
+#SBATCH -N 16
+
+###################################################
+#################Execution#########################
+###################################################
+
+'''
+	f.write(content)
+	f.close()
+	f = open(fn, 'a')
+	
+	i=0
+	whil i < len(cosmo_arr):
+		for j in range(8):
+			newline = 'ibrun -n 16 -o %s /work/02977/jialiu/IG_Pipeline_0.1/N-GenIC/N-GenIC /work/02977/jialiu/lenstools_home/Om0.300_Ol0.700/512b240/ic1/ngenic.param  &\n'%(j*16, cosmo_arr[i])
+			f.write(newline)
+			i+=1
+			if i == len(cosmo_arr):
+				break
+		f.write('wait\n')	
+	f.close()
+
 
 ##################################################
 ############## camb ##############################
@@ -171,12 +229,13 @@ cd /work/02977/jialiu/IG_Pipeline/camb
 	f.write('wait\n')
 	f.close()
 
-#write_camb_CMB91_submission()
+
+
+
 
 ###########################################
 ######## camb development #################
 ###########################################
-cosmo_arr = glob.glob('/home1/02977/jialiu/work/CMB_batch/O*')
 def write_camb_CMB91dev_submission(n_cosmo):
 	'''use dev nodes, run 16x2 cosmos each time, n_cosmo = one of [0,  32,  64 ]
 	'''
@@ -241,4 +300,14 @@ cd /work/02977/jialiu/IG_Pipeline/camb
 		f.write(newline)	
 	f.write('wait\n')	
 	f.close()
-map(write_camb_CMB91dev_submission, (0,  32,  64))
+
+#map(write_gadget_submission, range(5,501)[::5])
+
+#write_ngenic_submission()
+
+#write_camb_CMB91_submission()
+
+#map(write_camb_CMB91dev_submission, (0,  32,  64))
+
+
+write_ngenic_CMB1024_submission()
