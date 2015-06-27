@@ -171,7 +171,7 @@ cd /work/02977/jialiu/IG_Pipeline/camb
 	f.write('wait\n')
 	f.close()
 
-write_camb_CMB91_submission()
+#write_camb_CMB91_submission()
 
 ###########################################
 ######## camb development #################
