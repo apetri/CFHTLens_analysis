@@ -180,7 +180,7 @@ cosmo_arr = glob.glob('/home1/02977/jialiu/work/CMB_batch/O*')
 def write_camb_CMB91dev_submission(n_cosmo):
 	'''use dev nodes, run 16x2 cosmos each time, n_cosmo = one of [0,  32,  64 ]
 	'''
-	fn = '/work/02977/jialiu/CMB_batch/Jobs/camb_dev_%s-%s.sh'%(n_cosmo,amin(n_cosmo+31,90))	
+	fn = '/work/02977/jialiu/CMB_batch/Jobs/camb_dev_%s-%s.sh'%(n_cosmo,min(n_cosmo+31,90))	
 	f = open(fn, 'w')
 	content ='''#!/bin/bash
 
