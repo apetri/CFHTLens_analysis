@@ -226,16 +226,16 @@ cd /work/02977/jialiu/IG_Pipeline/camb
 	f.close()
 	f = open(fn,'a')
 	j = 0
-	for j in range(n_cosmo, n_cosmo+16):
-		newline = 'ibrun -n 1 -o %s /work/02977/jialiu/IG_Pipeline_0.1/camb/camb %s/1024b600/camb.param &\n'%(j, cosmo_arr[n_cosmo])
-		print newline
+	for nn in range(n_cosmo, n_cosmo+16):
+		newline = 'ibrun -n 1 -o %s /work/02977/jialiu/IG_Pipeline_0.1/camb/camb %s/1024b600/camb.param &\n'%(j, cosmo_arr[nn])
+		#print newline
 		j+=1
 		f.write(newline)	
 	f.write('wait\n')
 	
 	j = 0
-	for j in range(n_cosmo+16, min(n_cosmo+32, 91)):
-		newline = 'ibrun -n 1 -o %s /work/02977/jialiu/IG_Pipeline_0.1/camb/camb %s/1024b600/camb.param &\n'%(j, cosmo_arr[n_cosmo])
+	for nn in range(n_cosmo+16, min(n_cosmo+32, 91)):
+		newline = 'ibrun -n 1 -o %s /work/02977/jialiu/IG_Pipeline_0.1/camb/camb %s/1024b600/camb.param &\n'%(j, cosmo_arr[nn])
 		#print newline
 		j+=1
 		f.write(newline)	
