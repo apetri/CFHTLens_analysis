@@ -234,7 +234,7 @@ cd /work/02977/jialiu/IG_Pipeline/camb
 	f.write('wait\n')
 	
 	j = 0
-	for j in range(n_cosmo+16, amin(n_cosmo+32, 91)):
+	for j in range(n_cosmo+16, amin([n_cosmo+32, 91])):
 		newline = 'ibrun -n 1 -o %s /work/02977/jialiu/IG_Pipeline_0.1/camb/camb %s/1024b600/camb.param &\n'%(j, cosmo_arr[n_cosmo])
 		print newline
 		j+=1
