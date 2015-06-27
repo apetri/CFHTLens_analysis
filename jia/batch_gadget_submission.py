@@ -161,7 +161,7 @@ def write_ngenic_CMB1024_submission():
 	i=0
 	while i < len(cosmo_arr):
 		for j in range(8):
-			newline = 'ibrun -n 16 -o %s /work/02977/jialiu/IG_Pipeline_0.1/N-GenIC/N-GenIC /work/02977/jialiu/lenstools_home/Om0.300_Ol0.700/512b240/ic1/ngenic.param  &\n'%(j*16, cosmo_arr[i])
+			newline = 'ibrun -n 16 -o %s /work/02977/jialiu/IG_Pipeline_0.1/N-GenIC/N-GenIC %s/1024b600/ic1/ngenic.param  &\n'%(j*16, cosmo_arr[i])
 			f.write(newline)
 			i+=1
 			if i == len(cosmo_arr):
