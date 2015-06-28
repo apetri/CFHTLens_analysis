@@ -61,7 +61,7 @@ wait'''.format(ic, ic+1, ic+2, ic+3, ic+4)
 
 ################# gadget CMB submission ##############
 def write_gadget_CMB1024b600_submission(n):
-	f = open('/work/02977/jialiu/CMB_batch/Jobs/gadget_{0}.sh'.format(n), 'w')
+	f = open('/work/02977/jialiu/CMB_batch/Jobs/gadget_batch/gadget_{0}.sh'.format(n), 'w')
 	content = '''#!/bin/bash
 
 ################################
@@ -103,7 +103,8 @@ ibrun -n 1024 -o 0 /work/02977/jialiu/IG_Pipeline_0.1/Gadget2/Gadget2 1 1024 {1}
 wait
 
 ibrun -n 1024 -o 0 /work/02977/jialiu/IG_Pipeline_0.1/Gadget2/Gadget2 1 1024 {2}/1024b600/ic1/gadget2.param &
-wait'''.format(n,cosmo_arr[n], cosmo_arr[n+1])
+wait
+'''.format(n,cosmo_arr[n], cosmo_arr[n+1])
 	f.write(content)
 	f.close()
 	
@@ -359,4 +360,4 @@ cd /work/02977/jialiu/IG_Pipeline/camb
 
 #write_ngenic_CMB1024_submission()
 
-map(write_gadget_CMB1024b600_submission,cosmo_arr)
+map(write_gadget_CMB1024b600_submission,range(len(cosmo_arr))[::2])
