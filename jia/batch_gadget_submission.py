@@ -3,7 +3,7 @@ import glob
 from scipy import *
 
 cosmo_arr = glob.glob('/home1/02977/jialiu/work/CMB_batch/O*')
-cosmo_arr +['']
+cosmo_arr += ['',]
 
 def write_gadget_submission(ic):
 	f = open('/work/02977/jialiu/lenstools_home/Jobs/gadget_5ic{0}.sh'.format(ic), 'w')
