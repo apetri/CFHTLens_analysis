@@ -99,10 +99,10 @@ def write_gadget_CMB1024b600_submission(n):
 #################Execution#########################
 ###################################################
 
-ibrun -n 1024 -o 0 /work/02977/jialiu/IG_Pipeline_0.1/Gadget2/Gadget2 1 1024 {1}/1024b600/ic1/gadget2.param &
+ibrun -n 1024 -o 0 /home1/02918/apetri/IG_Pipeline/Gadget2/Gadget2 1 1024 {1}/1024b600/ic1/gadget2.param &
 wait
 
-ibrun -n 1024 -o 0 /work/02977/jialiu/IG_Pipeline_0.1/Gadget2/Gadget2 1 1024 {2}/1024b600/ic1/gadget2.param &
+ibrun -n 1024 -o 0 /home1/02918/apetri/IG_Pipeline/Gadget2/Gadget2 1 1024 {2}/1024b600/ic1/gadget2.param &
 wait
 '''.format(n, cosmo_arr[n], cosmo_arr[n+1])
 	f.write(content)
