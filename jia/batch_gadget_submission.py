@@ -59,6 +59,54 @@ wait'''.format(ic, ic+1, ic+2, ic+3, ic+4)
 	f.close()
 
 
+################# gadget CMB submission ##############
+def write_gadget_CMB1024b600_submission(n):
+	f = open('/work/02977/jialiu/CMB_batch/Jobs/gadget_{0}.sh'.format(n), 'w')
+	content = '''#!/bin/bash
+
+################################
+######Allocation ID#############
+################################
+
+#SBATCH -A TG-AST140041
+
+
+##########################################
+#############Directives###################
+##########################################
+
+#SBATCH -J Gadget2_{0}
+
+#SBATCH -o /work/02977/jialiu/lenstools_home/Logs/gadgetCMB_%j.err
+#SBATCH -e /work/02977/jialiu/lenstools_home/Logs/gadgetCMB_%j.err
+
+
+#SBATCH -p normal
+#SBATCH -t 20:00:00
+
+#SBATCH --mail-user=jia@astro.columbia.edu
+#SBATCH --mail-type=all
+
+
+##########################################
+#############Resources####################
+##########################################
+
+#SBATCH -n 1024
+#SBATCH -N 64
+
+###################################################
+#################Execution#########################
+###################################################
+
+ibrun -n 1024 -o 0 /work/02977/jialiu/IG_Pipeline_0.1/Gadget2/Gadget2 1 1024 {1}/1024b600/ic1/gadget2.param &
+wait
+
+ibrun -n 1024 -o 0 /work/02977/jialiu/IG_Pipeline_0.1/Gadget2/Gadget2 1 1024 {2}/1024b600/ic1/gadget2.param &
+wait'''.format(n,cosmo_arr[n], cosmo_arr[n+1])
+	f.write(content)
+	f.close()
+	
 
 #########################################
 ################# N-GenIC ###############
@@ -309,5 +357,6 @@ cd /work/02977/jialiu/IG_Pipeline/camb
 
 #map(write_camb_CMB91dev_submission, (0,  32,  64))
 
+#write_ngenic_CMB1024_submission()
 
-write_ngenic_CMB1024_submission()
+map(write_gadget_CMB1024b600_submission,cosmo_arr)
