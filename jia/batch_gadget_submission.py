@@ -3,7 +3,7 @@ import glob
 from scipy import *
 
 cosmo_arr = glob.glob('/home1/02977/jialiu/work/CMB_batch/O*')
-
+cosmo_arr +['']
 
 def write_gadget_submission(ic):
 	f = open('/work/02977/jialiu/lenstools_home/Jobs/gadget_5ic{0}.sh'.format(ic), 'w')
@@ -104,7 +104,7 @@ wait
 
 ibrun -n 1024 -o 0 /work/02977/jialiu/IG_Pipeline_0.1/Gadget2/Gadget2 1 1024 {2}/1024b600/ic1/gadget2.param &
 wait
-'''.format(n,cosmo_arr[n], cosmo_arr[n+1])
+'''.format(n, cosmo_arr[n], cosmo_arr[n+1])
 	f.write(content)
 	f.close()
 	
