@@ -1,6 +1,12 @@
 ### python code to compute non-Gaussianity of CMB lensing maps
 ### Jia Liu 2015/06/12
 ### works on Stampede
+### 2015/06/30: update, write function that takes one directory, 
+### for each file inside that dir, do:
+### (1) compute ps
+### (2) generate a GRF from that ps - maybe generate from avg ps instead
+### (3) compute PDF for file and GRF, for 5 smoothings
+### (4) compute peaks for file and GRF, for 5 smoothings
 
 import WLanalysis
 import glob, os, sys
@@ -13,14 +19,7 @@ CMBlensing_dir = '/work/02977/jialiu/CMBnonGaussian/'
 #PDF_bins = linspace(-0.3, 0.5, 51)
 ends = [0.7, 0.6, 0.5, 0.4]
 PDFbin_arr = [linspace(-end, end, 101) for end in ends]
-
-sigmaG_arr = (0.5, 1.0, 2.0, 5.0)
-
-b300_dir = '/work/02918/apetri/kappaCMB/Om0.260_Ol0.740_Ob0.046_w-1.000_ns0.960_si0.800/1024b300/Maps/'
-#Pixels on a side: 2048
-#Pixel size: 2.98828125 arcsec
-#Total angular size: 1.7 deg
-#lmin=2.1e+02 ; lmax=3.1e+05
+sigmaG_arr = (0.5, 1.0, 2.0, 5.0, 8.0)
 
 b600_dir =  '/work/02918/apetri/kappaCMB/Om0.260_Ol0.740_Ob0.046_w-1.000_ns0.960_si0.800/1024b600/Maps/'
 #Pixels on a side: 2048
@@ -28,37 +27,6 @@ b600_dir =  '/work/02918/apetri/kappaCMB/Om0.260_Ol0.740_Ob0.046_w-1.000_ns0.960
 #Total angular size: 3.5 deg
 #lmin=1.0e+02 ; lmax=1.5e+05
 
-ell600 = array([110.50448683,    126.93632224,    145.81154455,    167.49348136,
-          192.39948651,    221.00897366,    253.87264448,    291.62308909,
-          334.98696272,    384.79897302,    442.01794731,    507.74528896,
-          583.24617818,    669.97392544,    769.59794604,    884.03589463,
-         1015.49057792,   1166.49235637,   1339.94785088,   1539.19589208,
-         1768.07178925,   2030.98115583,   2332.98471274,   2679.89570175,
-         3078.39178417,   3536.14357851,   4061.96231167,   4665.96942547,
-         5359.79140351,   6156.78356833,   7072.28715702,   8123.92462333,
-         9331.93885094,  10719.58280701,  12313.56713667,  14144.57431404,
-        16247.84924667,  18663.87770189,  21439.16561402,  24627.13427334,
-        28289.14862808,  32495.69849334,  37327.75540378,  42878.33122805,
-        49254.26854668,  56578.29725615,  64991.39698667,  74655.51080755,
-        85756.6624561 ,  98508.53709335])
-
-ell300 = array([227.50923759,     261.33948696,     300.20023877,
-           344.83952045,     396.11658987,     455.01847518,
-           522.67897393,     600.40047754,     689.67904089,
-           792.23317975,     910.03695035,    1045.35794786,
-          1200.80095508,    1379.35808178,    1584.4663595 ,
-          1820.0739007 ,    2090.71589571,    2401.60191017,
-          2758.71616357,    3168.932719  ,    3640.14780141,
-          4181.43179142,    4803.20382034,    5517.43232714,
-          6337.86543799,    7280.29560281,    8362.86358284,
-          9606.40764068,   11034.86465428,   12675.73087598,
-         14560.59120563,   16725.72716569,   19212.81528136,
-         22069.72930855,   25351.46175197,   29121.18241125,
-         33451.45433138,   38425.63056271,   44139.45861711,
-         50702.92350393,   58242.36482251,   66902.90866275,
-         76851.26112542,   88278.91723422,  101405.84700787,
-        116484.72964502,  133805.8173255 ,  153702.52225084,
-        176557.83446844,  202811.69401573])
 
 def PDFGen(kmap, PDF_bins):
 	all_kappa = kmap[~isnan(kmap)]
@@ -75,6 +43,111 @@ def compute_PDF_ps (fnsizedeg):
 	PDF10 = [PDFGen(WLanalysis.smooth(kmap, PPA*sigmaG_arr[i]), PDFbin_arr[i]) for i in range(len(sigmaG_arr))]
 	ell_arr, powspec = WLanalysis.PowerSpectrum(kmap, sizedeg = sizedeg)
 	return PDF10, powspec
+
+
+from random import gauss
+from scipy import interpolate
+
+
+a=WLanalysis.readFits('/Users/jia/Documents/weaklensing/map_conv_shear_sample/WL-conv_m-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.798_4096xy_0001r_0029p_0100z_og.gre.fit')
+
+img = a.astype(float)
+size = img.shape[0]
+F = fftshift(fftpack.fft2(img))
+psd2D = np.abs(F)**2 # = sqrt(real**2 + imag**2)
+
+psd2Dr = fftshift(fftpack.rfft2(img))**2
+ell_arr0, psd1D0 = WLanalysis.azimuthalAverage(psd2D, center=None, edges = arange(sqrt(2)*size/2))
+ell_arr_center = WLanalysis.edge2center(ell_arr0)
+
+
+def GRF_Gen (ell_arr_center, psd1D0, size):
+	randfft2 = zeros(shape=(size, size))
+	y, x = np.indices((size,size))
+	center = np.array([(x.max()-x.min())/2.0, (x.max()-x.min())/2.0])
+	if size%2 == 0:
+		center+=0.5
+	r = np.hypot(x - center[0], y - center[1])
+	
+	ell_arr = array([0,]+list(ell_arr_center)+[ceil(sqrt(2)*size/2+2),])
+	psd1D = array([psd1D0[0],]+list(psd1D0)+[psd1D0[-1],])
+	
+	p1D_interp = interpolate.griddata(ell_arr, psd1D, r.flatten(), method='linear')
+
+	p2D_mean = p1D_interp.reshape(size,size)
+	p2D_std = sqrt(p2D_mean/2.0)
+	psd2D_GRF = gauss(p2D_mean, p2D_std)
+	rand_angle = rand(size**2).reshape(size,size)*2.0*pi
+	psd2D_GRF_Fourier = sqrt(psd2D_GRF) * [cos(rand_angle) + 1j * sin(rand_angle)]
+	###amax(abs(abs(psd2D_GRF_Fourier)**2 - psd2D_GRF)) = 1e-8, pass
+	GRF_image = fftpack.ifft2(ifftshift(psd2D_GRF_Fourier))[0]
+	return sqrt(2)*real(GRF_image)
+	
+e1, ps_kappa = WLanalysis.PowerSpectrum(a)
+e1, ps_GRF = WLanalysis.PowerSpectrum(sqrt(2)*real(GRF_image))
+
+loglog(e1, ps_kappa, label='kappa')
+loglog(e1, ps_GRF, label='GRF')
+legend()
+xlabel('ell')
+ylabel('ell**2*P')
+show()
+
+subplot(121)
+imshow(a,vmin=-.06,vmax=.06)
+title('kappa')
+colorbar()
+subplot(122)
+imshow(xxx,vmin=-.06,vmax=.06)
+title('GRF')
+colorbar()
+show()
+	
+	
+
+
+######################################################
+############### J U N K ##############################
+######################################################
+
+#b300_dir = '/work/02918/apetri/kappaCMB/Om0.260_Ol0.740_Ob0.046_w-1.000_ns0.960_si0.800/1024b300/Maps/'
+##Pixels on a side: 2048
+##Pixel size: 2.98828125 arcsec
+##Total angular size: 1.7 deg
+##lmin=2.1e+02 ; lmax=3.1e+05
+
+
+#ell600 = array([110.50448683,    126.93632224,    145.81154455,    167.49348136,
+          #192.39948651,    221.00897366,    253.87264448,    291.62308909,
+          #334.98696272,    384.79897302,    442.01794731,    507.74528896,
+          #583.24617818,    669.97392544,    769.59794604,    884.03589463,
+         #1015.49057792,   1166.49235637,   1339.94785088,   1539.19589208,
+         #1768.07178925,   2030.98115583,   2332.98471274,   2679.89570175,
+         #3078.39178417,   3536.14357851,   4061.96231167,   4665.96942547,
+         #5359.79140351,   6156.78356833,   7072.28715702,   8123.92462333,
+         #9331.93885094,  10719.58280701,  12313.56713667,  14144.57431404,
+        #16247.84924667,  18663.87770189,  21439.16561402,  24627.13427334,
+        #28289.14862808,  32495.69849334,  37327.75540378,  42878.33122805,
+        #49254.26854668,  56578.29725615,  64991.39698667,  74655.51080755,
+        #85756.6624561 ,  98508.53709335])
+
+#ell300 = array([227.50923759,     261.33948696,     300.20023877,
+           #344.83952045,     396.11658987,     455.01847518,
+           #522.67897393,     600.40047754,     689.67904089,
+           #792.23317975,     910.03695035,    1045.35794786,
+          #1200.80095508,    1379.35808178,    1584.4663595 ,
+          #1820.0739007 ,    2090.71589571,    2401.60191017,
+          #2758.71616357,    3168.932719  ,    3640.14780141,
+          #4181.43179142,    4803.20382034,    5517.43232714,
+          #6337.86543799,    7280.29560281,    8362.86358284,
+          #9606.40764068,   11034.86465428,   12675.73087598,
+         #14560.59120563,   16725.72716569,   19212.81528136,
+         #22069.72930855,   25351.46175197,   29121.18241125,
+         #33451.45433138,   38425.63056271,   44139.45861711,
+         #50702.92350393,   58242.36482251,   66902.90866275,
+         #76851.26112542,   88278.91723422,  101405.84700787,
+        #116484.72964502,  133805.8173255 ,  153702.52225084,
+        #176557.83446844,  202811.69401573])
 
 ########## operation on stampede 	
 #pool = MPIPool()
