@@ -78,8 +78,8 @@ def write_gadget_CMB1024b600_submission(n):
 
 #SBATCH -J Gadget2_{0}
 
-#SBATCH -o /work/02977/jialiu/lenstools_home/Logs/gadgetCMB_%j.err
-#SBATCH -e /work/02977/jialiu/lenstools_home/Logs/gadgetCMB_%j.err
+#SBATCH -o /work/02977/jialiu/CMB_batch/Logs/gadgetCMB_%j.err
+#SBATCH -e /work/02977/jialiu/CMB_batch/Logs/gadgetCMB_%j.err
 
 
 #SBATCH -p normal
@@ -185,8 +185,8 @@ def write_ngenic_CMB1024_submission():
 #SBATCH -e /work/02977/jialiu/CMB_batch/Logs/ngenic.%j.err
 
 
-#SBATCH -p development
-#SBATCH -t 02:00:00
+#SBATCH -p normal
+#SBATCH -t 15:00:00
 
 #SBATCH --mail-user=jia@astro.columbia.edu
 #SBATCH --mail-type=all
@@ -196,8 +196,8 @@ def write_ngenic_CMB1024_submission():
 #############Resources####################
 ##########################################
 
-#SBATCH -n 128
-#SBATCH -N 16
+#SBATCH -n 2048
+#SBATCH -N 256
 
 ###################################################
 #################Execution#########################
@@ -208,14 +208,13 @@ def write_ngenic_CMB1024_submission():
 	f.close()
 	f = open(fn, 'a')
 	
-	i=0
-	while i < len(cosmo_arr):
-		for j in range(8):
-			newline = 'ibrun -n 16 -o %s /work/02977/jialiu/IG_Pipeline_0.1/N-GenIC/N-GenIC %s/1024b600/ic1/ngenic.param  &\n'%(j*16, cosmo_arr[i])
-			f.write(newline)
-			i+=1
-			if i == len(cosmo_arr):
-				break
+	for i in range(len(cosmo_arr))[::2]:
+		newline = 'ibrun -n 1024 -o 0 /work/02977/jialiu/IG_Pipeline_0.1/N-GenIC/N-GenIC %s/1024b600/ic1/ngenic.param  &\n'%(cosmo_arr[i])
+		f.write(newline)
+		
+		newline = 'ibrun -n 1024 -o 1024 /work/02977/jialiu/IG_Pipeline_0.1/N-GenIC/N-GenIC %s/1024b600/ic1/ngenic.param  &\n'%(cosmo_arr[i+1])
+		f.write(newline)
+		
 		f.write('wait\n')	
 	f.close()
 
@@ -359,6 +358,6 @@ cd /work/02977/jialiu/IG_Pipeline/camb
 
 #map(write_camb_CMB91dev_submission, (0,  32,  64))
 
-#write_ngenic_CMB1024_submission()
+write_ngenic_CMB1024_submission()
 
 map(write_gadget_CMB1024b600_submission,range(len(cosmo_arr))[::2])

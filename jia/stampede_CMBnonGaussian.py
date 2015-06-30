@@ -108,41 +108,44 @@ def compute_PDF_ps (fnsizedeg):
 
 #print 'DONE-DONE-DONE'
 
+#######################################
 ###### local laptop plotting ##########
-import matplotlib.pyplot as plt
-from pylab import *
+#######################################
 
-ell_arr = [ell600, ell300]
-plot_dir = '/Users/jia/Desktop/CMBnonGaussian/plot/'
-i=0
-gaussian = lambda x, mu, sig: np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.)))/sig/sqrt(2.0*pi)
+#import matplotlib.pyplot as plt
+#from pylab import *
 
-f=figure(figsize=(8,6))
-ax=f.add_subplot(111)
-for res in ('600','300'):
-	res_dir = '/Users/jia/Desktop/CMBnonGaussian/b%s/'%(res)
-	ps = load(res_dir+'ps%s.npy'%(res))	
-	ax.errorbar(ell_arr[i], mean(ps,axis=0),std(ps,axis=0), label='Gadget (box size = %s Mpc/h)'%(res))
-	i+=1
+#ell_arr = [ell600, ell300]
+#plot_dir = '/Users/jia/Desktop/CMBnonGaussian/plot/'
+#i=0
+#gaussian = lambda x, mu, sig: np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.)))/sig/sqrt(2.0*pi)
+
+#f=figure(figsize=(8,6))
+#ax=f.add_subplot(111)
+#for res in ('600','300'):
+	#res_dir = '/Users/jia/Desktop/CMBnonGaussian/b%s/'%(res)
+	#ps = load(res_dir+'ps%s.npy'%(res))	
+	#ax.errorbar(ell_arr[i], mean(ps,axis=0),std(ps,axis=0), label='Gadget (box size = %s Mpc/h)'%(res))
+	#i+=1
 	
-ell_nicaea, P_kappa_smith = genfromtxt('/Users/jia/Documents/code/nicaea_2.5/Demo/P_kappa_smithrevised').T
+#ell_nicaea, P_kappa_smith = genfromtxt('/Users/jia/Documents/code/nicaea_2.5/Demo/P_kappa_smithrevised').T
 
-ell_nicaea, P_kappa_linear = genfromtxt('/Users/jia/Documents/code/nicaea_2.5/Demo/P_kappa_linear').T
+#ell_nicaea, P_kappa_linear = genfromtxt('/Users/jia/Documents/code/nicaea_2.5/Demo/P_kappa_linear').T
 
-ax.plot(ell_nicaea, P_kappa_smith, label='Nicaea2.5 (smith03)')
-ax.plot(ell_nicaea, P_kappa_linear, label='Nicaea2.5 (linear)')
-ax.set_xlim(ell_arr[0][0],ell_arr[1][-1])
-ax.set_ylim(1e-4, 1e-2)
-ax.set_xscale('log')
-ax.set_yscale('log')
-ax.set_xlabel(r'$\ell$')
-ax.set_ylabel(r'$\ell(\ell+1)\rm{P(\ell)/2\pi}$')
-leg=ax.legend(loc=0)
-leg.get_frame().set_visible(False)
-savefig(plot_dir+'ps_nicaea.jpg')
-close()
+#ax.plot(ell_nicaea, P_kappa_smith, label='Nicaea2.5 (smith03)')
+#ax.plot(ell_nicaea, P_kappa_linear, label='Nicaea2.5 (linear)')
+#ax.set_xlim(ell_arr[0][0],ell_arr[1][-1])
+#ax.set_ylim(1e-4, 1e-2)
+#ax.set_xscale('log')
+#ax.set_yscale('log')
+#ax.set_xlabel(r'$\ell$')
+#ax.set_ylabel(r'$\ell(\ell+1)\rm{P(\ell)/2\pi}$')
+#leg=ax.legend(loc=0)
+#leg.get_frame().set_visible(False)
+#savefig(plot_dir+'ps_nicaea.jpg')
+#close()
 
-i=0
+#i=0
 #for res in ('600','300'):	
 	##f=figure(figsize=(12,8))
 	##for j in range(4):
