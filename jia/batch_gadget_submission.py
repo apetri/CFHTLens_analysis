@@ -61,7 +61,6 @@ wait'''.format(ic, ic+1, ic+2, ic+3, ic+4)
 
 ################# gadget CMB submission ##############
 def write_gadget_CMB1024b600_submission(n):
-	cosmo_arr += ['',]# to solve the problem need length 92 to run..
 	f = open('/work/02977/jialiu/CMB_batch/Jobs/gadget_batch/gadget_{0}.sh'.format(n), 'w')
 	content = '''#!/bin/bash
 
