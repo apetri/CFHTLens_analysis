@@ -196,8 +196,8 @@ def write_ngenic_CMB1024_submission():
 #############Resources####################
 ##########################################
 
-#SBATCH -n 2048
-#SBATCH -N 256
+#SBATCH -n 1024
+#SBATCH -N 128
 
 ###################################################
 #################Execution#########################
@@ -208,11 +208,8 @@ def write_ngenic_CMB1024_submission():
 	f.close()
 	f = open(fn, 'a')
 	
-	for i in range(len(cosmo_arr))[::2]:
+	for i in range(len(cosmo_arr)):
 		newline = 'ibrun -n 1024 -o 0 /work/02977/jialiu/IG_Pipeline_0.1/N-GenIC/N-GenIC %s/1024b600/ic1/ngenic.param  &\n'%(cosmo_arr[i])
-		f.write(newline)
-		
-		newline = 'ibrun -n 1024 -o 1024 /work/02977/jialiu/IG_Pipeline_0.1/N-GenIC/N-GenIC %s/1024b600/ic1/ngenic.param  &\n'%(cosmo_arr[i+1])
 		f.write(newline)
 		
 		f.write('wait\n')	
