@@ -11,6 +11,26 @@ h = H0/100.0
 c = 299792.458#km/s
 z_ls = 1100
 Om_arr = genfromtxt('/Users/jia/weaklensing/CFHTLenS/emulator/cosmo_params.txt').T[0]
+
+############### test with omega radiation ###############
+#OmegaM = 0.3
+#OmegaR = 0#8.24e-5
+#OmegaV = 1-OmegaM-OmegaR
+
+#H_inv = lambda z: 1.0/(H0*sqrt(OmegaM*(1+z)**3+OmegaV+OmegaR*(1+z)**4))#H^-1
+#DC = lambda z: c*quad(H_inv, 0, z)[0] # comoving distance Mpc
+
+#Omega_radiation = 8.24e-5
+#r(z=38)=11316.94
+#r(z=165)=12557.87
+#r(z=1100)=13241.61
+
+#Omega_radiation = 0
+#r(z=38)=11327.04
+#r(z=165)=12581.56
+#r(z=1100)=13303.41
+###########################################
+
 def W_cmbD_fcn (OmegaM):
 	OmegaV = 1.0-OmegaM
 	H_inv = lambda z: 1.0/(H0*sqrt(OmegaM*(1+z)**3+OmegaV))#H^-1
@@ -31,6 +51,7 @@ def find_ratio(OmegaM):
 	ratio_arr = array([quad(W_cmbD, 0, z)[0] for z in z_arr])/norm
 	return ratio_arr
 ratio_arr = find_ratio(0.3)
+ratio26_arr = find_ratio(0.26)
 
 ################ junk ########################
 #norms = genfromtxt(cmbNG_dir+'kernel_norm_growth.txt')

@@ -44,7 +44,7 @@ def compute_PDF_ps (fnsizedeg):
 	ell_arr, powspec = WLanalysis.PowerSpectrum(kmap, sizedeg = sizedeg)
 	return PDF10, powspec
 
-
+############## GRF #####################
 from random import gauss
 from scipy import interpolate
 
@@ -72,7 +72,7 @@ def GRF_Gen (ell_arr_center, psd1D0, size):
 	ell_arr = array([0,]+list(ell_arr_center)+[ceil(sqrt(2)*size/2+2),])
 	psd1D = array([psd1D0[0],]+list(psd1D0)+[psd1D0[-1],])
 	
-	p1D_interp = interpolate.griddata(ell_arr, psd1D, r.flatten(), method='linear')
+	p1D_interp = interpolate.griddata(ell_arr, psd1D, r.flatten(), method='nearest')
 
 	p2D_mean = p1D_interp.reshape(size,size)
 	p2D_std = sqrt(p2D_mean/2.0)
@@ -82,12 +82,16 @@ def GRF_Gen (ell_arr_center, psd1D0, size):
 	###amax(abs(abs(psd2D_GRF_Fourier)**2 - psd2D_GRF)) = 1e-8, pass
 	GRF_image = fftpack.ifft2(ifftshift(psd2D_GRF_Fourier))[0]
 	return sqrt(2)*real(GRF_image)
-	
+
+############ test plots ######################
 e1, ps_kappa = WLanalysis.PowerSpectrum(a)
-e1, ps_GRF = WLanalysis.PowerSpectrum(sqrt(2)*real(GRF_image))
+GRF = GRF_Gen (ell_arr_center, psd1D0, size)
+e1, ps_GRF = WLanalysis.PowerSpectrum(GRF)
 
 loglog(e1, ps_kappa, label='kappa')
-loglog(e1, ps_GRF, label='GRF')
+#loglog(e1, ps_GRF, label='GRF')
+#xxxx=array([WLanalysis.PowerSpectrum(GRF_Gen (ell_arr_center, psd1D0, size))[1] for i in range(5)])
+loglog(e1,mean(xxxx,axis=0), label='GRF')
 legend()
 xlabel('ell')
 ylabel('ell**2*P')
