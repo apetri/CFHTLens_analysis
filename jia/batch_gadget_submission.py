@@ -61,6 +61,7 @@ wait'''.format(ic, ic+1, ic+2, ic+3, ic+4)
 
 ################# gadget CMB submission ##############
 def write_gadget_CMB1024b600_submission(n):
+	
 	f = open('/work/02977/jialiu/CMB_batch/Jobs/gadget_batch/gadget_{0}.sh'.format(n), 'w')
 	content = '''#!/bin/bash
 
@@ -355,5 +356,5 @@ cd /work/02977/jialiu/IG_Pipeline/camb
 #map(write_camb_CMB91dev_submission, (0,  32,  64))
 
 write_ngenic_CMB1024_submission()
-
+cosmo_arr += ['',]# to solve the problem need length 92 to run..
 map(write_gadget_CMB1024b600_submission,range(len(cosmo_arr))[::2])
