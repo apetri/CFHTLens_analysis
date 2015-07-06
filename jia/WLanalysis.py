@@ -13,6 +13,7 @@ import scipy.ndimage as snd
 import astropy.io.fits as pyfits
 #import pyfits
 import KSI
+from random import gauss
 
 ###################################
 #### CFHT list of redshifts
