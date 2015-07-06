@@ -22,7 +22,7 @@ CMBlensing_dir = '/work/02977/jialiu/CMBnonGaussian/'
 
 ends = [0.5, 0.22, 0.18, 0.1, 0.08]
 PDFbin_arr = [linspace(-end, end, 101) for end in ends]
-kmap_stds = [0.014, 0.011, 0.009, 0.006, 0.005]
+kmap_stds = [0.06, 0.05, 0.04, 0.03, 0.02] #[0.014, 0.011, 0.009, 0.006, 0.005]
 peak_bins_arr = [linspace(-3*istd, 6*istd, 26) for istd in kmap_stds]
 
 sizedeg = 3.5**2
@@ -54,20 +54,59 @@ def compute_GRF_PDF_ps_pk (r):
 	print r
 	kmap = kmapGen(r)
 	random.seed(r)
-	GRF = WLanalysis.GRF_Gen(kmap)
-	save(CMBlensing_dir+'GRF_fidu/'+'GRF_fidu_%04dr.npy'%(r), GRF)
+	#GRF = WLanalysis.GRF_Gen(kmap)
+	#save(CMBlensing_dir+'GRF_fidu/'+'GRF_fidu_%04dr.npy'%(r), GRF)
+	GRF = load(CMBlensing_dir+'GRF_fidu/'+'GRF_fidu_%04dr.npy'%(r))
 	
-	#kmap_smoothed = [WLanalysis.smooth(kmap, sigmaP) for sigmaP in sigmaP_arr]
-	kmap_smoothed = [WLanalysis.smooth(GRF, sigmaP) for sigmaP in sigmaP_arr]
+	kmap_smoothed = [WLanalysis.smooth(kmap, sigmaP) for sigmaP in sigmaP_arr]
 	i_arr = arange(len(sigmaP_arr))
 	PDF = [PDFGen(kmap_smoothed[i], PDFbin_arr[i]) for i in i_arr]
 	peaks = [peaksGen(kmap_smoothed[i], peak_bins_arr[i]) for i in i_arr]
-	return PDF, peaks
+	
+	GRF_smoothed = [WLanalysis.smooth(GRF, sigmaP) for sigmaP in sigmaP_arr]
+	PDF_GRF = [PDFGen(GRF_smoothed[i], PDFbin_arr[i]) for i in i_arr]
+	peaks_GRF = [peaksGen(GRF_smoothed[i], peak_bins_arr[i]) for i in i_arr]
+	
+	return PDF, peaks, PDF_GRF, peaks_GRF
 		
 pool=MPIPool()	
 a=pool.map(compute_GRF_PDF_ps_pk,range(1, 1025))
-save(CMBlensing_dir+'PDF_pk_600b_GRF.npy', a)
+save(CMBlensing_dir+'PDF_pk_600b_kappa_GRF.npy', a)
 #stampede_CMBnonGaussian.py
+
+############ plot on local laptop ##############
+
+#cd ~/Desktop/CMBnonGaussian/
+#mat_kappa=load('PDF_pk_600b.npy')
+#mat_GRF=load('PDF_pk_600b_GRF.npy')
+
+#f=figure(figsize=(15,25))
+#for i in arange(len(sigmaG_arr)):
+	#ax=f.add_subplot(5,2,i*2+1)
+	#ax2=f.add_subplot(5,2,i*2+2)
+	#iPDF_kappa = array([mat_kappa[x][0][i] for x in range(1024)])
+	#ipeak_kappa = array([mat_kappa[x][1][i] for x in range(1024)])
+	#iPDF_GRF = array([mat_GRF[x][0][i] for x in range(1024)])
+	#ipeak_GRF = array([mat_GRF[x][1][i] for x in range(1024)])
+	
+	#ax.errorbar(PDFbin_arr[i][1:], mean(iPDF_kappa, axis=0), std(iPDF_kappa, axis=0)/sqrt(3e4/12), label='kappa',)
+	#ax.errorbar(PDFbin_arr[i][1:], mean(iPDF_GRF, axis=0), std(iPDF_GRF, axis=0)/sqrt(3e4/12), label='GRF')
+	#ax2.errorbar(peak_bins_arr[i][1:], mean(ipeak_kappa, axis=0), std(ipeak_kappa, axis=0)/sqrt(3e4/12), label='kappa')
+	#ax2.errorbar(peak_bins_arr[i][1:], mean(ipeak_GRF, axis=0), std(ipeak_GRF, axis=0)/sqrt(3e4/12), label='GRF')
+	#ax.set_yscale('log')
+	#ax2.set_yscale('log')
+	#ax.set_title('PDF(%.1farcmin)'%(sigmaG_arr[i]))
+	#ax.set_title('peaks(%.1farcmin)'%(sigmaG_arr[i]))
+	#if i ==0:
+		#leg=ax.legend(ncol=1, labelspacing=0.3, prop={'size':16},loc=0)
+		#leg.get_frame().set_visible(False)
+	#if i == 4:
+		#ax.set_xlabel('kappa')
+		#ax2.set_xlabel('kappa')
+	
+#savefig('/Users/jia/Desktop/CMBnonGaussian/PK_PDF.jpg')
+#close()
+
 ############ test plots ######################
 
 #a=WLanalysis.readFits('/Users/jia/Documents/weaklensing/map_conv_shear_sample/WL-conv_m-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.798_4096xy_0001r_0029p_0100z_og.gre.fit')
