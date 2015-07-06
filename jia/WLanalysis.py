@@ -744,8 +744,8 @@ def GRF_Gen (kmap):
 	F = fftshift(fftpack.fft2(kmap.astype(float)))
 	psd2D = np.abs(F)**2 # = real**2 + imag**2
 	
-	ell_arr0, psd1D0 = WLanalysis.azimuthalAverage(psd2D, center=None, edges = arange(sqrt(2)*size/2))
-	ell_arr_center = WLanalysis.edge2center(ell_arr0)
+	ell_arr0, psd1D0 = azimuthalAverage(psd2D, center=None, edges = arange(sqrt(2)*size/2))
+	ell_arr_center = edge2center(ell_arr0)
 
 	randfft2 = zeros(shape=(size, size))
 	y, x = np.indices((size,size))
