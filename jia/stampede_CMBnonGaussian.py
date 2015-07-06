@@ -57,7 +57,8 @@ def compute_GRF_PDF_ps_pk (r):
 	GRF = WLanalysis.GRF_Gen(kmap)
 	save(CMBlensing_dir+'GRF_fidu/'+'GRF_fidu_%04dr.npy'%(r), GRF)
 	
-	kmap_smoothed = [WLanalysis.smooth(kmap, sigmaP) for sigmaP in sigmaP_arr]
+	#kmap_smoothed = [WLanalysis.smooth(kmap, sigmaP) for sigmaP in sigmaP_arr]
+	kmap_smoothed = [WLanalysis.smooth(GRF, sigmaP) for sigmaP in sigmaP_arr]
 	i_arr = arange(len(sigmaP_arr))
 	PDF = [PDFGen(kmap_smoothed[i], PDFbin_arr[i]) for i in i_arr]
 	peaks = [peaksGen(kmap_smoothed[i], peak_bins_arr[i]) for i in i_arr]
@@ -65,7 +66,7 @@ def compute_GRF_PDF_ps_pk (r):
 		
 pool=MPIPool()	
 a=pool.map(compute_GRF_PDF_ps_pk,range(1, 1025))
-save(CMBlensing_dir+'PDF_pk_600b.npy', a)
+save(CMBlensing_dir+'PDF_pk_600b_GRF.npy', a)
 #stampede_CMBnonGaussian.py
 ############ test plots ######################
 
