@@ -13,7 +13,7 @@ import glob, os, sys
 import numpy as np
 from scipy import *
 from scipy import interpolate, stats, fftpack
-from emcee.utils import MPIPool
+#from emcee.utils import MPIPool
 from scipy.fftpack import fftfreq, fftshift, ifftshift
 from random import gauss
 from scipy import interpolate
