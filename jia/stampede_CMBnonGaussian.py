@@ -13,15 +13,14 @@ import glob, os, sys
 import numpy as np
 from scipy import *
 from scipy import interpolate, stats, fftpack
-#from emcee.utils import MPIPool
-#from scipy.fftpack import fftfreq, fftshift
+from emcee.utils import MPIPool
 
 from scipy import interpolate
 import random
 
 CMBlensing_dir = '/work/02977/jialiu/CMBnonGaussian/'
 
-ends = [0.7, 0.6, 0.5, 0.4, 0.25]
+ends = [0.5, 0.22, 0.18, 0.1, 0.08]
 PDFbin_arr = [linspace(-end, end, 101) for end in ends]
 kmap_stds = [0.014, 0.011, 0.009, 0.006, 0.005]
 peak_bins_arr = [linspace(-3*istd, 6*istd, 26) for istd in kmap_stds]
@@ -64,10 +63,10 @@ def compute_GRF_PDF_ps_pk (r):
 	peaks = [peaksGen(kmap_smoothed[i], peak_bins_arr[i]) for i in i_arr]
 	return PDF, peaks
 		
-	
-r=3
-a=compute_GRF_PDF_ps_pk(r)
-
+pool=MPIPool()	
+a=pool.map(compute_GRF_PDF_ps_pk,range(1, 1025))
+save(CMBlensing_dir+'PDF_pk_600b.npy', a)
+#stampede_CMBnonGaussian.py
 ############ test plots ######################
 
 #a=WLanalysis.readFits('/Users/jia/Documents/weaklensing/map_conv_shear_sample/WL-conv_m-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.798_4096xy_0001r_0029p_0100z_og.gre.fit')
