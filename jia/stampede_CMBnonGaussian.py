@@ -73,7 +73,7 @@ pool=MPIPool()
 a=pool.map(compute_GRF_PDF_ps_pk,range(1, 1025))
 save(CMBlensing_dir+'PDF_pk_600b_kappa_GRF.npy', a)
 #stampede_CMBnonGaussian.py
-
+print 'DONE DONE'
 ############ plot on local laptop ##############
 
 #cd ~/Desktop/CMBnonGaussian/
