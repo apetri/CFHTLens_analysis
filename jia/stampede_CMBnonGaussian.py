@@ -17,7 +17,7 @@ from scipy import interpolate, stats, fftpack
 from scipy.fftpack import fftfreq, fftshift, ifftshift
 from random import gauss
 from scipy import interpolate
-from random import seed
+import random
 
 CMBlensing_dir = '/work/02977/jialiu/CMBnonGaussian/'
 
@@ -54,7 +54,7 @@ def compute_GRF_PDF_ps_pk (r):
 	'''for a convergence map with filename fn, compute the PDF and the power spectrum. sizedeg = 3.5**2, or 1.7**2'''
 	print r
 	kmap = kmapGen(r)
-	seed(r)
+	random.seed(r)
 	GRF = WLanalysis.GRF_Gen(kmap)
 	save('b600_dir'+'GRF_fidu/'+'GRF_fidu_%04r.npy'%(r), GRF)
 	
@@ -65,7 +65,8 @@ def compute_GRF_PDF_ps_pk (r):
 	return PDF, peaks
 		
 	
-
+r=3
+a=compute_GRF_PDF_ps_pk(r)
 
 ############ test plots ######################
 
