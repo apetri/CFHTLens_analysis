@@ -74,7 +74,7 @@ def compute_GRF_PDF_ps_pk (r):
 	return PDF, peaks, PDF_GRF, peaks_GRF
 		
 pool=MPIPool()	
-a=pool.map(compute_GRF_PDF_ps_pk,range(1, 100))
+a=pool.map(compute_GRF_PDF_ps_pk,range(1, 10))
 save(CMBlensing_dir+'PDF_pk_600b_kappa_GRF', a)
 #stampede_CMBnonGaussian.py
 print 'DONE DONE'
