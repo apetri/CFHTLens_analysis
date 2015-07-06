@@ -23,9 +23,10 @@ conc0 = lambda arr: concatenate([(0,), arr])
 #######################################
 ########## cosmo params ###############
 #######################################
-compute_model = 0
+compute_model = 1
 
 z0, z1 = load(cmb_dir+'dndz_weighted_nocut.npy')
+#z0, z1 = load('/Users/jia/weaklensing/cmblensing/DES_dndz.npy')#07/02/2015 use DES dndz
 
 ############ crazy test for dndz ####
 #idx = where(z0>1.3)[0]
@@ -54,6 +55,8 @@ OmegaM = 0.3156#,0.29982##0.33138#
 H0 = 67.27
 Ptable = genfromtxt(cmb_dir+'P_delta_Planck15')
 model_fn = 'model_Planck15_dndzWeighted'#Peak
+#model_fn = 'model_Planck15_DES_auto'
+
 ########### colin params ##############
 #OmegaM = 0.317 
 #H0 = 65.74
@@ -119,7 +122,7 @@ if compute_model:
 	Ckk_integrand = lambda z, ell: 1.0/(H_inv(z)*c*DC(z)**2)*W_wl(z)*W_cmb(z)*Pmatter(ell/DC(z), z)
 	
 	####### auto power spectrum
-	###Ckk_integrand = lambda z, ell: 1.0/(H_inv(z)*c*DC(z)**2)*W_wl(z)**2*Pmatter(ell/DC(z), z)
+	#Ckk_integrand = lambda z, ell: 1.0/(H_inv(z)*c*DC(z)**2)*W_wl(z)**2*Pmatter(ell/DC(z), z)
 
 	###########################
 	
@@ -138,7 +141,7 @@ plot_sample_gal_cmb_maps = 0
 plot_dndz_peak_PDF = 0
 plot_lensing_kernels = 0
 
-plot_null_test = 1
+plot_null_test = 0
 plot_data_model = 0
 plot_model_theory = 0
 plot_model_theory_haloterms = 0

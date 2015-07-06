@@ -12,7 +12,9 @@ import WLanalysis
 import glob, os, sys
 import numpy as np
 from scipy import *
+from scipy import interpolate, stats, fftpack
 from emcee.utils import MPIPool
+from scipy.fftpack import fftfreq, fftshift, ifftshift
 
 CMBlensing_dir = '/work/02977/jialiu/CMBnonGaussian/'
 
@@ -48,20 +50,17 @@ def compute_PDF_ps (fnsizedeg):
 from random import gauss
 from scipy import interpolate
 
+def GRF_Gen (img):
+	'''return a random gaussian field that has the same power spectrum as img.
+	'''
+	size = img.shape[0]
+	F = fftshift(fftpack.fft2(img.astype(float)))
+	psd2D = np.abs(F)**2 # = sqrt(real**2 + imag**2)
 
-a=WLanalysis.readFits('/Users/jia/Documents/weaklensing/map_conv_shear_sample/WL-conv_m-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.798_4096xy_0001r_0029p_0100z_og.gre.fit')
+	#psd2Dr = fftshift(fftpack.rfft2(img))**2
+	ell_arr0, psd1D0 = WLanalysis.azimuthalAverage(psd2D, center=None, edges = arange(sqrt(2)*size/2))
+	ell_arr_center = WLanalysis.edge2center(ell_arr0)
 
-img = a.astype(float)
-size = img.shape[0]
-F = fftshift(fftpack.fft2(img))
-psd2D = np.abs(F)**2 # = sqrt(real**2 + imag**2)
-
-psd2Dr = fftshift(fftpack.rfft2(img))**2
-ell_arr0, psd1D0 = WLanalysis.azimuthalAverage(psd2D, center=None, edges = arange(sqrt(2)*size/2))
-ell_arr_center = WLanalysis.edge2center(ell_arr0)
-
-
-def GRF_Gen (ell_arr_center, psd1D0, size):
 	randfft2 = zeros(shape=(size, size))
 	y, x = np.indices((size,size))
 	center = np.array([(x.max()-x.min())/2.0, (x.max()-x.min())/2.0])
@@ -81,38 +80,45 @@ def GRF_Gen (ell_arr_center, psd1D0, size):
 	psd2D_GRF_Fourier = sqrt(psd2D_GRF) * [cos(rand_angle) + 1j * sin(rand_angle)]
 	###amax(abs(abs(psd2D_GRF_Fourier)**2 - psd2D_GRF)) = 1e-8, pass
 	GRF_image = fftpack.ifft2(ifftshift(psd2D_GRF_Fourier))[0]
-	return sqrt(2)*real(GRF_image)
+	GRF = sqrt(2)*real(GRF_image)
+	return GRF
 
 ############ test plots ######################
-e1, ps_kappa = WLanalysis.PowerSpectrum(a)
-GRF = GRF_Gen (ell_arr_center, psd1D0, size)
-e1, ps_GRF = WLanalysis.PowerSpectrum(GRF)
 
-loglog(e1, ps_kappa, label='kappa')
-#loglog(e1, ps_GRF, label='GRF')
-#xxxx=array([WLanalysis.PowerSpectrum(GRF_Gen (ell_arr_center, psd1D0, size))[1] for i in range(5)])
-loglog(e1,mean(xxxx,axis=0), label='GRF')
-legend()
-xlabel('ell')
-ylabel('ell**2*P')
-show()
+a=WLanalysis.readFits('/Users/jia/Documents/weaklensing/map_conv_shear_sample/WL-conv_m-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.798_4096xy_0001r_0029p_0100z_og.gre.fit')
 
-subplot(121)
-imshow(a,vmin=-.06,vmax=.06)
-title('kappa')
-colorbar()
-subplot(122)
-imshow(xxx,vmin=-.06,vmax=.06)
-title('GRF')
-colorbar()
-show()
-	
-	
+b=GRF_Gen(a)
+
+
 
 
 ######################################################
 ############### J U N K ##############################
 ######################################################
+
+#img = a.astype(float)
+#e1, ps_kappa = WLanalysis.PowerSpectrum(a)
+#GRF = GRF_Gen (ell_arr_center, psd1D0, size)
+#e1, ps_GRF = WLanalysis.PowerSpectrum(GRF)
+
+#loglog(e1, ps_kappa, label='kappa')
+##loglog(e1, ps_GRF, label='GRF')
+##xxxx=array([WLanalysis.PowerSpectrum(GRF_Gen (ell_arr_center, psd1D0, size))[1] for i in range(5)])
+#loglog(e1,mean(xxxx,axis=0), label='GRF')
+#legend()
+#xlabel('ell')
+#ylabel('ell**2*P')
+#show()
+
+#subplot(121)
+#imshow(a,vmin=-.06,vmax=.06)
+#title('kappa')
+#colorbar()
+#subplot(122)
+#imshow(xxx,vmin=-.06,vmax=.06)
+#title('GRF')
+#colorbar()
+#show()
 
 #b300_dir = '/work/02918/apetri/kappaCMB/Om0.260_Ol0.740_Ob0.046_w-1.000_ns0.960_si0.800/1024b300/Maps/'
 ##Pixels on a side: 2048
