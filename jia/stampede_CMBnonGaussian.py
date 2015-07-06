@@ -52,8 +52,8 @@ def peaksGen (kmap, peak_bins):
 def compute_GRF_PDF_ps_pk (r):
 	'''for a convergence map with filename fn, compute the PDF and the power spectrum. sizedeg = 3.5**2, or 1.7**2'''
 	print r
-	kmap = kmapGen(r)
-	#kmap = load(CMBlensing_dir+'GRF_fidu/'+'GRF_fidu_%04dr.npy'%(r))
+	#kmap = kmapGen(r)
+	kmap = load(CMBlensing_dir+'GRF_fidu/'+'GRF_fidu_%04dr.npy'%(r))
 	
 	###### generate GRF
 	#random.seed(r)
@@ -75,8 +75,7 @@ def compute_GRF_PDF_ps_pk (r):
 		
 pool=MPIPool()	
 a=pool.map(compute_GRF_PDF_ps_pk,range(1, 1025))
-save(CMBlensing_dir+'PDF_pk_600b_kappa', a)
-#stampede_CMBnonGaussian.py
+save(CMBlensing_dir+'PDF_pk_600b_PDF', a)
 print 'DONE DONE'
 ############ plot on local laptop ##############
 
