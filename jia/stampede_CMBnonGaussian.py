@@ -46,7 +46,7 @@ def PDFGen (kmap, PDF_bins):
 	return PDF_normed
 
 def peaksGen (kmap, peak_bins):
-	peaks = peaks_list(kmap)
+	peaks = WLanalysis.peaks_list(kmap)
 	peaks_hist = histogram(peaks, bins=peak_bins)[0]
 	return peaks_hist
 
