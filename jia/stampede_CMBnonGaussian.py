@@ -17,6 +17,7 @@ from scipy import interpolate, stats, fftpack
 from scipy.fftpack import fftfreq, fftshift, ifftshift
 from random import gauss
 from scipy import interpolate
+from random import seed
 
 CMBlensing_dir = '/work/02977/jialiu/CMBnonGaussian/'
 
