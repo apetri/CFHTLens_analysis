@@ -56,7 +56,7 @@ def compute_GRF_PDF_ps_pk (r):
 	kmap = kmapGen(r)
 	random.seed(r)
 	GRF = WLanalysis.GRF_Gen(kmap)
-	save('b600_dir'+'GRF_fidu/'+'GRF_fidu_%04r.npy'%(r), GRF)
+	save(b600_dir+'GRF_fidu/'+'GRF_fidu_%04dr.npy'%(r), GRF)
 	
 	kmap_smoothed = [WLanalysis.smooth(kmap, sigmaP) for sigmaP in sigmaP_arr]
 	i_arr = arange(len(sigmaP_arr))
