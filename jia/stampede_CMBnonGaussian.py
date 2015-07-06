@@ -15,13 +15,20 @@ from scipy import *
 from scipy import interpolate, stats, fftpack
 from emcee.utils import MPIPool
 from scipy.fftpack import fftfreq, fftshift, ifftshift
+from random import gauss
+from scipy import interpolate
 
 CMBlensing_dir = '/work/02977/jialiu/CMBnonGaussian/'
 
-#PDF_bins = linspace(-0.3, 0.5, 51)
-ends = [0.7, 0.6, 0.5, 0.4]
+ends = [0.7, 0.6, 0.5, 0.4, 0.25]
 PDFbin_arr = [linspace(-end, end, 101) for end in ends]
-sigmaG_arr = (0.5, 1.0, 2.0, 5.0, 8.0)
+kmap_stds = [0.014, 0.011, 0.009, 0.006, 0.005]
+peak_bins_arr = [linspace(-3*istd, 6*istd, 26) for istd in kmap_stds]
+
+sizedeg = 3.5**2
+PPA = 2048.0/(sqrt(sizedeg)*60.0) #pixels per arcmin
+sigmaG_arr = array([0.5, 1.0, 2.0, 5.0, 8.0])
+sigmaP_arr = sigmaG_arr*PPA #smoothing scale in pixels
 
 b600_dir =  '/work/02918/apetri/kappaCMB/Om0.260_Ol0.740_Ob0.046_w-1.000_ns0.960_si0.800/1024b600/Maps/'
 #Pixels on a side: 2048
@@ -29,67 +36,51 @@ b600_dir =  '/work/02918/apetri/kappaCMB/Om0.260_Ol0.740_Ob0.046_w-1.000_ns0.960
 #Total angular size: 3.5 deg
 #lmin=1.0e+02 ; lmax=1.5e+05
 
-
-def PDFGen(kmap, PDF_bins):
+kmapGen = lambda r: WLanalysis.readFits(b600_dir+'WLconv_z38.00_%04dr.fits'%(r))
+	
+def PDFGen (kmap, PDF_bins):
 	all_kappa = kmap[~isnan(kmap)]
 	PDF = histogram(all_kappa, bins=PDF_bins)[0]
 	PDF_normed = PDF/float(len(all_kappa))
-	return PDF_normed, mean(kmap), std(kmap)
-	
-def compute_PDF_ps (fnsizedeg):
+	return PDF_normed
+
+def peaksGen (kmap, peak_bins):
+	peaks = peaks_list(kmap)
+	peaks_hist = histogram(peaks, bins=peak_bins)[0]
+	return peaks_hist
+
+def compute_GRF_PDF_ps_pk (r):
 	'''for a convergence map with filename fn, compute the PDF and the power spectrum. sizedeg = 3.5**2, or 1.7**2'''
-	fn, sizedeg = fnsizedeg
-	print fn, sizedeg
-	kmap = WLanalysis.readFits(fn)
-	PPA = 2048.0/(sqrt(sizedeg)*60.0) #pixels per arcmin
-	PDF10 = [PDFGen(WLanalysis.smooth(kmap, PPA*sigmaG_arr[i]), PDFbin_arr[i]) for i in range(len(sigmaG_arr))]
-	ell_arr, powspec = WLanalysis.PowerSpectrum(kmap, sizedeg = sizedeg)
-	return PDF10, powspec
-
-############## GRF #####################
-from random import gauss
-from scipy import interpolate
-
-def GRF_Gen (img):
-	'''return a random gaussian field that has the same power spectrum as img.
-	'''
-	size = img.shape[0]
-	F = fftshift(fftpack.fft2(img.astype(float)))
-	psd2D = np.abs(F)**2 # = sqrt(real**2 + imag**2)
-
-	#psd2Dr = fftshift(fftpack.rfft2(img))**2
-	ell_arr0, psd1D0 = WLanalysis.azimuthalAverage(psd2D, center=None, edges = arange(sqrt(2)*size/2))
-	ell_arr_center = WLanalysis.edge2center(ell_arr0)
-
-	randfft2 = zeros(shape=(size, size))
-	y, x = np.indices((size,size))
-	center = np.array([(x.max()-x.min())/2.0, (x.max()-x.min())/2.0])
-	if size%2 == 0:
-		center+=0.5
-	r = np.hypot(x - center[0], y - center[1])
+	print r
+	kmap = kmapGen(r)
+	seed(r)
+	GRF = WLanalysis.GRF_Gen(kmap)
+	save('b600_dir'+'GRF_fidu/'+'GRF_fidu_%04r.npy'%(r), GRF)
 	
-	ell_arr = array([0,]+list(ell_arr_center)+[ceil(sqrt(2)*size/2+2),])
-	psd1D = array([psd1D0[0],]+list(psd1D0)+[psd1D0[-1],])
+	kmap_smoothed = [WLanalysis.smooth(kmap, sigmaP) for sigmaP in sigmaP_arr]
+	i_arr = arange(len(sigmaP_arr))
+	PDF = [PDFGen(kmap_smoothed[i], PDFbin_arr[i]) for i in i_arr]
+	peaks = [peaksGen(kmap_smoothed[i], peak_bins_arr[i]) for i in i_arr]
+	return PDF, peaks
+		
 	
-	p1D_interp = interpolate.griddata(ell_arr, psd1D, r.flatten(), method='nearest')
 
-	p2D_mean = p1D_interp.reshape(size,size)
-	p2D_std = sqrt(p2D_mean/2.0)
-	psd2D_GRF = gauss(p2D_mean, p2D_std)
-	rand_angle = rand(size**2).reshape(size,size)*2.0*pi
-	psd2D_GRF_Fourier = sqrt(psd2D_GRF) * [cos(rand_angle) + 1j * sin(rand_angle)]
-	###amax(abs(abs(psd2D_GRF_Fourier)**2 - psd2D_GRF)) = 1e-8, pass
-	GRF_image = fftpack.ifft2(ifftshift(psd2D_GRF_Fourier))[0]
-	GRF = sqrt(2)*real(GRF_image)
-	return GRF
 
 ############ test plots ######################
 
-a=WLanalysis.readFits('/Users/jia/Documents/weaklensing/map_conv_shear_sample/WL-conv_m-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.798_4096xy_0001r_0029p_0100z_og.gre.fit')
+#a=WLanalysis.readFits('/Users/jia/Documents/weaklensing/map_conv_shear_sample/WL-conv_m-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.798_4096xy_0001r_0029p_0100z_og.gre.fit')
 
-b=GRF_Gen(a)
+#b=GRF_Gen(a)
 
+#ell, ps_a = WLanalysis.PowerSpectrum(a)
+#ell, ps_b = WLanalysis.PowerSpectrum(b)
 
+#from pylab import *
+#print 'hi'
+#loglog(ell, ps_b,'-',label='GRF')
+#loglog(ell, ps_a,'--',label='kappa')
+#legend()
+#show()
 
 
 ######################################################
