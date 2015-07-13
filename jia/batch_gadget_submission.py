@@ -3,7 +3,7 @@ import glob
 from scipy import *
 
 cosmo_arr = glob.glob('/home1/02977/jialiu/work/CMB_batch/O*')
-
+cosmo_arr.sort()
 
 def write_gadget_submission(ic):
 	f = open('/work/02977/jialiu/lenstools_home/Jobs/gadget_5ic{0}.sh'.format(ic), 'w')
@@ -62,7 +62,7 @@ wait'''.format(ic, ic+1, ic+2, ic+3, ic+4)
 ################# gadget CMB submission ##############
 def write_gadget_CMB1024b600_submission(n):
 	
-	f = open('/work/02977/jialiu/CMB_batch/Jobs/gadget_batch/gadget_{0}.sh'.format(n), 'w')
+	f = open('/work/02977/jialiu/CMB_batch/Jobs/gadget_batch/gadget_{0}.sh'.format(cosmo_arr[n][35:42]), 'w')
 	content = '''#!/bin/bash
 
 ################################
@@ -94,18 +94,14 @@ def write_gadget_CMB1024b600_submission(n):
 ##########################################
 
 #SBATCH -n 1024
-#SBATCH -N 64
+#SBATCH -N 128
 
 ###################################################
 #################Execution#########################
 ###################################################
 
-ibrun -n 1024 -o 0 /home1/02918/apetri/IG_Pipeline/Gadget2/Gadget2 1 1024 {1}/1024b600/ic1/gadget2.param &
-wait
-
-ibrun -n 1024 -o 0 /home1/02918/apetri/IG_Pipeline/Gadget2/Gadget2 1 1024 {2}/1024b600/ic1/gadget2.param &
-wait
-'''.format(n, cosmo_arr[n], cosmo_arr[n+1])
+ibrun -n 1024 -o 0 /home1/02918/apetri/IG_Pipeline/Gadget2/Gadget2 1 1024 {1}/1024b600/ic1/gadget2.param
+'''.format(cosmo_arr[n][35:42], cosmo_arr[n])
 	f.write(content)
 	f.close()
 	
@@ -357,4 +353,4 @@ cd /work/02977/jialiu/IG_Pipeline/camb
 
 write_ngenic_CMB1024_submission()
 cosmo_arr += ['',]# to solve the problem need length 92 to run..
-map(write_gadget_CMB1024b600_submission,range(len(cosmo_arr))[::2])
+map(write_gadget_CMB1024b600_submission,range(len(cosmo_arr)))

@@ -75,12 +75,12 @@ def compute_GRF_PDF_ps_pk (r):
 		
 pool=MPIPool()	
 a=pool.map(compute_GRF_PDF_ps_pk,range(1, 1025))
-save(CMBlensing_dir+'PDF_pk_600b_PDF', a)
+save(CMBlensing_dir+'PDF_pk_600b_GRF', a)
 print 'DONE DONE'
 ############ plot on local laptop ##############
 
 #cd ~/Desktop/CMBnonGaussian/
-#mat_kappa=load('PDF_pk_600b.npy')
+#mat_kappa=load('PDF_pk_600b_kappa.npy')
 #mat_GRF=load('PDF_pk_600b_GRF.npy')
 
 #f=figure(figsize=(15,25))
@@ -98,8 +98,12 @@ print 'DONE DONE'
 	#ax2.errorbar(peak_bins_arr[i][1:], mean(ipeak_GRF, axis=0), std(ipeak_GRF, axis=0)/sqrt(3e4/12), label='GRF')
 	#ax.set_yscale('log')
 	#ax2.set_yscale('log')
+	#meanPDF = mean(iPDF_kappa, axis=0)
+	#meanPK = mean(ipeak_kappa, axis=0)
+	#ax.set_ylim(amax([amin(meanPDF), 1e-7]), amax(meanPDF)*1.5)
+	#ax2.set_ylim(amin(meanPK), amax(meanPK)*1.5)
 	#ax.set_title('PDF(%.1farcmin)'%(sigmaG_arr[i]))
-	#ax.set_title('peaks(%.1farcmin)'%(sigmaG_arr[i]))
+	#ax2.set_title('peaks(%.1farcmin)'%(sigmaG_arr[i]))
 	#if i ==0:
 		#leg=ax.legend(ncol=1, labelspacing=0.3, prop={'size':16},loc=0)
 		#leg.get_frame().set_visible(False)
@@ -110,6 +114,39 @@ print 'DONE DONE'
 #savefig('/Users/jia/Desktop/CMBnonGaussian/PK_PDF.jpg')
 #close()
 
+mat_kappa=load('PDF_pk_600b_kappa.npy')
+mat_GRF=load('PDF_pk_600b_GRF.npy')
+
+
+for i in arange(len(sigmaG_arr)):
+	ax=f.add_subplot(5,2,i*2+1)
+	ax2=f.add_subplot(5,2,i*2+2)
+	iPDF_kappa = array([mat_kappa[x][0][i] for x in range(1024)])
+	ipeak_kappa = array([mat_kappa[x][1][i] for x in range(1024)])
+	iPDF_GRF = array([mat_GRF[x][0][i] for x in range(1024)])
+	ipeak_GRF = array([mat_GRF[x][1][i] for x in range(1024)])
+
+	mean_pk_GRF = mean(ipeak_GRF,axis=0)
+	mean_pk_kappa = mean(ipeak_kappa,axis=0)
+	#idx_pk = nonzero(mean_pk_GRF)[0]
+	idx_pk = nonzero(mean_pk_kappa)[0]
+	
+	mean_PDF_GRF = mean(iPDF_GRF,axis=0)
+	mean_PDF_kappa = mean(iPDF_kappa,axis=0)
+	#idx_PDF = where(mean_PDF_GRF>5e-4)[0]
+	idx_PDF = where(mean_PDF_kappa>5e-4)[0]
+	
+	#covI_PDF = mat(cov(iPDF_GRF[:,idx_PDF]/sqrt(3e4/12),rowvar=0)).I
+	#covI_peak = mat(cov(ipeak_GRF[:,idx_pk]/sqrt(3e4/12),rowvar=0)).I
+	
+	covI_PDF = mat(cov(iPDF_kappa[:,idx_PDF]/sqrt(3e4/12),rowvar=0)).I
+	covI_peak = mat(cov(ipeak_kappa[:,idx_pk]/sqrt(3e4/12),rowvar=0)).I
+
+	dN_PDF = mat((mean_PDF_GRF-mean_PDF_kappa)[idx_PDF])
+	dN_pk =  mat((mean_pk_GRF-mean_pk_kappa)[idx_pk])
+	chisq_PDF = dN_PDF*covI_PDF*dN_PDF.T
+	chisq_peak = dN_pk*covI_peak*dN_pk.T
+	print 'sigmaG = %.1f arcmin, SNR(PDF) = %.2f, SNR(peaks) = %.2f' % (sigmaG_arr[i], sqrt(chisq_PDF), sqrt(chisq_peak))
 ############ test plots ######################
 
 #a=WLanalysis.readFits('/Users/jia/Documents/weaklensing/map_conv_shear_sample/WL-conv_m-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.798_4096xy_0001r_0029p_0100z_og.gre.fit')

@@ -19,7 +19,7 @@ Om_arr = genfromtxt('/Users/jia/weaklensing/CFHTLenS/emulator/cosmo_params.txt')
 
 #H_inv = lambda z: 1.0/(H0*sqrt(OmegaM*(1+z)**3+OmegaV+OmegaR*(1+z)**4))#H^-1
 #DC = lambda z: c*quad(H_inv, 0, z)[0] # comoving distance Mpc
-
+#a=1/(1+z), z=1/a-1
 #Omega_radiation = 8.24e-5
 #r(z=38)=11316.94
 #r(z=165)=12557.87
