@@ -158,11 +158,33 @@ for i in arange(len(sigmaG_arr)):
 
 #from pylab import *
 #print 'hi'
-#loglog(ell, ps_b,'-',label='GRF')
-#loglog(ell, ps_a,'--',label='kappa')
-#legend()
+#f=figure()
+#ax=f.add_subplot(111)
+#ax.plot(ell, ps_a,'b-',lw=2,label='Convergence Map')
+#ax.plot(ell, ps_b,'r--',lw=2,label='Gaussian Random Field')
+#ax.set_ylabel(r'$\ell(\ell+1)\rm{P(\ell)/2\pi}$',fontsize=20)
+#ax.set_xscale('log')
+#ax.set_yscale('log')
+#ax.set_xlabel(r'$\ell$',fontsize=20)
+#ax.set_xlim(ell[6],ell[-5])
+#ax.set_ylim(3e-6,1e-3)
+#leg=ax.legend(ncol=1, labelspacing=0.3, prop={'size':16},loc=0)
+#leg.get_frame().set_visible(False)
 #show()
 
+#asmooth=WLanalysis.smooth(a, 2.5*4)
+#bsmooth=WLanalysis.smooth(b, 2.5*4)
+#f=figure()
+#xxx=0.01
+#subplot(121)
+#imshow(asmooth, vmin=-2*xxx, vmax=6*xxx)
+##title('Convergence Map',fontsize=20)
+#colorbar()
+#subplot(122)
+#imshow(bsmooth, vmin=-2*xxx, vmax=6*xxx)
+##title('Gaussian Random Field',fontsize=20)
+#colorbar()
+#show()
 
 ######################################################
 ############### J U N K ##############################

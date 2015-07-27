@@ -94,7 +94,7 @@ def write_gadget_CMB1024b600_submission(n):
 ##########################################
 
 #SBATCH -n 1024
-#SBATCH -N 128
+#SBATCH -N 64
 
 ###################################################
 #################Execution#########################
@@ -351,6 +351,6 @@ cd /work/02977/jialiu/IG_Pipeline/camb
 
 #map(write_camb_CMB91dev_submission, (0,  32,  64))
 
-write_ngenic_CMB1024_submission()
-cosmo_arr += ['',]# to solve the problem need length 92 to run..
+#write_ngenic_CMB1024_submission()
+#cosmo_arr += ['',]# to solve the problem need length 92 to run..
 map(write_gadget_CMB1024b600_submission,range(len(cosmo_arr)))
