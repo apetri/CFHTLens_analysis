@@ -18,6 +18,13 @@ from emcee.utils import MPIPool
 from scipy import interpolate
 import random
 
+############ for 31 cosmos #########
+iii = int(sys.argv[1])
+cosmo_arr = genfromtxt('/work/02977/jialiu/CMB_batch/success.txt',dtype='string')
+cosmo = cosmo_arr[iii]
+kmapGen = lambda r: WLanalysis.readFits('/home1/02977/jialiu/scratch/CMB_batch_storage/%s/1024b600/Maps/WLconv_z40.00_%04dr.fits'%(cosmo, r))
+####################################
+
 CMBlensing_dir = '/work/02977/jialiu/CMBnonGaussian/'
 
 ends = [0.5, 0.22, 0.18, 0.1, 0.08]
@@ -36,8 +43,8 @@ b600_dir =  '/work/02918/apetri/kappaCMB/Om0.260_Ol0.740_Ob0.046_w-1.000_ns0.960
 #Total angular size: 3.5 deg
 #lmin=1.0e+02 ; lmax=1.5e+05
 
-kmapGen = lambda r: WLanalysis.readFits(b600_dir+'WLconv_z38.00_%04dr.fits'%(r))
-	
+#kmapGen = lambda r: WLanalysis.readFits(b600_dir+'WLconv_z38.00_%04dr.fits'%(r))
+
 def PDFGen (kmap, PDF_bins):
 	all_kappa = kmap[~isnan(kmap)]
 	PDF = histogram(all_kappa, bins=PDF_bins)[0]
@@ -51,32 +58,35 @@ def peaksGen (kmap, peak_bins):
 
 def compute_GRF_PDF_ps_pk (r):
 	'''for a convergence map with filename fn, compute the PDF and the power spectrum. sizedeg = 3.5**2, or 1.7**2'''
-	print r
-	#kmap = kmapGen(r)
-	kmap = load(CMBlensing_dir+'GRF_fidu/'+'GRF_fidu_%04dr.npy'%(r))
-	
-	###### generate GRF
-	#random.seed(r)
-	#GRF = WLanalysis.GRF_Gen(kmap)
-	#save(CMBlensing_dir+'GRF_fidu/'+'GRF_fidu_%04dr.npy'%(r), GRF)	
-	
+	print cosmo, r
+	kmap = kmapGen(r)
+	#kmap = load(CMBlensing_dir+'GRF_fidu/'+'GRF_fidu_%04dr.npy'%(r))
 	
 	kmap_smoothed = [WLanalysis.smooth(kmap, sigmaP) for sigmaP in sigmaP_arr]
 	i_arr = arange(len(sigmaP_arr))
+	ps = WLanalysis.PowerSpectrum(kmap_smoothed[0])[1]
 	PDF = [PDFGen(kmap_smoothed[i], PDFbin_arr[i]) for i in i_arr]
 	peaks = [peaksGen(kmap_smoothed[i], peak_bins_arr[i]) for i in i_arr]
-	
+
+	###### generate GRF
+	#random.seed(r)
+	#GRF = WLanalysis.GRF_Gen(kmap)
+	#save(CMBlensing_dir+'GRF_fidu/'+'GRF_fidu_%04dr.npy'%(r), GRF)		
 	#GRF = load(CMBlensing_dir+'GRF_fidu/'+'GRF_fidu_%04dr.npy'%(r))
 	#GRF_smoothed = [WLanalysis.smooth(GRF, sigmaP) for sigmaP in sigmaP_arr]
 	#PDF_GRF = [PDFGen(GRF_smoothed[i], PDFbin_arr[i]) for i in i_arr]
 	#peaks_GRF = [peaksGen(GRF_smoothed[i], peak_bins_arr[i]) for i in i_arr]
-	
-	return PDF, peaks#, PDF_GRF, peaks_GRF
+	#############
+
+	return ps, PDF, peaks#, PDF_GRF, peaks_GRF
 		
-pool=MPIPool()	
+pool=MPIPool()
 a=pool.map(compute_GRF_PDF_ps_pk,range(1, 1025))
-save(CMBlensing_dir+'PDF_pk_600b_GRF', a)
-print 'DONE DONE'
+save(CMBlensing_dir+'%s_PDF_pk_600b_GRF'%(cosmo), a)
+print '---DONE---DONE---'
+
+
+
 ############ plot on local laptop ##############
 
 #cd ~/Desktop/CMBnonGaussian/
@@ -114,74 +124,74 @@ print 'DONE DONE'
 #savefig('/Users/jia/Desktop/CMBnonGaussian/PK_PDF.jpg')
 #close()
 
-mat_kappa=load('PDF_pk_600b_kappa.npy')
-mat_GRF=load('PDF_pk_600b_GRF.npy')
+#mat_kappa=load('PDF_pk_600b_kappa.npy')
+#mat_GRF=load('PDF_pk_600b_GRF.npy')
 
 
-for i in arange(len(sigmaG_arr)):
-	ax=f.add_subplot(5,2,i*2+1)
-	ax2=f.add_subplot(5,2,i*2+2)
-	iPDF_kappa = array([mat_kappa[x][0][i] for x in range(1024)])
-	ipeak_kappa = array([mat_kappa[x][1][i] for x in range(1024)])
-	iPDF_GRF = array([mat_GRF[x][0][i] for x in range(1024)])
-	ipeak_GRF = array([mat_GRF[x][1][i] for x in range(1024)])
+#for i in arange(len(sigmaG_arr)):
+	#ax=f.add_subplot(5,2,i*2+1)
+	#ax2=f.add_subplot(5,2,i*2+2)
+	#iPDF_kappa = array([mat_kappa[x][0][i] for x in range(1024)])
+	#ipeak_kappa = array([mat_kappa[x][1][i] for x in range(1024)])
+	#iPDF_GRF = array([mat_GRF[x][0][i] for x in range(1024)])
+	#ipeak_GRF = array([mat_GRF[x][1][i] for x in range(1024)])
 
-	mean_pk_GRF = mean(ipeak_GRF,axis=0)
-	mean_pk_kappa = mean(ipeak_kappa,axis=0)
-	#idx_pk = nonzero(mean_pk_GRF)[0]
-	idx_pk = nonzero(mean_pk_kappa)[0]
+	#mean_pk_GRF = mean(ipeak_GRF,axis=0)
+	#mean_pk_kappa = mean(ipeak_kappa,axis=0)
+	##idx_pk = nonzero(mean_pk_GRF)[0]
+	#idx_pk = nonzero(mean_pk_kappa)[0]
 	
-	mean_PDF_GRF = mean(iPDF_GRF,axis=0)
-	mean_PDF_kappa = mean(iPDF_kappa,axis=0)
-	#idx_PDF = where(mean_PDF_GRF>5e-4)[0]
-	idx_PDF = where(mean_PDF_kappa>5e-4)[0]
+	#mean_PDF_GRF = mean(iPDF_GRF,axis=0)
+	#mean_PDF_kappa = mean(iPDF_kappa,axis=0)
+	##idx_PDF = where(mean_PDF_GRF>5e-4)[0]
+	#idx_PDF = where(mean_PDF_kappa>5e-4)[0]
 	
-	#covI_PDF = mat(cov(iPDF_GRF[:,idx_PDF]/sqrt(3e4/12),rowvar=0)).I
-	#covI_peak = mat(cov(ipeak_GRF[:,idx_pk]/sqrt(3e4/12),rowvar=0)).I
+	##covI_PDF = mat(cov(iPDF_GRF[:,idx_PDF]/sqrt(3e4/12),rowvar=0)).I
+	##covI_peak = mat(cov(ipeak_GRF[:,idx_pk]/sqrt(3e4/12),rowvar=0)).I
 	
-	covI_PDF = mat(cov(iPDF_kappa[:,idx_PDF]/sqrt(3e4/12),rowvar=0)).I
-	covI_peak = mat(cov(ipeak_kappa[:,idx_pk]/sqrt(3e4/12),rowvar=0)).I
+	#covI_PDF = mat(cov(iPDF_kappa[:,idx_PDF]/sqrt(3e4/12),rowvar=0)).I
+	#covI_peak = mat(cov(ipeak_kappa[:,idx_pk]/sqrt(3e4/12),rowvar=0)).I
 
-	dN_PDF = mat((mean_PDF_GRF-mean_PDF_kappa)[idx_PDF])
-	dN_pk =  mat((mean_pk_GRF-mean_pk_kappa)[idx_pk])
-	chisq_PDF = dN_PDF*covI_PDF*dN_PDF.T
-	chisq_peak = dN_pk*covI_peak*dN_pk.T
-	print 'sigmaG = %.1f arcmin, SNR(PDF) = %.2f, SNR(peaks) = %.2f' % (sigmaG_arr[i], sqrt(chisq_PDF), sqrt(chisq_peak))
-############ test plots ######################
+	#dN_PDF = mat((mean_PDF_GRF-mean_PDF_kappa)[idx_PDF])
+	#dN_pk =  mat((mean_pk_GRF-mean_pk_kappa)[idx_pk])
+	#chisq_PDF = dN_PDF*covI_PDF*dN_PDF.T
+	#chisq_peak = dN_pk*covI_peak*dN_pk.T
+	#print 'sigmaG = %.1f arcmin, SNR(PDF) = %.2f, SNR(peaks) = %.2f' % (sigmaG_arr[i], sqrt(chisq_PDF), sqrt(chisq_peak))
+############# test plots ######################
 
-#a=WLanalysis.readFits('/Users/jia/Documents/weaklensing/map_conv_shear_sample/WL-conv_m-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.798_4096xy_0001r_0029p_0100z_og.gre.fit')
+##a=WLanalysis.readFits('/Users/jia/Documents/weaklensing/map_conv_shear_sample/WL-conv_m-512b240_Om0.260_Ol0.740_w-1.000_ns0.960_si0.798_4096xy_0001r_0029p_0100z_og.gre.fit')
 
-#b=GRF_Gen(a)
+##b=GRF_Gen(a)
 
-#ell, ps_a = WLanalysis.PowerSpectrum(a)
-#ell, ps_b = WLanalysis.PowerSpectrum(b)
+##ell, ps_a = WLanalysis.PowerSpectrum(a)
+##ell, ps_b = WLanalysis.PowerSpectrum(b)
 
-#from pylab import *
-#print 'hi'
-#f=figure()
-#ax=f.add_subplot(111)
-#ax.plot(ell, ps_a,'b-',lw=2,label='Convergence Map')
-#ax.plot(ell, ps_b,'r--',lw=2,label='Gaussian Random Field')
-#ax.set_ylabel(r'$\ell(\ell+1)\rm{P(\ell)/2\pi}$',fontsize=20)
-#ax.set_xscale('log')
-#ax.set_yscale('log')
-#ax.set_xlabel(r'$\ell$',fontsize=20)
-#ax.set_xlim(ell[6],ell[-5])
-#ax.set_ylim(3e-6,1e-3)
-#leg=ax.legend(ncol=1, labelspacing=0.3, prop={'size':16},loc=0)
-#leg.get_frame().set_visible(False)
-#show()
+##from pylab import *
+##print 'hi'
+##f=figure()
+##ax=f.add_subplot(111)
+##ax.plot(ell, ps_a,'b-',lw=2,label='Convergence Map')
+##ax.plot(ell, ps_b,'r--',lw=2,label='Gaussian Random Field')
+##ax.set_ylabel(r'$\ell(\ell+1)\rm{P(\ell)/2\pi}$',fontsize=20)
+##ax.set_xscale('log')
+##ax.set_yscale('log')
+##ax.set_xlabel(r'$\ell$',fontsize=20)
+##ax.set_xlim(ell[6],ell[-5])
+##ax.set_ylim(3e-6,1e-3)
+##leg=ax.legend(ncol=1, labelspacing=0.3, prop={'size':16},loc=0)
+##leg.get_frame().set_visible(False)
+##show()
 
-#asmooth=WLanalysis.smooth(a, 2.5*4)
-#bsmooth=WLanalysis.smooth(b, 2.5*4)
+##asmooth=WLanalysis.smooth(a, 2.5*4)
+##bsmooth=WLanalysis.smooth(b, 2.5*4)
 #f=figure()
 #xxx=0.01
 #subplot(121)
-#imshow(asmooth, vmin=-2*xxx, vmax=6*xxx)
+#imshow(asmooth, vmin=-2*xxx, vmax=8*xxx)
 ##title('Convergence Map',fontsize=20)
 #colorbar()
 #subplot(122)
-#imshow(bsmooth, vmin=-2*xxx, vmax=6*xxx)
+#imshow(bsmooth, vmin=-2*xxx, vmax=8*xxx)
 ##title('Gaussian Random Field',fontsize=20)
 #colorbar()
 #show()

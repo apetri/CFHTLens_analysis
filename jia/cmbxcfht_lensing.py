@@ -23,7 +23,7 @@ conc0 = lambda arr: concatenate([(0,), arr])
 #######################################
 ########## cosmo params ###############
 #######################################
-compute_model = 1
+compute_model = 0
 
 z0, z1 = load(cmb_dir+'dndz_weighted_nocut.npy')
 #z0, z1 = load('/Users/jia/weaklensing/cmblensing/DES_dndz.npy')#07/02/2015 use DES dndz
@@ -142,7 +142,7 @@ plot_dndz_peak_PDF = 0
 plot_lensing_kernels = 0
 
 plot_null_test = 0
-plot_data_model = 0
+plot_data_model = 1
 plot_model_theory = 0
 plot_model_theory_haloterms = 0
 compute_theory_err = 0
@@ -346,7 +346,7 @@ theory_err = array([[  3.14634974e-07,   6.43955357e-07,   1.03293813e-06,
 
 if plot_data_model:
 
-	year,cosmo_params = 2013,'planck'
+	year,cosmo_params = 2015,'planck'
 	nocut = 1
 	
 	ell_arr_data = 40.0*WLanalysis.edge2center(linspace(1,50,6))# 40=512.0/1330.0*360./(sqrt(12.0))
@@ -425,6 +425,7 @@ if plot_data_model:
 	f=figure(figsize=(8,6))
 	ax=f.add_subplot(111)
 	ax.bar(ell_arr_data, 2*err_mean*1e6, bottom=(CC_mean-err_mean)*1e6, width=ones(len(ell_arr_data))*80, align='center',ec='brown',fc='none',linewidth=1.5, alpha=1.0)#
+	print ell_arr_data, CC_mean, err_mean
 	
 	ax.plot([0,2000], [0,0], 'k-', linewidth=1)
 	seed(584)#good seeds: 6, 16, 25, 41, 53, 128, 502, 584
@@ -452,8 +453,9 @@ if plot_data_model:
 	ax.text(100, 4, r'$\kappa_{\rm cmb,%s}\times\,\kappa_{\rm gal}$'%(year), color='k', fontsize=20)
 	#ax.set_title('%s dn/dz nocutPeak, A=%.2f, SNR=%.2f'%(year, A_min, SNR))#, noZcut
 	ax.tick_params(labelsize=16)
-	savefig(cmb_dir+'paper/CC_%s_plancksim.pdf'%(year))
-	close()
+	#savefig(cmb_dir+'paper/CC_%s_plancksim.pdf'%(year))
+	#close()
+	show()
 
 if plot_model_theory:
 	
