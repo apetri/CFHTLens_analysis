@@ -19,11 +19,16 @@ from scipy import interpolate
 import random
 
 ############ for 31 cosmos #########
-iii = int(sys.argv[1])
-cosmo_arr = genfromtxt('/work/02977/jialiu/CMB_batch/success.txt',dtype='string')
-cosmo = cosmo_arr[iii]
-kmapGen = lambda r: WLanalysis.readFits('/home1/02977/jialiu/scratch/CMB_batch_storage/%s/1024b600/Maps/WLconv_z40.00_%04dr.fits'%(cosmo, r))
+#iii = int(sys.argv[1])
+#cosmo_arr = genfromtxt('/work/02977/jialiu/CMB_batch/success.txt',dtype='string')
+#cosmo = cosmo_arr[iii]
+#kmapGen = lambda r: WLanalysis.readFits('/home1/02977/jialiu/scratch/CMB_batch_storage/%s/1024b600/Maps/WLconv_z40.00_%04dr.fits'%(cosmo, r))
 ####################################
+
+########### fiducial cosmos #########
+cosmo='Om0.260_Ol0.740_Ob0.046_w-1.000_ns0.960_si0.800'
+kmapGen = lambda r: WLanalysis.readFits(b600_dir+'WLconv_z38.00_%04dr.fits'%(r))
+#####################################
 
 CMBlensing_dir = '/work/02977/jialiu/CMBnonGaussian/'
 
@@ -43,7 +48,6 @@ b600_dir =  '/work/02918/apetri/kappaCMB/Om0.260_Ol0.740_Ob0.046_w-1.000_ns0.960
 #Total angular size: 3.5 deg
 #lmin=1.0e+02 ; lmax=1.5e+05
 
-#kmapGen = lambda r: WLanalysis.readFits(b600_dir+'WLconv_z38.00_%04dr.fits'%(r))
 
 def PDFGen (kmap, PDF_bins):
 	all_kappa = kmap[~isnan(kmap)]
