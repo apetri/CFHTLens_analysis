@@ -19,15 +19,15 @@ from scipy import interpolate
 import random
 
 ############ for 31 cosmos #########
-#iii = int(sys.argv[1])
-#cosmo_arr = genfromtxt('/work/02977/jialiu/CMB_batch/success.txt',dtype='string')
-#cosmo = cosmo_arr[iii]
-#kmapGen = lambda r: WLanalysis.readFits('/home1/02977/jialiu/scratch/CMB_batch_storage/%s/1024b600/Maps/WLconv_z40.00_%04dr.fits'%(cosmo, r))
+iii = int(sys.argv[1])
+cosmo_arr = genfromtxt('/work/02977/jialiu/CMB_batch/success.txt',dtype='string')
+cosmo = cosmo_arr[iii]
+kmapGen = lambda r: WLanalysis.readFits('/home1/02977/jialiu/scratch/CMB_batch_storage/%s/1024b600/Maps/WLconv_z40.00_%04dr.fits'%(cosmo, r))
 ####################################
 
 ########### fiducial cosmos #########
-cosmo='Om0.260_Ol0.740_Ob0.046_w-1.000_ns0.960_si0.800'
-kmapGen = lambda r: WLanalysis.readFits(b600_dir+'WLconv_z38.00_%04dr.fits'%(r))
+#cosmo='Om0.260_Ol0.740_Ob0.046_w-1.000_ns0.960_si0.800'
+#kmapGen = lambda r: WLanalysis.readFits(b600_dir+'WLconv_z38.00_%04dr.fits'%(r))
 #####################################
 
 CMBlensing_dir = '/work/02977/jialiu/CMBnonGaussian/'
@@ -88,6 +88,46 @@ pool=MPIPool()
 a=pool.map(compute_GRF_PDF_ps_pk,range(1, 1025))
 save(CMBlensing_dir+'%s_PDF_pk_600b_GRF'%(cosmo), a)
 print '---DONE---DONE---'
+
+
+########### cosmology constraints #############
+# first get average of everything
+# covariance matrix
+#cosmo_arr = genfromtxt('/work/02977/jialiu/CMB_batch/success.txt',dtype='string')
+#pspkPDF_avg = 
+#pspkPDF_fidu_mat = 
+
+#def return_interp_cosmo_for_idx (idx):
+	#ps_CFHT_test = ps_CFHT0[idx]
+	#idx = idx[where(ps_CFHT_test>0)[0]]#rid of zero bins	
+	#ps_CFHT = ps_CFHT0[idx]
+	#ps_fidu_mat = ps_fidu_mat0[:,idx]
+	#ps_avg = ps_avg0[:,idx]
+	#cov_mat = cov(ps_fidu_mat,rowvar=0)
+	#cov_inv = mat(cov_mat).I
+
+	#spline_interps = list()
+	#for ibin in range(ps_avg.shape[-1]):
+		#ps_model = ps_avg[:,ibin]
+		#iinterp = interpolate.Rbf(im, iw, s, ps_model)
+		#spline_interps.append(iinterp)
+
+	#def interp_cosmo (params, method = 'multiquadric'):
+		#'''Interpolate the powspec for certain param.
+		#Params: list of 3 parameters = (om, w, si8)
+		#Method: "multiquadric" for spline (default), and "GP" for Gaussian process.
+		#'''
+		#mm, wm, sm = params
+		#gen_ps = lambda ibin: spline_interps[ibin](mm, wm, sm)
+		#ps_interp = array(map(gen_ps, range(ps_avg.shape[-1])))
+		#ps_interp = ps_interp.reshape(-1,1).squeeze()
+		#return ps_interp
+	#return interp_cosmo, cov_mat, cov_inv, ps_CFHT
+
+
+
+
+
 
 
 
