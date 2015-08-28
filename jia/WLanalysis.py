@@ -622,7 +622,7 @@ def create_dir_if_nonexist(dirname):
 def buildInterpolator(obs_arr, cosmo_params):
 	'''Build an interpolator:
 	input:
-	obs_arr = (points, Nbin), where points are the # of param sets
+	obs_arr = (points, Nbin), where # of points = # of models
 	cosmo_params = (points, Nparams), currently Nparams is hard-coded
 	to be 3 (om,w,si8)
 	output:
@@ -636,7 +636,18 @@ def buildInterpolator(obs_arr, cosmo_params):
 		model = obs_arr[:,ibin]
 		iinterp = interpolate.Rbf(m, w, s, model)
 		spline_interps.append(iinterp)
-	return spline_interps
+	#return spline_interps
+	def interp_cosmo (params, method = 'multiquadric'):
+		'''Interpolate the powspec for certain param.
+		Params: list of 3 parameters = (om, w, si8)
+		Method: "multiquadric" for spline (default), and "GP" for Gaussian process.
+		'''
+		mm, wm, sm = params
+		gen_ps = lambda ibin: spline_interps[ibin](mm, wm, sm)
+		ps_interp = array(map(gen_ps, range(obs_arr.shape[-1])))
+		ps_interp = ps_interp.reshape(-1,1).squeeze()
+		return ps_interp
+	return interp_cosmo
 
 def findlevel (H):
 	'''Find 68%, 95%, 99% confidence level for a probability 2D plane H.

@@ -18,11 +18,15 @@ from emcee.utils import MPIPool
 from scipy import interpolate
 import random
 
+
+CMBlensing_dir = '/work/02977/jialiu/CMBnonGaussian/'
+#CMBlensing_dir ='/Users/jia/weaklensing/CMBnonGaussian/'
 ############ for 31 cosmos #########
 iii = int(sys.argv[1])
-cosmo_arr = genfromtxt('/work/02977/jialiu/CMB_batch/success.txt',dtype='string')
+cosmo_arr = genfromtxt(CMBlensing_dir+'cosmo_arr.txt',dtype='string')
 cosmo = cosmo_arr[iii]
-kmapGen = lambda r: WLanalysis.readFits('/home1/02977/jialiu/scratch/CMB_batch_storage/%s/1024b600/Maps/WLconv_z40.00_%04dr.fits'%(cosmo, r))
+kmapGen = lambda r: WLanalysis.readFits('/scratch/02977/jialiu/CMB_hopper/CMB_batch_storage/%s/1024b600/Maps/WLconv_z38.00_%04dr.fits'%(cosmo, r))
+#kmapGen = lambda r: WLanalysis.readFits('/home1/02977/jialiu/scratch/CMB_batch_storage/%s/1024b600/Maps/WLconv_z40.00_%04dr.fits'%(cosmo, r))
 ####################################
 
 ########### fiducial cosmos #########
@@ -30,7 +34,6 @@ kmapGen = lambda r: WLanalysis.readFits('/home1/02977/jialiu/scratch/CMB_batch_s
 #kmapGen = lambda r: WLanalysis.readFits(b600_dir+'WLconv_z38.00_%04dr.fits'%(r))
 #####################################
 
-CMBlensing_dir = '/work/02977/jialiu/CMBnonGaussian/'
 
 ends = [0.5, 0.22, 0.18, 0.1, 0.08]
 PDFbin_arr = [linspace(-end, end, 101) for end in ends]
@@ -42,7 +45,7 @@ PPA = 2048.0/(sqrt(sizedeg)*60.0) #pixels per arcmin
 sigmaG_arr = array([0.5, 1.0, 2.0, 5.0, 8.0])
 sigmaP_arr = sigmaG_arr*PPA #smoothing scale in pixels
 
-b600_dir =  '/work/02918/apetri/kappaCMB/Om0.260_Ol0.740_Ob0.046_w-1.000_ns0.960_si0.800/1024b600/Maps/'
+#b600_dir =  '/work/02918/apetri/kappaCMB/Om0.260_Ol0.740_Ob0.046_w-1.000_ns0.960_si0.800/1024b600/Maps/'
 #Pixels on a side: 2048
 #Pixel size: 6.15234375 arcsec
 #Total angular size: 3.5 deg
@@ -86,50 +89,130 @@ def compute_GRF_PDF_ps_pk (r):
 		
 pool=MPIPool()
 a=pool.map(compute_GRF_PDF_ps_pk,range(1, 1025))
-save(CMBlensing_dir+'%s_PDF_pk_600b_GRF'%(cosmo), a)
+#save(CMBlensing_dir+'%s_PDF_pk_600b_GRF'%(cosmo), a)
+save(CMBlensing_dir+'%s_ps_PDF_pk_600b.npy'%(cosmo), a)
 print '---DONE---DONE---'
 
 
 ########### cosmology constraints #############
-# first get average of everything
-# covariance matrix
-#cosmo_arr = genfromtxt('/work/02977/jialiu/CMB_batch/success.txt',dtype='string')
-#pspkPDF_avg = 
-#pspkPDF_fidu_mat = 
+## first get average of everything
+## covariance matrix
+#def cosmo_str2params(cosmo):
+	#Om = float(cosmo[2:7])
+	#w = float(cosmo[17:23])
+	#si8 = float(cosmo[-5:])
+	#return Om, w, si8
+#ell_gadget=WLanalysis.PowerSpectrum(rand(2048,2048))[0][7:34]
+#def cosmo_avg_calc (cosmo,return_mat=0):
+	## index: 50ps+100PDF*5+25peaks*5
+	#temp = load(CMBlensing_dir+'Pkappa_gadget/%s_PDF_pk_600b_GRF.npy'%(cosmo))
+	#big_mat = array([concatenate([temp[i][0], concatenate(temp[i][1]), concatenate(temp[i][2])]) for i in range(len(temp))])
+	#if return_mat:
+		#return big_mat
+	#else:
+		#return mean(big_mat,axis=0),std(big_mat,axis=0)
+	
+#cosmo_arr = genfromtxt(CMBlensing_dir+'success.txt',dtype='string')[:-1]
+#cosmo_params = array(map(cosmo_str2params, cosmo_arr))
 
-#def return_interp_cosmo_for_idx (idx):
-	#ps_CFHT_test = ps_CFHT0[idx]
-	#idx = idx[where(ps_CFHT_test>0)[0]]#rid of zero bins	
-	#ps_CFHT = ps_CFHT0[idx]
-	#ps_fidu_mat = ps_fidu_mat0[:,idx]
-	#ps_avg = ps_avg0[:,idx]
-	#cov_mat = cov(ps_fidu_mat,rowvar=0)
-	#cov_inv = mat(cov_mat).I
+####pspkavgerr = array(map(cosmo_avg_calc, cosmo_arr))
+####pspkPDF_avg, pspkPDF_err = swapaxes(pspkavgerr,0,1)
+####save(CMBlensing_dir+'pspkPDF_avg.npy',pspkPDF_avg)
+####save(CMBlensing_dir+'pspkPDF_err.npy',pspkPDF_err)
+####pspkPDF_fidu_mat = cosmo_avg_calc('Om0.260_Ol0.740_w-1.000_si0.800',return_mat=1)
+####save(CMBlensing_dir+'pspkPDF_fidu_mat.npy',pspkPDF_fidu_mat)
 
+#pspkPDF_avg=load(CMBlensing_dir+'pspkPDF_avg.npy')
+#pspkPDF_err=load(CMBlensing_dir+'pspkPDF_err.npy')
+#pspkPDF_fidu_mat=load(CMBlensing_dir+'pspkPDF_fidu_mat.npy')
+
+
+#def chisq_grid (obs, interp_cosmo, cov_inv, Om_arr=linspace(0.1, 0.6,30), si8_arr=linspace(0.3, 1.0, 40)):
+	#heatmap = zeros(shape=(len(Om_arr),len(si8_arr)))
+	#for i in range(len(Om_arr)):
+		#for j in range(len(si8_arr)):
+			#best_fit = (Om_arr[i], -1, si8_arr[j])
+			#model = interp_cosmo(best_fit)
+			#del_N = np.mat(model - obs)
+			#chisq = float(del_N*cov_inv*del_N.T)
+			#heatmap[i,j] = chisq
+	#return heatmap
+
+
+#ps_avg = pspkPDF_avg[:,7:34]
+#ps_err = pspkPDF_err[:,7:34]
+#ps_fidu_mat = pspkPDF_fidu_mat[:,7:34]
+#cov_mat = cov(ps_fidu_mat,rowvar=0)
+#cov_inv = mat(cov_mat).I
+#obs=mean(ps_fidu_mat,axis=0)
+#err=std(ps_fidu_mat,axis=0)
+########### heat map ######
+#heatmap = chisq_grid (obs, interp_cosmo, cov_inv)
+#P=exp(-0.5*heatmap)
+###########################
+
+#from pylab import *
+##imshow(P,origin='lower')
+#iii=9
+#plot_dir='/Users/jia/weaklensing/CMBnonGaussian/plot/'
+
+#def buildInterpolator(obs_arr, cosmo_params):
+	#'''Build an interpolator:
+	#input:
+	#obs_arr = (points, Nbin), where # of points = # of models
+	#cosmo_params = (points, Nparams), currently Nparams is hard-coded
+	#to be 3 (om,w,si8)
+	#output:
+	#spline_interps
+	#Usage:
+	#spline_interps[ibin](im, wm, sm)
+	#'''
+	#m, w, s = cosmo_params.T
 	#spline_interps = list()
-	#for ibin in range(ps_avg.shape[-1]):
-		#ps_model = ps_avg[:,ibin]
-		#iinterp = interpolate.Rbf(im, iw, s, ps_model)
+	#for ibin in range(obs_arr.shape[-1]):
+		#model = obs_arr[:,ibin]
+		##iinterp = interpolate.LinearNDInterpolator(cosmo_params, model)
+		#iinterp = interpolate.Rbf(m, w, s, model, method = "cubic")
 		#spline_interps.append(iinterp)
-
-	#def interp_cosmo (params, method = 'multiquadric'):
+	##return spline_interps
+	#def interp_cosmo (params):
 		#'''Interpolate the powspec for certain param.
 		#Params: list of 3 parameters = (om, w, si8)
-		#Method: "multiquadric" for spline (default), and "GP" for Gaussian process.
+		#method = 'multiquadric'
 		#'''
 		#mm, wm, sm = params
 		#gen_ps = lambda ibin: spline_interps[ibin](mm, wm, sm)
-		#ps_interp = array(map(gen_ps, range(ps_avg.shape[-1])))
+		#ps_interp = array(map(gen_ps, range(obs_arr.shape[-1])))
 		#ps_interp = ps_interp.reshape(-1,1).squeeze()
 		#return ps_interp
-	#return interp_cosmo, cov_mat, cov_inv, ps_CFHT
+	#return interp_cosmo
 
+#for iii in range(31):
+	#print iii
+	#ps_avg_test = delete(ps_avg.copy(),iii,axis=0)
+	#cosmo_params_test = delete(cosmo_params.copy(),iii,axis=0)
+	##interp_cosmo = WLanalysis.buildInterpolator(ps_avg_test, cosmo_params_test)
+	#interp_cosmo = buildInterpolator(ps_avg_test, cosmo_params_test)
+	#f=figure(figsize=(8,6))
+	#ax=f.add_subplot(111)
+	#ax.errorbar(ell_gadget,ps_avg[iii], ps_err[iii],label='true')
+	#ax.plot(ell_gadget,interp_cosmo(cosmo_params[iii]),'-',label='interpolate')
+	#iparam=cosmo_params[iii].copy()
+	#iparam[1]=-1
+	#ax.plot(ell_gadget,interp_cosmo(iparam),'-',label='interpolate(w=-1)')
+	#leg=ax.legend()
+	#leg.get_frame().set_visible(False)
+	#ax.set_xlabel(r'$\ell$')
+	#ax.set_ylabel(r'$\ell(\ell+1)\rm{P(\ell)/2\pi}$')
+	##show()
+	#ax.set_title('om, w, si8='+str(cosmo_params[iii]))
+	#ax.set_xscale('log')
+	#ax.set_yscale('log')
+	#ax.set_xlim(ell_gadget[0],ell_gadget[-1])
+	#savefig(plot_dir+'test_spline_linear_%i.jpg'%(iii))
+	#close()
 
-
-
-
-
-
+#cosmo_params[9]=([ 0.286, -1.272,  1.104])
 
 ############ plot on local laptop ##############
 
