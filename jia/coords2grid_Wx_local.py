@@ -47,7 +47,7 @@ cat_dir = '/Users/jia/weaklensing/CFHTLenS/catalogue/'
 #textfile = genfromtxt(cat_dir+'CFHTLenS_downloads/CFHTLens_2015-02-25T04-54-07.tsv')#374M
 #save(cat_dir+'CFHTLenS_downloads/All_RA_Dec_e12_w_z_m_c.npy', textfile.astype(float32))
 
-textfile = load(cat_dir+'CFHTLenS_downloads/All_RA_Dec_e12_w_z_m_c.npy')[1:]
+textfile = load('/Users/jia/weaklensing/CFHTLenS_downloads/All_RA_Dec_e12_w_z_m_c.npy')[1:]
 RA, DEC, e1, e2, weight, zB, m, c2 = textfile.T
 
 ####################################
@@ -62,11 +62,11 @@ def list2coords(radeclist, Wx):
 	#xy = array(map(f_Wx, radeclist))#in radians
 	return xy
 
-def construct_kmap (Wx, sigmaG=1.0, append = 'zcut13'):
+def construct_kmap (Wx, sigmaG=1.0, append = 'zcut0213'):
 	
 	isize=sizes[Wx-1]
 	iRA0, iRA1 = RAs[Wx-1]
-	idx = where((RA<iRA1) & (RA>iRA0) & (zB<1.3))[0]
+	idx = where((RA<iRA1) & (RA>iRA0) & (zB<1.3) & (zB>0.2))[0]
 	
 	print Wx, len(idx)
 	

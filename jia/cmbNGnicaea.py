@@ -4,7 +4,7 @@ import numpy as np
 from scipy import *
 from scipy import interpolate, stats, fftpack
 
-cosmo_arr = genfromtxt('/Users/jia/weaklensing/CMBnonGaussian/success.txt',dtype='string')
+cosmo_arr = genfromtxt('/Users/jia/weaklensing/CMBnonGaussian/cosmo_arr.txt',dtype='string')
 ## e.g.Om0.145_Ol0.855_w-2.211_si1.303
 
 def create_Nicaea_ps (cosmo):
@@ -63,16 +63,18 @@ a_min           0.1             # For late Universe stuff
 	f=open('/Users/jia/Documents/code/nicaea_2.5/par_files/cosmo.par','w')
 	f.write(content)
 	f.close()
-	os.system('cd /Users/jia/Documents/code/nicaea_2.5/Demo; ./lensingdemo; cp P_kappa /Users/jia/weaklensing/CMBnonGaussian/Pkappa_nicaea25_%s'%(cosmo))
+	os.system('cd /Users/jia/Documents/code/nicaea_2.5/Demo; ./lensingdemo; cp P_kappa /Users/jia/weaklensing/CMBnonGaussian/Pkappa_nicaea/Pkappa_nicaea25_%s'%(cosmo))
 
+#map(create_Nicaea_ps, cosmo_arr)
 plot_dir='/Users/jia/weaklensing/CMBnonGaussian/plot/'
 ell_gadget=WLanalysis.PowerSpectrum(rand(2048,2048))[0][:34]
 #import matplotlib.pyplot as plt
 from pylab import *
-for cosmo in cosmo_arr[:-1]:
+for cosmo in cosmo_arr:#(cosmo_arr[18],):
 	#create_Nicaea_ps(cosmo)
-	pspkPDFgadget=load('/Users/jia/weaklensing/CMBnonGaussian/Pkappa_gadget/{0}_PDF_pk_600b_GRF.npy'.format(cosmo))
+	pspkPDFgadget=load('/Users/jia/weaklensing/CMBnonGaussian/Pkappa_gadget/{0}_ps_PDF_pk_600b.npy'.format(cosmo))
 	ps_gadget=array([pspkPDFgadget[i][0][:34] for i in range(len(pspkPDFgadget))])
+	#ps_gadget[331]=ps_gadget[332]
 	ell_nicaea, ps_nicaea=genfromtxt('/Users/jia/weaklensing/CMBnonGaussian/Pkappa_nicaea/Pkappa_nicaea25_{0}'.format(cosmo))[33:-5].T
 	f=figure(figsize=(6,4.5))
 	ax=f.add_subplot(111)

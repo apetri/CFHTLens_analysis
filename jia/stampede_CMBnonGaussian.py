@@ -19,8 +19,8 @@ from scipy import interpolate
 import random
 
 
-CMBlensing_dir = '/work/02977/jialiu/CMBnonGaussian/'
-#CMBlensing_dir ='/Users/jia/weaklensing/CMBnonGaussian/'
+#CMBlensing_dir = '/work/02977/jialiu/CMBnonGaussian/'
+CMBlensing_dir ='/Users/jia/weaklensing/CMBnonGaussian/'
 ############ for 31 cosmos #########
 iii = int(sys.argv[1])
 cosmo_arr = genfromtxt(CMBlensing_dir+'cosmo_arr.txt',dtype='string')
@@ -87,107 +87,115 @@ def compute_GRF_PDF_ps_pk (r):
 
 	return ps, PDF, peaks#, PDF_GRF, peaks_GRF
 		
-pool=MPIPool()
-a=pool.map(compute_GRF_PDF_ps_pk,range(1, 1025))
-#save(CMBlensing_dir+'%s_PDF_pk_600b_GRF'%(cosmo), a)
-save(CMBlensing_dir+'%s_ps_PDF_pk_600b.npy'%(cosmo), a)
+#pool=MPIPool()
+#a=pool.map(compute_GRF_PDF_ps_pk,range(1, 1025))
+##save(CMBlensing_dir+'%s_PDF_pk_600b_GRF'%(cosmo), a)
+#save(CMBlensing_dir+'%s_ps_PDF_pk_600b.npy'%(cosmo), a)
 print '---DONE---DONE---'
 
 
 ########### cosmology constraints #############
-## first get average of everything
-## covariance matrix
-#def cosmo_str2params(cosmo):
-	#Om = float(cosmo[2:7])
-	#w = float(cosmo[17:23])
-	#si8 = float(cosmo[-5:])
-	#return Om, w, si8
-#ell_gadget=WLanalysis.PowerSpectrum(rand(2048,2048))[0][7:34]
-#def cosmo_avg_calc (cosmo,return_mat=0):
-	## index: 50ps+100PDF*5+25peaks*5
-	#temp = load(CMBlensing_dir+'Pkappa_gadget/%s_PDF_pk_600b_GRF.npy'%(cosmo))
-	#big_mat = array([concatenate([temp[i][0], concatenate(temp[i][1]), concatenate(temp[i][2])]) for i in range(len(temp))])
-	#if return_mat:
-		#return big_mat
-	#else:
-		#return mean(big_mat,axis=0),std(big_mat,axis=0)
+# first get average of everything
+# covariance matrix
+def cosmo_str2params(cosmo):
+	Om = float(cosmo[2:7])
+	w = float(cosmo[17:23])
+	si8 = float(cosmo[-5:])
+	return Om, w, si8
+ell_gadget=WLanalysis.PowerSpectrum(rand(2048,2048))[0]#[7:34]
+def cosmo_avg_calc (cosmo,return_mat=0):
+	# index: 50ps+100PDF*5+25peaks*5
+	temp = load(CMBlensing_dir+'Pkappa_gadget/%s_ps_PDF_pk_600b.npy'%(cosmo))
+	big_mat = array([concatenate([temp[i][0], concatenate(temp[i][1]), concatenate(temp[i][2])]) for i in range(len(temp))])
+	if cosmo=='Om0.369_Ol0.631_w-1.000_si0.918':
+		big_mat[331]=big_mat[-1]
+	if return_mat:
+		return big_mat
+	else:
+		return mean(big_mat,axis=0),std(big_mat,axis=0)
 	
 #cosmo_arr = genfromtxt(CMBlensing_dir+'success.txt',dtype='string')[:-1]
-#cosmo_params = array(map(cosmo_str2params, cosmo_arr))
+cosmo_arr = genfromtxt(CMBlensing_dir+'cosmo_arr.txt',dtype='string')
+cosmo_params = array(map(cosmo_str2params, cosmo_arr))
 
-####pspkavgerr = array(map(cosmo_avg_calc, cosmo_arr))
-####pspkPDF_avg, pspkPDF_err = swapaxes(pspkavgerr,0,1)
-####save(CMBlensing_dir+'pspkPDF_avg.npy',pspkPDF_avg)
-####save(CMBlensing_dir+'pspkPDF_err.npy',pspkPDF_err)
-####pspkPDF_fidu_mat = cosmo_avg_calc('Om0.260_Ol0.740_w-1.000_si0.800',return_mat=1)
-####save(CMBlensing_dir+'pspkPDF_fidu_mat.npy',pspkPDF_fidu_mat)
+##pspkavgerr = array(map(cosmo_avg_calc, cosmo_arr))
+##pspkPDF_avg, pspkPDF_err = swapaxes(pspkavgerr,0,1)
+##save(CMBlensing_dir+'pspkPDF_avg.npy',pspkPDF_avg)
+##save(CMBlensing_dir+'pspkPDF_err.npy',pspkPDF_err)
+##pspkPDF_fidu_mat = cosmo_avg_calc('Om0.260_Ol0.740_w-1.000_si0.800',return_mat=1)
+##save(CMBlensing_dir+'pspkPDF_fidu_mat.npy',pspkPDF_fidu_mat)
+##pspkPDF_fidu_mat = cosmo_avg_calc(cosmo_arr[12],return_mat=1)
+##save(CMBlensing_dir+'pspkPDF_fidu_mat12.npy',pspkPDF_fidu_mat)
 
-#pspkPDF_avg=load(CMBlensing_dir+'pspkPDF_avg.npy')
-#pspkPDF_err=load(CMBlensing_dir+'pspkPDF_err.npy')
-#pspkPDF_fidu_mat=load(CMBlensing_dir+'pspkPDF_fidu_mat.npy')
+pspkPDF_avg=load(CMBlensing_dir+'pspkPDF_avg.npy')
+pspkPDF_err=load(CMBlensing_dir+'pspkPDF_err.npy')
+pspkPDF_fidu_mat=load(CMBlensing_dir+'pspkPDF_fidu_mat12.npy')
+pspkPDF_fidu_mean=mean(pspkPDF_fidu_mat,axis=0)
+#0-49: power spectrum, 7-34 for ell<1e4, 7-22 for ell<2000
+#50-549: PDF
+#550-674: peaks
+stats_idx = range(650, 674)
+#peaks 2arcmin: range(600, 625)
+#peaks 5arcmin:range(626, 647) #range(7,22)+range(450,549)
+#PDF8arcmin:range(450,549)
+#ps:range(7,22)
+jjj=50
+ititle='peaks (8arcmin), 2e4deg^2'#'ps(ell<2000)+PDF(8arcmin), 2e4deg^2'
+iii=12
+del_om, del_si8 = 0.01, 0.01
 
 
-#def chisq_grid (obs, interp_cosmo, cov_inv, Om_arr=linspace(0.1, 0.6,30), si8_arr=linspace(0.3, 1.0, 40)):
-	#heatmap = zeros(shape=(len(Om_arr),len(si8_arr)))
-	#for i in range(len(Om_arr)):
-		#for j in range(len(si8_arr)):
-			#best_fit = (Om_arr[i], -1, si8_arr[j])
-			#model = interp_cosmo(best_fit)
-			#del_N = np.mat(model - obs)
-			#chisq = float(del_N*cov_inv*del_N.T)
-			#heatmap[i,j] = chisq
-	#return heatmap
+ps_avg = pspkPDF_avg[:,stats_idx]
+ps_err = pspkPDF_err[:,stats_idx]
+ps_fidu_mat = pspkPDF_fidu_mat[:,stats_idx]
+cov_mat = cov(ps_fidu_mat,rowvar=0)/(2e4/3.5**2)
+cov_inv = mat(cov_mat).I
+obs=mean(ps_fidu_mat,axis=0)
+err=std(ps_fidu_mat,axis=0)
 
+#ps_avg_test = delete(ps_avg.copy(),iii,axis=0)
+#cosmo_params_test = delete(cosmo_params.copy(),iii,axis=0)
+#interp_cosmo = buildInterpolator(ps_avg_test, cosmo_params_test)
+obs = ps_avg[iii]
 
-#ps_avg = pspkPDF_avg[:,7:34]
-#ps_err = pspkPDF_err[:,7:34]
-#ps_fidu_mat = pspkPDF_fidu_mat[:,7:34]
-#cov_mat = cov(ps_fidu_mat,rowvar=0)
-#cov_inv = mat(cov_mat).I
-#obs=mean(ps_fidu_mat,axis=0)
-#err=std(ps_fidu_mat,axis=0)
-########### heat map ######
-#heatmap = chisq_grid (obs, interp_cosmo, cov_inv)
-#P=exp(-0.5*heatmap)
-###########################
+from pylab import *
+plot_dir='/Users/jia/weaklensing/CMBnonGaussian/plot/'
 
-#from pylab import *
-##imshow(P,origin='lower')
 #iii=9
-#plot_dir='/Users/jia/weaklensing/CMBnonGaussian/plot/'
 
-#def buildInterpolator(obs_arr, cosmo_params):
-	#'''Build an interpolator:
-	#input:
-	#obs_arr = (points, Nbin), where # of points = # of models
-	#cosmo_params = (points, Nparams), currently Nparams is hard-coded
-	#to be 3 (om,w,si8)
-	#output:
-	#spline_interps
-	#Usage:
-	#spline_interps[ibin](im, wm, sm)
-	#'''
-	#m, w, s = cosmo_params.T
-	#spline_interps = list()
-	#for ibin in range(obs_arr.shape[-1]):
-		#model = obs_arr[:,ibin]
-		##iinterp = interpolate.LinearNDInterpolator(cosmo_params, model)
-		#iinterp = interpolate.Rbf(m, w, s, model, method = "cubic")
-		#spline_interps.append(iinterp)
-	##return spline_interps
-	#def interp_cosmo (params):
-		#'''Interpolate the powspec for certain param.
-		#Params: list of 3 parameters = (om, w, si8)
-		#method = 'multiquadric'
-		#'''
-		#mm, wm, sm = params
-		#gen_ps = lambda ibin: spline_interps[ibin](mm, wm, sm)
-		#ps_interp = array(map(gen_ps, range(obs_arr.shape[-1])))
-		#ps_interp = ps_interp.reshape(-1,1).squeeze()
-		#return ps_interp
-	#return interp_cosmo
+def buildInterpolator(obs_arr, cosmo_params):
+	'''Build an interpolator:
+	input:
+	obs_arr = (points, Nbin), where # of points = # of models
+	cosmo_params = (points, Nparams), currently Nparams is hard-coded
+	to be 3 (om,w,si8)
+	output:
+	spline_interps
+	Usage:
+	spline_interps[ibin](im, wm, sm)
+	'''
+	m, w, s = cosmo_params.T
+	spline_interps = list()
+	for ibin in range(obs_arr.shape[-1]):
+		model = obs_arr[:,ibin]
+		#iinterp = interpolate.LinearNDInterpolator(cosmo_params, model)
+		iinterp = interpolate.Rbf(m, s, model)
+		spline_interps.append(iinterp)
+	#return spline_interps
+	def interp_cosmo (params):
+		'''Interpolate the powspec for certain param.
+		Params: list of 3 parameters = (om, w, si8)
+		method = 'multiquadric'
+		'''
+		mm, sm = params
+		gen_ps = lambda ibin: spline_interps[ibin](mm, sm)
+		ps_interp = array(map(gen_ps, range(obs_arr.shape[-1])))
+		ps_interp = ps_interp.reshape(-1,1).squeeze()
+		return ps_interp
+	return interp_cosmo
 
-#for iii in range(31):
+########### begin: test interpolator ##############
+#for iii in range(46):
 	#print iii
 	#ps_avg_test = delete(ps_avg.copy(),iii,axis=0)
 	#cosmo_params_test = delete(cosmo_params.copy(),iii,axis=0)
@@ -196,10 +204,10 @@ print '---DONE---DONE---'
 	#f=figure(figsize=(8,6))
 	#ax=f.add_subplot(111)
 	#ax.errorbar(ell_gadget,ps_avg[iii], ps_err[iii],label='true')
-	#ax.plot(ell_gadget,interp_cosmo(cosmo_params[iii]),'-',label='interpolate')
-	#iparam=cosmo_params[iii].copy()
-	#iparam[1]=-1
-	#ax.plot(ell_gadget,interp_cosmo(iparam),'-',label='interpolate(w=-1)')
+	#ax.plot(ell_gadget,interp_cosmo(cosmo_params[iii][[0,-1]]),'-',label='interpolate')
+	##iparam=cosmo_params[iii].copy()
+	##iparam[1]=-1
+	##ax.plot(ell_gadget,interp_cosmo(iparam),'-',label='interpolate(w=-1)')
 	#leg=ax.legend()
 	#leg.get_frame().set_visible(False)
 	#ax.set_xlabel(r'$\ell$')
@@ -209,8 +217,45 @@ print '---DONE---DONE---'
 	#ax.set_xscale('log')
 	#ax.set_yscale('log')
 	#ax.set_xlim(ell_gadget[0],ell_gadget[-1])
-	#savefig(plot_dir+'test_spline_linear_%i.jpg'%(iii))
+	#savefig(plot_dir+'testinterp_%i.jpg'%(iii))
 	#close()
+############## end: test interpolator ########
+
+########## begin: heat map ######
+om_fidu=cosmo_params[iii][0]
+si8_fidu=cosmo_params[iii][2]
+om0,om1,si80,si81=om_fidu-del_om, om_fidu+del_om, si8_fidu-del_si8, si8_fidu+del_si8
+
+def chisq_grid (obs, interp_cosmo, cov_inv, Om_arr=linspace(om0,om1,jjj), si8_arr=linspace(si80,si81, jjj+1)):
+	heatmap = zeros(shape=(len(Om_arr),len(si8_arr)))
+	for i in range(len(Om_arr)):
+		for j in range(len(si8_arr)):
+			best_fit = (Om_arr[i], si8_arr[j])
+			#best_fit = (Om_arr[i], -1, si8_arr[j])
+			model = interp_cosmo(best_fit)
+			del_N = np.mat(model - obs)
+			chisq = float(del_N*cov_inv*del_N.T)
+			heatmap[i,j] = chisq
+	return heatmap
+
+
+
+interp_cosmo = buildInterpolator(ps_avg, cosmo_params)
+heatmap = chisq_grid (obs, interp_cosmo, cov_inv)
+P=exp(-0.5*heatmap)
+P/=sum(P)
+
+#imshow(heatmap,origin='lower',interpolation='nearest',extent=[si80,si81,om0,om1])
+imshow(P,origin='lower',interpolation='nearest',extent=[si80,si81,om0,om1])
+colorbar()
+scatter(cosmo_params[iii][2],cosmo_params[iii][0])
+title(ititle)
+#scatter(0.8, 0.26)
+xlabel('sigma_8')
+ylabel('omega_m')
+show()
+############ end: head map ##############
+
 
 #cosmo_params[9]=([ 0.286, -1.272,  1.104])
 

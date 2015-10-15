@@ -456,7 +456,32 @@ if plot_data_model:
 	#savefig(cmb_dir+'paper/CC_%s_plancksim.pdf'%(year))
 	#close()
 	show()
-
+################### to alvaro ###############
+def find_SNR (CC_arr, errK_arr):
+	'''Find the mean of 4 fields, and the signal to noise ratio (SNR).
+	Input:
+	CC_arr: array of (4 x Nbin) in size, for cross correlations;
+	errK_arr: error bar array, same dimension as CC_arr;
+	Output:
+	SNR = signal to noise ratio
+	CC_mean = the mean power spectrum of the 4 fields, an Nbin array.
+	err_mean = the mean error bar of the 4 fields, an Nbin array.
+	'''
+	weightK = 1/errK_arr**2/sum(1/errK_arr**2, axis=0)
+	CC_mean = sum(CC_arr*weightK,axis=0)
+	err_mean = sqrt(1.0/sum(1/errK_arr**2, axis=0))
+	SNR = sqrt(sum(err_mean/CC_mean))
+	return SNR, CC_mean, err_mean
+	
+	#A_out = op.minimize(chisq_model_fcn, 1.0, args=(concatenate(CC_arr), concatenate(errK_arr)))
+	A_out = op.minimize(chisq_model_fcn, 1.0, args=(concatenate(CC_arr), covI))
+	A_min = A_out.x
+	chisq_model = A_out.fun
+	chisq_null = sum(array([plot_elems(Wx, return_chisq_null=1, nocut=nocut) for Wx in range(1,5)]))
+	SNR = sqrt(chisq_null-chisq_model)
+	print year,cosmo_params, 'A={0:.2f}, chisq_null={1:.2f}, chisq_model={2:.2f}, SNR={3:.2f}'.format(float(A_min), chisq_null, chisq_model, SNR)
+	return A_min, SNR, CC_mean, err_mean
+########################################
 if plot_model_theory:
 	
 	#models = ('model_Planck15','model_Planck15_hi_om','model_Planck15_lo_om','model_Planck15_hi_si8','model_Planck15_lo_si8')#'model_Hinshaw,model_Planck15'

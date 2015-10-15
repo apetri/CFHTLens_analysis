@@ -519,7 +519,7 @@ def azimuthalAverage(image, center = None, edges = None, logbins = True, bins = 
 
 edge2center = lambda x: x[:-1]+0.5*(x[1:]-x[:-1])
 
-def PowerSpectrum(img, sizedeg = 12.0, edges = None, logbins = True, sigmaG=0):#edges should be pixels
+def PowerSpectrum(img, sizedeg = 12.25, edges = None, logbins = True, sigmaG=0, bins=50):#edges should be pixels
 	'''Calculate the power spectrum for a square image, with normalization.
 	Input:
 	img = input square image in numpy array.
@@ -537,14 +537,14 @@ def PowerSpectrum(img, sizedeg = 12.0, edges = None, logbins = True, sigmaG=0):#
 	psd2D = np.abs(F)**2
 	## correct for b_ell
 	psd2D /= bell_2D(size, sigmaG*PPA512)**2
-	ell_arr, psd1D = azimuthalAverage(psd2D, center=None, edges = edges,logbins = logbins)
+	ell_arr, psd1D = azimuthalAverage(psd2D, center=None, edges = edges,logbins = logbins, bins=bins)
 	ell_arr = edge2center(ell_arr)
 	ell_arr *= 360./sqrt(sizedeg)# normalized to our current map size
 	norm = ((2*pi*sqrt(sizedeg)/360.0)**2)/(size**2)**2
 	powspec = ell_arr*(ell_arr+1)/(2*pi) * norm * psd1D
 	return ell_arr, powspec
 
-def PowerSpectrum_Pell_binning(img, sizedeg = 12.0, edges = None, logbins = True):#edges should be pixels
+def PowerSpectrum_Pell_binning(img, sizedeg = 12.25, edges = None, logbins = True):#edges should be pixels
 	'''Calculate the power spectrum for a square image, with normalization.
 	Input:
 	img = input square image in numpy array.
