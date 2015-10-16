@@ -135,10 +135,11 @@ class GRF_Gen:
 ########### compute sim error ######################
 seednum=0
 #for Wx in range(1,5):
-Ckmap = CkappaGen(Wx)
-Pkmap = PkappaGen(Wx)
 	#for cut in (22, 23, 24):
 Wx, cut = int(sys.argv[1]), int(sys.argv[2])
+Ckmap = CkappaGen(Wx)
+Pkmap = PkappaGen(Wx)
+
 print 'Wx, cut', Wx, cut
 galn = galnGen(Wx, cut)
 
