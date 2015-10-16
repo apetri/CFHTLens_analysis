@@ -128,7 +128,7 @@ def sim_err (kmap, galn, Wx, seednum=0):
 	random.seed(seednum)
 	x = GRF_Gen(galn)
 	#CC_arr = array([WLanalysis.CrossCorrelate(kmap*mask_arr[Wx-1], x.newGRF()*mask_arr[Wx-1], edges = edges_arr[Wx-1], sigmaG1=1.0, sigmaG2=1.0)[1]/fmask2_arr[Wx-1]/factor for i in range(100)])
-	def iCC = lambda i: WLanalysis.CrossCorrelate(kmap*mask_arr[Wx-1], x.newGRF()*mask_arr[Wx-1], edges = edges_arr[Wx-1], sigmaG1=1.0, sigmaG2=1.0)[1]/fmask2_arr[Wx-1]/factor
+	iCC = lambda i: WLanalysis.CrossCorrelate(kmap*mask_arr[Wx-1], x.newGRF()*mask_arr[Wx-1], edges = edges_arr[Wx-1], sigmaG1=1.0, sigmaG2=1.0)[1]/fmask2_arr[Wx-1]/factor
 	CC_arr = array(p.map(iCC, range(100)))
 	return CC_arr
 
