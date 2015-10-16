@@ -137,11 +137,11 @@ seednum=0
 #for Wx in range(1,5):
 	#for cut in (22, 23, 24):
 Wx, cut = int(sys.argv[1]), int(sys.argv[2])
-Ckmap = CkappaGen(Wx)
-Pkmap = PkappaGen(Wx)
+Ckmap = CkappaGen(Wx)*mask_arr[Wx-1]
+Pkmap = PkappaGen(Wx)*mask_arr[Wx-1]
 
 print 'Wx, cut', Wx, cut
-galn = galnGen(Wx, cut)
+galn = galnGen(Wx, cut)*mask_arr[Wx-1]
 
 random.seed(seednum)
 x = GRF_Gen(galn)
@@ -149,8 +149,8 @@ x = GRF_Gen(galn)
 
 def iCC (i):
 	igaln = x.newGRF()*mask_arr[Wx-1]
-	CCP = WLanalysis.CrossCorrelate(Pkmap*mask_arr[Wx-1], igaln, edges = edges_arr[Wx-1], sigmaG1=1.0, sigmaG2=1.0)[1]/fmask2_arr[Wx-1]/factor
-	CCC = WLanalysis.CrossCorrelate(Ckmap*mask_arr[Wx-1], igaln, edges = edges_arr[Wx-1], sigmaG1=1.0, sigmaG2=1.0)[1]/fmask2_arr[Wx-1]/factor
+	CCP = WLanalysis.CrossCorrelate(Pkmap, igaln, edges = edges_arr[Wx-1], sigmaG1=1.0, sigmaG2=1.0)[1]/fmask2_arr[Wx-1]/factor
+	CCC = WLanalysis.CrossCorrelate(Ckmap, igaln, edges = edges_arr[Wx-1], sigmaG1=1.0, sigmaG2=1.0)[1]/fmask2_arr[Wx-1]/factor
 	return CCP, CCC
 
 if not p.is_master():
