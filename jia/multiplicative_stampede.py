@@ -144,11 +144,15 @@ for Wx in range(1,5):
 		random.seed(seednum)
 		x = GRF_Gen(galn)
 		
-		iCCP = lambda i: WLanalysis.CrossCorrelate(Pkmap*mask_arr[Wx-1], x.newGRF()*mask_arr[Wx-1], edges = edges_arr[Wx-1], sigmaG1=1.0, sigmaG2=1.0)[1]/fmask2_arr[Wx-1]/factor
+		#iCCP = lambda i: 
+		def iCCP (i):
+			return WLanalysis.CrossCorrelate(Pkmap*mask_arr[Wx-1], x.newGRF()*mask_arr[Wx-1], edges = edges_arr[Wx-1], sigmaG1=1.0, sigmaG2=1.0)[1]/fmask2_arr[Wx-1]/factor
 		Psim_err_arr = array(p.map(iCCP, range(100)))
 		
 		random.seed(seednum)
-		iCCC = lambda i: WLanalysis.CrossCorrelate(Ckmap*mask_arr[Wx-1], x.newGRF()*mask_arr[Wx-1], edges = edges_arr[Wx-1], sigmaG1=1.0, sigmaG2=1.0)[1]/fmask2_arr[Wx-1]/factor
+		#iCCC = lambda i: 
+		def iCCC(i):
+			return WLanalysis.CrossCorrelate(Ckmap*mask_arr[Wx-1], x.newGRF()*mask_arr[Wx-1], edges = edges_arr[Wx-1], sigmaG1=1.0, sigmaG2=1.0)[1]/fmask2_arr[Wx-1]/factor
 		Csim_err_arr = array(p.map(iCCC, range(100)))
 		
 		#Csim_err_arr = sim_err(Ckmap, galn, Wx)
