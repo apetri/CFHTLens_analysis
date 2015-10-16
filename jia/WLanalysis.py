@@ -581,6 +581,7 @@ def CrossCorrelate(img1, img2, edges = None, logbins = True, sigmaG1=0, sigmaG2=
 	Output:
 	powspec = the power at the bins
 	ell_arr = lower bound of the binedges
+	sigmaG1, sigmaG2 = smoothing scales for map1,2 in arcmin
 	'''
 	img1 = img1.astype(float)
 	img2 = img2.astype(float)
