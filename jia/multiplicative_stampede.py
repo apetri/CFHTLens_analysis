@@ -17,7 +17,7 @@ from scipy.fftpack import fftfreq, fftshift
 import os
 import scipy.ndimage as snd
 import WLanalysis
-
+import sys
 #################### constants and small functions ##################
 sizes = (1330, 800, 1120, 950)
 #main_dir = '/Users/jia/weaklensing/multiplicative/'
@@ -134,32 +134,25 @@ class GRF_Gen:
 
 ########### compute sim error ######################
 seednum=0
-for Wx in range(1,5):
-	Ckmap = CkappaGen(Wx)
-	Pkmap = PkappaGen(Wx)
-	for cut in (22, 23, 24):
-		print 'Wx, cut', Wx, cut
-		galn = galnGen(Wx, cut)
-		
-		random.seed(seednum)
-		x = GRF_Gen(galn)
-		
-		#iCCP = lambda i: 
-		def iCCP (i):
-			return WLanalysis.CrossCorrelate(Pkmap*mask_arr[Wx-1], x.newGRF()*mask_arr[Wx-1], edges = edges_arr[Wx-1], sigmaG1=1.0, sigmaG2=1.0)[1]/fmask2_arr[Wx-1]/factor
-		Psim_err_arr = array(p.map(iCCP, range(100)))
-		
-		random.seed(seednum)
-		#iCCC = lambda i: 
-		def iCCC(i):
-			return WLanalysis.CrossCorrelate(Ckmap*mask_arr[Wx-1], x.newGRF()*mask_arr[Wx-1], edges = edges_arr[Wx-1], sigmaG1=1.0, sigmaG2=1.0)[1]/fmask2_arr[Wx-1]/factor
-		Csim_err_arr = array(p.map(iCCC, range(100)))
-		
-		#Csim_err_arr = sim_err(Ckmap, galn, Wx)
-		#Psim_err_arr = sim_err(Pkmap, galn, Wx)
-		save(main_dir+'powspec/CCsim_cfht_cut%i_W%i.npy'%(cut, Wx), Csim_err_arr)
-		save(main_dir+'powspec/CCsim_planck_cut%i_W%i.npy'%(cut, Wx), Psim_err_arr)
-		
+#for Wx in range(1,5):
+	#Ckmap = CkappaGen(Wx)
+	#Pkmap = PkappaGen(Wx)
+	#for cut in (22, 23, 24):
+Wx, cut = sys.argv[1], sys.argv[2]
+print 'Wx, cut', Wx, cut
+galn = galnGen(Wx, cut)
+
+random.seed(seednum)
+x = GRF_Gen(galn)
+
+
+def iCC (i):
+	igaln = x.newGRF()*mask_arr[Wx-1]
+	CCP = WLanalysis.CrossCorrelate(Pkmap*mask_arr[Wx-1], igaln, edges = edges_arr[Wx-1], sigmaG1=1.0, sigmaG2=1.0)[1]/fmask2_arr[Wx-1]/factor
+	CCC = WLanalysis.CrossCorrelate(Ckmap*mask_arr[Wx-1], igaln, edges = edges_arr[Wx-1], sigmaG1=1.0, sigmaG2=1.0)[1]/fmask2_arr[Wx-1]/factor
+	return CCP, CCC
+CCsim_err_arr = array(p.map(iCC, range(100)))
+save(main_dir+'powspec/CCsim_cfht_cut%i_W%i.npy'%(cut, Wx), CCsim_err_arr)
 
 	
 #for cut in (22,23, 24):
