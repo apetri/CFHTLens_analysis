@@ -138,7 +138,7 @@ seednum=0
 	#Ckmap = CkappaGen(Wx)
 	#Pkmap = PkappaGen(Wx)
 	#for cut in (22, 23, 24):
-Wx, cut = sys.argv[1], sys.argv[2]
+Wx, cut = int(sys.argv[1]), int(sys.argv[2])
 print 'Wx, cut', Wx, cut
 galn = galnGen(Wx, cut)
 
