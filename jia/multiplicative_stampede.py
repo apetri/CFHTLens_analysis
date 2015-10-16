@@ -152,10 +152,14 @@ def iCC (i):
 	CCP = WLanalysis.CrossCorrelate(Pkmap*mask_arr[Wx-1], igaln, edges = edges_arr[Wx-1], sigmaG1=1.0, sigmaG2=1.0)[1]/fmask2_arr[Wx-1]/factor
 	CCC = WLanalysis.CrossCorrelate(Ckmap*mask_arr[Wx-1], igaln, edges = edges_arr[Wx-1], sigmaG1=1.0, sigmaG2=1.0)[1]/fmask2_arr[Wx-1]/factor
 	return CCP, CCC
-CCsim_err_arr = array(p.map(iCC, range(100)))
-save(main_dir+'powspec/CCsim_cfht_cut%i_W%i.npy'%(cut, Wx), CCsim_err_arr)
 
-	
+if not p.is_master():
+	p.wait()
+	sys.exit(0)
+CCsim_err_arr = array(p.map(iCC, range(100)))
+save(main_dir+'powspec/CCsim_cut%i_W%i.npy'%(cut, Wx), CCsim_err_arr)
+
+p.close()
 #for cut in (22,23, 24):
 	##planck_CC_err = array([theory_CC_err(PkappaGen(Wx), galnGen(Wx,cut), Wx) for Wx in range(1,5)])
 
