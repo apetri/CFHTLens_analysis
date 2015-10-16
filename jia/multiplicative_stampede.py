@@ -75,6 +75,77 @@ def find_SNR (CC_arr, errK_arr):
 	SNR2 = sqrt(sum (CC_arr**2/errK_arr**2))
 	return SNR, SNR2, CC_mean, err_mean
 
+def ps1DGen(kmap):
+	size = kmap.shape[0]
+	F = fftshift(fftpack.fft2(kmap.astype(float)))
+	psd2D = np.abs(F)**2 # = real**2 + imag**2
+
+	ell_arr0, psd1D0 = WLanalysis.azimuthalAverage(psd2D, center=None, edges = arange(sqrt(2)*size/2))
+	ell_arr_center = WLanalysis.edge2center(ell_arr0)
+
+	randfft2 = zeros(shape=(size, size))
+	y, x = np.indices((size,size))
+	center = np.array([(x.max()-x.min())/2.0, (x.max()-x.min())/2.0])
+	if size%2 == 0:
+		center+=0.5
+	r = np.hypot(x - center[0], y - center[1])
+	
+	extrap = psd1D0[-1]+(ceil(sqrt(2)*size/2+1.0)-ell_arr_center[-1])*(psd1D0[-1]-psd1D0[-2])/(ell_arr_center[-1]-ell_arr_center[-2])
+	
+	ell_arr = array([0,]+list(ell_arr_center)+ [ceil(sqrt(2)*size/2+1.0),])
+	psd1D = array([psd1D0[0],]+list(psd1D0)+[extrap,])
+	
+	p1D_interp = interpolate.griddata(ell_arr, psd1D, r.flatten(), method='nearest')
+	p1D_interp[isnan(p1D_interp)]=0
+
+	p2D_mean = p1D_interp.reshape(size,size)
+	p2D_std = sqrt(p2D_mean/2.0)
+	return p2D_mean, p2D_std
+
+from scipy.fftpack import fftfreq, fftshift,ifftshift
+from random import gauss
+from emcee.utils import MPIPool
+p = MPIPool()
+class GRF_Gen:
+	'''return a random gaussian field that has the same power spectrum as img.
+	'''
+	def __init__(self, kmap):
+		self.size = kmap.shape[0]
+		self.GRF = rand(self.size,self.size)
+		self.p2D_mean, self.p2D_std = ps1DGen(kmap)
+	
+	def newGRF(self):
+		self.psd2D_GRF = gauss(self.p2D_mean, self.p2D_std)
+		self.rand_angle = rand(self.size**2).reshape(self.size,self.size)*2.0*pi
+		self.psd2D_GRF_Fourier = sqrt(self.psd2D_GRF) * [cos(self.rand_angle) + 1j * sin(self.rand_angle)]
+		self.GRF_image = fftpack.ifft2(ifftshift(self.psd2D_GRF_Fourier))[0]
+		self.GRF = sqrt(2)*real(self.GRF_image)
+		return self.GRF
+
+
+def sim_err (kmap, galn, Wx, seednum=0):
+	'''generate 100 GRF from galn, then compute the 100 cross correlation with kmap'''
+	random.seed(seednum)
+	x = GRF_Gen(galn)
+	#CC_arr = array([WLanalysis.CrossCorrelate(kmap*mask_arr[Wx-1], x.newGRF()*mask_arr[Wx-1], edges = edges_arr[Wx-1], sigmaG1=1.0, sigmaG2=1.0)[1]/fmask2_arr[Wx-1]/factor for i in range(100)])
+	def iCC = lambda i: WLanalysis.CrossCorrelate(kmap*mask_arr[Wx-1], x.newGRF()*mask_arr[Wx-1], edges = edges_arr[Wx-1], sigmaG1=1.0, sigmaG2=1.0)[1]/fmask2_arr[Wx-1]/factor
+	CC_arr = array(p.map(iCC, range(100)))
+	return CC_arr
+
+########### compute sim error ######################
+for Wx in range(1,5):
+	Ckmap = CkappaGen(Wx)
+	Pkmap = PkappaGen(Wx)
+	for cut in (22, 23, 24):
+		print 'Wx, cut', Wx, cut
+		galn = galnGen(Wx, cut)
+		Csim_err_arr = sim_err(Ckmap, galn, Wx)
+		Psim_err_arr = sim_err(Pkmap, galn, Wx)
+		save(main_dir+'powspec/CCsim_cfht_cut%i_W%i.npy'%(cut, Wx), Csim_err_arr)
+		save(main_dir+'powspec/CCsim_planck_cut%i_W%i.npy'%(cut, Wx), Psim_err_arr)
+		
+
+	
 #for cut in (22,23, 24):
 	##planck_CC_err = array([theory_CC_err(PkappaGen(Wx), galnGen(Wx,cut), Wx) for Wx in range(1,5)])
 
@@ -89,8 +160,8 @@ def find_SNR (CC_arr, errK_arr):
 	#planck_SNR = find_SNR (planck_CC_err[:,0,:], planck_CC_err[:,1,:])	
 	#cfht_SNR = find_SNR (cfht_CC_err[:,0,:], cfht_CC_err[:,1,:])
 	
-	#print 'i<%i\tSNR(planck)=%.2f\tSNR(cfht)=%.2f (using mean, or 6 bins)'%(cut,planck_SNR[0],cfht_SNR[0])
-	#print 'i<%i\tSNR(planck)=%.2f\tSNR(cfht)=%.2f (using all 24 bins)'%(cut,planck_SNR[1],cfht_SNR[1])
+	##print 'i<%i\tSNR(planck)=%.2f\tSNR(cfht)=%.2f (using mean, or 6 bins)'%(cut,planck_SNR[0],cfht_SNR[0])
+	##print 'i<%i\tSNR(planck)=%.2f\tSNR(cfht)=%.2f (using all 24 bins)'%(cut,planck_SNR[1],cfht_SNR[1])
 	
 	#from pylab import *
 	#f=figure(figsize=(8,8))
@@ -103,10 +174,18 @@ def find_SNR (CC_arr, errK_arr):
 		#ax=f.add_subplot(2,1,i)
 		#iCC, iSNR = SNR_arr[i-1]
 		#CC_arr = iCC[:,0,:]*ell_arr*1e5
-		#errK_arr = iCC[:,1,:]*ell_arr*1e5
-		#SNR, SNR2, CC_mean, err_mean =iSNR
-		#CC_mean *=1e5*ell_arr
-		#err_mean *=1e5*ell_arr
+		
+		#errK_arr = array([std(load(main_dir+'powspec/CCsim_cfht_cut%i_W%i.npy'%(cut, Wx)), axis=0) for Wx in range(1,5)])*1e5*ell_arr
+		#SNR, SNR2, CC_mean, err_mean = find_SNR(CC_arr/(1e5*ell_arr), errK_arr/(1e5*ell_arr))
+		##errK_arr = iCC[:,1,:]*ell_arr*1e5
+		##SNR, SNR2, CC_mean, err_mean =iSNR
+		
+		#print 'i<%i\tSNR(%s)=%.2f (6bins), %.2f (24bins)'%(cut,proj,SNR, SNR2)
+		##print 'i<%i\tSNR(planck)=%.2f\tSNR(cfht)=%.2f (using all 24 bins)'%(cut,planck_SNR[1],cfht_SNR[1])
+	
+	
+		#CC_mean *= 1e5*ell_arr
+		#err_mean *= 1e5*ell_arr
 		
 		#ax.bar(ell_arr, 2*err_mean, bottom=(CC_mean-err_mean), width=ones(len(ell_arr))*80, align='center',ec='brown',fc='none',linewidth=1.5, alpha=1.0)#
 		
@@ -128,7 +207,7 @@ def find_SNR (CC_arr, errK_arr):
 			#ax.set_title('i<%s, SNR(planck)=%.2f, SNR(cfht)=%.2f'%(cut, planck_SNR[0], cfht_SNR[0]),fontsize=14)
 			##ax.set_ylim(-4,5)
 		#ax.tick_params(labelsize=14)
-	#savefig(main_dir+'plot/CC_cut%s.jpg'%(cut))
+	#savefig(main_dir+'plot/CC_simErr_cut%s.jpg'%(cut))
 	#close()
-	##show()
+	#show()
 
