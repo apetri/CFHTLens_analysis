@@ -123,24 +123,36 @@ class GRF_Gen:
 		return self.GRF
 
 
-def sim_err (kmap, galn, Wx, seednum=0):
-	'''generate 100 GRF from galn, then compute the 100 cross correlation with kmap'''
-	random.seed(seednum)
-	x = GRF_Gen(galn)
-	#CC_arr = array([WLanalysis.CrossCorrelate(kmap*mask_arr[Wx-1], x.newGRF()*mask_arr[Wx-1], edges = edges_arr[Wx-1], sigmaG1=1.0, sigmaG2=1.0)[1]/fmask2_arr[Wx-1]/factor for i in range(100)])
-	iCC = lambda i: WLanalysis.CrossCorrelate(kmap*mask_arr[Wx-1], x.newGRF()*mask_arr[Wx-1], edges = edges_arr[Wx-1], sigmaG1=1.0, sigmaG2=1.0)[1]/fmask2_arr[Wx-1]/factor
-	CC_arr = array(p.map(iCC, range(100)))
-	return CC_arr
+#def sim_err (kmap, galn, Wx, seednum=0):
+	#'''generate 100 GRF from galn, then compute the 100 cross correlation with kmap'''
+	#random.seed(seednum)
+	#x = GRF_Gen(galn)
+	##CC_arr = array([WLanalysis.CrossCorrelate(kmap*mask_arr[Wx-1], x.newGRF()*mask_arr[Wx-1], edges = edges_arr[Wx-1], sigmaG1=1.0, sigmaG2=1.0)[1]/fmask2_arr[Wx-1]/factor for i in range(100)])
+	#iCC = lambda i: WLanalysis.CrossCorrelate(kmap*mask_arr[Wx-1], x.newGRF()*mask_arr[Wx-1], edges = edges_arr[Wx-1], sigmaG1=1.0, sigmaG2=1.0)[1]/fmask2_arr[Wx-1]/factor
+	#CC_arr = array(p.map(iCC, range(100)))
+	#return CC_arr
 
 ########### compute sim error ######################
+seednum=0
 for Wx in range(1,5):
 	Ckmap = CkappaGen(Wx)
 	Pkmap = PkappaGen(Wx)
 	for cut in (22, 23, 24):
 		print 'Wx, cut', Wx, cut
 		galn = galnGen(Wx, cut)
-		Csim_err_arr = sim_err(Ckmap, galn, Wx)
-		Psim_err_arr = sim_err(Pkmap, galn, Wx)
+		
+		random.seed(seednum)
+		x = GRF_Gen(galn)
+		
+		iCCP = lambda i: WLanalysis.CrossCorrelate(Pkmap*mask_arr[Wx-1], x.newGRF()*mask_arr[Wx-1], edges = edges_arr[Wx-1], sigmaG1=1.0, sigmaG2=1.0)[1]/fmask2_arr[Wx-1]/factor
+		Psim_err_arr = array(p.map(iCCP, range(100)))
+		
+		random.seed(seednum)
+		iCCC = lambda i: WLanalysis.CrossCorrelate(Ckmap*mask_arr[Wx-1], x.newGRF()*mask_arr[Wx-1], edges = edges_arr[Wx-1], sigmaG1=1.0, sigmaG2=1.0)[1]/fmask2_arr[Wx-1]/factor
+		Csim_err_arr = array(p.map(iCCC, range(100)))
+		
+		#Csim_err_arr = sim_err(Ckmap, galn, Wx)
+		#Psim_err_arr = sim_err(Pkmap, galn, Wx)
 		save(main_dir+'powspec/CCsim_cfht_cut%i_W%i.npy'%(cut, Wx), Csim_err_arr)
 		save(main_dir+'powspec/CCsim_planck_cut%i_W%i.npy'%(cut, Wx), Psim_err_arr)
 		
