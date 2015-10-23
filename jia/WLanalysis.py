@@ -750,7 +750,7 @@ def extrap1d(interpolator):
 
 	return ufunclike
 
-def GRF_Gen (kmap):
+def GRF_Gen_1map (kmap):
 	'''return a random gaussian field that has the same power spectrum as img.
 	'''
 	size = kmap.shape[0]
@@ -784,3 +784,19 @@ def GRF_Gen (kmap):
 	GRF_image = fftpack.ifft2(ifftshift(psd2D_GRF_Fourier))[0]
 	GRF = sqrt(2)*real(GRF_image)
 	return GRF
+
+class GRF_Gen:
+	'''return a random gaussian field that has the same power spectrum as img.
+	'''
+	def __init__(self, kmap):
+		self.size = kmap.shape[0]
+		self.GRF = rand(self.size,self.size)
+		self.p2D_mean, self.p2D_std = ps1DGen(kmap)
+	
+	def newGRF(self):
+		self.psd2D_GRF = gauss(self.p2D_mean, self.p2D_std)
+		self.rand_angle = rand(self.size**2).reshape(self.size,self.size)*2.0*pi
+		self.psd2D_GRF_Fourier = sqrt(self.psd2D_GRF) * [cos(self.rand_angle) + 1j * sin(self.rand_angle)]
+		self.GRF_image = fftpack.ifft2(ifftshift(self.psd2D_GRF_Fourier))[0]
+		self.GRF = sqrt(2)*real(self.GRF_image)
+		return self.GRF
