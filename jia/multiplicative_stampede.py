@@ -156,59 +156,63 @@ if compute_sim_err:
 
 ############ calculate theory #################
 if compute_model:
-	cut=23
-	from scipy.integrate import quad
-	z_center= arange(0.025, 3.5, 0.05)
-	dndzgal = load(main_dir+'dndz/dndz_0213_cut%s_noweight.npy'%(cut))[:,1]
-	dndzkappa = load(main_dir+'dndz/dndz_0213_weighted.npy')[:,1]
-	Ptable = genfromtxt('/Users/jia/weaklensing/cmblensing/P_delta_Planck15')
-	z_center = concatenate([[0,], z_center, [4.0,]])
-	dndzgal = concatenate([[0,], dndzgal, [0,]])
-	dndzkappa = concatenate([[0,], dndzkappa, [0,]])
-	dndzgal_interp = interpolate.interp1d(z_center,dndzgal ,kind='cubic')
-	dndzkappa_interp = interpolate.interp1d(z_center,dndzkappa ,kind='cubic')
+	for cut in (22,23,24):#cut=22
+		print cut
+		from scipy.integrate import quad
+		z_center= arange(0.025, 3.5, 0.05)
+		dndzgal = load(main_dir+'dndz/dndz_0213_cut%s_noweight.npy'%(cut))[:,1]
+		dndzkappa = load(main_dir+'dndz/dndz_0213_weighted.npy')[:,1]
+		Ptable = genfromtxt('/Users/jia/weaklensing/cmblensing/P_delta_Planck15')
+		z_center = concatenate([[0,], z_center, [4.0,]])
+		dndzgal = concatenate([[0,], dndzgal, [0,]])
+		dndzkappa = concatenate([[0,], dndzkappa, [0,]])
+		dndzgal /= 0.05*sum(dndzgal)
+		dndzkappa /= 0.05*sum(dndzkappa)
+		dndzgal_interp = interpolate.interp1d(z_center,dndzgal ,kind='cubic')
+		dndzkappa_interp = interpolate.interp1d(z_center,dndzkappa ,kind='cubic')
 
-	OmegaM = 0.3156#,0.29982##0.33138#
-	H0 = 67.27
-	OmegaV = 1.0-OmegaM
-	h = H0/100.0
-	c = 299792.458#km/s
-	H_inv = lambda z: 1.0/(H0*sqrt(OmegaM*(1+z)**3+OmegaV))
-	DC = lambda z: c*quad(H_inv, 0, z)[0] # comoving distance Mpc
-	z_ls = 1100 #last scattering
-	z_arr = linspace(0, 4.0, 200)
+		OmegaM = 0.3156#,0.29982##0.33138#
+		H0 = 67.27
+		OmegaV = 1.0-OmegaM
+		h = H0/100.0
+		c = 299792.458#km/s
+		H_inv = lambda z: 1.0/(H0*sqrt(OmegaM*(1+z)**3+OmegaV))
+		DC_fcn = lambda z: c*quad(H_inv, 0, z)[0] # comoving distance Mpc
+		z_ls = 1100 #last scattering
+		z_arr = linspace(0, 4.0, 200)
+		DC = interpolate.interp1d(linspace(0,1100,300), [DC_fcn(iz) for iz in linspace(0,1100,300)])
+		
+		integrand = lambda zs, z: dndzkappa_interp(zs)*(1-DC(z)/DC(zs))
+		W_wl_fcn = lambda z: quad(integrand, z, 4.0, args=(z,))[0]
+		W_wl0 = array(map(W_wl_fcn, z_arr))
+		W_wl = interpolate.interp1d(z_arr, W_wl0)
+		W_cmb = lambda z: (1-DC(z)/DC(z_ls))
 
-	integrand = lambda zs, z: dndzkappa_interp(zs)*(1-DC(z)/DC(zs))
-	W_wl_fcn = lambda z: quad(integrand, z, 4.0, args=(z,))[0]
-	W_cmb = lambda z: (1-DC(z)/DC(z_ls))#(1+z)*H_inv(z)*DC(z)/c*
-	W_wl0 = array(map(W_wl_fcn, z_arr))
-	W_wl = interpolate.interp1d(z_arr, W_wl0)
-	#W_cmb_arr = array([W_cmb(z) for z in z_arr])
+		aa = array([1/1.05**i for i in arange(33)])
+		zz = 1.0/aa-1 # redshifts
+		kk = Ptable.T[0]
+		iZ, iK = meshgrid(zz,kk)
+		Z, K = iZ.flatten(), iK.flatten()
+		P_deltas = Ptable[:,1:34].flatten()
 
-	aa = array([1/1.05**i for i in arange(33)])
-	zz = 1.0/aa-1 # redshifts
-	kk = Ptable.T[0]
-	iZ, iK = meshgrid(zz,kk)
-	Z, K = iZ.flatten(), iK.flatten()
-	P_deltas = Ptable[:,1:34].flatten()
+		Pmatter_interp = interpolate.CloughTocher2DInterpolator(array([K*h, Z]).T, 2.0*pi**2*P_deltas/(K*h)**3)
+		Pmatter = lambda k, z: Pmatter_interp (k, z)
+		
+		ell_arr2 = linspace(30, 2000, 20)
 
-	Pmatter_interp = interpolate.CloughTocher2DInterpolator(array([K*h, Z]).T, 2.0*pi**2*P_deltas/(K*h)**3)
-	Pmatter = lambda k, z: Pmatter_interp (k, z)
-	
-	ell_arr2 = linspace(1e-5, 2000, 200)
-	Cplan_integrand = lambda z, ell: (1.0+z)/(H_inv(z)*DC(z))*dndzgal_interp(z)*W_cmb(z)*Pmatter(ell/DC(z), z)
+		Cplan_integrand = lambda z, ell: (1.0+z)/DC(z)*dndzgal_interp(z)*W_cmb(z)*Pmatter(ell/DC(z), z)
 
-	Ccfht_integrand = lambda z, ell: (1.0+z)/(H_inv(z)*DC(z))*dndzgal_interp(z)*W_wl(z)*Pmatter(ell/DC(z), z)
-	
-	print 'Cplan_arr'
-	Cplan_arr = array([quad(Cplan_integrand, 0.002, 3.5 , args=(iell))[0] for iell in ell_arr2])
-	
-	print 'Ccfht_arr'
-	Ccfht_arr = array([quad(Ccfht_integrand, 0.002, 3.5 , args=(iell))[0] for iell in ell_arr2])
-	
-	save(main_dir+'powspec/Cplanck_cut%s_arr.npy'%(cut), array([ell_arr2, Cplan_arr]).T)
-	save(main_dir+'powspec/Ccfht_cut%s_arr.npy'%(cut), array([ell_arr2, Ccfht_arr]).T)
-	save(main_dir+'powspec/Ccfht_over_Cplanck_cut%s.npy'%(cut), array([ell_arr2, Ccfht_arr/Cplan_arr]).T)
+		Ccfht_integrand = lambda z, ell: (1.0+z)/DC(z)*dndzgal_interp(z)*W_wl(z)*Pmatter(ell/DC(z), z)
+		
+		print 'Cplan_arr'
+		Cplan_arr = 1.5*OmegaM*(H0/c)**2*array([quad(Cplan_integrand, 0.002, 3.5 , args=(iell))[0] for iell in ell_arr2])
+		
+		print 'Ccfht_arr'
+		Ccfht_arr = 1.5*OmegaM*(H0/c)**2*array([quad(Ccfht_integrand, 0.002, 3.5 , args=(iell))[0] for iell in ell_arr2])
+		
+		save(main_dir+'powspec/Cplanck_cut%s_arr.npy'%(cut), array([ell_arr2, Cplan_arr]).T)
+		save(main_dir+'powspec/Ccfht_cut%s_arr.npy'%(cut), array([ell_arr2, Ccfht_arr]).T)
+		save(main_dir+'powspec/Ccfht_over_Cplanck_cut%s.npy'%(cut), array([ell_arr2, Ccfht_arr/Cplan_arr]).T)
 
 ############ done theory ######################
 
@@ -227,8 +231,8 @@ if compute_model:
 	#print 'i<%i\tSNR(planck)=%.2f\tSNR(cfht)=%.2f (all 20x4=80bins)'%(cut,planck_SNR[1],cfht_SNR[1])
 	
 	
-############# plotting #################
-for cut in (23, 24): ######## 3 field cross power spectrum
+############# plotting: 2 cross-correlation and theory #################
+for cut in (22, 23, 24): ######## 3 field cross power spectrum
 	### compute C_ell, only needed once
 	#planck_CC_err = array([theory_CC_err(PkappaGen(Wx), galnGen(Wx,cut), Wx) for Wx in range(1,5)])
 	#cfht_CC_err = array([theory_CC_err(CkappaGen(Wx), galnGen(Wx,cut), Wx) for Wx in range(1,5)])
@@ -249,25 +253,28 @@ for cut in (23, 24): ######## 3 field cross power spectrum
 	SNR_arr = ((planck_CC_err, planck_SNR), (cfht_CC_err, cfht_SNR))
 	
 	##########simerr
-	#errK_arr2 = array([std(load(main_dir+'powspec/CCsim_cut%i_W%i.npy'%(cut, Wx)), axis=0) for Wx in range(1,5)])*1e5*ell_arr
+	errK_arr2 = array([std(load(main_dir+'powspec/CCsim_cut%i_W%i.npy'%(cut, Wx)), axis=0) for Wx in range(1,5)])*1e5*ell_arr
 	##################
 	for i in (1,2):
 		if i == 1:
 			proj='planck'
+			
 		if i == 2:
 			proj='cfht'
+			
+		ell_theo, CC_theo = load(main_dir+'powspec/C%s_cut%s_arr.npy'%(proj,cut)).T
 		ax=f.add_subplot(2,1,i)
 		iCC, iSNR = SNR_arr[i-1]
 		CC_arr = iCC[:,0,:]*ell_arr*1e5
-		
-		
-		##########simerr
-		#errK_arr = errK_arr2[:,i-1,:]
-		#SNR, SNR2, CC_mean, err_mean = find_SNR(CC_arr/(1e5*ell_arr), errK_arr/(1e5*ell_arr))
-		##################
-		
+		ax.plot(ell_theo, CC_theo*ell_theo*1e5, '--',label='Planck')
+
 		errK_arr = iCC[:,1,:]*ell_arr*1e5
 		SNR, SNR2, CC_mean, err_mean =iSNR
+		
+		##########uncomment to use simerr
+		errK_arr = errK_arr2[:,i-1,:]
+		SNR, SNR2, CC_mean, err_mean = find_SNR(CC_arr/(1e5*ell_arr), errK_arr/(1e5*ell_arr))
+		##################
 		
 		print 'i<%i\tSNR(%s)=%.2f (6bins),\t%.2f (24bins)'%(cut,proj,SNR, SNR2)
 		#print 'i<%i\tSNR(planck)=%.2f\tSNR(cfht)=%.2f (using all 24 bins)'%(cut,planck_SNR[1],cfht_SNR[1])
@@ -294,12 +301,12 @@ for cut in (23, 24): ######## 3 field cross power spectrum
 			#ax.set_ylim(-4,5)
 		ax.tick_params(labelsize=14)
 
-	show()
-	#savefig(main_dir+'plot/CC_simErr_cut%s.jpg'%(cut))
-	#close()
+	#show()
+	savefig(main_dir+'plot/CC_simErr_cut%s.jpg'%(cut))
+	close()
 
 ############## ratio plot
-#for cut in (24,):
+#for cut in range(22,25):
 	
 	#planck_CC_arr = load(main_dir+'powspec/planck_CC_err_%s.npy'%(cut))
 	#cfht_CC_arr = load(main_dir+'powspec/cfht_CC_err_%s.npy'%(cut))
@@ -330,6 +337,6 @@ for cut in (23, 24): ######## 3 field cross power spectrum
 
 	#ax.set_title('i<%s, SNR=%.2f (6bins), %.2f (24bins)'%(cut, SNR, SNR2), fontsize=14)
 	#ax.set_ylim(-1,1)
-	#show()
+	##show()
 	#savefig(main_dir+'plot/CC_ratio_cut%s.jpg'%(cut))
 	#close()

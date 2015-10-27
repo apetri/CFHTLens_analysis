@@ -9,7 +9,7 @@ import random
 
 CMBlensing_dir ='/Users/jia/weaklensing/CMBnonGaussian/'
 
-kmapGen0 = lambda r: load(CMBlensing_dir+'noisy_maps_blake/sampleKappaMap0-34/sampleKappaMap%03d.npy'%(r))
+#kmapGen0 = lambda r: load(CMBlensing_dir+'noisy_maps_blake/sampleKappaMap0-34/sampleKappaMap%03d.npy'%(r))
 kmapGen = lambda r: WLanalysis.smooth(kmapGen0(r), 3.2)
 
 #sigmaG_arr = array([0.5, 1.0, 2.0, 5.0, 8.0])
@@ -24,7 +24,12 @@ ell_arr77 = WLanalysis.PowerSpectrum(zeros(shape=(77,77)), bins=bins)[0]
 ##kmap0_smooth10=WLanalysis.smooth(kmap0_original,100)
 #kmap0_smooth10=load(CMBlensing_dir+'test_maps/kmap0_smooth10arcmin.npy')
 import pickle
-FTmapGen = lambda r: pickle.load(open('/Users/jia/Desktop/kappaMap_TT_Jia/kappaMap%03dTT_3.pkl'%(r)))
+#FTmapGen = lambda r: pickle.load(open('/Users/jia/Desktop/kappaMap_TT_Jia/kappaMap%03dTT_3.pkl'%(r)))
+
+FTmapGen = lambda r: pickle.load(open(CMBlensing_dir+'kappaOutput_gaus/kappaMap%03dTT_3.pkl'%(r)))
+
+FTmapGen = lambda r: pickle.load(open(CMBlensing_dir+'kappaOutput_TT/kappaMap%03dTT_3.pkl'%(r)))
+
 
 def FT_PowerSpectrum (r, bins=10, return_ell_arr=0):
 	a=FTmapGen(r)
@@ -72,7 +77,7 @@ ps_all = all_stats[:,:50]
 PDF_all = all_stats[:, 450:550]
 peaks_all = all_stats[:, -25:]
 
-all_stats77 = array([compute_GRF_PDF_ps_pk(r, IFT=1) for r in range(35)])
+all_stats77 = array([compute_GRF_PDF_ps_pk(r, IFT=1) for r in range(1024)])
 ps_all77 = all_stats77[:,:bins]
 PDF_all77 = all_stats77[:, bins:bins+len(PDFbins)-1]
 peaks_all77 = all_stats77[:, bins+len(PDFbins)-1:]
