@@ -469,7 +469,7 @@ def bell_2D (size, sigma):
 	bell_mat = exp(-(r*sigma*2*pi/size)**2/2.0)
 	return bell_mat
 	
-def azimuthalAverage(image, center = None, edges = None, logbins = True, bins = 50):
+def azimuthalAverage(image, center = None, edges = None, logbins = True, bins = 50, return_num_modes=0):
 	"""
 	Calculate the azimuthally averaged radial profile.
 	Input:
@@ -514,8 +514,11 @@ def azimuthalAverage(image, center = None, edges = None, logbins = True, bins = 
 	csim = np.cumsum(i_sorted, dtype=float)
 	tbin = csim[hist_sum[1:]] - csim[hist_sum[:-1]]
 	radial_prof = tbin/hist_ind[1:]
-	
-	return edges[1:], radial_prof
+	if return_num_modes:
+		#where N=hist_sum[1:]-hist_sum[:-1] is the number of modes in each bin, but note N/2 is the num of independent modes
+		return edges[1:], radial_prof, (hist_sum[1:]-hist_sum[:-1])/2.0
+	else:
+		return edges[1:], radial_prof
 
 edge2center = lambda x: x[:-1]+0.5*(x[1:]-x[:-1])
 
@@ -784,6 +787,34 @@ def GRF_Gen_1map (kmap):
 	GRF_image = fftpack.ifft2(ifftshift(psd2D_GRF_Fourier))[0]
 	GRF = sqrt(2)*real(GRF_image)
 	return GRF
+
+def ps1DGen(kmap):
+	size = kmap.shape[0]
+	F = fftshift(fftpack.fft2(kmap.astype(float)))
+	psd2D = np.abs(F)**2 # = real**2 + imag**2
+
+	ell_arr0, psd1D0, Nmode = azimuthalAverage(psd2D, center=None, edges = arange(sqrt(2)*size/2), return_num_modes=1)
+	ell_arr_center = edge2center(ell_arr0)
+
+	randfft2 = zeros(shape=(size, size))
+	y, x = np.indices((size,size))
+	center = np.array([(x.max()-x.min())/2.0, (x.max()-x.min())/2.0])
+	if size%2 == 0:
+		center+=0.5
+	r = np.hypot(x - center[0], y - center[1])
+
+	extrap = psd1D0[-1]+(ceil(sqrt(2)*size/2+1.0)-ell_arr_center[-1])*(psd1D0[-1]-psd1D0[-2])/(ell_arr_center[-1]-ell_arr_center[-2])
+	
+	ell_arr = array([0,]+list(ell_arr_center)+ [ceil(sqrt(2)*size/2+1.0),])
+	psd1D = array([psd1D0[0],]+list(psd1D0)+[extrap,])
+
+	p1D_interp = interpolate.griddata(ell_arr, psd1D, r.flatten(), method='nearest')
+	p1D_interp[isnan(p1D_interp)]=0
+
+	p2D_mean = p1D_interp.reshape(size,size)
+	p2D_std = p2D_mean*sqrt(2.0)#was sqrt(P2D_mean/2)
+	#p2D_std = p2D_mean/sqrt(Nmode)
+	return p2D_mean, p2D_std
 
 class GRF_Gen:
 	'''return a random gaussian field that has the same power spectrum as img.
