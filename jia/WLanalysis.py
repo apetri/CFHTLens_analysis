@@ -759,7 +759,7 @@ def GRF_Gen_1map (kmap):
 	size = kmap.shape[0]
 	F = fftshift(fftpack.fft2(kmap.astype(float)))
 	psd2D = np.abs(F)**2 # = real**2 + imag**2
-	
+
 	ell_arr0, psd1D0 = azimuthalAverage(psd2D, center=None, edges = arange(sqrt(2)*size/2))
 	ell_arr_center = edge2center(ell_arr0)
 
@@ -769,23 +769,27 @@ def GRF_Gen_1map (kmap):
 	if size%2 == 0:
 		center+=0.5
 	r = np.hypot(x - center[0], y - center[1])
-	
+
 	extrap = psd1D0[-1]+(ceil(sqrt(2)*size/2+1.0)-ell_arr_center[-1])*(psd1D0[-1]-psd1D0[-2])/(ell_arr_center[-1]-ell_arr_center[-2])
-	
+
 	ell_arr = array([0,]+list(ell_arr_center)+ [ceil(sqrt(2)*size/2+1.0),])
 	psd1D = array([psd1D0[0],]+list(psd1D0)+[extrap,])
-	
+
 	p1D_interp = interpolate.griddata(ell_arr, psd1D, r.flatten(), method='nearest')
 	p1D_interp[isnan(p1D_interp)]=0
 
 	p2D_mean = p1D_interp.reshape(size,size)
-	p2D_std = sqrt(p2D_mean/2.0)
-	psd2D_GRF = gauss(p2D_mean, p2D_std)
-	rand_angle = rand(size**2).reshape(size,size)*2.0*pi
-	psd2D_GRF_Fourier = sqrt(psd2D_GRF) * [cos(rand_angle) + 1j * sin(rand_angle)]
-	###amax(abs(abs(psd2D_GRF_Fourier)**2 - psd2D_GRF)) = 1e-8, pass
-	GRF_image = fftpack.ifft2(ifftshift(psd2D_GRF_Fourier))[0]
-	GRF = sqrt(2)*real(GRF_image)
+
+	############
+	#rand_angle = rand(size,size)*2.0*pi
+	#psd2D_GRF_Fourier = sqrt(p2D_mean*2.0)*random.normal(0, 1, (size,size)) * (cos(rand_angle) + 1j * sin(rand_angle))
+	
+	######## or ###########
+	psd2D_GRF_Fourier = sqrt(p2D_mean)* (random.normal(0, 1, (size,size)) + 1j*random.normal(0, 1, (size,size)))
+	
+	GRF_image = fftpack.ifft2(ifftshift(psd2D_GRF_Fourier))
+	GRF = real(GRF_image)
+	
 	return GRF
 
 def ps1DGen(kmap):
@@ -793,7 +797,7 @@ def ps1DGen(kmap):
 	F = fftshift(fftpack.fft2(kmap.astype(float)))
 	psd2D = np.abs(F)**2 # = real**2 + imag**2
 
-	ell_arr0, psd1D0, Nmode = azimuthalAverage(psd2D, center=None, edges = arange(sqrt(2)*size/2), return_num_modes=1)
+	ell_arr0, psd1D0 = azimuthalAverage(psd2D, center=None, edges = arange(sqrt(2)*size/2))
 	ell_arr_center = edge2center(ell_arr0)
 
 	randfft2 = zeros(shape=(size, size))
@@ -812,9 +816,9 @@ def ps1DGen(kmap):
 	p1D_interp[isnan(p1D_interp)]=0
 
 	p2D_mean = p1D_interp.reshape(size,size)
-	p2D_std = p2D_mean*sqrt(2.0)#was sqrt(P2D_mean/2)
+	#p2D_std = p2D_mean*sqrt(2.0)#was sqrt(P2D_mean/2)
 	#p2D_std = p2D_mean/sqrt(Nmode)
-	return p2D_mean, p2D_std
+	return p2D_mean#, p2D_std
 
 class GRF_Gen:
 	'''return a random gaussian field that has the same power spectrum as img.
@@ -822,12 +826,11 @@ class GRF_Gen:
 	def __init__(self, kmap):
 		self.size = kmap.shape[0]
 		self.GRF = rand(self.size,self.size)
-		self.p2D_mean, self.p2D_std = ps1DGen(kmap)
+		self.p2D_mean = ps1DGen(kmap)
 	
 	def newGRF(self):
-		self.psd2D_GRF = gauss(self.p2D_mean, self.p2D_std)
-		self.rand_angle = rand(self.size**2).reshape(self.size,self.size)*2.0*pi
-		self.psd2D_GRF_Fourier = sqrt(self.psd2D_GRF) * [cos(self.rand_angle) + 1j * sin(self.rand_angle)]
-		self.GRF_image = fftpack.ifft2(ifftshift(self.psd2D_GRF_Fourier))[0]
-		self.GRF = sqrt(2)*real(self.GRF_image)
+		#self.rand_angle = rand(self.size**2).reshape(self.size,self.size)*2.0*pi
+		self.psd2D_GRF = sqrt(self.p2D_mean)* (random.normal(0, 1, (size,size)) + 1j*random.normal(0, 1, (size,size)))
+		self.GRF_image = fftpack.ifft2(ifftshift(self.psd2D_GRF))
+		self.GRF = real(self.GRF_image)
 		return self.GRF
