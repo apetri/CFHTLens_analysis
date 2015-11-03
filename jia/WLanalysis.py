@@ -816,9 +816,7 @@ def ps1DGen(kmap):
 	p1D_interp[isnan(p1D_interp)]=0
 
 	p2D_mean = p1D_interp.reshape(size,size)
-	#p2D_std = p2D_mean*sqrt(2.0)#was sqrt(P2D_mean/2)
-	#p2D_std = p2D_mean/sqrt(Nmode)
-	return p2D_mean#, p2D_std
+	return p2D_mean
 
 class GRF_Gen:
 	'''return a random gaussian field that has the same power spectrum as img.
