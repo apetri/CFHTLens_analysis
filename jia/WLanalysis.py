@@ -828,7 +828,7 @@ class GRF_Gen:
 	
 	def newGRF(self):
 		#self.rand_angle = rand(self.size**2).reshape(self.size,self.size)*2.0*pi
-		self.psd2D_GRF = sqrt(self.p2D_mean)* (random.normal(0, 1, (size,size)) + 1j*random.normal(0, 1, (size,size)))
+		self.psd2D_GRF = sqrt(self.p2D_mean)* (random.normal(0, 1, (self.size,self.size)) + 1j*random.normal(0, 1, (self.size,self.size)))
 		self.GRF_image = fftpack.ifft2(ifftshift(self.psd2D_GRF))
 		self.GRF = real(self.GRF_image)
 		return self.GRF
