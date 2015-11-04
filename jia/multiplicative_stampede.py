@@ -23,8 +23,8 @@ compute_sim_err = 1
 compute_model = 0
 #################### constants and small functions ##################
 sizes = (1330, 800, 1120, 950)
-main_dir = '/Users/jia/weaklensing/multiplicative/'
-#main_dir = '/work/02977/jialiu/multiplicative/'
+#main_dir = '/Users/jia/weaklensing/multiplicative/'
+main_dir = '/work/02977/jialiu/multiplicative/'
 
 galnGen = lambda Wx, cut: load (main_dir+'cfht_galn/W%i_cut%i.npy'%(Wx, cut))
 CkappaGen = lambda Wx: WLanalysis.readFits (main_dir+'cfht_kappa/W%s_KS_1.3_lo_sigmaG10.fit'%(Wx))
