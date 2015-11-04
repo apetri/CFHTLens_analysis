@@ -19,7 +19,7 @@ import scipy.ndimage as snd
 import WLanalysis
 import sys
 
-compute_sim_err = 0
+compute_sim_err = 1
 compute_model = 0
 #################### constants and small functions ##################
 sizes = (1330, 800, 1120, 950)
@@ -148,7 +148,7 @@ if compute_sim_err:
 		p.wait()
 		sys.exit(0)
 	CCsim_err_arr = array(p.map(iCC, range(100)))
-	save(main_dir+'powspec/CCsim_nov1_cut%i_W%i.npy'%(cut, Wx), CCsim_err_arr)
+	save(main_dir+'powspec/CCsim_nov3_cut%i_W%i.npy'%(cut, Wx), CCsim_err_arr)
 
 	p.close()
 ############# finish compute sim error #####################
