@@ -34,7 +34,7 @@ PkappaGen = lambda Wx: load (main_dir+'planck2015_kappa/dat_kmap_flipper2048_CFH
 CmaskGen = lambda Wx: load (main_dir+'cfht_mask/Mask_W%s_0.7_sigmaG10.npy'%(Wx))
 PmaskGen = lambda Wx: load (main_dir+'planck2015_mask/kappamask_flipper2048_CFHTLS_W%s_map.npy'%(Wx))
 maskGen = lambda Wx: CmaskGen(Wx)*PmaskGen(Wx)
-PlanckSim15Gen = lambda Wx, r: load('/work/02977/jialiu/cmblensing/planck/sim15/sim_%04d_kmap_CFHTLS_W4%s.npy'%(r, Wx))
+PlanckSim15Gen = lambda Wx, r: load('/work/02977/jialiu/cmblensing/planck/sim15/sim_%04d_kmap_CFHTLS_W%s.npy'%(r, Wx))
 
 edgesGen = lambda Wx: linspace(1,60,7)*sizes[Wx-1]/1330.0
 ### omori & holder bin edges #####
