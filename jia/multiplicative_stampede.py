@@ -132,17 +132,26 @@ if compute_sim_err:
 		
 	seednum=0
 	Wx, cut = int(sys.argv[1]), int(sys.argv[2])
-	Ckmap = CkappaGen(Wx)*mask_arr[Wx-1]
+	Ckmap0 = CkappaGen(Wx)*mask_arr[Wx-1]
 	Pkmap = PkappaGen(Wx)*mask_arr[Wx-1]
 
 	print 'Wx, cut', Wx, cut
 	galn = galnGen(Wx, cut)*mask_arr[Wx-1]
-
+	igaln = galn.copy()
+	
 	random.seed(seednum)
-	x = WLanalysis.GRF_Gen(galn)
-
+	#x = WLanalysis.GRF_Gen(galn)
+	
+	CFHTx = WLanalysis.GRF_Gen (Ckmap0)
+	
 	def iCC (i):
-		igaln = x.newGRF()*mask_arr[Wx-1]
+		
+		#igaln = x.newGRF()*mask_arr[Wx-1]
+		######## # use Planck sim map, and CFHT GRF map
+		Pkmap = PlanckSim15Gen(Wx, r)*mask_arr[Wx-1]
+		Ckmap = CFHT.newGRF()
+		#############
+		
 		CCP = WLanalysis.CrossCorrelate(Pkmap, igaln, edges = edges_arr[Wx-1], sigmaG1=1.0, sigmaG2=1.0)[1]/fmask2_arr[Wx-1]/factor
 		CCC = WLanalysis.CrossCorrelate(Ckmap, igaln, edges = edges_arr[Wx-1], sigmaG1=1.0, sigmaG2=1.0)[1]/fmask2_arr[Wx-1]/factor
 		return CCP, CCC
@@ -151,7 +160,7 @@ if compute_sim_err:
 		p.wait()
 		sys.exit(0)
 	CCsim_err_arr = array(p.map(iCC, range(100)))
-	save(main_dir+'powspec/CCsim_nov3_cut%i_W%i.npy'%(cut, Wx), CCsim_err_arr)
+	save(main_dir+'powspec/CC_Plancksim_cut%i_W%i.npy'%(cut, Wx), CCsim_err_arr)
 
 	p.close()
 ############# finish compute sim error #####################
