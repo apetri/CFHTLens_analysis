@@ -148,7 +148,7 @@ if compute_sim_err:
 		
 		#igaln = x.newGRF()*mask_arr[Wx-1]
 		######## # use Planck sim map, and CFHT GRF map
-		Pkmap = PlanckSim15Gen(Wx, r)*mask_arr[Wx-1]
+		Pkmap = PlanckSim15Gen(Wx, i)*mask_arr[Wx-1]
 		Ckmap = CFHTx.newGRF()
 		#############
 		
