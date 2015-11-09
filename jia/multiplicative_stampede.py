@@ -162,7 +162,7 @@ if compute_sim_err:
 		p.wait()
 		sys.exit(0)
 	CCsim_err_arr = array(p.map(iCC, range(100)))
-	save(main_dir+'powspec/CC_Plancksim_cut%i_W%i.npy'%(cut, Wx), CCsim_err_arr)
+	save(main_dir+'powspec/CC_Plancksim_CFHTrot_cut%i_W%i.npy'%(cut, Wx), CCsim_err_arr)
 
 	p.close()
 ############# finish compute sim error #####################
