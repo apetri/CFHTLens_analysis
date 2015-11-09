@@ -151,7 +151,7 @@ if compute_sim_err:
 		######## # use Planck sim map, and CFHT GRF map
 		Pkmap = PlanckSim15Gen(Wx, i)*mask_arr[Wx-1]
 		#Ckmap = CFHTx.newGRF()
-		Ckmap = load('/work/02977/jialiu/kSZ/W%i_Noise_sigmaG10_%04d.npy'%(Wx, i))
+		Ckmap = load('/work/02977/jialiu/kSZ/CFHT/Noise/W%i_Noise_sigmaG10_%04d.npy'%(Wx, i))
 		#############
 		
 		CCP = WLanalysis.CrossCorrelate(Pkmap, igaln, edges = edges_arr[Wx-1], sigmaG1=1.0, sigmaG2=1.0)[1]/fmask2_arr[Wx-1]/factor
