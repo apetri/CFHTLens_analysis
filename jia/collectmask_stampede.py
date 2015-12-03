@@ -25,7 +25,7 @@ mask_big=lambda Wx: '/work/02977/jialiu/multiplicative/mask_ludo/W%i.16bit.small
 
 Wx = int(sys.argv[1])
 
-print 'Wx'
+print 'Wx', Wx
 hdulist = pyfits.open(mask_big(Wx))
 size=sizes[Wx-1]
 center=centers[Wx-1]
