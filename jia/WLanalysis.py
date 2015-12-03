@@ -832,3 +832,18 @@ class GRF_Gen:
 		self.GRF_image = fftpack.ifft2(ifftshift(self.psd2D_GRF))
 		self.GRF = real(self.GRF_image)
 		return self.GRF
+def prob_plane (chisq_fcn, param1_arr, param2_arr):
+	heatmap = zeros(shape=(len(param1_arr),len(param2_arr)))
+	for i in range(len(param1_arr)):
+		for j in range(len(param2_arr)):
+			heatmap[i,j] = chisq_fcn(param1_arr[i], param2_arr[j])
+	prob = exp(-0.5*heatmap)
+	prob /= sum(prob)
+	return heatmap, prob
+
+def corr_mat (cov_mat):
+	'''calculate the correlation mat
+	'''
+	diag_sqrt = sqrt(diag(cov_mat))
+	X, Y = np.meshgrid(diag_sqrt, diag_sqrt)
+	return cov_mat / (X*Y)
