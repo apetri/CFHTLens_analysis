@@ -64,5 +64,6 @@ if not p.is_master():
 small_map = sum(array(p.map(iCC, range(63))),axis=0)
 save(mask_dir+'W%i_smaller_mask.npy',small_map)
 
+p.close()
 #import time
 #print 'begin',time.strftime("%Y-%m-%d %H:%M")
