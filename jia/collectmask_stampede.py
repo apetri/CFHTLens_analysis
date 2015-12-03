@@ -25,6 +25,7 @@ mask_big=lambda Wx: '/work/02977/jialiu/multiplicative/mask_ludo/W%i.16bit.small
 
 Wx = int(sys.argv[1])
 
+print 'Wx'
 hdulist = pyfits.open(mask_big(Wx))
 size=sizes[Wx-1]
 center=centers[Wx-1]
@@ -39,9 +40,13 @@ xy=np.indices(data.shape)
 f_Wx = WLanalysis.gnom_fun(centers[Wx-1])
 step = ceil(data.shape[1]/63.0)
 
+import time
+print 'begin',time.strftime("%Y-%m-%d %H:%M")
+
 # 1 field needs to be split into 24 cores to do
 def partialdata2grid (icount):
     '''for a small portion of the data, put into a grid'''
+    print 'icount',icount
     ixy = xy[:,:,step*icount:step*(1+icount)]
     radeclist = (array(w.wcs_pix2world(ixy[0],ixy[1],0)).T).reshape(-1,2) 
     
@@ -50,7 +55,7 @@ def partialdata2grid (icount):
     idata=data[:,step*icount:step*(1+icount)].flatten().reshape(1,-1)
     #y, x = xy.T
     ipix, ipix_mask = WLanalysis.coords2grid(x, y, idata, size=sizes[Wx-1])
-    #print 'done coords2grid',time.strftime("%Y-%m-%d %H:%M")
+    print icount,'done coords2grid',time.strftime("%Y-%m-%d %H:%M")
     
     save(mask_dir+'smaller/W%i_%i_numpix'%(Wx,icount), ipix)
     save(mask_dir+'smaller/W%i_%i_nummask'%(Wx,icount), ipix_mask)
@@ -65,5 +70,3 @@ small_map = sum(array(p.map(iCC, range(63))),axis=0)
 save(mask_dir+'W%i_smaller_mask.npy',small_map)
 
 p.close()
-#import time
-#print 'begin',time.strftime("%Y-%m-%d %H:%M")
