@@ -31,13 +31,14 @@ size=sizes[Wx-1]
 center=centers[Wx-1]
 headers=hdulist[0].header
 w=wcs.WCS(headers)
-footprint = w.calc_footprint()
+footprint 
+step = ceil(data.shape[1]/63.0)= w.calc_footprint()
 
 ############ ONCE TIME: saves part of the data into files ######
 #data = np.array(hdulist[0].data)
 #data[data<=1]=0.0
 #data[data>1]=1.0#mask out everything has mask<1
-#step = ceil(data.shape[1]/63.0)
+
 #for icount in range(63):
     #print icount
     #idata=data[:,step*icount:step*(1+icount)]#.flatten().reshape(1,-1)
