@@ -70,7 +70,9 @@ p = MPIPool()
 if not p.is_master():
     p.wait()
     sys.exit(0)
-small_map = sum(array(p.map(iCC, range(63))),axis=0)
+
+ismall_map=p.map(partialdata2grid, range(63))
+small_map = sum(array(ismall_map),axis=0)
 save(mask_dir+'W%i_smaller_mask.npy',small_map)
 
 p.close()
