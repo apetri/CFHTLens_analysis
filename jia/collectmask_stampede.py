@@ -60,7 +60,7 @@ def partialdata2grid (icount):
 
     y, x = f_Wx (radeclist)
     ipix, ipix_mask = WLanalysis.coords2grid(x, y, idata.flatten().reshape(1,-1), size=sizes[Wx-1])
-    print icount,'done coords2grid',time.strftime("%Y-%m-%d %H:%M")
+    #print icount,'done coords2grid',time.strftime("%Y-%m-%d %H:%M")
     
     save(mask_dir+'smaller/W%i_%i_numpix'%(Wx,icount), ipix)
     save(mask_dir+'smaller/W%i_%i_nummask'%(Wx,icount), ipix_mask)
