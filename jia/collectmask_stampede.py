@@ -56,10 +56,10 @@ def partialdata2grid (icount):
     idata = load(mask_dir+'smaller/cat_W%i_step%i_start%i.npy'%(Wx,step, icount))
     ix, iy=np.indices(idata.shape)
     iy+=step*icount
-    radeclist = (array(w.wcs_pix2world(ix, iy, 0)).T).reshape(-1,2) 
+    radeclist = (array(w.wcs_pix2world(ix, iy, 0)).reshape(2,-1)).T 
 
     y, x = f_Wx (radeclist)
-    ipix, ipix_mask = WLanalysis.coords2grid(x, y, idata.flatten().reshape(1,-1), size=sizes[Wx-1])
+    ipix_mask,ipix = WLanalysis.coords2grid(x, y, idata.flatten().reshape(1,-1), size=sizes[Wx-1])
     #print icount,'done coords2grid',time.strftime("%Y-%m-%d %H:%M")
     
     save(mask_dir+'smaller/W%i_%i_numpix'%(Wx,icount), ipix)
@@ -74,6 +74,6 @@ if not p.is_master():
 
 ismall_map=p.map(partialdata2grid, range(63))
 small_map = sum(array(ismall_map),axis=0)
-save(mask_dir+'W%i_smaller_mask.npy',small_map)
+save(mask_dir+'W%i_smaller_mask.npy'%(Wx),small_map)
 
 p.close()
