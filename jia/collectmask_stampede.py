@@ -32,7 +32,7 @@ center=centers[Wx-1]
 headers=hdulist[0].header
 w=wcs.WCS(headers)
 footprint = w.calc_footprint()
-step = ceil(data.shape[1]/63.0)
+step = [522, 294, 420, 351][Wx-1]# ceil(data.shape[1]/63.0)
 
 ############ ONCE TIME: saves part of the data into files ######
 #data = np.array(hdulist[0].data)
