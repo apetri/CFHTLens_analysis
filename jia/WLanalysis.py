@@ -299,8 +299,12 @@ def coords2grid(x, y, k, size=512):
 	'''
 	rad2pix=lambda x: around(size/2.0-0.5 + x*PPR512).astype(int)
 	x = rad2pix(x)
-	y = rad2pix(y)
-	# first put galaxies to grid, note some pixels may have multiple galaxies
+        y = rad2pix(y)
+        idx_range = where((x<size) & (x>=0) & (y<size) & (y>=0))
+	x = x[idx_range]
+	y = y[idx_range]
+	k = k[:,idx_range]
+	## first put galaxies to grid, note some pixels may have multiple galaxies
 	if len(k.shape)>1:
 		Mk = zeros(shape=(k.shape[0],size,size))
 	else:
