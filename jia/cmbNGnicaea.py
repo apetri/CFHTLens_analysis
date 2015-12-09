@@ -63,7 +63,7 @@ a_min           0.1             # For late Universe stuff
 	f=open('/Users/jia/Documents/code/nicaea_2.5/par_files/cosmo.par','w')
 	f.write(content)
 	f.close()
-	os.system('cd /Users/jia/Documents/code/nicaea_2.5/Demo; ./lensingdemo; cp P_kappa /Users/jia/weaklensing/CMBnonGaussian/Pkappa_nicaea/Pkappa_nicaea25_%s'%(cosmo))
+	os.system('cd /Users/jia/Documents/code/nicaea_2.5/Demo; ./lensingdemo; cp P_kappa /Users/jia/weaklensing/CMBnonGaussian/Pkappa_nicaea/Pkappa_nicaea25_%s; cp P_delta /Users/jia/weaklensing/CMBnonGaussian/Pkappa_nicaea/Pdelta_nicaea25_%s'%(cosmo,cosmo))
 
 #map(create_Nicaea_ps, cosmo_arr)
 plot_dir='/Users/jia/weaklensing/CMBnonGaussian/plot/'
