@@ -57,10 +57,12 @@ def partialdata2grid (icount):
     ix, iy=np.indices(idata.shape)
     iy+=step*icount
     #radeclist = (array(w.wcs_pix2world(ix, iy, 0)).reshape(2,-1)).T ////jia changed on 12/9, since the coordinates seems to be off..
-    radeclist = (array(w.wcs_pix2world(iy, ix, 0)).reshape(2,-1)).T 
+    
+    #radeclist = (array(w.wcs_pix2world(iy, ix, 0)).reshape(2,-1)).T 
+    #y, x = f_Wx (radeclist)
 
-    y, x = f_Wx (radeclist)
-    ipix_mask,ipix = WLanalysis.coords2grid(x, y, idata.flatten().reshape(1,-1), size=sizes[Wx-1])
+    iy, ix = f_Wx ((array(w.wcs_pix2world(iy, ix, 0)).reshape(2,-1)).T )
+    ipix_mask,ipix = WLanalysis.coords2grid(ix, iy, idata.flatten().reshape(1,-1), size=sizes[Wx-1])
     #print icount,'done coords2grid',time.strftime("%Y-%m-%d %H:%M")
     
     save(mask_dir+'smaller/W%i_%i_numpix'%(Wx,icount), ipix)
