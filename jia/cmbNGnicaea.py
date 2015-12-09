@@ -68,28 +68,30 @@ a_min           0.1             # For late Universe stuff
 #map(create_Nicaea_ps, cosmo_arr)
 plot_dir='/Users/jia/weaklensing/CMBnonGaussian/plot/'
 ell_gadget=WLanalysis.PowerSpectrum(rand(2048,2048))[0][:34]
+van_dir = '/Users/jia/weaklensing/CMBnonGaussian/to_vanessa/'
 #import matplotlib.pyplot as plt
 from pylab import *
 for cosmo in cosmo_arr:#(cosmo_arr[18],):
 	#create_Nicaea_ps(cosmo)
 	pspkPDFgadget=load('/Users/jia/weaklensing/CMBnonGaussian/Pkappa_gadget/{0}_ps_PDF_pk_600b.npy'.format(cosmo))
 	ps_gadget=array([pspkPDFgadget[i][0][:34] for i in range(len(pspkPDFgadget))])
-	#ps_gadget[331]=ps_gadget[332]
-	ell_nicaea, ps_nicaea=genfromtxt('/Users/jia/weaklensing/CMBnonGaussian/Pkappa_nicaea/Pkappa_nicaea25_{0}'.format(cosmo))[33:-5].T
-	f=figure(figsize=(6,4.5))
-	ax=f.add_subplot(111)
-	ax.errorbar(ell_gadget, mean(ps_gadget,axis=0),std(ps_gadget,axis=0))
-	ax.plot(ell_nicaea, ps_nicaea,'--',lw=1)
-	ax.set_xscale('log')
-	ax.set_yscale('log')
-	ax.set_title(cosmo)
-	ax.set_xlabel(r'$\ell$')
-	ax.set_ylabel(r'$\ell(\ell+1)\rm{P(\ell)/2\pi}$')
-	ax.set_xlim(100,1e4)
-	#ax.set_ylim(6e-5,1e-2)
-	plt.tight_layout()
-	savefig(plot_dir+'ps_{}.jpg'.format(cosmo))
-	close()
+	savetxt(van_dir+'Pkappa_gadget_{}'.format(cosmo),array([ell_gadget, mean(ps_gadget,axis=0),std(ps_gadget,axis=0)]).T, header='ell\tell(ell+1)/2pi*Pkappa\tsigma_(ell(ell+1)/2pi*Pkappa)')
+	###ps_gadget[331]=ps_gadget[332]
+	#ell_nicaea, ps_nicaea=genfromtxt('/Users/jia/weaklensing/CMBnonGaussian/Pkappa_nicaea/Pkappa_nicaea25_{0}'.format(cosmo))[33:-5].T
+	#f=figure(figsize=(6,4.5))
+	#ax=f.add_subplot(111)
+	#ax.errorbar(ell_gadget, mean(ps_gadget,axis=0),std(ps_gadget,axis=0))
+	#ax.plot(ell_nicaea, ps_nicaea,'--',lw=1)
+	#ax.set_xscale('log')
+	#ax.set_yscale('log')
+	#ax.set_title(cosmo)
+	#ax.set_xlabel(r'$\ell$')
+	#ax.set_ylabel(r'$\ell(\ell+1)\rm{P(\ell)/2\pi}$')
+	#ax.set_xlim(100,1e4)
+	##ax.set_ylim(6e-5,1e-2)
+	#plt.tight_layout()
+	#savefig(plot_dir+'ps_{}.jpg'.format(cosmo))
+	#close()
 	
 
 
