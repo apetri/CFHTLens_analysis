@@ -24,8 +24,8 @@ compute_sim_err = 1
 compute_model = 0
 compute_m_fit = 0
 plot_omori_comp = 0
-main_dir = '/Users/jia/weaklensing/multiplicative/'
-#main_dir = '/work/02977/jialiu/multiplicative/'
+#main_dir = '/Users/jia/weaklensing/multiplicative/'
+main_dir = '/work/02977/jialiu/multiplicative/'
 
 #################### constants and small functions ##################
 sizes = (1330, 800, 1120, 950)
