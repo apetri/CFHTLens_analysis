@@ -88,14 +88,15 @@ if not p.is_master():
     p.wait()
     sys.exit(0)
 
-ismall_map=p.map(partialdata2grid, range(63))
-small_map = sum(array(ismall_map),axis=0)
-save(mask_dir+'weight0_W%i_smaller_mask.npy'%(Wx),small_map)
-weight=1-small_map[1]/small_map[0]
-weight[isnan(weight)]=0
-save(mask_dir+'ludoweight_weight0_W%i.npy'%Wx, weight)
-mask=weight/weight
-mask[isnan(mask)]=0
-save(mask_dir+'ludomask_weight0_W%i.npy'%Wx, mask)
+p.map(partialdata2grid, range(63))
+#ismall_map=p.map(partialdata2grid, range(63))
+#small_map = sum(array(ismall_map),axis=0)
+#save(mask_dir+'weight0_W%i_smaller_mask.npy'%(Wx),small_map)
+#weight=1-small_map[1]/small_map[0]
+#weight[isnan(weight)]=0
+#save(mask_dir+'ludoweight_weight0_W%i.npy'%Wx, weight)
+#mask=weight/weight
+#mask[isnan(mask)]=0
+#save(mask_dir+'ludomask_weight0_W%i.npy'%Wx, mask)
 
 p.close()
