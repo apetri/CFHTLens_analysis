@@ -30,10 +30,11 @@ main_dir = '/Users/jia/weaklensing/multiplicative/'
 #################### constants and small functions ##################
 sizes = (1330, 800, 1120, 950)
 
-galnGen = lambda Wx, cut: load (main_dir+'cfht_galn/W%i_cut%i.npy'%(Wx, cut))
+galnGen = lambda Wx, cut: load (main_dir+'cfht_galn/W%i_cut%i_ludoweight.npy'%(Wx, cut))
 CkappaGen = lambda Wx: WLanalysis.readFits (main_dir+'cfht_kappa/W%s_KS_1.3_lo_sigmaG10.fit'%(Wx))
 PkappaGen = lambda Wx: load (main_dir+'planck2015_kappa/dat_kmap_flipper2048_CFHTLS_W%s_map.npy'%(Wx))
-CmaskGen = lambda Wx: load (main_dir+'cfht_mask/Mask_W%s_0.7_sigmaG10.npy'%(Wx))
+#CmaskGen = lambda Wx: load (main_dir+'cfht_mask/Mask_W%s_0.7_sigmaG10.npy'%(Wx))
+CmaskGen = lambda Wx: load (main_dir+'mask_ludo/ludomask_weight0_manu_W%i.npy'%(Wx))
 PmaskGen = lambda Wx: load (main_dir+'planck2015_mask/kappamask_flipper2048_CFHTLS_W%s_map.npy'%(Wx))
 maskGen = lambda Wx: CmaskGen(Wx)*PmaskGen(Wx)
 PlanckSim15Gen = lambda Wx, r: load('/work/02977/jialiu/cmblensing/planck/sim15/sim_%04d_kmap_CFHTLS_W%s.npy'%(r, Wx))
@@ -163,7 +164,7 @@ if compute_sim_err:
         p.wait()
         sys.exit(0)
     CCsim_err_arr = array(p.map(iCC, range(100)))
-    save(main_dir+'powspec/CC_Plancksim_CFHTrot_cut%i_W%i.npy'%(cut, Wx), CCsim_err_arr)
+    save(main_dir+'powspec/CC_Plancksim_CFHTrot_ludomask_cut%i_W%i.npy'%(cut, Wx), CCsim_err_arr)
 
     p.close()
 ############# finish compute sim error #####################
@@ -357,8 +358,8 @@ if plot_omori_comp:
     a=genfromtxt('/Users/jia/Desktop/omoriholder_data.txt').T
     j = 0
     xgalnGen = lambda Wx, cut:  load('/Users/jia/Desktop/galn_test/galn_W%i_cut%i.npy'%(Wx,cut))
-    xmaskGen = lambda Wx: load('/Users/jia/weaklensing/multiplicative/mask_ludo/ludomask_W%i.npy'%Wx)
-    weightGen = lambda Wx: load('/Users/jia/weaklensing/multiplicative/mask_ludo/ludoweight_W%i.npy'%Wx)
+    xmaskGen = lambda Wx: load('/Users/jia/weaklensing/multiplicative/mask_ludo/ludomask_weight0_manu_W%i.npy'%Wx)
+    weightGen = lambda Wx: load('/Users/jia/weaklensing/multiplicative/mask_ludo/ludoweight_weight0_W%i.npy'%Wx)
     def galnGen(Wx, cut):
         igaln=xgalnGen(Wx, cut)
         mask=xmaskGen(Wx)
@@ -467,7 +468,7 @@ if plot_omori_comp:
             ax.set_ylim(-5, 10)
 
         #show()
-        savefig(main_dir+'plot/ludomask_CC_omoricomp_cut%s.jpg'%(cut))
+        savefig(main_dir+'plot/ludoweight0_manu_CC_omoricomp_cut%s.jpg'%(cut))
         close()
         j+=6
 
