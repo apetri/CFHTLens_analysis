@@ -71,7 +71,7 @@ def partialdata2grid (icount):
     
     while jj< len(y):
         print 'icount, jj',icount,jj
-        iipix_mask,iipix = WLanalysis.coords2grid(ix[jj:jj+istep], iy[jj:jj+istep], idata.flatten().reshape(1,-1)[jj:jj+istep], size=sizes[Wx-1])
+        iipix_mask,iipix = WLanalysis.coords2grid(x[jj:jj+istep], y[jj:jj+istep], idata.flatten().reshape(1,-1)[jj:jj+istep], size=sizes[Wx-1])
         ipix_mask += iipix_mask
         ipix += iipix
         jj+=istep
