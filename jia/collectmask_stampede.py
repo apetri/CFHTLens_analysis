@@ -63,20 +63,22 @@ def partialdata2grid (icount):
     #y, x = f_Wx (radeclist)
     y, x = f_Wx ((array(w.wcs_pix2world(iy, ix, 0)).reshape(2,-1)).T )
     print icount,'done f_wx %s'%(icount)#,time.strftime("%Y-%m-%d %H:%M")
-    
-    istep=ceil(len(y)/10.0)
-    
-    ipix_mask = zeros(shape=(sizes[Wx-1], sizes[Wx-1]))
-    ipix = ipix_mask.copy()
-    jj=0
-    
-    while jj< len(y):
-        print 'icount, jj',icount,jj
-        iipix_mask,iipix = WLanalysis.coords2grid(x[jj:jj+istep], y[jj:jj+istep], idata.flatten().reshape(1,-1)[:,jj:jj+istep], size=sizes[Wx-1])
-        ipix_mask += iipix_mask
-        ipix += iipix
-        jj+=istep
-    #print icount,'done coords2grid %s'%(icount),time.strftime("%Y-%m-%d %H:%M")    
+
+    if Wx!=1:
+        ipix_mask, ipix = WLanalysis.coords2grid(x,y, idata.flatten().reshape(1,-1), size=sizes[Wx-1])
+        
+    else:
+        istep=ceil(len(y)/10.0)
+        ipix_mask = zeros(shape=(sizes[Wx-1], sizes[Wx-1]))
+        ipix = ipix_mask.copy()
+        jj=0    
+        while jj< len(y):
+            print 'icount, jj',icount,jj
+            iipix_mask,iipix = WLanalysis.coords2grid(x[jj:jj+istep], y[jj:jj+istep], idata.flatten().reshape(1,-1)[:,jj:jj+istep], size=sizes[Wx-1])
+            ipix_mask += iipix_mask
+            ipix += iipix
+            jj+=istep
+    print icount,'W%i done coords2grid %s'%(Wx,icount)#,time.strftime("%Y-%m-%d %H:%M")    
     
     save(mask_dir+'smaller/weight0_W%i_%i_numpix'%(Wx,icount), ipix)
     save(mask_dir+'smaller/weight0_W%i_%i_nummask'%(Wx,icount), ipix_mask)
@@ -88,15 +90,15 @@ if not p.is_master():
     p.wait()
     sys.exit(0)
 
-p.map(partialdata2grid, range(63))
-#ismall_map=p.map(partialdata2grid, range(63))
-#small_map = sum(array(ismall_map),axis=0)
-#save(mask_dir+'weight0_W%i_smaller_mask.npy'%(Wx),small_map)
-#weight=1-small_map[1]/small_map[0]
-#weight[isnan(weight)]=0
-#save(mask_dir+'ludoweight_weight0_W%i.npy'%Wx, weight)
-#mask=weight/weight
-#mask[isnan(mask)]=0
-#save(mask_dir+'ludomask_weight0_W%i.npy'%Wx, mask)
+#p.map(partialdata2grid, range(63))
+ismall_map=p.map(partialdata2grid, range(63))
+small_map = sum(array(ismall_map),axis=0)
+save(mask_dir+'weight0_W%i_smaller_mask.npy'%(Wx),small_map)
+weight=1-small_map[1]/small_map[0]
+weight[isnan(weight)]=0
+save(mask_dir+'ludoweight_weight0_W%i.npy'%Wx, weight)
+mask=weight/weight
+mask[isnan(mask)]=0
+save(mask_dir+'ludomask_weight0_W%i.npy'%Wx, mask)
 
 p.close()
