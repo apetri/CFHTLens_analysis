@@ -35,14 +35,14 @@ footprint = w.calc_footprint()
 step = [522, 294, 420, 351][Wx-1]# ceil(data.shape[1]/63.0)
 
 ############ ONCE TIME: saves part of the data into files ######
-data = np.array(hdulist[0].data)
-data[data<=1]=0.0
-data[data>1]=1.0#mask out everything has mask<1
+#data = np.array(hdulist[0].data)
+#data[data<=1]=0.0
+#data[data>1]=1.0#mask out everything has mask<1
 
-for icount in range(63):
-    print icount
-    idata=data[:,step*icount:step*(1+icount)]#.flatten().reshape(1,-1)
-    save(mask_dir+'smaller/cat_W%i_step%i_start%i'%(Wx,step, icount), idata)
+#for icount in range(63):
+    #print icount
+    #idata=data[:,step*icount:step*(1+icount)]#.flatten().reshape(1,-1)
+    #save(mask_dir+'smaller/cat_W%i_step%i_start%i'%(Wx,step, icount), idata)
 #################################################################
 
 #import time
@@ -87,7 +87,7 @@ if not p.is_master():
     p.wait()
     sys.exit(0)
 
-ismall_map=p.map(partialdata2grid, range(127))
+ismall_map=p.map(partialdata2grid, range(63))
 small_map = sum(array(ismall_map),axis=0)
 save(mask_dir+'W%i_smaller_mask.npy'%(Wx),small_map)
 
