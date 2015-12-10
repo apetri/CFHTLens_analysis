@@ -20,10 +20,10 @@ import WLanalysis
 import sys
 
 ########## knobs #############
-compute_sim_err = 0
+compute_sim_err = 1
 compute_model = 0
 compute_m_fit = 0
-plot_omori_comp = 1
+plot_omori_comp = 0
 main_dir = '/Users/jia/weaklensing/multiplicative/'
 #main_dir = '/work/02977/jialiu/multiplicative/'
 
@@ -357,15 +357,25 @@ if plot_omori_comp:
     a=genfromtxt('/Users/jia/Desktop/omoriholder_data.txt').T
     j = 0
     xgalnGen = lambda Wx, cut:  load('/Users/jia/Desktop/galn_test/galn_W%i_cut%i.npy'%(Wx,cut))
-    xmaskGen = lambda Wx,cut: load('/Users/jia/Desktop/galn_test/mask_W%i_cut%i.npy'%(Wx,cut))
+    xmaskGen = lambda Wx: load('/Users/jia/weaklensing/multiplicative/mask_ludo/ludomask_W%i.npy'%Wx)
+    weightGen = lambda Wx: load('/Users/jia/weaklensing/multiplicative/mask_ludo/ludoweight_W%i.npy'%Wx)
     def galnGen(Wx, cut):
         igaln=xgalnGen(Wx, cut)
-        mask=xmaskGen(Wx,cut)
+        mask=xmaskGen(Wx)
+        igaln=igaln/weightGen(Wx)
         igaln=igaln/mean(igaln[mask>0])-1
         igaln[mask<1]=0
-        return WLanalysis.smooth(igaln,1.0)
+        return igaln#WLanalysis.smooth(igaln,1.0)
+    #def galnGen(Wx, cut):
+        #igaln0=xgalnGen(Wx, cut)
+        #mask=xmaskGen(Wx)
+        #weight=weightGen(Wx)
+        #igaln1=igaln0#/weight
+        #igaln=igaln1/mean(igaln1[mask>0])-1
+        #igaln[mask<1]=0
+        #return igaln#
     def theory_CC_err(map1, map2, Wx, cut):
-        mask=xmaskGen(Wx, cut)*PmaskGen(Wx)
+        mask=xmaskGen(Wx)*PmaskGen(Wx)
         map1*=mask
         map2*=mask
         fmask2=sum(mask)/sizes[Wx-1]**2
@@ -457,9 +467,10 @@ if plot_omori_comp:
             ax.set_ylim(-5, 10)
 
         #show()
-        savefig(main_dir+'plot/noShearMask001_CC_omoricomp_cut%s.jpg'%(cut))
+        savefig(main_dir+'plot/ludomask_CC_omoricomp_cut%s.jpg'%(cut))
         close()
         j+=6
+
 
 ############## ratio plot
 #for cut in range(22,25):

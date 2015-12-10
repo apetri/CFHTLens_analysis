@@ -35,14 +35,15 @@ footprint = w.calc_footprint()
 step = [522, 294, 420, 351][Wx-1]# ceil(data.shape[1]/63.0)
 
 ############ ONCE TIME: saves part of the data into files ######
-#data = np.array(hdulist[0].data)
+data = np.array(hdulist[0].data)
 #data[data<=1]=0.0
 #data[data>1]=1.0#mask out everything has mask<1
+data[data>0]=1.0#mask out everything has mask=0
 
-#for icount in range(63):
-    #print icount
-    #idata=data[:,step*icount:step*(1+icount)]#.flatten().reshape(1,-1)
-    #save(mask_dir+'smaller/cat_W%i_step%i_start%i'%(Wx,step, icount), idata)
+for icount in range(63):
+    print icount
+    idata=data[:,step*icount:step*(1+icount)]#.flatten().reshape(1,-1)
+    save(mask_dir+'smaller/weight0_cat_W%i_step%i_start%i'%(Wx,step, icount), idata)
 #################################################################
 
 #import time
@@ -77,8 +78,8 @@ def partialdata2grid (icount):
         jj+=istep
     #print icount,'done coords2grid %s'%(icount),time.strftime("%Y-%m-%d %H:%M")    
     
-    save(mask_dir+'smaller/W%i_%i_numpix'%(Wx,icount), ipix)
-    save(mask_dir+'smaller/W%i_%i_nummask'%(Wx,icount), ipix_mask)
+    save(mask_dir+'smaller/weight0_W%i_%i_numpix'%(Wx,icount), ipix)
+    save(mask_dir+'smaller/weight0_W%i_%i_nummask'%(Wx,icount), ipix_mask)
     #ipix is the num. of pixels fall in that big pix, ipix_mask is the mask
     return ipix, ipix_mask
 
@@ -89,6 +90,12 @@ if not p.is_master():
 
 ismall_map=p.map(partialdata2grid, range(63))
 small_map = sum(array(ismall_map),axis=0)
-save(mask_dir+'W%i_smaller_mask.npy'%(Wx),small_map)
+save(mask_dir+'weight0_W%i_smaller_mask.npy'%(Wx),small_map)
+weight=1-small_map[1]/small_map[0]
+weight[isnan(weight)]=0
+save(mask_dir+'ludoweight_weight0_W%i.npy'%Wx, weight)
+mask=weight/weight
+mask[isnan(mask)]=0
+save(mask_dir+'ludomask_weight0_W%i.npy'%Wx, mask)
 
 p.close()
