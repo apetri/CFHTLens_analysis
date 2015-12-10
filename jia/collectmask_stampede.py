@@ -66,7 +66,7 @@ def partialdata2grid (icount):
     istep=ceil(len(y)/10.0)
     
     ipix_mask = zeros(shape=(sizes[Wx-1], sizes[Wx-1]))
-    ipix = ipx_max.copy()
+    ipix = ipix_mask.copy()
     jj=0
     
     while jj< len(y):
