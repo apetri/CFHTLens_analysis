@@ -54,7 +54,7 @@ f_Wx = WLanalysis.gnom_fun(centers[Wx-1])
 def partialdata2grid (icount):
     '''for a small portion of the data, put into a grid'''
     print 'icount',icount
-    idata = load(mask_dir+'smaller/cat_W%i_step%i_start%i.npy'%(Wx,step, icount))
+    idata = load(mask_dir+'smaller/weight0_cat_W%i_step%i_start%i.npy'%(Wx,step, icount))
     print 'loaded',icount
     ix, iy=np.indices(idata.shape)
     iy+=step*icount
