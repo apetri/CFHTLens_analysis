@@ -35,15 +35,15 @@ footprint = w.calc_footprint()
 step = [522, 294, 420, 351][Wx-1]# ceil(data.shape[1]/63.0)
 
 ############ ONCE TIME: saves part of the data into files ######
-data = np.array(hdulist[0].data)
-#data[data<=1]=0.0
-#data[data>1]=1.0#mask out everything has mask<1
-data[data>0]=1.0#mask out everything has mask=0
+#data = np.array(hdulist[0].data)
+##data[data<=1]=0.0
+##data[data>1]=1.0#mask out everything has mask<1
+#data[data>0]=1.0#mask out everything has mask=0
 
-for icount in range(63):
-    print icount
-    idata=data[:,step*icount:step*(1+icount)]#.flatten().reshape(1,-1)
-    save(mask_dir+'smaller/weight0_cat_W%i_step%i_start%i'%(Wx,step, icount), idata)
+#for icount in range(63):
+    #print icount
+    #idata=data[:,step*icount:step*(1+icount)]#.flatten().reshape(1,-1)
+    #save(mask_dir+'smaller/weight0_cat_W%i_step%i_start%i'%(Wx,step, icount), idata)
 #################################################################
 
 #import time
