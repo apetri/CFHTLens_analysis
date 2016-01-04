@@ -31,15 +31,15 @@ for cosmo in cosmo_arr[4:]:
     DC_fcn = lambda z: c*quad(H_inv, 0, z)[0]
     
     #Write 9 fake planes with zeroes on them (if the last non trivial snapshot is 60, these will be labelled by 61)
-    last_snapshot=len(genfromtxt(info_fn(cosmo), dtype='string'))+1
+    last_snapshot=len(genfromtxt(info_fn(cosmo), dtype='string'))
     
     for normal in [0,1,2]:
         for cut_point in [0,1,2]:
             print normal, cut_point
-            pln = PotentialPlane(data=np.zeros((4096,4096)),angle=iangle,redshift=1100.+1.,cosmology=cosmology,num_particles=1024**3/3.)
+            pln = PotentialPlane(data=np.zeros((4096,4096)),angle=iangle,redshift=1101.0,cosmology=cosmology,num_particles=1024**3/3.)
             pln.save('snap{0}_potentialPlane{1}_normal{2}.fits'.format(last_snapshot+1,cut_point,normal))
     
-    string = "s=%i,d=%.8f Mpc/h,z=1101\n"%(last_snapshot+1, DC(1101)*h)
+    string = "s=%i,d=%.8f Mpc/h,z=1101.0\n"%(last_snapshot+1, DC(1101)*h)
     with open(info_fn(cosmo), "a") as myfile: myfile.write(string)
 
 
