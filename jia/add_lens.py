@@ -35,6 +35,7 @@ for cosmo in cosmo_arr[4:]:
     
     for normal in [0,1,2]:
         for cut_point in [0,1,2]:
+            print normal, cut_point
             pln = PotentialPlane(data=np.zeros((4096,4096)),angle=iangle,redshift=1100.+1.,cosmology=cosmology,num_particles=1024**3/3.)
             pln.save('snap{0}_potentialPlane{1}_normal{2}.fits'.format(last_snapshot+1,cut_point,normal))
     
