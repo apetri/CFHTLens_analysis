@@ -17,11 +17,13 @@ cosmo_arr = genfromtxt('/scratch/02977/jialiu/CMB_hopper/CMB_batch/cosmo_list.tx
 h = 0.72
 c = 299792.458#km/s
 for cosmo in cosmo_arr:
-
+    print cosmo
     Om = float(cosmo[2:7])
     w = float(cosmo[17:23])
     si8 = float(cosmo[-5:])
     
+    if Om==0.296:
+        continue
     #Om, w, si8=[0.296,-1.000,0.786]
     cosmology = LensToolsCosmology(Om0=Om,Ode0=1-Om,w0=w,sigma8=si8)
     
