@@ -126,12 +126,12 @@ if compute_model:
 
 	###########################
 	
-	ell_arr = linspace(1e-5, 2000, 200)
-	Ckk_arr = array([quad(Ckk_integrand, 0.002, 3.7 , args=(iell))[0] for iell in ell_arr])#3.7
-	#plot(ell_arr, Ckk_arr*ell_arr**2/2.0/pi)
-	plot(ell_arr, Ckk_arr*ell_arr)
-	show()
-	save(cmb_dir+model_fn,array([ell_arr, Ckk_arr]))
+	#ell_arr = linspace(1e-5, 2000, 200)
+	#Ckk_arr = array([quad(Ckk_integrand, 0.002, 3.7 , args=(iell))[0] for iell in ell_arr])#3.7
+	##plot(ell_arr, Ckk_arr*ell_arr**2/2.0/pi)
+	#plot(ell_arr, Ckk_arr*ell_arr)
+	#show()
+	#save(cmb_dir+model_fn,array([ell_arr, Ckk_arr]))
 
 
 ###################################
@@ -142,7 +142,7 @@ plot_dndz_peak_PDF = 0
 plot_lensing_kernels = 0
 
 plot_null_test = 0
-plot_data_model = 1
+plot_data_model = 0
 plot_model_theory = 0
 plot_model_theory_haloterms = 0
 compute_theory_err = 0
