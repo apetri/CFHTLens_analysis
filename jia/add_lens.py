@@ -40,7 +40,7 @@ for cosmo in cosmo_arr[4:]:
             #pln.save('snap{0}_potentialPlane{1}_normal{2}.fits'.format(last_snapshot+1,cut_point,normal))
             os.system("ln -sf /home1/02977/jialiu/scratch/CMB_hopper/CMB_batch_storage/Om0.296_Ol0.704_w-1.000_si0.786/1024b600/ic1/Planes/snap58_potentialPlane{0}_normal{1}.fits /home1/02977/jialiu/scratch/CMB_hopper/CMB_batch_storage/{2}/1024b600/ic1/Planes/snap{3}_potentialPlane{0}_normal{1}.fits".format(cut_point, normal, cosmo, last_snapshot))
     
-    string = "s=%i,d=%.8f Mpc/h,z=1101.0\n"%(last_snapshot+1, DC(1101)*h)
+    string = "s=%i,d=%.8f Mpc/h,z=1101.0\n"%(last_snapshot, DC(1101)*h)
     with open(info_fn(cosmo), "a") as myfile: myfile.write(string)
 
 
