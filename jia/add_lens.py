@@ -16,7 +16,7 @@ iangle = 1000*u.Mpc
 cosmo_arr = genfromtxt('/scratch/02977/jialiu/CMB_hopper/CMB_batch/cosmo_list.txt',dtype='string')
 h = 0.72
 c = 299792.458#km/s
-for cosmo in cosmo_arr[4:]:
+for cosmo in cosmo_arr[0:4]:
     print cosmo
     Om = float(cosmo[2:7])
     w = float(cosmo[17:23])
