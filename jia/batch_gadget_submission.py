@@ -28,26 +28,26 @@ def write_batch_submission(cosmo, code='plane'):
         content = '''#!/bin/bash
 
 #SBATCH -A TG-AST140041
-#SBATCH -J {1}{0}
+#SBATCH -J {0}{1}
 
-#SBATCH -o /work/02977/jialiu/CMB_hopper/CMB_batch/Logs/{1}{0}_%j.err
-#SBATCH -e /work/02977/jialiu/CMB_hopper/CMB_batch/Logs/{1}{0}_%j.err
+#SBATCH -o /work/02977/jialiu/CMB_hopper/CMB_batch/Logs/{0}{1}_%j.err
+#SBATCH -e /work/02977/jialiu/CMB_hopper/CMB_batch/Logs/{0}{1}_%j.err
 
 #SBATCH -p normal
-#SBATCH -t {3}:00:00
+#SBATCH -t {2}:00:00
 
 #SBATCH --mail-user=jia@astro.columbia.edu
 #SBATCH --mail-type=all
 
-#SBATCH -n {4}
-#SBATCH -N {5}
+#SBATCH -n {3}
+#SBATCH -N {4}
 
 ml intel/14.0.1.106
 ml mvapich2
 
-{2}
+{5}
 
-'''.format(cosmo[:7], code, hour, runline, n, N)
+'''.format(code, cosmo[:7], hour, n, N, runline)
         f.write(content)
         f.close()
         
