@@ -16,7 +16,7 @@ def write_batch_submission(cosmo, code='plane'):
         f = open('/work/02977/jialiu/CMB_hopper/CMB_batch/Jobs/{0}/{0}{1}.sh'.format(code,cosmo[:7]), 'w')
         
         if code=='plane':
-            runline='ibrun -n 32 -o 1120 lenstools.planes-mpi -e /work/02977/jialiu/CMB_hopper/CMB_batch/environment.ini -c /work/02977/jialiu/CMB_hopper/CMB_batch/lens.ini "%s|1024b600|ic1" &'%(cosmo)
+            runline='ibrun -n 32 -o 0 lenstools.planes-mpi -e /work/02977/jialiu/CMB_hopper/CMB_batch/environment.ini -c /work/02977/jialiu/CMB_hopper/CMB_batch/lens.ini "%s|1024b600|ic1" &'%(cosmo)
             n,N,hour=32,2,8
         elif code =='gadget':
             runline = 'ibrun -n 256 -o 0 /work/02977/jialiu/IG_Pipeline_0.1/Gadget2/Gadget2 1 256 /work/02977/jialiu/CMB_hopper/CMB_batch/%s/ic1/gadget2.param'%(param)
@@ -52,7 +52,6 @@ ml mvapich2
         f.close()
         
 map(write_batch_submission, cosmo_arr)
-
 ##########################################
 
 
