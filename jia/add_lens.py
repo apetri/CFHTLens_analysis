@@ -11,17 +11,17 @@ from scipy import *
 info_fn = lambda cosmo: '/scratch/02977/jialiu/CMB_hopper/CMB_batch_storage/%s/1024b600/ic1/Planes/info.txt'%(cosmo)
 
 #Size of the plane (make it large enough to fit 3.5 degrees in angular size)
-iangle = 2000*u.Mpc
+iangle = 1500*u.Mpc
 
 cosmo_arr = genfromtxt('/scratch/02977/jialiu/CMB_hopper/CMB_batch/cosmo_list.txt',dtype='string')
 h = 0.72
 c = 299792.458#km/s
-for cosmo in cosmo_arr[0:4]:
+
+def addplane(cosmo):#for cosmo in cosmo_arr[0:4]:
     print cosmo
     Om = float(cosmo[2:7])
     w = float(cosmo[17:23])
-    si8 = float(cosmo[-5:])
-    
+    si8 = float(cosmo[-5:])    
     if Om==0.296:
         continue
     #Om, w, si8=[0.296,-1.000,0.786]
@@ -36,12 +36,17 @@ for cosmo in cosmo_arr[0:4]:
     for normal in [0,1,2]:
         for cut_point in [0,1,2]:
             print normal, cut_point
-            pln = PotentialPlane(data=np.zeros((4096,4096)),angle=iangle,redshift=1101.0,cosmology=cosmology,num_particles=1024**3/3.)
-            pln.save('snap{0}_potentialPlane{1}_normal{2}.fits'.format(last_snapshot+1,cut_point,normal))
-            #os.system("ln -sf /home1/02977/jialiu/scratch/CMB_hopper/CMB_batch_storage/Om0.296_Ol0.704_w-1.000_si0.786/1024b600/ic1/Planes/snap58_potentialPlane{0}_normal{1}.fits /home1/02977/jialiu/scratch/CMB_hopper/CMB_batch_storage/{2}/1024b600/ic1/Planes/snap{3}_potentialPlane{0}_normal{1}.fits".format(cut_point, normal, cosmo, last_snapshot))
+            #pln = PotentialPlane(data=np.zeros((4096,4096)),angle=iangle,redshift=1101.0,cosmology=cosmology,num_particles=1024**3/3.)
+            #pln.save('snap{0}_potentialPlane{1}_normal{2}.fits'.format(last_snapshot+1,cut_point,normal))
+            ########### work around, do a symlink instead
+            os.system("ln -sf /home1/02977/jialiu/scratch/CMB_hopper/CMB_batch_storage/Om0.296_Ol0.704_w-1.000_si0.786/1024b600/ic1/Planes/snap58_potentialPlane{0}_normal{1}.fits /home1/02977/jialiu/scratch/CMB_hopper/CMB_batch_storage/{2}/1024b600/ic1/Planes/snap{3}_potentialPlane{0}_normal{1}.fits".format(cut_point, normal, cosmo, last_snapshot))
     
     string = "s=%i,d=%.8f Mpc/h,z=1101.0\n"%(last_snapshot, DC_fcn(1101)*h)
     with open(info_fn(cosmo), "a") as myfile: myfile.write(string)
+
+addplane(cosmo_arr[9])
+addplane(cosmo_arr[10])
+addplane(cosmo_arr[11])
 
 
 def gen_infotxt(cosmo):
