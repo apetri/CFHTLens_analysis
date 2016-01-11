@@ -8,7 +8,9 @@ from lenstools.pipeline.simulation import LensToolsCosmology
 from scipy.integrate import quad
 from scipy import *
 
-iii=int(sys.argv[1])
+#iii=int(sys.argv[1])
+init_Om = float(sys.argv[1])
+
 
 info_fn = lambda cosmo: '/scratch/02977/jialiu/CMB_hopper/CMB_batch_storage/%s/1024b600/ic1/Planes/info.txt'%(cosmo)
 
@@ -16,6 +18,12 @@ info_fn = lambda cosmo: '/scratch/02977/jialiu/CMB_hopper/CMB_batch_storage/%s/1
 iangle = 1500*u.Mpc
 
 cosmo_arr = genfromtxt('/scratch/02977/jialiu/CMB_hopper/CMB_batch/cosmo_list.txt',dtype='string')
+
+iii=0
+while init_Om!=float(cosmo_arr[iii][2:7]):
+    iii+=1
+print iii, cosmo_arr[iii][2:7]
+
 h = 0.72
 c = 299792.458#km/s
 
