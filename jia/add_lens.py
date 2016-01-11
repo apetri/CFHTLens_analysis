@@ -43,11 +43,11 @@ def addplane(cosmo):#for cosmo in cosmo_arr[0:4]:
     with open(info_fn(cosmo), "a") as myfile: myfile.write(string)
 
 #addplane(cosmo_arr[9])#om0.210
-addplane(cosmo_arr[7])
-addplane(cosmo_arr[6])
-addplane(cosmo_arr[5])
-addplane(cosmo_arr[4])
-
+#addplane(cosmo_arr[7])
+#addplane(cosmo_arr[6])
+#addplane(cosmo_arr[5])
+#addplane(cosmo_arr[4])
+addplane(cosmo_arr[25])
 
 
 def gen_infotxt(cosmo):
