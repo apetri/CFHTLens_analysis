@@ -8,6 +8,8 @@ from lenstools.pipeline.simulation import LensToolsCosmology
 from scipy.integrate import quad
 from scipy import *
 
+iii=int(sys.argv[1])
+
 info_fn = lambda cosmo: '/scratch/02977/jialiu/CMB_hopper/CMB_batch_storage/%s/1024b600/ic1/Planes/info.txt'%(cosmo)
 
 #Size of the plane (make it large enough to fit 3.5 degrees in angular size)
@@ -47,7 +49,8 @@ def addplane(cosmo):#for cosmo in cosmo_arr[0:4]:
 #addplane(cosmo_arr[6])
 #addplane(cosmo_arr[5])
 #addplane(cosmo_arr[4])
-addplane(cosmo_arr[25])
+#addplane(cosmo_arr[25])
+addplane(cosmo_arr[iii])
 
 
 def gen_infotxt(cosmo):
