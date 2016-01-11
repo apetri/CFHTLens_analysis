@@ -42,9 +42,12 @@ def addplane(cosmo):#for cosmo in cosmo_arr[0:4]:
     string = "s=%i,d=%.8f Mpc/h,z=1101.0\n"%(last_snapshot, DC_fcn(1101)*h)
     with open(info_fn(cosmo), "a") as myfile: myfile.write(string)
 
-addplane(cosmo_arr[9])
-addplane(cosmo_arr[10])
-addplane(cosmo_arr[11])
+#addplane(cosmo_arr[9])#om0.210
+addplane(cosmo_arr[7])
+addplane(cosmo_arr[6])
+addplane(cosmo_arr[5])
+addplane(cosmo_arr[4])
+
 
 
 def gen_infotxt(cosmo):
