@@ -12,19 +12,29 @@ code_ngenic = '/work/02977/jialiu/IG_Pipeline_0.1/N-GenIC/N-GenIC'
 code_gadget = '/work/02977/jialiu/IG_Pipeline_0.1/Gadget2/Gadget2'
 
 
-def write_batch_submission(cosmo, code='plane'):
+def write_batch_submission(cosmo, code='ngenic'):
         f = open('/work/02977/jialiu/CMB_hopper/CMB_batch/Jobs/{0}/{0}{1}.sh'.format(code,cosmo[:7]), 'w')
         
         if code=='plane':
-            runline='ibrun -n 32 -o 0 lenstools.planes-mpi -e /work/02977/jialiu/CMB_hopper/CMB_batch/environment.ini -c /work/02977/jialiu/CMB_hopper/CMB_batch/lens.ini "%s|1024b600|ic1" '%(cosmo)
+            runline='''ml intel/14.0.1.106
+ml mvapich2
+ibrun -n 32 -o 0 lenstools.planes-mpi -e /work/02977/jialiu/CMB_hopper/CMB_batch/environment.ini -c /work/02977/jialiu/CMB_hopper/CMB_batch/lens.ini "%s|1024b600|ic1" '''%(cosmo)
             n,N,hour=32,2,8
         elif code =='gadget':
-            runline = 'ibrun -n 256 -o 0 /work/02977/jialiu/IG_Pipeline_0.1/Gadget2/Gadget2 1 256 /work/02977/jialiu/CMB_hopper/CMB_batch/%s/ic1/gadget2.param'%(param)
+            runline = '''ml intel/13.0.2.146
+ibrun -n 256 -o 0 /work/02977/jialiu/IG_Pipeline_0.1/Gadget2/Gadget2 1 256 /work/02977/jialiu/CMB_hopper/CMB_batch/%s/ic1/gadget2.param'''%(param)
             n,N,hour=256, 16, 6
         elif code=='ray':
-            runline='ibrun lenstools.raytracing-mpi -e /work/02977/jialiu/CMB_hopper/CMB_batch/environment.ini -c /work/02977/jialiu/CMB_hopper/CMB_batch/lens.ini "%s|1024b600"'%(cosmo)
-            n,N,hour=16*16, 16, 4
-        
+            runline='''ml intel/14.0.1.106
+ml mvapich2
+
+ibrun lenstools.raytracing-mpi -e /work/02977/jialiu/CMB_hopper/CMB_batch/environment.ini -c /work/02977/jialiu/CMB_hopper/CMB_batch/lens.ini "%s|1024b600"'''%(cosmo)
+            n,N,hour,minute=16*16, 16, 1
+        elif code == 'ngenic':
+            runline='''ml intel/13.0.2.146
+            
+ibrun -n 1024 -o 0 /work/02977/jialiu/IG_Pipeline_0.1/N-GenIC/N-GenIC/home1/02977/jialiu/work/CMB_hopper/CMB_batch/%s/1024b600/ic1/ngenic.param'''%(cosmo)
+            n,N,hour=1024, 128, 1
         content = '''#!/bin/bash
 
 #SBATCH -A TG-AST140041
@@ -41,9 +51,6 @@ def write_batch_submission(cosmo, code='plane'):
 
 #SBATCH -n {3}
 #SBATCH -N {4}
-
-ml intel/14.0.1.106
-ml mvapich2
 
 {5}
 
