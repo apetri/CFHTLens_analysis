@@ -29,11 +29,11 @@ ibrun -n 256 -o 0 /work/02977/jialiu/IG_Pipeline_0.1/Gadget2/Gadget2 1 256 /work
 ml mvapich2
 
 ibrun lenstools.raytracing-mpi -e /work/02977/jialiu/CMB_hopper/CMB_batch/environment.ini -c /work/02977/jialiu/CMB_hopper/CMB_batch/lens.ini "%s|1024b600"'''%(cosmo)
-            n,N,hour,minute=16*16, 16, 1
+            n,N,hour,minute=16*16, 16, 5
         elif code == 'ngenic':
             runline='''ml intel/13.0.2.146
             
-ibrun -n 1024 -o 0 /work/02977/jialiu/IG_Pipeline_0.1/N-GenIC/N-GenIC/home1/02977/jialiu/work/CMB_hopper/CMB_batch/%s/1024b600/ic1/ngenic.param'''%(cosmo)
+ibrun -n 1024 -o 0 /work/02977/jialiu/IG_Pipeline_0.1/N-GenIC/N-GenIC /home1/02977/jialiu/work/CMB_hopper/CMB_batch/%s/1024b600/ic1/ngenic.param'''%(cosmo)
             n,N,hour=1024, 128, 1
         content = '''#!/bin/bash
 
@@ -44,7 +44,7 @@ ibrun -n 1024 -o 0 /work/02977/jialiu/IG_Pipeline_0.1/N-GenIC/N-GenIC/home1/0297
 #SBATCH -e /work/02977/jialiu/CMB_hopper/CMB_batch/Logs/{0}{1}_%j.err
 
 #SBATCH -p normal
-#SBATCH -t {2}:00:00
+#SBATCH -t 00:05:00
 
 #SBATCH --mail-user=jia@astro.columbia.edu
 #SBATCH --mail-type=all
