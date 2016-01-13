@@ -18,7 +18,7 @@ from emcee.utils import MPIPool
 from scipy import interpolate
 import random
 
-doGRF=0
+doGRF=1
 
 print 'GRF=',doGRF
 
