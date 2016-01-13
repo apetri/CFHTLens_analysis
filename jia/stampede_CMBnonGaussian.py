@@ -97,8 +97,8 @@ def compute_GRF_PDF_ps_pk (r):
 	return ps, PDF, peaks#, PDF_GRF, peaks_GRF
 		
 pool=MPIPool()
-if not p.is_master():
-    p.wait()
+if not pool.is_master():
+    pool.wait()
     sys.exit(0)
 a=pool.map(compute_GRF_PDF_ps_pk,range(1, 1025))
 ##save(CMBlensing_dir+'%s_PDF_pk_600b_GRF'%(cosmo), a)
