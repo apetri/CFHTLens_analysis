@@ -93,9 +93,9 @@ for cosmo in (cosmo_arr[12],):#cosmo_arr:#(cosmo_arr[18],):
         ########################################
         
         ######## 2 power spectrum traced at z=1100 #####
-        ellxx,ps1,ps2=load('/Users/jia/Desktop/test_z1100.npy')
-        ax.plot(ellxx,ps1,label='gadget (z=1100)')
-        ax.plot(ellxx,ps2,label='gadget (z=1100)')
+        #ellxx,ps1,ps2=load('/Users/jia/Desktop/test_z1100.npy')
+        #ax.plot(ellxx,ps1,label='gadget (z=1100)')
+        #ax.plot(ellxx,ps2,label='gadget (z=1100)')
         
 	ax.set_xscale('log')
 	ax.set_yscale('log')
@@ -106,9 +106,9 @@ for cosmo in (cosmo_arr[12],):#cosmo_arr:#(cosmo_arr[18],):
 	legend(fontsize=10,loc=0)
 	ax.set_ylim(6e-5,1e-2)
 	plt.tight_layout()
-	show()
-	#savefig(plot_dir+'ps_{}.jpg'.format(cosmo))
-	#close()
+	#show()
+	savefig(plot_dir+'ps_z1100_{}.jpg'.format(cosmo))
+	close()
 	
 
 
