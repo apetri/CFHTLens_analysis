@@ -18,7 +18,7 @@ from emcee.utils import MPIPool
 from scipy import interpolate
 import random
 
-doGRF=1
+doGRF=0
 
 print 'GRF=',doGRF
 
@@ -71,10 +71,12 @@ def compute_GRF_PDF_ps_pk (r):
 	print cosmo, r
 	kmap = kmapGen(r)
 	#kmap = load(CMBlensing_dir+'GRF_fidu/'+'GRF_fidu_%04dr.npy'%(r))
-	ps = WLanalysis.PowerSpectrum(kmap_smoothed[0])[1]
+	
 	
 	if not doGRF:
             kmap_smoothed = [WLanalysis.smooth(kmap, sigmaP) for sigmaP in sigmaP_arr]
+            ps = WLanalysis.PowerSpectrum(kmap_smoothed[0])[1]
+            
             i_arr = arange(len(sigmaP_arr))
             
             PDF = [PDFGen(kmap_smoothed[i], PDFbin_arr[i]) for i in i_arr]
@@ -82,6 +84,7 @@ def compute_GRF_PDF_ps_pk (r):
 
 	###### generate GRF
 	else:
+            ps=0
             random.seed(r)
             GRF = WLanalysis.GRF_Gen(kmap)
             #save(CMBlensing_dir+'GRF_fidu/'+'GRF_fidu_%04dr.npy'%(r), GRF)		
