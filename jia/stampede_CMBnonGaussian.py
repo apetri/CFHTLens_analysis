@@ -99,7 +99,7 @@ pool=MPIPool()
 if not pool.is_master():
     pool.wait()
     sys.exit(0)
-a=pool.map(compute_GRF_PDF_ps_pk, range(1025, 10241))
+a=pool.map(compute_GRF_PDF_ps_pk, range(1, 10241))
 ##save(CMBlensing_dir+'%s_PDF_pk_600b_GRF'%(cosmo), a)
 if doGRF:
     save(CMBlensing_dir+'GRF_%s_ps_PDF_pk_z1100.npy'%(cosmo), a)
