@@ -105,7 +105,7 @@ if doGRF:
     save(CMBlensing_dir+'GRF_%s_ps_PDF_pk_z1100.npy'%(cosmo), a)
 else:
     save(CMBlensing_dir+'kappa_%s_ps_PDF_pk_z1100.npy'%(cosmo), a)
-p.close()
+pool.close()
 print '---DONE---DONE---'
 
 
