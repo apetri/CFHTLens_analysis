@@ -28,7 +28,8 @@ CMBlensing_dir = '/work/02977/jialiu/CMBnonGaussian/'
 iii = int(sys.argv[1])
 cosmo_arr = genfromtxt(CMBlensing_dir+'cosmo_arr.txt',dtype='string')
 cosmo = cosmo_arr[iii]
-kmapGen = lambda r: WLanalysis.readFits('/work/02977/jialiu/CMBL_maps_46cosmo/%s/WLconv_z1100.00_%04dr.fits'%(cosmo, r))
+#kmapGen = lambda r: WLanalysis.readFits('/work/02977/jialiu/CMBL_maps_46cosmo/%s/WLconv_z1100.00_%04dr.fits'%(cosmo, r))
+kmapGen = lambda r: WLanalysis.readFits('/scratch/02977/jialiu/CMB_hopper/CMB_batch_storage/%s/1024b600/Maps/WLconv_z1100.00_%04dr.fits'%(cosmo, r))
 
 ####################################
 
