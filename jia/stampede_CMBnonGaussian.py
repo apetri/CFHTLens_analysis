@@ -90,8 +90,8 @@ def compute_GRF_PDF_ps_pk (r):
             #save(CMBlensing_dir+'GRF_fidu/'+'GRF_fidu_%04dr.npy'%(r), GRF)		
             #GRF = load(CMBlensing_dir+'GRF_fidu/'+'GRF_fidu_%04dr.npy'%(r))
             GRF_smoothed = [WLanalysis.smooth(GRF, sigmaP) for sigmaP in sigmaP_arr]
-            PDF_GRF = [PDFGen(GRF_smoothed[i], PDFbin_arr[i]) for i in i_arr]
-            peaks_GRF = [peaksGen(GRF_smoothed[i], peak_bins_arr[i]) for i in i_arr]
+            PDF = [PDFGen(GRF_smoothed[i], PDFbin_arr[i]) for i in i_arr]
+            peaks = [peaksGen(GRF_smoothed[i], peak_bins_arr[i]) for i in i_arr]
 	#############
 
 	return ps, PDF, peaks#, PDF_GRF, peaks_GRF
