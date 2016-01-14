@@ -86,7 +86,7 @@ def compute_GRF_PDF_ps_pk (r):
 	else:
             ps=0
             random.seed(r)
-            GRF = WLanalysis.GRF_Gen(kmap)
+            GRF = (WLanalysis.GRF_Gen(kmap)).newGRF()
             #save(CMBlensing_dir+'GRF_fidu/'+'GRF_fidu_%04dr.npy'%(r), GRF)		
             #GRF = load(CMBlensing_dir+'GRF_fidu/'+'GRF_fidu_%04dr.npy'%(r))
             GRF_smoothed = [WLanalysis.smooth(GRF, sigmaP) for sigmaP in sigmaP_arr]
