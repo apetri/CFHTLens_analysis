@@ -104,7 +104,7 @@ a=pool.map(compute_GRF_PDF_ps_pk, range(1, 10241))
 if doGRF:
     save(CMBlensing_dir+'GRF_%s_ps_PDF_pk_z1100.npy'%(cosmo), a)
 else:
-    save(CMBlensing_dir+'kappa_%s_ps_PDF_pk_z1100_1025-10241.npy'%(cosmo), a)
+    save(CMBlensing_dir+'kappa_%s_ps_PDF_pk_z1100_10241.npy'%(cosmo), a)
 pool.close()
 print '---DONE---DONE---'
 
