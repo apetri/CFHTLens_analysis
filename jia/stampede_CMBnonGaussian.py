@@ -93,13 +93,13 @@ def compute_GRF_PDF_ps_pk (r):
             peaks = [peaksGen(GRF_smoothed[i], peak_bins_arr[i]) for i in i_arr]
 	#############
 
-	return ps, PDF, peaks#, PDF_GRF, peaks_GRF
+	return [ps,], PDF, peaks#, PDF_GRF, peaks_GRF
 		
 pool=MPIPool()
 if not pool.is_master():
     pool.wait()
     sys.exit(0)
-a=pool.map(compute_GRF_PDF_ps_pk,range(1, 1025))
+a=pool.map(compute_GRF_PDF_ps_pk,range(5))#range(1, 1025))
 ##save(CMBlensing_dir+'%s_PDF_pk_600b_GRF'%(cosmo), a)
 if doGRF:
     save(CMBlensing_dir+'GRF_%s_ps_PDF_pk_z1100.npy'%(cosmo), a)
