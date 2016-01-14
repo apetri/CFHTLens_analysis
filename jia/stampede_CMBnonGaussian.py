@@ -19,7 +19,7 @@ from scipy import interpolate
 import random
 
 doGRF=int(sys.argv[2])
-doGRF=int(sys.argv[3])
+start=int(sys.argv[3])
 
 print 'GRF=',doGRF
 
