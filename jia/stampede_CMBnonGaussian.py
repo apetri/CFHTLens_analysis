@@ -72,13 +72,12 @@ def compute_GRF_PDF_ps_pk (r):
 	kmap = kmapGen(r)
 	#kmap = load(CMBlensing_dir+'GRF_fidu/'+'GRF_fidu_%04dr.npy'%(r))
 	
+	i_arr = arange(len(sigmaP_arr))
 	
 	if not doGRF:
             kmap_smoothed = [WLanalysis.smooth(kmap, sigmaP) for sigmaP in sigmaP_arr]
             ps = WLanalysis.PowerSpectrum(kmap_smoothed[0])[1]
-            
-            i_arr = arange(len(sigmaP_arr))
-            
+
             PDF = [PDFGen(kmap_smoothed[i], PDFbin_arr[i]) for i in i_arr]
             peaks = [peaksGen(kmap_smoothed[i], peak_bins_arr[i]) for i in i_arr]
 
