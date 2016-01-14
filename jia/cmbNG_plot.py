@@ -1,4 +1,3 @@
-
 import WLanalysis
 import glob, os, sys
 import numpy as np
@@ -7,10 +6,89 @@ from scipy import interpolate, stats, fftpack
 
 from scipy import interpolate
 import random
+from pylab import *
 
+ends = [0.5, 0.22, 0.18, 0.1, 0.08]
+PDFbin_arr = [linspace(-end, end, 101) for end in ends]
+kmap_stds = [0.06, 0.05, 0.04, 0.03, 0.02] #[0.014, 0.011, 0.009, 0.006, 0.005]
+peak_bins_arr = [linspace(-3*istd, 6*istd, 26) for istd in kmap_stds]
+
+sizedeg = 3.5**2
+PPA = 2048.0/(sqrt(sizedeg)*60.0) #pixels per arcmin
+sigmaG_arr = array([0.5, 1.0, 2.0, 5.0, 8.0])
+sigmaP_arr = sigmaG_arr*PPA #smoothing scale in pixels
 
 #CMBlensing_dir = '/work/02977/jialiu/CMBnonGaussian/'
-CMBlensing_dir ='/Users/jia/weaklensing/CMBnonGaussian/'
+CMBNG_dir ='/Users/jia/weaklensing/CMBnonGaussian/'
+cosmo_arr = genfromtxt('/Users/jia/weaklensing/CMBnonGaussian/cosmo_arr.txt',dtype='string')
+
+
+######### official plot konbs ###########
+plot_design = 0
+plot_comp_nicaea = 0
+plot_noiseless_peaks = 1
+plot_noiseless_PDF = 0
+plot_noisy_peaks = 0
+plot_noisy_PDF = 0
+plot_reconstruction_noise = 0
+plot_corr_mat = 0
+plot_contour_peaks = 0
+
+if plot_design:
+    all_points=genfromtxt(CMBNG_dir+'model_point.txt')
+    idx = argsort(all_points.T[0])[4:]
+    om,si8=all_points[idx].T
+    f=figure(figsize=(6,6))
+    ax=f.add_subplot(111)
+    ax.scatter(om,si8,marker='D',color='k')
+    ax.scatter(om[12],si8[12], s=300, marker='o',color='red', facecolors='none', edgecolors='r',lw=2)
+    ax.set_xlabel(r'$\Omega_m$',fontsize=22)
+    ax.set_ylabel(r'$\sigma_8$',fontsize=22)
+    ax.set_xlim(0.12,0.75)
+    ax.set_ylim(0.46,1.05)
+    ax.grid(True)
+    #show()
+    savefig(CMBNG_dir+'plot_official/plot_design.pdf')
+    savefig(CMBNG_dir+'plot/plot_design.png')
+    close()
+    
+if plot_comp_nicaea:
+    ell_gadget = (WLanalysis.edge2center(logspace(log10(1.0),log10(1024),51))*360./sqrt(12.25))[:34]
+    
+    fidu_cosmo=cosmo_arr[12]
+    
+    ell_nicaea, ps_nicaea=genfromtxt('/Users/jia/weaklensing/CMBnonGaussian/Pkappa_nicaea/Pkappa_nicaea25_{0}_1100'.format(fidu_cosmo))[33:-5].T
+    
+    pspkPDFgadget=load('/Users/jia/weaklensing/CMBnonGaussian/Pkappa_gadget/kappa_{0}_ps_PDF_pk_z1100.npy'.format(fidu_cosmo))
+    ps_gadget=array([pspkPDFgadget[i][0][:34] for i in range(len(pspkPDFgadget))])
+    idx=where(~isnan(mean(ps_gadget,axis=0)))[0]
+    ps_gadget=ps_gadget[:,idx]
+    ell_gadget=ell_gadget[idx]
+    
+    f=figure(figsize=(8,6))
+    ax=f.add_subplot(111)
+    ax.errorbar(ell_gadget, mean(ps_gadget,axis=0),std(ps_gadget,axis=0),label=r'$\rm{Simulation}$',lw=1.0,color='k')
+    ax.plot(ell_nicaea, ps_nicaea,'k--',lw=2,label=r'$\rm{Smith03+Takahashi12}$')
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    #ax.set_title(cosmo)
+    ax.set_xlabel(r'$\ell$',fontsize=22)
+    ax.set_ylabel(r'$\ell(\ell+1)C_{\ell}/2\pi$',fontsize=22)
+    ax.set_xlim(100,1e4)
+    leg=ax.legend(loc=2,fontsize=20,ncol=1)
+    leg.get_frame().set_visible(False)
+    ax.set_ylim(6e-5,1e-2)
+    ax.tick_params(labelsize=16)
+    plt.tight_layout()
+    #show()
+    savefig(CMBNG_dir+'plot_official/plot_theory_comparison.pdf')
+    savefig(CMBNG_dir+'plot/plot_theory_comparison.jpg')
+    close()
+    
+
+
+
+
 
 ########### cosmology constraints #############
 ## first get average of everything
