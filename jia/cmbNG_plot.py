@@ -26,10 +26,8 @@ fidu_cosmo=cosmo_arr[12]
 ######### official plot konbs ###########
 plot_design = 0
 plot_comp_nicaea = 0
-plot_noiseless_peaks = 1
-plot_noiseless_PDF = 0
-plot_noisy_peaks = 0
-plot_noisy_PDF = 0
+plot_noiseless_peaks_PDF = 1
+plot_noisy_peaks_PDF = 0
 plot_reconstruction_noise = 0
 plot_corr_mat = 0
 plot_contour_peaks = 0
@@ -84,7 +82,7 @@ if plot_comp_nicaea:
     close()
     
 
-if plot_noiseless_peaks:
+if plot_noiseless_peaks_PDF:
     mat_kappa=load('/Users/jia/weaklensing/CMBnonGaussian/Pkappa_gadget/kappa_{0}_ps_PDF_pk_z1100.npy'.format(fidu_cosmo))
     mat_GRF=load('/Users/jia/weaklensing/CMBnonGaussian/Pkappa_gadget/GRF_{0}_ps_PDF_pk_z1100.npy'.format(fidu_cosmo))
     N=len(mat_kappa)

@@ -104,9 +104,9 @@ if not pool.is_master():
 a=pool.map(compute_GRF_PDF_ps_pk, range(start*1024+1, (start+1)*1024+1))
 ##save(CMBlensing_dir+'%s_PDF_pk_600b_GRF'%(cosmo), a)
 if doGRF:
-    save(CMBlensing_dir+'GRF_%s_ps_PDF_pk_z1100_%i.npy'%(cosmo), a, start)
+    save(CMBlensing_dir+'GRF_%s_ps_PDF_pk_z1100_%i.npy'%(cosmo,start), a)
 else:
-    save(CMBlensing_dir+'kappa_%s_ps_PDF_pk_z1100_%i.npy'%(cosmo), a, start)
+    save(CMBlensing_dir+'kappa_%s_ps_PDF_pk_z1100_%i.npy'%(cosmo,start), a)
 pool.close()
 print '---DONE---DONE---'
 
