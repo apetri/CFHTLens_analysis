@@ -26,11 +26,13 @@ fidu_cosmo=cosmo_arr[12]
 ######### official plot konbs ###########
 plot_design = 0
 plot_comp_nicaea = 0
-plot_noiseless_peaks_PDF = 1
+plot_noiseless_peaks_PDF = 0
+plot_sample_noiseless_noisy_map = 0
 plot_noisy_peaks_PDF = 0
 plot_reconstruction_noise = 0
 plot_corr_mat = 0
 plot_contour_peaks = 0
+plot_contour_PDF = 0
 
 if plot_design:
     all_points=genfromtxt(CMBNG_dir+'model_point.txt')
@@ -55,8 +57,13 @@ if plot_comp_nicaea:
 
     ell_nicaea, ps_nicaea=genfromtxt('/Users/jia/weaklensing/CMBnonGaussian/Pkappa_nicaea/Pkappa_nicaea25_{0}_1100'.format(fidu_cosmo))[33:-5].T
     
-    pspkPDFgadget=load('/Users/jia/weaklensing/CMBnonGaussian/Pkappa_gadget/kappa_{0}_ps_PDF_pk_z1100_10240.npy'.format(fidu_cosmo))
-    ps_gadget=array([pspkPDFgadget[i][0][:34] for i in range(len(pspkPDFgadget))])
+    def get_1024(j):
+        pspkPDFgadget=load('/Users/jia/weaklensing/CMBnonGaussian/Pkappa_gadget/kappa_{0}_ps_PDF_pk_z1100_{1}.npy'.format(fidu_cosmo, j))
+        ps_gadget=array([pspkPDFgadget[i][0] for i in range(len(pspkPDFgadget))])
+        ps_gadget=ps_gadget.squeeze()
+        return ps_gadget
+    ps_gadget=concatenate(map(get_1024, range(10)),axis=0)[:,:34]
+    
     idx=where(~isnan(mean(ps_gadget,axis=0)))[0]
     ps_gadget=ps_gadget[:,idx]
     ell_gadget=ell_gadget[idx]
@@ -88,23 +95,30 @@ if plot_noiseless_peaks_PDF:
     N=len(mat_kappa)
     
     ############ plot peaks and PDF ##########
-    #for j in (1,2):## 0 is PDF, 1 is kappa
+    #for j in (1,2):## 1 is PDF, 2 is kappa
         #f=figure(figsize=(6,10))
-        #f.text(0.02, 0.5, [r'$\rm{PDF}$', r'$\rm{N_{peaks}}$'][j-1], va='center', rotation='vertical',fontsize=22)
+        #f.text(0.02, 0.5, [r'$\rm{PDF}$', r'$\rm{N_{peaks}\, (deg^{-2})}$'][j-1], va='center', rotation='vertical',fontsize=22)
         
         #for i in arange(len(sigmaG_arr)):
             #ax=f.add_subplot(5, 1, i+1)
+            
             #iPDF_kappa = array([mat_kappa[x][j][i] for x in range(N)])
             #iPDF_GRF = array([mat_GRF[x][j][i] for x in range(N)])
-            #x_arr = [PDFbin_arr, peak_bins_arr][j-1]
             
+            #x_arr = [PDFbin_arr, peak_bins_arr][j-1]
+            #if j==1:#PDF, normalize by dk
+                #iPDF_kappa = iPDF_kappa/(x_arr[i][1]-x_arr[i][0])
+                #iPDF_GRF = iPDF_GRF/(x_arr[i][1]-x_arr[i][0])
+            #elif j==2:#peak, normalized by deg^2
+                #iPDF_kappa = iPDF_kappa/12.25
+                #iPDF_GRF = iPDF_GRF/12.25
             #plot(x_arr[i][1:], mean(iPDF_kappa, axis=0),'k-',lw=1,label=r'$\kappa\,\rm{maps}$')
             #plot(x_arr[i][1:], mean(iPDF_GRF, axis=0),'k--',lw=2,label=r'$\rm{GRF}$')
             ##ax.errorbar(x_arr[i][1:], mean(iPDF_kappa, axis=0), std(iPDF_kappa, axis=0)/sqrt(3e4/12), label='kappa',capsize=0,)
             ##ax.errorbar(x_arr[i][1:], mean(iPDF_GRF, axis=0), std(iPDF_GRF, axis=0)/sqrt(3e4/12), fmt='--',label='GRF',capsize=0,)
 
             #ax.locator_params(axis = 'x', nbins = 4)
-            #locator_params(axis = 'y', nbins = 2)
+            #ax.locator_params(axis = 'y', nbins = 2)
             #ax.annotate(r"$\theta_G=%.1f'$"%(sigmaG_arr[i]), xy=(0.025, 0.8), xycoords='axes fraction',fontsize=16)
             #ax.set_yscale('log')
             #meanPDF = mean(iPDF_kappa, axis=0)
@@ -112,7 +126,12 @@ if plot_noiseless_peaks_PDF:
                 #ax.set_ylim(amin(meanPDF), amax(meanPDF)*2)
             #else:
                 #ax.set_ylim(amax([amin(meanPDF), 1e-6])*1.5, amax(meanPDF)*2.5)
-                #x0=1.5*abs(x_arr[i][1:][where(meanPDF==WLanalysis.findlevel(meanPDF)[-1])[0]])
+                #x0=abs(x_arr[i][1:][where(meanPDF==WLanalysis.findlevel(meanPDF)[-1])[0]])
+                #if i==0:
+                    #x0=2.0*x0
+                    #ax.set_yticks([1e-5,1e-3,1e-1])
+                #else:
+                    #x0=1.5*x0
                 #ax.set_xlim(-x0,x0)
 
             #if i ==0:
@@ -128,10 +147,10 @@ if plot_noiseless_peaks_PDF:
         #savefig(CMBNG_dir+'plot_official/plot_noiseless_%s.pdf'%(['PDF','peaks'][j-1]))
         #close()
 
-############# plot frac diff ##########
-    for j in (1,2):## 0 is PDF, 1 is kappa
+    ############# plot frac diff ##########
+    for j in (1,2):## 1 is PDF, 2 is kappa
         f=figure(figsize=(6,10))
-        f.text(0.02, 0.5, [r'$\rm{PDF}$', r'$\rm{N_{peaks}}$'][j-1], va='center', rotation='vertical',fontsize=22)
+        f.text(0.02, 0.5, [r'$\rm{PDF^{\kappa}/PDF^{GRF}}-1$', r'$\rm{N_{peaks}^\kappa / N_{peaks}^{GRF}}-1$'][j-1], va='center', rotation='vertical',fontsize=22)
         
         for i in arange(len(sigmaG_arr)):
             ax=f.add_subplot(5, 1, i+1)
@@ -141,16 +160,17 @@ if plot_noiseless_peaks_PDF:
             
             #plot(x_arr[i][1:], mean(iPDF_kappa, axis=0),'k-',lw=1,label=r'$\kappa\,\rm{maps}$')
             plot([-0.5,0.5],[0,0],'k--',lw=2)
-            ax.errorbar(x_arr[i][1:], mean(iPDF_kappa, axis=0)/mean(iPDF_GRF, axis=0)-1, std(iPDF_kappa, axis=0)/sqrt(3e4/12)/mean(iPDF_GRF, axis=0), capsize=0,color='k')
+            ax.errorbar(x_arr[i][1:], mean(iPDF_kappa, axis=0)/mean(iPDF_GRF, axis=0)-1, std(iPDF_kappa, axis=0)/sqrt(2e4/12)/mean(iPDF_GRF, axis=0), capsize=0,color='k')
 
             ax.locator_params(axis = 'x', nbins = 4)
-            locator_params(axis = 'y', nbins = 2)
+            locator_params(axis = 'y', nbins = 3)
             ax.annotate(r"$\theta_G=%.1f'$"%(sigmaG_arr[i]), xy=(0.025, 0.8), xycoords='axes fraction',fontsize=16)
             meanPDF = mean(iPDF_kappa, axis=0)
             if j==2:#peaks
                 ax.set_ylim(amin(meanPDF), amax(meanPDF)*2)
                 idx=where(meanPDF>0)[0]
-                ax.set_xlim(x_arr[i][1:][amin(idx)], x_arr[i][1:][amax(idx)])
+                #ax.set_xlim(x_arr[i][1:][amin(idx)], x_arr[i][1:][amax(idx)])
+                ax.set_xlim(x_arr[i][1:][0],x_arr[i][1:][-1])
             else:
                 #ax.set_ylim(amax([amin(meanPDF), 1e-6])*1.5, amax(meanPDF)*2.5)
                 x0=1.5*abs(x_arr[i][1:][where(meanPDF==WLanalysis.findlevel(meanPDF)[-1])[0]])
@@ -168,7 +188,177 @@ if plot_noiseless_peaks_PDF:
         savefig(CMBNG_dir+'plot_official/plot_noiseless_%s_diff.pdf'%(['PDF','peaks'][j-1]))
         close()
 
+if plot_sample_noiseless_noisy_map:
+    import pickle
+    from mpl_toolkits.axes_grid1 import make_axes_locatable
+    #kmap_noiseless=WLanalysis.readFits(CMBNG_dir+'test_maps/WLconv_z1100.00_0001r.fits')
+    #kmap_noiseless_8arcmin=WLanalysis.smooth(kmap_noiseless,78.01904762)
+    kmap_noiseless_8arcmin=load(CMBNG_dir+'test_maps/kmap_noiseless_8arcmin_1r.npy')
+    #### get noisy map ########
+    FTmap = pickle.load(open(CMBNG_dir+'kappaMapTT_10000sims/kappaMap0000TT_3.pkl'))
+    areal = real(fftpack.ifft2(FTmap))
+    inorm = (2*pi*3.5/360.0)/(77.0**2)
+    areal /= inorm
+    kmap_noisy=areal
+    kmap_noisy_8arcmin = WLanalysis.smooth(kmap_noisy, 2.93)
+    
+    f=figure(figsize=(12,5))
+    
+    i=1
+    for kmap in [kmap_noiseless_8arcmin, kmap_noisy_8arcmin]:
+        ax=subplot(1,2,i)
+        #imshow(kmap_noiseless_8arcmin,vmin=-0.1,vmax=0.1,extent=(0,3.5,0,3.5))
+        im=ax.imshow(kmap,vmin=-3*std(kmap),vmax=3*std(kmap),extent=(0,3.5,0,3.5))
+        ax.annotate(r"$\rm{%s}$"%(['noiseless','noisy'][i-1]), xy=(0.05, 0.9), xycoords='axes fraction',fontsize=24)
+        ax.set_xlabel(r"$\rm{deg}$",fontsize=22)
+        ax.set_ylabel(r"$\rm{deg}$",fontsize=22)
+        ax.tick_params(labelsize=16)
+        divider=make_axes_locatable(ax)
+        cax=divider.append_axes("right", size="5%", pad=0.1)
+        cbar=colorbar(im,format="%.2f",cax=cax)
+        cbar.ax.tick_params(labelsize=16)
+        i+=1
+    plt.subplots_adjust(hspace=0.0, wspace=0.2, left=0.05, right=0.93, bottom=0.15, top=0.95)
+    #show()
+    savefig(CMBNG_dir+'plot_official/plot_maps.pdf')
+    close()
 
+if plot_noisy_peaks_PDF:
+    import matplotlib.gridspec as gridspec 
+    bins=25
+    PDFbins = linspace(-0.12, 0.12, 101)
+    PDFbins = WLanalysis.edge2center(PDFbins)
+    peak_bins = linspace(-0.06,0.14,26)
+    peak_bins = WLanalysis.edge2center(peak_bins)
+    ell_gadget = (WLanalysis.edge2center(logspace(log10(1.0),log10(77/2.0),26))*360./sqrt(12.25))
+
+    all_stats77 = load (CMBNG_dir+'Pkappa_gadget/noisy_z1100_stats77_kappa.npy')
+    ps_all77 = all_stats77[:,:bins]
+    PDF_all77 = all_stats77[:, bins:bins+len(PDFbins)]
+    peaks_all77 = all_stats77[:, bins+len(PDFbins):]
+
+    all_stats77_GRF = load(CMBNG_dir+'Pkappa_gadget/noisy_z1100_stats77_GRF.npy')
+    ps_all77_GRF = all_stats77_GRF[:,:bins]
+    PDF_all77_GRF = all_stats77_GRF[:, bins:bins+len(PDFbins)]
+    peaks_all77_GRF = all_stats77_GRF[:, bins+len(PDFbins):]
+
+    all_stats=[[ell_gadget, ps_all77, ps_all77_GRF],[PDFbins, PDF_all77, PDF_all77_GRF],[peak_bins, peaks_all77, peaks_all77_GRF]]
+    
+    gs = gridspec.GridSpec(2,1,height_ratios=[3,1])
+    for i in (1,2):## 1 is PDF, 2 is peaks
+        stats = all_stats[i]
+        x,y,z=stats
+        if i==1:
+            y = y/(x[1]-x[0])
+            z = z/(x[1]-x[0])
+        else:
+            y = y/12.5
+            z = z/12.5
+        f=figure(figsize=(8,6))
+        ax=f.add_subplot(gs[0])
+        ax2=f.add_subplot(gs[1],sharex=ax)
+        
+        #ax=f.add_subplot(111)
+        ax.errorbar(x,mean(y,axis=0),std(y,axis=0)*sqrt(12/2e4),color='k',fmt='-',capsize=0,label=r'$\kappa\,\rm{maps}$',lw=1)
+        ax.errorbar(x,mean(z,axis=0),std(z,axis=0)*sqrt(12/2e4),color='k',fmt='--',capsize=0,label=r'$\rm{GRF}$',lw=2)
+        ax.set_yscale('log')
+        handles0, labels0 = ax.get_legend_handles_labels()
+        handles=[h[0] for h in handles0]
+        leg=ax.legend(handles,labels0,ncol=1, prop={'size':24}, loc=8)
+        leg.get_frame().set_visible(False)
+        ax.set_ylabel([r'$\rm{PDF}$', r'$\rm{N_{peaks}\, (deg^{-2})}$'][i-1],fontsize=22)
+        ax.set_ylim(amax([ax.get_ylim()[0],2e-4]), amax(mean(z,axis=0))*2)
+        ax.tick_params(labelsize=16)
+        
+        ax2.errorbar(x,mean(y,axis=0)/mean(z,axis=0)-1,std(y,axis=0)*sqrt(12/3e4)/mean(z,axis=0), color='k',fmt='-',capsize=0,label=r'$\kappa\,\rm{maps}$',lw=1)
+        ax2.plot(x,zeros(len(x)),'k--')
+        ax2.set_xlabel('$\kappa$',fontsize=22)
+        ax2.set_ylabel([r'$\rm{\Delta PDF/PDF}$', r'$\rm{\Delta N_{peaks}/ N_{peaks}}$'][i-1],fontsize=20)
+        ax2.tick_params(labelsize=16)
+        ax2.locator_params(axis = 'y', nbins = 5)
+        ax2.set_ylim([-0.25,0.25])
+        #ax2.set_ylim([[-0.23,0.13],[-0.25,0.25]][i-1])
+        ax2.set_xlim(x[0],x[-1])
+        plt.subplots_adjust(hspace=0.05,left=0.15)
+        plt.setp(ax.get_xticklabels(), visible=False)
+        #show()
+        savefig(CMBNG_dir+'plot_official/plot_noisy_%s.pdf'%(['PDF','peaks'][i-1]))
+        close()
+
+if plot_reconstruction_noise: 
+    mat_GRF=load('/Users/jia/weaklensing/CMBnonGaussian/Pkappa_gadget/GRF_{0}_ps_PDF_pk_z1100.npy'.format(fidu_cosmo))
+    mat_kappa=load('/Users/jia/weaklensing/CMBnonGaussian/Pkappa_gadget/kappa_{0}_ps_PDF_pk_z1100.npy'.format(fidu_cosmo))
+    N=len(mat_GRF)
+    
+    
+    PDFbins = linspace(-0.12, 0.12, 101)
+    PDFbins = WLanalysis.edge2center(PDFbins)
+    peak_bins = linspace(-0.06, 0.14, 26)
+    peak_bins = WLanalysis.edge2center(peak_bins)
+    ell_77 = (WLanalysis.edge2center(logspace(log10(1.0),log10(77/2.0),26))*360./sqrt(12.25))
+
+
+    ips_GRF = array([mat_kappa[x][0] for x in range(N)])
+    iPDF_GRF = array([mat_GRF[x][1][-1] for x in range(N)])
+    ipeak_GRF = array([mat_GRF[x][2][-1] for x in range(N)])
+    ell_2048 = (WLanalysis.edge2center(logspace(log10(1.0),log10(1024.0),51))*360./sqrt(12.25))
+    
+    bins=25
+    all_stats77_GRF = load(CMBNG_dir+'Pkappa_gadget/noisy_z1100_stats77_GRF.npy')
+    ps_all77_GRF = all_stats77_GRF[:,:bins]
+    PDF_all77_GRF = all_stats77_GRF[:, bins:bins+len(PDFbins)]
+    peaks_all77_GRF = all_stats77_GRF[:, bins+len(PDFbins):]
+    
+    idx_noiseless = where(~isnan(ips_GRF[0]))[0]
+    idx_noisy = where(~isnan(ps_all77_GRF[0]))[0]
+    xbins=[[ell_2048[idx_noiseless], ell_77[idx_noisy]],[WLanalysis.edge2center(PDFbin_arr[-1]), PDFbins],[WLanalysis.edge2center(peak_bins_arr[-1]), peak_bins]]
+    pss=[[ips_GRF[:,idx_noiseless],ps_all77_GRF[:,idx_noisy]], [iPDF_GRF/(0.08-0.0784), PDF_all77_GRF/0.0024], [ipeak_GRF/12.25, peaks_all77_GRF/12.25]]
+    ############ plot, ps, peaks and PDF ##########
+    f=figure(figsize=(6,8))
+    #f.text(0.02, 0.5, [r'$\rm{PDF}$', r'$\rm{N_{peaks}}$'][j-1], va='center', rotation='vertical',fontsize=22)
+    
+    for i in arange(3):
+        xnoiseless, xnoisy = xbins[i]
+        ynoiseless, ynoisy = pss[i]
+        
+        ax=f.add_subplot(3, 1, i+1)
+        
+        ax.plot(xnoiseless, mean(ynoiseless, axis=0), 'k',label=r'$\rm{noiseless \,GRF}$',lw=1)
+        ax.plot(xnoisy, mean(ynoisy, axis=0),'k--',label=r'$\rm{noisy \,GRF}$',lw=2)
+
+        ax.locator_params(axis = 'x', nbins = 4)
+        ax.locator_params(axis = 'y', nbins = 2)
+        ax.set_yscale('log')
+
+        if i ==0:
+            ax.set_ylim(1.2e-4,0.35)
+            ax.set_xscale('log')
+            ax.set_xlabel('$\ell$',fontsize=22)
+            ax.set_ylabel(r'$\ell(\ell+1)C_{\ell}/2\pi$',fontsize=20)
+            ax.set_xlim(130,2e4)
+        elif i==1:
+            leg=ax.legend(ncol=1, labelspacing=0.3, prop={'size':16},loc=8)
+            leg.get_frame().set_visible(False)
+            ax.set_xlabel('$\kappa$',fontsize=22)
+            ax.set_ylabel(r'$\rm{PDF}$',fontsize=20)
+            ax.set_ylim(0.3,25)
+            ax.set_xlim(xnoisy[0],xnoisy[-1])
+        else:
+            ax.set_xlabel(r'$\kappa$',fontsize=22)
+            ax.set_ylabel(r'$\rm{N_{peaks}\,(deg^{-2})}$',fontsize=20)
+            ax.set_xlim(xnoisy[0],xnoisy[-1])
+            ax.set_ylim(5e-3,0.5)
+        ax.tick_params(labelsize=16)
+    plt.tight_layout()
+    plt.subplots_adjust(hspace=0.4,bottom=0.1,right=0.96)#hspace=0.2,wspace=0, left=0.18, right=0.95)
+    #show()
+    savefig(CMBNG_dir+'plot_official/plot_reconstruction.pdf')
+    close()
+
+def create_prob_plane (fidu_mat, )
+
+if plot_contour_peaks:
+    
 ########### cosmology constraints #############
 ## first get average of everything
 ## covariance matrix
@@ -336,11 +526,8 @@ if plot_noiseless_peaks_PDF:
 
 ############ plot on local laptop ##############
 
-
-
 #mat_kappa=load('PDF_pk_600b_kappa.npy')
 #mat_GRF=load('PDF_pk_600b_GRF.npy')
-
 
 #for i in arange(len(sigmaG_arr)):
         #ax=f.add_subplot(5,2,i*2+1)
