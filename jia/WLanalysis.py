@@ -664,6 +664,36 @@ def buildInterpolator(obs_arr, cosmo_params):
         return ps_interp
     return interp_cosmo
 
+def buildInterpolator2D(obs_arr, cosmo_params):
+    '''Build an interpolator:
+    input:
+    obs_arr = (points, Nbin), where # of points = # of models
+    cosmo_params = (points, Nparams), currently Nparams is hard-coded
+    to be 3 (om,w,si8)
+    output:
+    spline_interps
+    Usage:
+    spline_interps[ibin](im, wm, sm)
+    '''
+    m, s = cosmo_params.T
+    spline_interps = list()
+    for ibin in range(obs_arr.shape[-1]):
+        model = obs_arr[:,ibin]
+        iinterp = interpolate.Rbf(m, s, model)
+        spline_interps.append(iinterp)
+    #return spline_interps
+    def interp_cosmo (params, method = 'multiquadric'):
+        '''Interpolate the powspec for certain param.
+        Params: list of 3 parameters = (om, w, si8)
+        Method: "multiquadric" for spline (default), and "GP" for Gaussian process.
+        '''
+        mm, sm = params
+        gen_ps = lambda ibin: spline_interps[ibin](mm, sm)
+        ps_interp = array(map(gen_ps, range(obs_arr.shape[-1])))
+        ps_interp = ps_interp.reshape(-1,1).squeeze()
+        return ps_interp
+    return interp_cosmo
+
 def findlevel (H):
     '''Find 68%, 95%, 99% confidence level for a probability 2D plane H.
     return V = [v68, v95, v99]
@@ -843,6 +873,7 @@ class GRF_Gen:
         self.GRF_image = fftpack.ifft2(ifftshift(self.psd2D_GRF))
         self.GRF = real(self.GRF_image)
         return self.GRF
+
 def prob_plane (chisq_fcn, param1_arr, param2_arr):
     heatmap = zeros(shape=(len(param1_arr),len(param2_arr)))
     for i in range(len(param1_arr)):

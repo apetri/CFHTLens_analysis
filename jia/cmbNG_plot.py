@@ -31,8 +31,7 @@ plot_sample_noiseless_noisy_map = 0
 plot_noisy_peaks_PDF = 0
 plot_reconstruction_noise = 0
 plot_corr_mat = 0
-plot_contour_peaks = 0
-plot_contour_PDF = 0
+plot_contour_PDF_pk = 1
 
 if plot_design:
     all_points=genfromtxt(CMBNG_dir+'model_point.txt')
@@ -355,19 +354,144 @@ if plot_reconstruction_noise:
     savefig(CMBNG_dir+'plot_official/plot_reconstruction.pdf')
     close()
 
-def create_prob_plane (fidu_mat, )
 
-if plot_contour_peaks:
+#if plot_contour_peaks:
     
 ########### cosmology constraints #############
-## first get average of everything
-## covariance matrix
-#def cosmo_str2params(cosmo):
-        #Om = float(cosmo[2:7])
-        #w = float(cosmo[17:23])
-        #si8 = float(cosmo[-5:])
-        #return Om, w, si8
-#ell_gadget=WLanalysis.PowerSpectrum(rand(2048,2048))[0]#[7:34]
+# first get average of everything
+# covariance matrix
+cosmo_params = array([[float(cosmo[2:7]), float(cosmo[-5:])] for cosmo in cosmo_arr])
+
+def getmat(cosmo, psPDFpk='ps', sigmaG_idx=0, avg=1):
+    '''return the matrix of 'ps','PDF',or'pk', for sigmaG, if avg=1, then return average, instead of all 1024 realizations'''
+    print cosmo
+    mat_kappa=load('/Users/jia/weaklensing/CMBnonGaussian/Pkappa_gadget/kappa_{0}_ps_PDF_pk_z1100.npy'.format(cosmo))
+    N=len(mat_kappa)
+    #Om = float(cosmo[2:7])
+    #si8 = float(cosmo[-5:])
+    if psPDFpk=='ps':
+        ips = array([mat_kappa[x][0] for x in range(N)])
+    elif psPDFpk=='PDF':
+        ips = array([mat_kappa[x][1][sigmaG_idx] for x in range(N)])
+    elif psPDFpk=='pk':
+        ips = array([mat_kappa[x][2][sigmaG_idx] for x in range(N)])
+    if avg:
+        ips=mean(ips,axis=0)
+    return ips
+
+#save(CMBNG_dir+'mat_ps_avg.npy', [getmat(cosmo) for cosmo in cosmo_arr])
+#save(CMBNG_dir+'mat_ps_fidu.npy', getmat(fidu_cosmo,avg=0))
+
+#[save(CMBNG_dir+'mat/mat_%s_sigmaG%i_avg.npy'%(pk, isigmaG), [getmat(cosmo, psPDFpk=pk, sigmaG_idx=isigmaG) for cosmo in cosmo_arr]) for pk in ['PDF','pk'] for isigmaG in range(len(sigmaG_arr))] 
+
+#[save(CMBNG_dir+'mat/mat_%s_sigmaG%i_fidu.npy'%(pk, isigmaG), getmat(fidu_cosmo, psPDFpk=pk, sigmaG_idx=isigmaG, avg=0)) for pk in ['PDF','pk'] for isigmaG in range(len(sigmaG_arr))] 
+
+om_fidu, si8_fidu=cosmo_params[12]
+del_om, del_si8 = 0.01, 0.01
+om0,om1,si80,si81=om_fidu-del_om, om_fidu+del_om, si8_fidu-del_si8, si8_fidu+del_si8
+jjj=250
+om_arr= linspace(om0,om1,jjj)
+si8_arr=linspace(si80,si81, jjj+1)
+ell_gadget = (WLanalysis.edge2center(logspace(log10(1.0),log10(1024),51))*360./sqrt(12.25))
+def create_prob_plane(psPDFpk='pk', sigmaG_idx=0):
+    if psPDFpk =='ps':
+        idx2000=where(ell_gadget<10000)[0]
+        obs_arr = load(CMBNG_dir+'mat/mat_ps_avg.npy')[:,idx2000]
+        fidu_mat = load(CMBNG_dir+'mat/mat_ps_fidu.npy')[:,idx2000]
+    else:
+        obs_arr = load(CMBNG_dir+'mat/mat_%s_sigmaG%i_avg.npy'%(psPDFpk, sigmaG_idx))
+        
+        fidu_mat = load(CMBNG_dir+'mat/mat_%s_sigmaG%i_fidu.npy'%(psPDFpk, sigmaG_idx))
+    
+    idx = where(~isnan(mean(fidu_mat,axis=0))&(mean(fidu_mat,axis=0)!=0))[0]
+    fidu_mat=fidu_mat[:,idx]
+    interp_cosmo=WLanalysis.buildInterpolator2D(obs_arr[:,idx], cosmo_params)
+    
+    #cov_mat = 
+    cov_mat = cov(fidu_mat,rowvar=0)/(2e4/12.5)
+    cov_inv = mat(cov_mat).I
+    
+    def chisq_fcn(param1, param2):
+        model = interp_cosmo((param1,param2))
+        del_N = np.mat(model - mean(fidu_mat,axis=0))
+        chisq = float(del_N*cov_inv*del_N.T)
+        return chisq
+        
+    prob_plane = WLanalysis.prob_plane(chisq_fcn, om_arr, si8_arr)
+    return prob_plane[1]
+
+
+############ create probability planes #######
+#for sigmaG_idx in range(5):
+    #print sigmaG_idx
+    #if sigmaG_idx==0:
+        #iP = create_prob_plane(psPDFpk='ps')
+        #save(CMBNG_dir+'mat/Prob_ps_ell2000.npy',iP)
+    #for psPDFpk in ['pk','PDF']:
+        #iP = create_prob_plane(psPDFpk=psPDFpk, sigmaG_idx=sigmaG_idx)
+        #save(CMBNG_dir+'mat/Prob_%s_sigmaG%i.npy'%(psPDFpk, sigmaG_idx),iP)
+
+#iP = create_prob_plane(psPDFpk='ps')
+#save(CMBNG_dir+'mat/Prob_ps_ell10000.npy',iP)
+        
+#imshow(iP,origin='lower',extent=[si80,si81,om0,om1],interpolation='nearest')
+#xlabel('si8')
+#ylabel('om')
+#show()
+###########################################
+
+if plot_contour_PDF_pk:
+    for j in range(2):
+        PDF=('PDF','peaks')[j]
+        PDF2=('PDF','pk')[j]
+        
+        seed(55)
+        X, Y = np.meshgrid(si8_arr, om_arr)
+        labels = [r"$\rm{%s\,(%s')}$"%(PDF,sigmaG) for sigmaG in sigmaG_arr[[1,3,4]] ]
+        labels.append(r"$\rm{PS}(\ell<2,000)$")
+        labels.append(r"$\rm{PS}(\ell<10,000)$")
+        lines=[]
+        f=figure(figsize=(8,6))
+        ax=f.add_subplot(111)
+        iextent=[si80,si81,om0,om1]
+        for sigmaG_idx in (1,3,4,5):#range(6):
+            if sigmaG_idx==5:
+                prob=load(CMBNG_dir+'mat/Prob_ps_ell2000.npy')
+            elif sigmaG_idx==6:
+                prob=load(CMBNG_dir+'mat/Prob_ps_ell10000.npy')
+            else:
+                prob=load(CMBNG_dir+'mat/Prob_%s_sigmaG%i.npy'%(PDF2,sigmaG_idx))
+            V=WLanalysis.findlevel(prob)
+            icolor=rand(3)
+            CS=ax.contour(X, Y, prob, levels=[V[0],], origin='lower', extent=iextent,linewidths=2, colors=[icolor, ])
+            lines.append(CS.collections[0])
+
+        leg=ax.legend(lines, labels, ncol=1, labelspacing=0.3, prop={'size':18},loc=0)
+        leg.get_frame().set_visible(False)
+        ax.tick_params(labelsize=16)
+        ax.locator_params(axis = 'both', nbins = 5)
+        ax.set_xlabel('$\sigma_8$',fontsize=22)
+        ax.set_ylabel('$\Omega_m$',fontsize=22)
+        ax.grid(True)
+        ax.set_xlim(0.78,0.797)
+        plt.subplots_adjust(hspace=0.0,bottom=0.13,right=0.96,left=0.15)
+        #show()
+       
+        savefig(CMBNG_dir+'plot_official/contour_%s.pdf'%(PDF))
+        close()
+
+
+
+
+
+
+
+
+
+
+
+
+
 #def cosmo_avg_calc (cosmo,return_mat=0):
         ## index: 50ps+100PDF*5+25peaks*5
         #temp = load(CMBlensing_dir+'Pkappa_gadget/%s_ps_PDF_pk_600b.npy'%(cosmo))
@@ -379,10 +503,6 @@ if plot_contour_peaks:
         #else:
                 #return mean(big_mat,axis=0),std(big_mat,axis=0)
         
-##cosmo_arr = genfromtxt(CMBlensing_dir+'success.txt',dtype='string')[:-1]
-#cosmo_arr = genfromtxt(CMBlensing_dir+'cosmo_arr.txt',dtype='string')
-#cosmo_params = array(map(cosmo_str2params, cosmo_arr))
-
 ###pspkavgerr = array(map(cosmo_avg_calc, cosmo_arr))
 ###pspkPDF_avg, pspkPDF_err = swapaxes(pspkavgerr,0,1)
 ###save(CMBlensing_dir+'pspkPDF_avg.npy',pspkPDF_avg)
