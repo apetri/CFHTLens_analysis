@@ -5,7 +5,7 @@ from emcee.utils import MPIPool
 
 CMBlensing_dir = '/work/02977/jialiu/CMBnonGaussian/'
 
-PPA = 2048.0/(sqrt(sizedeg)*60.0)
+PPA = 2048.0/(sqrt(12.25)*60.0)
 sigmaG = PPA*1.0
 kmapGen = lambda r: WLanalysis.readFits('/scratch/02977/jialiu/CMB_hopper/CMB_batch_storage/Om0.296_Ol0.704_w-1.000_si0.786/1024b600/Maps/WLconv_z1100.00_%04dr.fits'%(r))
 
