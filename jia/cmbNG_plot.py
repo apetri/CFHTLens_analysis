@@ -27,11 +27,11 @@ fidu_cosmo=cosmo_arr[12]
 plot_design = 0
 plot_comp_nicaea = 0
 plot_noiseless_peaks_PDF = 0
-plot_sample_noiseless_noisy_map = 0
+plot_sample_noiseless_noisy_map = 1
 plot_noisy_peaks_PDF = 0
 plot_reconstruction_noise = 0
 plot_corr_mat = 0
-plot_contour_PDF_pk = 1
+plot_contour_PDF_pk = 0
 
 if plot_design:
     all_points=genfromtxt(CMBNG_dir+'model_point.txt')
@@ -76,10 +76,11 @@ if plot_comp_nicaea:
     #ax.set_title(cosmo)
     ax.set_xlabel(r'$\ell$',fontsize=22)
     ax.set_ylabel(r'$\ell(\ell+1)C_{\ell}/2\pi$',fontsize=22)
-    ax.set_xlim(100,1e4)
+    ax.set_xlim(100,3e3)
     leg=ax.legend(loc=2,fontsize=20,ncol=1)
     leg.get_frame().set_visible(False)
     ax.set_ylim(6e-5,1e-2)
+    #ax.set_xlim(6e-5,1e-2)
     ax.tick_params(labelsize=16)
     plt.tight_layout()
     #show()
@@ -207,7 +208,7 @@ if plot_sample_noiseless_noisy_map:
     for kmap in [kmap_noiseless_8arcmin, kmap_noisy_8arcmin]:
         ax=subplot(1,2,i)
         #imshow(kmap_noiseless_8arcmin,vmin=-0.1,vmax=0.1,extent=(0,3.5,0,3.5))
-        im=ax.imshow(kmap,vmin=-3*std(kmap),vmax=3*std(kmap),extent=(0,3.5,0,3.5))
+        im=ax.imshow(kmap,vmin=-3*std(kmap_noiseless_8arcmin),vmax=3*std(kmap_noiseless_8arcmin),extent=(0,3.5,0,3.5))
         ax.annotate(r"$\rm{%s}$"%(['noiseless','noisy'][i-1]), xy=(0.05, 0.9), xycoords='axes fraction',fontsize=24)
         ax.set_xlabel(r"$\rm{deg}$",fontsize=22)
         ax.set_ylabel(r"$\rm{deg}$",fontsize=22)

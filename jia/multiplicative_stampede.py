@@ -31,7 +31,7 @@ compute_m_fit = 0
 
 ## official plots ########
 plot_cc = 0
-plot_contour = 0
+plot_contour = 1
 plot_kernel = 0
 #################### constants and small functions ##################
 sizes = (1330, 800, 1120, 950)
@@ -195,7 +195,16 @@ if compute_model:
         z_center= arange(0.025, 3.5, 0.05)
         dndzgal = load(main_dir+'dndz/dndz_0213_cut%s_noweight.npy'%(cut))[:,1]
         dndzkappa = load(main_dir+'dndz/dndz_0213_weighted.npy')[:,1]
+        
+        ######### Planck 15
+        OmegaM = 0.3156#
+        H0 = 67.27
         Ptable = genfromtxt('/Users/jia/weaklensing/cmblensing/P_delta_Planck15')
+        ######## WMAP
+        #Ptable = genfromtxt('/Users/jia/weaklensing/cmblensing/P_delta_Hinshaw')
+        #OmegaM = 0.282#Planck15 0.3156#
+        #H0 = 69.7 #Planck15 67.27
+        
         #Ptable = genfromtxt('/Users/jia/weaklensing/cmblensing/P_delta_smith03_revised_colinparams')
         z_center = concatenate([[0,], z_center, [4.0,]])
         dndzgal = concatenate([[0,], dndzgal, [0,]])
@@ -205,8 +214,6 @@ if compute_model:
         dndzgal_interp = interpolate.interp1d(z_center,dndzgal ,kind='cubic')
         dndzkappa_interp = interpolate.interp1d(z_center,dndzkappa ,kind='cubic')
 
-        OmegaM = 0.3156#,0.29982##0.33138#
-        H0 = 67.27
         OmegaV = 1.0-OmegaM
         h = H0/100.0
         c = 299792.458#km/s
@@ -243,11 +250,11 @@ if compute_model:
         ell_arr2 = linspace(10, 2300, 200)
 
         ####### constant b ############
-        #Cplan_integrand = lambda z, ell: (1.0+z)/DC(z)*dndzgal_interp(z)*W_cmb(z)*Pmatter(ell/DC(z), z)
-        #Ccfht_integrand = lambda z, ell: (1.0+z)/DC(z)*dndzgal_interp(z)*W_wl(z)*Pmatter(ell/DC(z), z)
+        Cplan_integrand = lambda z, ell: (1.0+z)/DC(z)*dndzgal_interp(z)*W_cmb(z)*Pmatter(ell/DC(z), z)
+        Ccfht_integrand = lambda z, ell: (1.0+z)/DC(z)*dndzgal_interp(z)*W_wl(z)*Pmatter(ell/DC(z), z)
         ####### b=b0(1+z)
-        Ccfht_integrand = lambda z, ell: (1.0+z)**2/DC(z)*dndzgal_interp(z)*W_wl(z)*Pmatter(ell/DC(z), z)
-        Cplan_integrand = lambda z, ell: (1.0+z)**2/DC(z)*dndzgal_interp(z)*W_cmb(z)*Pmatter(ell/DC(z), z)
+        #Ccfht_integrand = lambda z, ell: (1.0+z)**2/DC(z)*dndzgal_interp(z)*W_wl(z)*Pmatter(ell/DC(z), z)
+        #Cplan_integrand = lambda z, ell: (1.0+z)**2/DC(z)*dndzgal_interp(z)*W_cmb(z)*Pmatter(ell/DC(z), z)
         
         #C_gal_auto_integrand = lambda z, ell: 1.0/DC(z)**2/(c*H_inv(z))*dndzgal_interp(z)**2*Pmatter(ell/DC(z), z)
         
@@ -255,10 +262,10 @@ if compute_model:
         Cplan_arr = 1.5*OmegaM*(H0/c)**2*array([quad(Cplan_integrand, 0.002, 3.5 , args=(iell))[0] for iell in ell_arr2])
         
         print 'Ccfht_arr'
-        #Ccfht_arr = 1.5*OmegaM*(H0/c)**2*array([quad(Ccfht_integrand, 0.002, 3.5 , args=(iell))[0] for iell in ell_arr2])
+        Ccfht_arr = 1.5*OmegaM*(H0/c)**2*array([quad(Ccfht_integrand, 0.002, 3.5 , args=(iell))[0] for iell in ell_arr2])
         
-        save(main_dir+'powspec/Cplanck_cut%s_arr_bz.npy'%(cut), array([ell_arr2, Cplan_arr]).T)
-        #save(main_dir+'powspec/Ccfht_cut%s_arr_bz.npy'%(cut), array([ell_arr2, Ccfht_arr]).T)
+        save(main_dir+'powspec/Cplanck_cut%s_arr.npy'%(cut), array([ell_arr2, Cplan_arr]).T)
+        save(main_dir+'powspec/Ccfht_cut%s_arr.npy'%(cut), array([ell_arr2, Ccfht_arr]).T)
         
         
         #print 'C_gal_auto'
@@ -285,7 +292,7 @@ if compute_model:
     
 ############# plotting: 2 cross-correlation and theory #################
 if compute_m_fit:
-    const_b = 1
+    const_b = 0
     for cut in (22, 23, 24):
         planck_CC_err = load(main_dir+'powspec/planck_CC_err_%s_ludo.npy'%(cut))
         cfht_CC_err = load(main_dir+'powspec/cfht_CC_err_%s_ludo.npy'%(cut))
@@ -323,11 +330,24 @@ if compute_m_fit:
             ell_arr2, Ccfht_theory = load(main_dir+'powspec/Ccfht_cut%s_arr_bz.npy'%(cut)).T
         #####################
         
-        theorypoints_planck0 = interpolate.interp1d(ell_arr2, Cplanck_theory)(ell_arr)
-        theorypoints_cfht0 = interpolate.interp1d(ell_arr2, Ccfht_theory)(ell_arr)
-        theorypoints_planck = concatenate(repeat(theorypoints_planck0.reshape(1,-1),4,axis=0))
-        theorypoints_cfht = concatenate(repeat(theorypoints_cfht0.reshape(1,-1),4,axis=0))
-
+        #theorypoints_planck0 = interpolate.interp1d(ell_arr2, Cplanck_theory)(ell_arr)
+        #theorypoints_cfht0 = interpolate.interp1d(ell_arr2, Ccfht_theory)(ell_arr)
+        #theorypoints_planck = lambda b: b*concatenate(repeat(theorypoints_planck0.reshape(1,-1),4,axis=0))
+        #theorypoints_cfht = lambda b, m: b*m*concatenate(repeat(theorypoints_cfht0.reshape(1,-1),4,axis=0))
+        
+        
+        ###################### use b=b0+(b0-1)z, comment out above block, and uncomment below block
+        ell_arr2, Cplanck_theory_const = load(main_dir+'powspec/Cplanck_cut%s_arr.npy'%(cut)).T
+        ell_arr2, Ccfht_theory_const = load(main_dir+'powspec/Ccfht_cut%s_arr.npy'%(cut)).T
+        
+        theorypoints_planck0 = lambda b: interpolate.interp1d(ell_arr2, Cplanck_theory*b-(Cplanck_theory-Cplanck_theory_const))(ell_arr)
+        theorypoints_cfht0 = lambda b,m: interpolate.interp1d(ell_arr2, Ccfht_theory*b*m-m*(Ccfht_theory-Ccfht_theory_const))(ell_arr)
+        
+        theorypoints_planck = lambda b: concatenate(repeat(theorypoints_planck0(b).reshape(1,-1),4,axis=0))
+        theorypoints_cfht = lambda b, m: concatenate(repeat(theorypoints_cfht0(b,m).reshape(1,-1),4,axis=0))
+        #########################################
+        
+        #######################
         b_arr = linspace(0.0, 3.0, 1001)
         m_arr = linspace(0.0, 3.0, 1000)
         #m_arr = linspace(0.0, 3.0, 2)###### to do quick fit for cfht or cmb only
@@ -335,17 +355,17 @@ if compute_m_fit:
         ######### sanity check against omori & holder ###########
         ###### for check: comment out this section
         def chisq_func(b, m): 
-            dn = mat(CC_data-concatenate([theorypoints_planck*b, theorypoints_cfht*b*m]))
+            dn = mat(CC_data-concatenate([theorypoints_planck(b), theorypoints_cfht(b,m)]))
             return dn*covI_sims*dn.T
         ###### uncomment this section: using planck x gal only
         #covI_sims24 = mat(cov(CC_conc[:24,:])).I
         #def chisq_func (b, m):
-            #dn = mat(CC_data[:24]-theorypoints_planck*b)
+            #dn = mat(CC_data[:24]-theorypoints_planck(b))
             #return dn*covI_sims24*dn.T
         ####### or uncomment this section: using cfht x gal only
         #covI_sims24 = mat(cov(CC_conc[24:,:])).I
         #def chisq_func (b, m):
-            #dn = mat(CC_data[24:]-theorypoints_cfht*b)
+            #dn = mat(CC_data[24:]-theorypoints_cfht(b,1))
             #return dn*covI_sims24*dn.T
         ########################################################
         
@@ -358,7 +378,7 @@ if compute_m_fit:
         ###### dummy setting for comparing to omori holder ####       
         P_m = sum(prob,axis=0)
         V_m = WLanalysis.findlevel(P_m)
-        ###############################
+        ################################
         string = '''cut i<%i 
 68 percent CL: b = %.2f -%.2f +%.2f, m = %.2f -%.2f +%.2f
 95 percent CL: b = %.2f -%.2f +%.2f, m = %.2f -%.2f +%.2f
@@ -382,10 +402,11 @@ if compute_m_fit:
        #)
         print string   
         
-        if const_b:
-            save(main_dir+'prob_cut%i.npy'%(cut),prob)
-        else:
-            save(main_dir+'prob_cut%i_bz.npy'%(cut),prob)
+        #if const_b:
+            #save(main_dir+'prob_cut%i_WMAP.npy'%(cut),prob)
+        #else:
+            ##save(main_dir+'prob_cut%i_bz.npy'%(cut),prob)
+            #save(main_dir+'prob_cut%i_bTEGMARK.npy'%(cut),prob)
         #from pylab import *
         
         #imshow(WLanalysis.corr_mat(cov_sims),interpolation='nearest',origin='lower')
@@ -545,10 +566,13 @@ if plot_cc:
         m_arr_bz = linspace(0.0, 3.0, 1000)
         prob = load(main_dir+'prob_cut%i.npy'%(cut))
         prob_bz = load(main_dir+'prob_cut%i_bz.npy'%(cut))
+        prob_bz2 = load(main_dir+'prob_cut%i_bTEGMARK.npy'%(cut))
         idx = where(prob==amax(prob))
         idx_bz = where(prob_bz==amax(prob_bz))
+        idx_bz2 = where(prob_bz2==amax(prob_bz2))
         b_best, m_best = b_arr[idx[0]], m_arr[idx[1]]
         b_best_bz, m_best_bz = b_arr_bz[idx_bz[0]], m_arr_bz[idx_bz[1]]
+        b_best_bz2, m_best_bz2 = b_arr_bz[idx_bz2[0]], m_arr_bz[idx_bz2[1]]
         print '(cut%i)b=%.2f, m=%.2f, b0=%.2f, m=%.2f'%(cut, b_best,m_best,b_best_bz,m_best_bz)
         
         for i in (1, 2):
@@ -562,7 +586,7 @@ if plot_cc:
             ell_theo_bz, CC_theo_bz= load(main_dir+'powspec/C%s_cut%s_arr_bz.npy'%(proj,cut)).T
             ell_theo_bz = concatenate([[0,], ell_theo_bz])
             CC_theo_bz = concatenate([[0,], CC_theo_bz])
-            
+
 
             #ell_theo = linspace(0,2000,300)
             #ell_theo_interp = interpolate.interp1d(ell_theo0,CC_theo0,kind="cubic")
@@ -576,16 +600,21 @@ if plot_cc:
             
             #seed(15)
             seed(977)#good seed: 15, 66
-            ax.plot(ell_theo, CC_theo*ell_theo*10**(4+i), '-',lw=2,label='Planck ($b=1$)',color=rand(3))
+            ax.plot(ell_theo, CC_theo*ell_theo*10**(4+i), '-',lw=2,label=r'$\rm{Planck\,} (b=1)$',color=rand(3))
             
             #ax.plot(ell_theo_bz, CC_theo_bz*ell_theo_bz*10**(4+i), '-',lw=2,label='Planck (b(z))',color=rand(3))
             ####### add bestfit curves ##########
             if i==1:
                 ax.plot(ell_theo, CC_theo*ell_theo*10**(4+i)*b_best, '-',lw=1,label='best fit (b=%.2f)'%(b_best),color=rand(3))
-                ax.plot(ell_theo, CC_theo_bz*ell_theo*10**(4+i)*b_best_bz, '--',lw=2,label='best fit (b=%.2f)'%(b_best),color=rand(3))
+                
+                ax.plot(ell_theo, CC_theo_bz*ell_theo*10**(4+i)*b_best_bz, '--',lw=2,color=rand(3))
+                rand(8)
+                ax.plot(ell_theo, ell_theo*10**(4+i)*(b_best_bz2*CC_theo_bz-(CC_theo_bz-CC_theo)), '--',lw=1,color=rand(3))
             elif i==2:
-                ax.plot(ell_theo, CC_theo*ell_theo*10**(4+i)*b_best*m_best, '-',lw=1,label='best fit (const. $b$)'%(b_best),color=rand(3))
-                ax.plot(ell_theo, CC_theo_bz*ell_theo*10**(4+i)*b_best_bz*m_best_bz, '--',lw=2,label='best fit ($b=b_0(1+z)$)'%(b_best),color=rand(3))
+                ax.plot(ell_theo, CC_theo*ell_theo*10**(4+i)*b_best*m_best, '-',lw=1,label=r'$\rm{const.}\,b$',color=rand(3))
+                ax.plot(ell_theo, CC_theo_bz*ell_theo*10**(4+i)*b_best_bz*m_best_bz, '--',lw=2,label=r'$\rm{best\, fit\, }(b=b_0(1+z))$',color=rand(3))
+                rand(8)
+                ax.plot(ell_theo, ell_theo*10**(4+i)*m_best_bz2*(b_best_bz2*CC_theo_bz-(CC_theo_bz-CC_theo)), '--',lw=1,label=r'$\rm{best\,fit}\,(b=\tilde{b}_0(1+z)-z)$',color=rand(3))
             ########################
             
             
@@ -602,8 +631,8 @@ if plot_cc:
             ax.plot([0,2000], [0,0], 'k--', linewidth=1)
             if i==2:
                 handles0, labels0 = ax.get_legend_handles_labels()
-                new_handles=[handles0[i] for i in (3,4,5,6,0,1,2)]
-                new_labels=[labels0[i] for i in (3,4,5,6,0,1,2)]
+                new_handles=[handles0[ii] for ii in (4,5,6,7,0,1,2,3)]
+                new_labels=[labels0[ii] for ii in (4,5,6,7,0,1,2,3)]
                 leg=ax.legend(new_handles, new_labels, loc=1,fontsize=12,ncol=2)
                 #leg=ax.legend(loc=1,fontsize=12,ncol=2)
                 leg.get_frame().set_visible(False)
@@ -643,7 +672,7 @@ if plot_contour:
     f=figure(figsize=(8,6))
     ax=f.add_subplot(111)
     for cut in (22,23,24):
-        prob=load(main_dir+'prob_cut%i_bz.npy'%(cut))[80:500,100:600]
+        prob=load(main_dir+'prob_cut%i_bTEGMARK.npy'%(cut))[80:500,100:600]
         P_b = sum(prob,axis=1)        
         P_m = sum(prob,axis=0)
         V=WLanalysis.findlevel(prob)
@@ -674,12 +703,12 @@ if plot_contour:
     leg.get_frame().set_visible(False)
     ax.tick_params(labelsize=16)
     ax.set_xlabel('$m$',fontsize=20)
-    ax.set_ylabel('$b_0$',fontsize=20)
+    ax.set_ylabel(r'$\tilde{b}_0$',fontsize=20)
     ax.grid(True)
-    ax.set_ylim(0.2,1.0)
+    ax.set_ylim(0.45, 1.35)#(0.2,1.0)
     #show()
-    savefig(main_dir+'plot/contour_bz.jpg')
-    savefig(main_dir+'plot/official/contour_bz.pdf')
+    savefig(main_dir+'plot/contour_bz2.jpg')
+    savefig(main_dir+'plot/official/contour_bz2.pdf')
     close()
  
 def steppify(arr,isX=False,interval=0):
