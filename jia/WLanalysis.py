@@ -715,15 +715,18 @@ def findlevel (H):
     return V
 
 def update_values_by_RaDec (new_ra, new_dec, master_ra, master_dec):
-    '''For a list of [new_ra, new_dec], find index in [master_ra, master_dec].
-    requires all values in master are unique, and new ra dec all in master list.
+    '''For a list of [new_ra, new_dec], find index in [master_ra, master_dec]
+    for elements that are in both lists.
+    requires all values in master are unique.
     '''
     RADEC = master_ra+1.0j*master_dec
     iradec = new_ra+1.0j*new_dec
-    idx = where(in1d(RADEC, iradec)==True)[0]
-    iRADEC = RADEC[idx]
-    unique_iradec, idx_inverse = unique(iradec, return_inverse=True)
-    newidx = idx[argsort(iRADEC)][idx_inverse]
+    idx_master_in_new = where(in1d(RADEC, iradec)==True)[0]## indices of RADEC elements that're in iradec
+    idx_new_in_master = where(in1d(iradec, RADEC)==True)[0]
+    #newidx_master = idx_new_in_master[argsort(iradec[idx_new_in_master])]
+    #iRADEC = RADEC[idx]
+    #unique_iradec, idx_inverse = unique(iradec, return_inverse=True)
+    #newidx = idx[argsort(iRADEC)][idx_inverse]
     return newidx
 
 ############## CFHT specific operations ############

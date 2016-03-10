@@ -26,7 +26,7 @@ if make_kappa_predict:
 	obsPK_dir = '/home1/02977/jialiu/obsPK/'
 else:
 	######## for laptop #####
-	obsPK_dir = '/Users/jia/CFHTLenS/obsPK/'
+	obsPK_dir = '/Users/jia/weaklensing/obsPK/'
 	plot_dir = obsPK_dir+'plot/'
 
 ########### constants ######################

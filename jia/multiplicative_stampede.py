@@ -20,23 +20,26 @@ import WLanalysis
 import sys
 
 ########## knobs #############
-main_dir = '/Users/jia/weaklensing/multiplicative/'
-#main_dir = '/work/02977/jialiu/multiplicative/'
+#main_dir = '/Users/jia/weaklensing/multiplicative/'
+main_dir = '/work/02977/jialiu/multiplicative/'
 
-compute_data_points = 0
-compute_sim_err = 0
+compute_data_points = 1
+compute_sim_err = 1
 compute_model = 0
 plot_omori_comp = 0
 compute_m_fit = 0
 
 ## official plots ########
 plot_cc = 0
-plot_contour = 1
+plot_contour = 0
 plot_kernel = 0
 #################### constants and small functions ##################
 sizes = (1330, 800, 1120, 950)
 
-galnGen = lambda Wx, cut: load (main_dir+'cfht_galn/W%i_cut%i_ludoweight.npy'%(Wx, cut))
+######## referee
+#galnGen = lambda Wx, cut: load (main_dir+'cfht_galn/W%i_cut%i_ludoweight.npy'%(Wx, cut))
+galnGen = lambda Wx, cut: load (main_dir+'referee/galn_W%i_cut%i_LensfitWNonzero.npy'%(Wx,cut))
+
 CkappaGen = lambda Wx: WLanalysis.readFits (main_dir+'cfht_kappa/W%s_KS_1.3_lo_sigmaG10.fit'%(Wx))
 PkappaGen = lambda Wx: load (main_dir+'planck2015_kappa/dat_kmap_flipper2048_CFHTLS_W%s_map.npy'%(Wx))
 #CmaskGen = lambda Wx: load (main_dir+'cfht_mask/Mask_W%s_0.7_sigmaG10.npy'%(Wx))
@@ -120,12 +123,15 @@ if compute_data_points:
     #save('/Users/jia/Desktop/cfhtplancklensing_CC_err_%s_diffmask.npy'%(cut), kappa_CC_err3)
 
     ###########################################
-    #for cut in (22, 23, 24): ######## 3 field cross power spectrum
-        ### compute C_ell, only needed once
-        #planck_CC_err = array([theory_CC_err(PkappaGen(Wx), galnGen(Wx,cut), Wx, cut) for Wx in range(1,5)])
-        #cfht_CC_err = array([theory_CC_err(CkappaGen(Wx), galnGen(Wx,cut), Wx, cut) for Wx in range(1,5)])
+    for cut in (22, 23, 24): ######## 3 field cross power spectrum
+        ## compute C_ell, only needed once
+        planck_CC_err = array([theory_CC_err(PkappaGen(Wx), galnGen(Wx,cut), Wx, cut) for Wx in range(1,5)])
+        cfht_CC_err = array([theory_CC_err(CkappaGen(Wx), galnGen(Wx,cut), Wx, cut) for Wx in range(1,5)])
+        ####### referee
         #save(main_dir+'powspec/planck_CC_err_%s_ludo.npy'%(cut), planck_CC_err)
         #save(main_dir+'powspec/cfht_CC_err_%s_ludo.npy'%(cut), cfht_CC_err)
+        save(main_dir+'referee/planck_CC_err_%s_ludo.npy'%(cut), planck_CC_err)
+        save(main_dir+'referee/cfht_CC_err_%s_ludo.npy'%(cut), cfht_CC_err)
         
     
 ########### compute sim error ######################
@@ -181,7 +187,10 @@ if compute_sim_err:
         p.wait()
         sys.exit(0)
     CCsim_err_arr = array(p.map(iCC, range(100)))
-    save(main_dir+'powspec/CC_Plancksim_CFHTrot_ludomask_cut%i_W%i.npy'%(cut, Wx), CCsim_err_arr)
+    
+    ####### referee
+    #save(main_dir+'powspec/CC_Plancksim_CFHTrot_ludomask_cut%i_W%i.npy'%(cut, Wx), CCsim_err_arr)
+    save(main_dir+'referee/CC_Plancksim_CFHTrot_ludomask_cut%i_W%i.npy'%(cut, Wx), CCsim_err_arr)
 
     p.close()
 ############# finish compute sim error #####################
@@ -193,7 +202,10 @@ if compute_model:
         print cut
         from scipy.integrate import quad
         z_center= arange(0.025, 3.5, 0.05)
-        dndzgal = load(main_dir+'dndz/dndz_0213_cut%s_noweight.npy'%(cut))[:,1]
+        #referee
+        #dndzgal = load(main_dir+'dndz/dndz_0213_cut%s_noweight.npy'%(cut))[:,1]
+        
+        
         dndzkappa = load(main_dir+'dndz/dndz_0213_weighted.npy')[:,1]
         
         ######### Planck 15
@@ -264,8 +276,11 @@ if compute_model:
         print 'Ccfht_arr'
         Ccfht_arr = 1.5*OmegaM*(H0/c)**2*array([quad(Ccfht_integrand, 0.002, 3.5 , args=(iell))[0] for iell in ell_arr2])
         
-        save(main_dir+'powspec/Cplanck_cut%s_arr.npy'%(cut), array([ell_arr2, Cplan_arr]).T)
-        save(main_dir+'powspec/Ccfht_cut%s_arr.npy'%(cut), array([ell_arr2, Ccfht_arr]).T)
+        ######### referee
+        #save(main_dir+'powspec/Cplanck_cut%s_arr.npy'%(cut), array([ell_arr2, Cplan_arr]).T)
+        #save(main_dir+'powspec/Ccfht_cut%s_arr.npy'%(cut), array([ell_arr2, Ccfht_arr]).T)
+        save(main_dir+'referee/Cplanck_cut%s_arr.npy'%(cut), array([ell_arr2, Cplan_arr]).T)
+        save(main_dir+'referee/Ccfht_cut%s_arr.npy'%(cut), array([ell_arr2, Ccfht_arr]).T)
         
         
         #print 'C_gal_auto'
@@ -611,7 +626,7 @@ if plot_cc:
                 rand(8)
                 ax.plot(ell_theo, ell_theo*10**(4+i)*(b_best_bz2*CC_theo_bz-(CC_theo_bz-CC_theo)), '--',lw=1,color=rand(3))
             elif i==2:
-                ax.plot(ell_theo, CC_theo*ell_theo*10**(4+i)*b_best*m_best, '-',lw=1,label=r'$\rm{const.}\,b$',color=rand(3))
+                ax.plot(ell_theo, CC_theo*ell_theo*10**(4+i)*b_best*m_best, '-',lw=1,label=r'$\rm{best\, fit\, (const.}\,b)$',color=rand(3))
                 ax.plot(ell_theo, CC_theo_bz*ell_theo*10**(4+i)*b_best_bz*m_best_bz, '--',lw=2,label=r'$\rm{best\, fit\, }(b=b_0(1+z))$',color=rand(3))
                 rand(8)
                 ax.plot(ell_theo, ell_theo*10**(4+i)*m_best_bz2*(b_best_bz2*CC_theo_bz-(CC_theo_bz-CC_theo)), '--',lw=1,label=r'$\rm{best\,fit}\,(b=\tilde{b}_0(1+z)-z)$',color=rand(3))
