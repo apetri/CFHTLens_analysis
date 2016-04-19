@@ -20,15 +20,15 @@ import WLanalysis
 import sys
 
 ########## knobs #############
-#main_dir = '/Users/jia/weaklensing/multiplicative/'
-main_dir = '/work/02977/jialiu/multiplicative/'
+main_dir = '/Users/jia/weaklensing/multiplicative/'
+#main_dir = '/work/02977/jialiu/multiplicative/'
 
-compute_data_points = 1
-compute_sim_err = 1
+prefix = '_nonzeroOffDiagCov'##''# or '' for zero off-diag cov
+compute_data_points = 0
+compute_sim_err = 0
 compute_model = 0
 plot_omori_comp = 0
-compute_m_fit = 0
-
+compute_m_fit, bmodel = 1, 2#bmodels:0-constb, 1-b0(1+z), 2-b0(1+z)-z
 ## official plots ########
 plot_cc = 0
 plot_contour = 0
@@ -165,8 +165,7 @@ if compute_sim_err:
     igaln = galn.copy()
     
     random.seed(seednum)
-    #x = WLanalysis.GRF_Gen(galn)
-    
+    #x = WLanalysis.GRF_Gen(galn)    
     #Ckmap0 = CkappaGen(Wx)*mask_arr[Wx-1]
     #CFHTx = WLanalysis.GRF_Gen (Ckmap0)
     
@@ -203,8 +202,8 @@ if compute_model:
         from scipy.integrate import quad
         z_center= arange(0.025, 3.5, 0.05)
         #referee
-        #dndzgal = load(main_dir+'dndz/dndz_0213_cut%s_noweight.npy'%(cut))[:,1]
-        
+        dndzgal = load(main_dir+'dndz/dndz_0213_cut%s_noweight.npy'%(cut))[:,1]
+        #dndzgal = load('/Users/jia/weaklensing/multiplicative/referee/dndz_0213_cut%s_noweight_lensfitWnonzero.npy'%(cut))[:,1]
         
         dndzkappa = load(main_dir+'dndz/dndz_0213_weighted.npy')[:,1]
         
@@ -279,8 +278,9 @@ if compute_model:
         ######### referee
         #save(main_dir+'powspec/Cplanck_cut%s_arr.npy'%(cut), array([ell_arr2, Cplan_arr]).T)
         #save(main_dir+'powspec/Ccfht_cut%s_arr.npy'%(cut), array([ell_arr2, Ccfht_arr]).T)
-        save(main_dir+'referee/Cplanck_cut%s_arr.npy'%(cut), array([ell_arr2, Cplan_arr]).T)
-        save(main_dir+'referee/Ccfht_cut%s_arr.npy'%(cut), array([ell_arr2, Ccfht_arr]).T)
+        
+        #save(main_dir+'referee/Cplanck_cut%s_arr.npy'%(cut), array([ell_arr2, Cplan_arr]).T)
+        #save(main_dir+'referee/Ccfht_cut%s_arr.npy'%(cut), array([ell_arr2, Ccfht_arr]).T)
         
         
         #print 'C_gal_auto'
@@ -307,20 +307,22 @@ if compute_model:
     
 ############# plotting: 2 cross-correlation and theory #################
 if compute_m_fit:
-    const_b = 0
+    ell_arr = ell_arr[:5]
     for cut in (22, 23, 24):
-        planck_CC_err = load(main_dir+'powspec/planck_CC_err_%s_ludo.npy'%(cut))
-        cfht_CC_err = load(main_dir+'powspec/cfht_CC_err_%s_ludo.npy'%(cut))
+        ###### referee, with w>0 gals only
+        #planck_CC_err = load(main_dir+'referee/planck_CC_err_%s_ludo.npy'%(cut))
+        #cfht_CC_err = load(main_dir+'referee/cfht_CC_err_%s_ludo.npy'%(cut))
+        planck_CC_err = load(main_dir+'powspec/planck_CC_err_%s_ludo.npy'%(cut))[:,:,:5]
+        cfht_CC_err = load(main_dir+'powspec/cfht_CC_err_%s_ludo.npy'%(cut))[:,:,:5]
         
-        #errK_arr2 = array([std(load(main_dir+'powspec/CC_Plancksim_CFHTrot_cut%i_W%i.npy'%(cut, Wx)), axis=0) for Wx in range(1,5)])*1e5*ell_arr
-        
+        #errK_arr2 = array([std(load(main_dir+'powspec/CC_Plancksim_CFHTrot_cut%i_W%i.npy'%(cut, Wx)), axis=0) for Wx in range(1,5)])*1e5*ell_arr        
         #planck_simerrdiag = errK_arr2[:,0,:]
         #cfht_simerrdiag = errK_arr2[:,1,:]
-        
         #SNR, SNR2, CC_mean, err_mean = find_SNR(CC_arr/(1e5*ell_arr), errK_arr/(1e5*ell_arr))
         
-        
-        CC_sims = array([load(main_dir+'powspec/CC_Plancksim_CFHTrot_ludomask_cut%i_W%i.npy'%(cut, Wx)) for Wx in range(1,5)])
+        ########## referee
+        #CC_sims = array([load(main_dir+'referee/CC_Plancksim_CFHTrot_ludomask_cut%i_W%i.npy'%(cut, Wx)) for Wx in range(1,5)])
+        CC_sims = array([load(main_dir+'powspec/CC_Plancksim_CFHTrot_ludomask_cut%i_W%i.npy'%(cut, Wx))[:,:,:5] for Wx in range(1,5)])
         
         CC_conc=concatenate(swapaxes(concatenate(swapaxes(CC_sims, 1,-1)),0,1))
         ############ debugging ##########
@@ -331,99 +333,133 @@ if compute_m_fit:
         ## CC_conc.shape=(48,100)
         #################################
         cov_sims = cov(CC_conc)
-        covI_sims = mat(cov_sims).I
+        
         
         CC_data = concatenate([concatenate(planck_CC_err[:,0,:]),concatenate(cfht_CC_err[:,0,:])])# shape=(2,4,6)
 
         err_data = concatenate([concatenate(planck_CC_err[:,1,:]),concatenate(cfht_CC_err[:,1,:])])
-
-        if const_b:
+        
+        ######## referee
+        #ell_arr2, Cplanck_theory = load(main_dir+'referee/Cplanck_cut%s_arr.npy'%(cut)).T
+        #ell_arr2, Ccfht_theory = load(main_dir+'referee/Ccfht_cut%s_arr.npy'%(cut)).T
+        if bmodel ==0:
             ell_arr2, Cplanck_theory = load(main_dir+'powspec/Cplanck_cut%s_arr.npy'%(cut)).T
             ell_arr2, Ccfht_theory = load(main_dir+'powspec/Ccfht_cut%s_arr.npy'%(cut)).T        
-        else:
+        if bmodel == 1 or bmodel==2:
             ell_arr2, Cplanck_theory = load(main_dir+'powspec/Cplanck_cut%s_arr_bz.npy'%(cut)).T
             ell_arr2, Ccfht_theory = load(main_dir+'powspec/Ccfht_cut%s_arr_bz.npy'%(cut)).T
+        
+        
         #####################
+        if bmodel < 2: # const, or b=b0(1+z)
+            theorypoints_planck0 = interpolate.interp1d(ell_arr2, Cplanck_theory)(ell_arr)
+            theorypoints_cfht0 = interpolate.interp1d(ell_arr2, Ccfht_theory)(ell_arr)
+            theorypoints_planck = lambda b: b*concatenate(repeat(theorypoints_planck0.reshape(1,-1),4,axis=0))
+            theorypoints_cfht = lambda b, m: b*m*concatenate(repeat(theorypoints_cfht0.reshape(1,-1),4,axis=0))
+       
+        else:######## use b=b0(1+z)-z = b0*z+b0-z; bug before calculates b=b0*z+1-z
+            ell_arr2, Cplanck_theory_const = load(main_dir+'powspec/Cplanck_cut%s_arr.npy'%(cut)).T
+            ell_arr2, Ccfht_theory_const = load(main_dir+'powspec/Ccfht_cut%s_arr.npy'%(cut)).T
+            
+            #theorypoints_planck1 = lambda b: interpolate.interp1d(ell_arr2, Cplanck_theory*b- Cplanck_theory+b*Cplanck_theory_const)(ell_arr)
+            #theorypoints_cfht1 = lambda b,m: interpolate.interp1d(ell_arr2, Ccfht_theory*b*m-m*(Ccfht_theory-b*Ccfht_theory_const))(ell_arr)
+            
+            theorypoints_planck1 = lambda b: interpolate.interp1d(ell_arr2, Cplanck_theory*(b-1)+Cplanck_theory_const)(ell_arr)
+            theorypoints_cfht1 = lambda b,m: interpolate.interp1d(ell_arr2, Ccfht_theory*(b-1)*m+m*Ccfht_theory_const)(ell_arr)
+            
+            theorypoints_planck = lambda b: concatenate(repeat(theorypoints_planck1(b).reshape(1,-1),4,axis=0))
+            theorypoints_cfht = lambda b, m: concatenate(repeat(theorypoints_cfht1(b,m).reshape(1,-1),4,axis=0))
+        ########################################
         
-        #theorypoints_planck0 = interpolate.interp1d(ell_arr2, Cplanck_theory)(ell_arr)
-        #theorypoints_cfht0 = interpolate.interp1d(ell_arr2, Ccfht_theory)(ell_arr)
-        #theorypoints_planck = lambda b: b*concatenate(repeat(theorypoints_planck0.reshape(1,-1),4,axis=0))
-        #theorypoints_cfht = lambda b, m: b*m*concatenate(repeat(theorypoints_cfht0.reshape(1,-1),4,axis=0))
-        
-        
-        ###################### use b=b0+(b0-1)z, comment out above block, and uncomment below block
-        ell_arr2, Cplanck_theory_const = load(main_dir+'powspec/Cplanck_cut%s_arr.npy'%(cut)).T
-        ell_arr2, Ccfht_theory_const = load(main_dir+'powspec/Ccfht_cut%s_arr.npy'%(cut)).T
-        
-        theorypoints_planck0 = lambda b: interpolate.interp1d(ell_arr2, Cplanck_theory*b-(Cplanck_theory-Cplanck_theory_const))(ell_arr)
-        theorypoints_cfht0 = lambda b,m: interpolate.interp1d(ell_arr2, Ccfht_theory*b*m-m*(Ccfht_theory-Ccfht_theory_const))(ell_arr)
-        
-        theorypoints_planck = lambda b: concatenate(repeat(theorypoints_planck0(b).reshape(1,-1),4,axis=0))
-        theorypoints_cfht = lambda b, m: concatenate(repeat(theorypoints_cfht0(b,m).reshape(1,-1),4,axis=0))
-        #########################################
-        
-        #######################
-        b_arr = linspace(0.0, 3.0, 1001)
-        m_arr = linspace(0.0, 3.0, 1000)
-        #m_arr = linspace(0.0, 3.0, 2)###### to do quick fit for cfht or cmb only
+        ####################### 
+        b_arr = linspace(0.0, 3.0, 1001)#301)#referee
+        m_arr = linspace(0.0, 3.0, 1000)#300)#
+        #m_arr = ones(2)###### to do quick fit for cfht or cmb only
 
         ######### sanity check against omori & holder ###########
         ###### for check: comment out this section
-        def chisq_func(b, m): 
-            dn = mat(CC_data-concatenate([theorypoints_planck(b), theorypoints_cfht(b,m)]))
-            return dn*covI_sims*dn.T
+        idxhalf=len(cov_sims)/2
+        if prefix == '_nonzeroOffDiagCov':
+            covI_sims = mat(cov_sims).I
+            covI_sims*=(100-cov_sims.shape[0]-2)/(100.-1)
+            def chisq_func(b, m): 
+                dn = mat(CC_data-concatenate([theorypoints_planck(b), theorypoints_cfht(b,m)]))
+                return dn*covI_sims*dn.T
+        else:
+            
+            covI_sims_block1 = (100-cov_sims.shape[0]/2.0-2)/(100.-1)*mat(cov_sims[:idxhalf,:idxhalf]).I
+            covI_sims_block2 = (100-cov_sims.shape[0]/2.0-2)/(100.-1)*mat(cov_sims[idxhalf:,idxhalf:]).I
+            def chisq_func(b, m): 
+                #dn = mat(CC_data-concatenate([theorypoints_planck(b), theorypoints_cfht(b,m)]))
+                dn1 = mat(CC_data[:idxhalf]-theorypoints_planck(b))
+                dn2 = mat(CC_data[idxhalf:]-theorypoints_cfht(b,m))
+                return dn1*covI_sims_block1*dn1.T+dn2*covI_sims_block2*dn2.T
         ###### uncomment this section: using planck x gal only
-        #covI_sims24 = mat(cov(CC_conc[:24,:])).I
+        #covI_sims20 = (100-cov_sims.shape[0]/2.0-2)/(100.-1)*mat(cov(CC_conc[:idxhalf,:])).I 
         #def chisq_func (b, m):
-            #dn = mat(CC_data[:24]-theorypoints_planck(b))
-            #return dn*covI_sims24*dn.T
+            #dn = mat(CC_data[:idxhalf]-theorypoints_planck(b))
+            #return dn*covI_sims20*dn.T
         ####### or uncomment this section: using cfht x gal only
-        #covI_sims24 = mat(cov(CC_conc[24:,:])).I
+        #covI_sims20 = (100-cov_sims.shape[0]/2.0-2)/(100.-1)*mat(cov(CC_conc[idxhalf:,:])).I
         #def chisq_func (b, m):
-            #dn = mat(CC_data[24:]-theorypoints_cfht(b,1))
-            #return dn*covI_sims24*dn.T
+            #dn = mat(CC_data[idxhalf:]-theorypoints_cfht(b,1))
+            #return dn*covI_sims20*dn.T
         ########################################################
         
-        heatmap, prob = WLanalysis.prob_plane(chisq_func, b_arr, m_arr)
         
-        P_b = sum(prob,axis=1)
-        V_b = WLanalysis.findlevel(P_b)
+        ############## this block: calculate chisq for best fits #######
+        prob=load(main_dir+'referee/prob%s_cut%i_%s_40bins.npy'%(prefix,cut,['Planck','bz','bTEGMARK'][bmodel]))
+        idx = where(prob==amax(prob))
+        b_best, m_best = b_arr[idx[0]], m_arr[idx[1]]
+        ichisq = chisq_func(b_best, m_best)
+        print ['const b','b=b0(1+z)','b=b0(1+z)-z'][bmodel], cut,float(ichisq), float(ichisq/(len(cov_sims)-2.0))
+        ################################################################
         
-
-        ###### dummy setting for comparing to omori holder ####       
-        P_m = sum(prob,axis=0)
-        V_m = WLanalysis.findlevel(P_m)
-        ################################
-        string = '''cut i<%i 
-68 percent CL: b = %.2f -%.2f +%.2f, m = %.2f -%.2f +%.2f
-95 percent CL: b = %.2f -%.2f +%.2f, m = %.2f -%.2f +%.2f
-99 percent CL: b = %.2f -%.2f +%.2f, m = %.2f -%.2f +%.2f
-        '''%(cut, 
-       b_arr[argmax(P_b)], b_arr[argmax(P_b)]-b_arr[P_b>V_b[0]][0], b_arr[P_b>V_b[0]][-1]-b_arr[argmax(P_b)], 
-       m_arr[argmax(P_m)], m_arr[argmax(P_m)]-m_arr[P_m>V_m[0]][0], m_arr[P_m>V_m[0]][-1]-m_arr[argmax(P_m)],
-       b_arr[argmax(P_b)], b_arr[argmax(P_b)]-b_arr[P_b>V_b[1]][0], b_arr[P_b>V_b[1]][-1]-b_arr[argmax(P_b)], 
-       m_arr[argmax(P_m)], m_arr[argmax(P_m)]-m_arr[P_m>V_m[1]][0], m_arr[P_m>V_m[1]][-1]-m_arr[argmax(P_m)],
-       b_arr[argmax(P_b)], b_arr[argmax(P_b)]-b_arr[P_b>V_b[2]][0], b_arr[P_b>V_b[2]][-1]-b_arr[argmax(P_b)], 
-       m_arr[argmax(P_m)], m_arr[argmax(P_m)]-m_arr[P_m>V_m[2]][0], m_arr[P_m>V_m[2]][-1]-m_arr[argmax(P_m)] )
+        
+        ############## this block: prob plane calculation
+        #heatmap, prob = WLanalysis.prob_plane(chisq_func, b_arr, m_arr)
+        #P_b = sum(prob,axis=1)
+        #V_b = WLanalysis.findlevel(P_b)
+        ####### dummy setting for comparing to omori holder ####       
+        #P_m = sum(prob,axis=0)
+        #V_m = WLanalysis.findlevel(P_m)
+        ##################################
+        
+########## print out for latex marginalized errors #############
+        #string = '''cut i<%i 
+#68CL: b = $%.2f\substack{+%.2f \\\\ -%.2f}$ &$%.2f\substack{+%.2f \\\\ -%.2f}$
+#95CL: b = $%.2f\substack{+%.2f \\\\ -%.2f}$ &$%.2f\substack{+%.2f \\\\ -%.2f}$
+#99CL: b = $%.2f\substack{+%.2f \\\\ -%.2f}$ &$%.2f\substack{+%.2f \\\\ -%.2f}$
+        #'''%(cut, 
+       #b_arr[argmax(P_b)], b_arr[P_b>V_b[0]][-1]-b_arr[argmax(P_b)], b_arr[argmax(P_b)]-b_arr[P_b>V_b[0]][0], 
+       #m_arr[argmax(P_m)], m_arr[P_m>V_m[0]][-1]-m_arr[argmax(P_m)], m_arr[argmax(P_m)]-m_arr[P_m>V_m[0]][0], 
+       #b_arr[argmax(P_b)], b_arr[P_b>V_b[1]][-1]-b_arr[argmax(P_b)], b_arr[argmax(P_b)]-b_arr[P_b>V_b[1]][0], 
+       #m_arr[argmax(P_m)], m_arr[P_m>V_m[1]][-1]-m_arr[argmax(P_m)], m_arr[argmax(P_m)]-m_arr[P_m>V_m[1]][0], 
+       #b_arr[argmax(P_b)], b_arr[P_b>V_b[2]][-1]-b_arr[argmax(P_b)], b_arr[argmax(P_b)]-b_arr[P_b>V_b[2]][0], 
+       #m_arr[argmax(P_m)], m_arr[P_m>V_m[2]][-1]-m_arr[argmax(P_m)], m_arr[argmax(P_m)]-m_arr[P_m>V_m[2]][0]) 
         
         #string = '''cut i<%i 
-#68 percent CL: b = %.2f -%.2f +%.2f
-#95 percent CL: b = %.2f -%.2f +%.2f
-#99 percent CL: b = %.2f -%.2f +%.2f
+#68CL: b = $%.2f\substack{+%.2f \\\\ -%.2f}$
+#95CL: b = $%.2f\substack{+%.2f \\\\ -%.2f}$
+#99CL: b = $%.2f\substack{+%.2f \\\\ -%.2f}$
         #'''%(cut, 
-       #b_arr[argmax(P_b)], b_arr[argmax(P_b)]-b_arr[P_b>V_b[0]][0], b_arr[P_b>V_b[0]][-1]-b_arr[argmax(P_b)], 
-       #b_arr[argmax(P_b)], b_arr[argmax(P_b)]-b_arr[P_b>V_b[1]][0], b_arr[P_b>V_b[1]][-1]-b_arr[argmax(P_b)], 
-       #b_arr[argmax(P_b)], b_arr[argmax(P_b)]-b_arr[P_b>V_b[2]][0], b_arr[P_b>V_b[2]][-1]-b_arr[argmax(P_b)], 
+       #b_arr[argmax(P_b)], b_arr[P_b>V_b[0]][-1]-b_arr[argmax(P_b)],b_arr[argmax(P_b)]-b_arr[P_b>V_b[0]][0],  
+       #b_arr[argmax(P_b)], b_arr[P_b>V_b[1]][-1]-b_arr[argmax(P_b)],b_arr[argmax(P_b)]-b_arr[P_b>V_b[1]][0],  
+       #b_arr[argmax(P_b)], b_arr[P_b>V_b[2]][-1]-b_arr[argmax(P_b)],b_arr[argmax(P_b)]-b_arr[P_b>V_b[2]][0],  
        #)
-        print string   
+        #print ['const b','b=b0(1+z)','b=b0(1+z)-z'][bmodel]
+        #print string   
+#########end: print out for latex marginalized errors #############        
+        #if bmodel==0:
+            #save(main_dir+'referee/prob%s_cut%i_Planck_40bins.npy'%(prefix,cut),prob)
+        #elif bmodel==1:
+            #save(main_dir+'referee/prob%s_cut%i_bz_40bins.npy'%(prefix,cut),prob)
+        #elif bmodel==2:
+            #save(main_dir+'referee/prob%s_cut%i_bTEGMARK_40bins.npy'%(prefix,cut),prob)
         
-        #if const_b:
-            #save(main_dir+'prob_cut%i_WMAP.npy'%(cut),prob)
-        #else:
-            ##save(main_dir+'prob_cut%i_bz.npy'%(cut),prob)
-            #save(main_dir+'prob_cut%i_bTEGMARK.npy'%(cut),prob)
+
+    ##################  plotting for correlation mat, or probability plane###########  
         #from pylab import *
-        
         #imshow(WLanalysis.corr_mat(cov_sims),interpolation='nearest',origin='lower')
         #title('correlation matrix (i<%s)'%(cut))
         #colorbar()
@@ -565,10 +601,14 @@ if plot_cc:
     from pylab import *
     f=figure(figsize=(15,8))
     for cut in range(22,25):
+        ######### referee
+        #planck_CC_err = load(main_dir+'referee/planck_CC_err_%s_ludo.npy'%(cut))
+        #cfht_CC_err = load(main_dir+'referee/cfht_CC_err_%s_ludo.npy'%(cut))
+        #errK_arr2 = array([std(load(main_dir+'referee/CC_Plancksim_CFHTrot_ludomask_cut%i_W%i.npy'%(cut, Wx)), axis=0) for Wx in range(1,5)])
         planck_CC_err = load(main_dir+'powspec/planck_CC_err_%s_ludo.npy'%(cut))
         cfht_CC_err = load(main_dir+'powspec/cfht_CC_err_%s_ludo.npy'%(cut))
-        
         errK_arr2 = array([std(load(main_dir+'powspec/CC_Plancksim_CFHTrot_ludomask_cut%i_W%i.npy'%(cut, Wx)), axis=0) for Wx in range(1,5)])
+        
         #errK_arr2 = array([std(load(main_dir+'powspec/CC_Plancksim_CFHTrot_cut%i_W%i.npy'%(cut, Wx)), axis=0) for Wx in range(1,5)])
         
         planck_SNR = find_SNR (planck_CC_err[:,0,:], errK_arr2[:,0,:])
@@ -579,9 +619,14 @@ if plot_cc:
         m_arr = linspace(0.0, 3.0, 1000)
         b_arr_bz = linspace(0.0, 3.0, 1001)
         m_arr_bz = linspace(0.0, 3.0, 1000)
-        prob = load(main_dir+'prob_cut%i.npy'%(cut))
-        prob_bz = load(main_dir+'prob_cut%i_bz.npy'%(cut))
-        prob_bz2 = load(main_dir+'prob_cut%i_bTEGMARK.npy'%(cut))
+        #prob = load(main_dir+'prob_cut%i.npy'%(cut))
+        #prob_bz = load(main_dir+'prob_cut%i_bz.npy'%(cut))
+        #prob_bz2 = load(main_dir+'prob_cut%i_bTEGMARK.npy'%(cut))
+        
+        prob = load(main_dir+'referee/prob%s_cut%i_Planck_40bins.npy'%(prefix,cut))
+        prob_bz = load(main_dir+'referee/prob%s_cut%i_bz_40bins.npy'%(prefix,cut))
+        prob_bz2 = load(main_dir+'referee/prob%s_cut%i_bTEGMARK_40bins.npy'%(prefix,cut))
+        
         idx = where(prob==amax(prob))
         idx_bz = where(prob_bz==amax(prob_bz))
         idx_bz2 = where(prob_bz2==amax(prob_bz2))
@@ -594,6 +639,8 @@ if plot_cc:
             proj=['planck','cfht'][i-1]
             CC_arr = SNR_arr[i-1][0][:,0,:]
             
+            ###### referee
+            #ell_theo, CC_theo = load(main_dir+'referee/C%s_cut%s_arr.npy'%(proj,cut)).T
             ell_theo, CC_theo = load(main_dir+'powspec/C%s_cut%s_arr.npy'%(proj,cut)).T
             ell_theo = concatenate([[0,], ell_theo])
             CC_theo = concatenate([[0,], CC_theo])
@@ -615,7 +662,7 @@ if plot_cc:
             
             #seed(15)
             seed(977)#good seed: 15, 66
-            ax.plot(ell_theo, CC_theo*ell_theo*10**(4+i), '-',lw=2,label=r'$\rm{Planck\,} (b=1)$',color=rand(3))
+            ax.plot(ell_theo, CC_theo*ell_theo*10**(4+i), '-',lw=2,label=r'$\rm{Planck\,} (b=1,\;m=1)$',color=rand(3))
             
             #ax.plot(ell_theo_bz, CC_theo_bz*ell_theo_bz*10**(4+i), '-',lw=2,label='Planck (b(z))',color=rand(3))
             ####### add bestfit curves ##########
@@ -643,7 +690,7 @@ if plot_cc:
                 ax.errorbar(ell_arr+(Wx-2.5)*15, CC_arr[Wx-1]*ell_arr*10**(4+i), errK_arr2[Wx-1][i-1]*ell_arr*10**(4+i), fmt='o',ecolor=cc,mfc=cc, mec=cc, label=r'$\rm W%i$'%(Wx), linewidth=1.2, capsize=0)
             
 
-            ax.plot([0,2000], [0,0], 'k--', linewidth=1)
+            ax.plot([0,2300], [0,0], 'k--', linewidth=1)
             if i==2:
                 handles0, labels0 = ax.get_legend_handles_labels()
                 new_handles=[handles0[ii] for ii in (4,5,6,7,0,1,2,3)]
@@ -668,63 +715,84 @@ if plot_cc:
             ax.tick_params(labelsize=16)
             #ax.set_yticks(linspace(-4,8,7))
     plt.subplots_adjust(hspace=0,wspace=0, left=0.08, right=0.98)
-    #show()
-    savefig(main_dir+'plot/official/CC_weight0mask.pdf')
-    savefig(main_dir+'plot/CC_weight0mask.jpg')
-    close()
+    show()
+    #savefig(main_dir+'plot/official/CC_weight0mask%s.pdf'%(prefix))
+    #savefig(main_dir+'plot/official/CC_weight0mask%s_test6bins.pdf'%(prefix))
+    #savefig(main_dir+'plot/CC_weight0mask.png')
+    #close()
 
 if plot_contour:
-    random.seed(25)
-    #rand(6)
-    
-    b_arr = linspace(0.0, 3.0, 1001)[80:500]
-    m_arr = linspace(0.0, 3.0, 1000)[100:600]
-    X, Y = np.meshgrid(m_arr, b_arr)
-    iextent=[0,b_arr[-1],0,b_arr[-1]]
-    labels = ["$18<i<%i$"%(cut) for cut in (22,23,24)]
-    from pylab import *
-    lines=[]
-    f=figure(figsize=(8,6))
-    ax=f.add_subplot(111)
-    for cut in (22,23,24):
-        prob=load(main_dir+'prob_cut%i_bTEGMARK.npy'%(cut))[80:500,100:600]
-        P_b = sum(prob,axis=1)        
-        P_m = sum(prob,axis=0)
-        V=WLanalysis.findlevel(prob)
-        V_b = WLanalysis.findlevel(P_b)
-        V_m = WLanalysis.findlevel(P_m)
+    for bmodel in range(3):
+        np.random.seed(25)
+        #seed(25)
+        #rand(6)
+        fn=['Planck','bz','bTEGMARK'][bmodel]
+        b_arr = linspace(0.0, 3.0, 1001)#[80:500]
+        m_arr = linspace(0.0, 3.0, 1000)#[100:600]
+        X, Y = np.meshgrid(m_arr, b_arr)
+        iextent=[0,b_arr[-1],0,b_arr[-1]]
+        labels = ["$18<i<%i$"%(cut) for cut in (22,23,24)]
+        from pylab import *
+        lines=[]
+        f=figure(figsize=(8,6))
+        ax=f.add_subplot(111)
+        for cut in (22,23,24):
+            ##### referee
+            prob=load(main_dir+'referee/prob%s_cut%i_%s_40bins.npy'%(prefix,cut,fn))#[80:500,100:600]
+            
+            P_b = sum(prob,axis=1)        
+            P_m = sum(prob,axis=0)
+            V=WLanalysis.findlevel(prob)
+            V_b = WLanalysis.findlevel(P_b)
+            V_m = WLanalysis.findlevel(P_m)
+            #string = '''cut i<%i 
+#68CL: b = $%.2f\substack{+%.2f \\\\ -%.2f}$ &$%.2f\substack{+%.2f \\\\ -%.2f}$'''%(cut, 
+       #b_arr[argmax(P_b)], b_arr[P_b>V_b[0]][-1]-b_arr[argmax(P_b)], b_arr[argmax(P_b)]-b_arr[P_b>V_b[0]][0], 
+       #m_arr[argmax(P_m)], m_arr[P_m>V_m[0]][-1]-m_arr[argmax(P_m)], m_arr[argmax(P_m)]-m_arr[P_m>V_m[0]][0], 
+       ##b_arr[argmax(P_b)], b_arr[P_b>V_b[1]][-1]-b_arr[argmax(P_b)], b_arr[argmax(P_b)]-b_arr[P_b>V_b[1]][0], 
+       ##m_arr[argmax(P_m)], m_arr[P_m>V_m[1]][-1]-m_arr[argmax(P_m)], m_arr[argmax(P_m)]-m_arr[P_m>V_m[1]][0], 
+       ##b_arr[argmax(P_b)], b_arr[P_b>V_b[2]][-1]-b_arr[argmax(P_b)], b_arr[argmax(P_b)]-b_arr[P_b>V_b[2]][0], 
+       ##m_arr[argmax(P_m)], m_arr[P_m>V_m[2]][-1]-m_arr[argmax(P_m)], m_arr[argmax(P_m)]-m_arr[P_m>V_m[2]][0]
+       #)
+            string = '''cut i<%i 
+    68 percent CL: b = %.2f -%.2f +%.2f, m = %.2f -%.2f +%.2f
+    95 percent CL: b = %.2f -%.2f +%.2f, m = %.2f -%.2f +%.2f
+    99 percent CL: b = %.2f -%.2f +%.2f, m = %.2f -%.2f +%.2f
+            '''%(cut, 
+        b_arr[argmax(P_b)], b_arr[argmax(P_b)]-b_arr[P_b>V_b[0]][0], b_arr[P_b>V_b[0]][-1]-b_arr[argmax(P_b)], 
+        m_arr[argmax(P_m)], m_arr[argmax(P_m)]-m_arr[P_m>V_m[0]][0], m_arr[P_m>V_m[0]][-1]-m_arr[argmax(P_m)],
+        b_arr[argmax(P_b)], b_arr[argmax(P_b)]-b_arr[P_b>V_b[1]][0], b_arr[P_b>V_b[1]][-1]-b_arr[argmax(P_b)], 
+        m_arr[argmax(P_m)], m_arr[argmax(P_m)]-m_arr[P_m>V_m[1]][0], m_arr[P_m>V_m[1]][-1]-m_arr[argmax(P_m)],
+        b_arr[argmax(P_b)], b_arr[argmax(P_b)]-b_arr[P_b>V_b[2]][0], b_arr[P_b>V_b[2]][-1]-b_arr[argmax(P_b)], 
+        m_arr[argmax(P_m)], m_arr[argmax(P_m)]-m_arr[P_m>V_m[2]][0], m_arr[P_m>V_m[2]][-1]-m_arr[argmax(P_m)] )
+            print ['const b','b=b0(1+z)','b=b0(1+z)=z'][bmodel]
+            print string
+            
+            icolor=rand(3)
+            #CS=ax.contourf(m_arr, b_arr, prob, [V[1], V[0], 1], origin='lower',colors=['b','g'])
+            
+            CS=ax.contour(X, Y, prob, levels=[V[0],], origin='lower', extent=iextent,linewidths=3.5, colors=[icolor, ])
+            lines.append(CS.collections[0])
+            
         
-        string = '''cut i<%i 
-68 percent CL: b = %.2f -%.2f +%.2f, m = %.2f -%.2f +%.2f
-95 percent CL: b = %.2f -%.2f +%.2f, m = %.2f -%.2f +%.2f
-99 percent CL: b = %.2f -%.2f +%.2f, m = %.2f -%.2f +%.2f
-        '''%(cut, 
-       b_arr[argmax(P_b)], b_arr[argmax(P_b)]-b_arr[P_b>V_b[0]][0], b_arr[P_b>V_b[0]][-1]-b_arr[argmax(P_b)], 
-       m_arr[argmax(P_m)], m_arr[argmax(P_m)]-m_arr[P_m>V_m[0]][0], m_arr[P_m>V_m[0]][-1]-m_arr[argmax(P_m)],
-       b_arr[argmax(P_b)], b_arr[argmax(P_b)]-b_arr[P_b>V_b[1]][0], b_arr[P_b>V_b[1]][-1]-b_arr[argmax(P_b)], 
-       m_arr[argmax(P_m)], m_arr[argmax(P_m)]-m_arr[P_m>V_m[1]][0], m_arr[P_m>V_m[1]][-1]-m_arr[argmax(P_m)],
-       b_arr[argmax(P_b)], b_arr[argmax(P_b)]-b_arr[P_b>V_b[2]][0], b_arr[P_b>V_b[2]][-1]-b_arr[argmax(P_b)], 
-       m_arr[argmax(P_m)], m_arr[argmax(P_m)]-m_arr[P_m>V_m[2]][0], m_arr[P_m>V_m[2]][-1]-m_arr[argmax(P_m)] )
-        print string
-        
-        icolor=rand(3)
-        #CS=ax.contourf(m_arr, b_arr, prob, [V[1], V[0], 1], origin='lower',colors=['b','g'])
-        
-        CS=ax.contour(X, Y, prob, levels=[V[0],], origin='lower', extent=iextent,linewidths=3.5, colors=[icolor, ])
-        lines.append(CS.collections[0])
-        
-    
-    leg=ax.legend(lines, labels, ncol=1, labelspacing=0.3, prop={'size':20},loc=0)
-    leg.get_frame().set_visible(False)
-    ax.tick_params(labelsize=16)
-    ax.set_xlabel('$m$',fontsize=20)
-    ax.set_ylabel(r'$\tilde{b}_0$',fontsize=20)
-    ax.grid(True)
-    ax.set_ylim(0.45, 1.35)#(0.2,1.0)
-    #show()
-    savefig(main_dir+'plot/contour_bz2.jpg')
-    savefig(main_dir+'plot/official/contour_bz2.pdf')
-    close()
+        leg=ax.legend(lines, labels, ncol=1, labelspacing=0.3, prop={'size':20},loc=0)
+        leg.get_frame().set_visible(False)
+        ax.tick_params(labelsize=16)
+        ax.set_xlabel('$m$',fontsize=24)
+        ax.set_ylabel([r'$b$',r'$b_0$',r'$\tilde{b}_0$'][bmodel],fontsize=24)
+        ax.grid(True)
+        plt.subplots_adjust(hspace=0, wspace=0, left=0.13, right=0.96,bottom=0.13, top=0.95)
+        #ax.set_ylim(0.45, 1.35)#(0.2,1.0)
+        if cut==24:
+            #######referee
+            #ax.imshow(prob[::-1,:], extent=[b_arr[0], b_arr[-1],m_arr[0], m_arr[-1]])
+            #######
+            ax.set_ylim(b_arr[P_b>V_b[2]][0]*0.9,b_arr[P_b>V_b[2]][-1]*1.1)
+            ax.set_xlim(0.1,2.2)
+        show()
+        #savefig(main_dir+'plot/official/contour%s.png'%(['','_bz','_bz2'][bmodel]))
+        #savefig(main_dir+'plot/official/contour%s%s.pdf'%(['','_bz','_bz2'][bmodel],prefix))
+        close()
  
 def steppify(arr,isX=False,interval=0):
     """

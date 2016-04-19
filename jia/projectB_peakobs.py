@@ -163,25 +163,25 @@ def kappa_proj (Mvir, Rvir, z_fore, x_fore, y_fore, z_back, x_back, y_back, DC_f
 	return kappa_p
 
 ########## update halo mass using L12
-#Mhalo_params_arr = [[12.520, 10.916, 0.457, 0.566, 1.53],
-		    #[12.725, 11.038, 0.466, 0.610, 1.95],
-		    #[12.722, 11.100, 0.470, 0.393, 2.51]]
+Mhalo_params_arr = [[12.520, 10.916, 0.457, 0.566, 1.53],
+		    [12.725, 11.038, 0.466, 0.610, 1.95],
+		    [12.722, 11.100, 0.470, 0.393, 2.51]]
 ##log10M1, log10M0, beta, sig, gamma
 
-#redshift_edges=[[0, 0.48], [0.48,0.74], [0.74, 1.30]]
+redshift_edges=[[0, 0.48], [0.48,0.74], [0.74, 1.30]]
 
-#master_ra, master_dec, w, M_star = genfromtxt('/Users/jia/CFHTLenS/catalogue/CFHTLens_2015-02-05T05-08-44.tsv', skip_header=1).T
+##master_ra, master_dec, w, M_star = genfromtxt('/Users/jia/CFHTLenS/catalogue/CFHTLens_2015-02-05T05-08-44.tsv', skip_header=1).T
 
-#def Mstar2Mhalo (Mstar_arr, redshift_arr):
-	#Mhalo_arr = zeros(len(Mstar_arr))
-	#for i in range(3):
-		#z0,z1 = redshift_edges[i]
-		#log10M1, log10M0, beta, sig, gamma = Mhalo_params_arr[i]
-		#print log10M1, log10M0, beta, sig, gamma 
-		#Mhalo_fcn = lambda log10Mstar: log10M1+beta*(log10Mstar-log10M0)+10.0**(sig*(log10Mstar-log10M0))/(1+10.0**(-gamma*(log10Mstar-log10M0)))-0.5
-		#idx = where((redshift_arr>z0)&(redshift_arr<=z1))[0]
-		#Mhalo_arr[idx] = Mhalo_fcn(Mstar_arr[idx])
-	#return Mhalo_arr
+def Mstar2Mhalo (Mstar_arr, redshift_arr):
+	Mhalo_arr = zeros(len(Mstar_arr))
+	for i in range(3):
+		z0,z1 = redshift_edges[i]
+		log10M1, log10M0, beta, sig, gamma = Mhalo_params_arr[i]
+		print log10M1, log10M0, beta, sig, gamma 
+		Mhalo_fcn = lambda log10Mstar: log10M1+beta*(log10Mstar-log10M0)+10.0**(sig*(log10Mstar-log10M0))/(1+10.0**(-gamma*(log10Mstar-log10M0)))-0.5
+		idx = where((redshift_arr>z0)&(redshift_arr<=z1))[0]
+		Mhalo_arr[idx] = Mhalo_fcn(Mstar_arr[idx])
+	return Mhalo_arr
 	
 #for Wx in range(1,5):
 	#print Wx

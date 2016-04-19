@@ -20,7 +20,8 @@ bins=25
 #ell_arr77 = WLanalysis.PowerSpectrum(zeros(shape=(77,77)), bins=bins)[0]
 
 FTmapGen_Gaus = lambda r: pickle.load(open(CMBlensing_dir+'kappaMapTT_10000sims/kappaMap%03dTT_3.pkl'%(r)))
-FTmapGen = lambda r: pickle.load(open(CMBlensing_dir+'kappaMapTT_Gauss_10000sims/kappaMap%03dTT_3.pkl'%(r)))
+#FTmapGen = lambda r: pickle.load(open(CMBlensing_dir+'kappaMapTT_Gauss_10000sims/kappaMap%03dTT_3.pkl'%(r)))
+FTmapGen = lambda r: pickle.load(open(CMBlensing_dir+'reconMaps_Om0.406_Ol0.594_w-1.000_si0.847/kappaMap%04dTT_3.pkl'%(r)))
 
 def FT_PowerSpectrum (r, bins=10, return_ell_arr=0, Gaus=0):
     if Gaus:
@@ -77,16 +78,16 @@ def compute_GRF_PDF_ps_pk (r, Gaus=0):
 #ipeak_GRF = array([mat_GRF[x][1][4] for x in range(1024)])
 
 ### noisy TT
-all_stats77 = array([compute_GRF_PDF_ps_pk(r,Gaus=0) for r in range(1024)])
-save(CMBlensing_dir+'Pkappa_gadget/noisy_z1100_stats77_kappa.npy', all_stats77)
+all_stats77 = array([compute_GRF_PDF_ps_pk(r,Gaus=0) for r in range(1000)])#1024
+save(CMBlensing_dir+'Pkappa_gadget/noisy_z1100_stats77_kappa_Om0.406_Ol0.594_w-1.000_si0.847.npy', all_stats77)
 #all_stats77 = load (CMBlensing_dir+'Pkappa_gadget/noisy_z1100_stats77_kappa.npy')
 #ps_all77 = all_stats77[:,:bins]
 #PDF_all77 = all_stats77[:, bins:bins+len(PDFbins)-1]
 #peaks_all77 = all_stats77[:, bins+len(PDFbins)-1:]
 
 ### noisy GRF
-all_stats77_GRF = array([compute_GRF_PDF_ps_pk(r,Gaus=1) for r in range(1024)])
-save(CMBlensing_dir+'Pkappa_gadget/noisy_z1100_stats77_GRF.npy', all_stats77_GRF)
+#all_stats77_GRF = array([compute_GRF_PDF_ps_pk(r,Gaus=1) for r in range(1024)])
+#save(CMBlensing_dir+'Pkappa_gadget/noisy_z1100_stats77_GRF.npy', all_stats77_GRF)
 #all_stats77_GRF = load(CMBlensing_dir+'Pkappa_gadget/noisy_z1100_stats77_GRF.npy')
 #ps_all77_GRF = all_stats77_GRF[:,:bins]
 #PDF_all77_GRF = all_stats77_GRF[:, bins:bins+len(PDFbins)-1]

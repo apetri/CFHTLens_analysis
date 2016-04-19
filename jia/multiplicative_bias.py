@@ -101,6 +101,10 @@ def coords2grid_counts(radeclist, Wx):
 	return grid_counts
 
 ################# for referee report March 10 2016
+
+create_galn_LensfitWNonzero = 0
+create_dndz_LensfitWNonzero = 0
+
 RA1 =(30.0, 39.0)#starting RA for W1
 DEC1=(-11.5,-3.5)
 RA2 =(132.0, 137.0)
@@ -117,13 +121,11 @@ DECs=(DEC1,DEC2,DEC3,DEC4)
 xmaskGen = lambda Wx: load('/Users/jia/weaklensing/multiplicative/mask_ludo/ludomask_weight0_manu_W%i.npy'%Wx)
 
 weightGen = lambda Wx: load('/Users/jia/weaklensing/multiplicative/mask_ludo/weight0/ludoweight_weight0_W%i.npy'%Wx)
-create_galn_LensfitWNonzero = 1
 
 if create_galn_LensfitWNonzero:
     cat_w0 = load('/Users/jia/weaklensing/CFHTLenS_downloads/CFHTLens_2015-08-18T04-37-45.npy').T
     RA, DEC, weight, Z_B,  MAG_i, MAG_y, MAG_u, MAG_g, MAG_r, MAG_z = cat_w0
-    MAGI = amin(array([abs(MAG_y), abs(MAG_i)]),axis=0)
-    
+    MAGI = amin(array([abs(MAG_y), abs(MAG_i)]),axis=0)    
 
     for Wx in range(1,5):
         print Wx
@@ -131,14 +133,48 @@ if create_galn_LensfitWNonzero:
         mask=xmaskGen(Wx)
         for cut in (22,23,24):
             #
-            idx_Wx = where((RA<RAs[Wx-1][1])&(RA>RAs[Wx-1][0])&(MAGI>18)&(MAGI<cut))&(weight>0))[0]
+            idx_Wx = where((RA<RAs[Wx-1][1])&(RA>RAs[Wx-1][0])&(MAGI>18)&(MAGI<cut)&(weight>0))[0]
             igaln = coords2grid_counts(array([RA,DEC]).T[idx_Wx], Wx)
             igaln=igaln/weightGen(Wx)
             igaln=igaln/mean(igaln[mask>0])-1
             igaln[mask<1]=0
             igaln_smooth=WLanalysis.smooth(igaln,1.0)
-            #save('/Users/jia/weaklensing/multiplicative/referee/galn_W%i_cut%i_LensfitWNonzero.npy'%(Wx,cut),igaln_smooth)
+            save('/Users/jia/weaklensing/multiplicative/referee/galn_W%i_cut%i_LensfitWNonzero.npy'%(Wx,cut),igaln_smooth)
 
+if create_dndz_LensfitWNonzero:
+    z_arr = arange(.025,3.5,0.05)
+    Pz = load('/Users/jia/weaklensing/CFHTLenS_downloads/2015-09-290split/Pz_xac.npy')
+    #Pz = (np.core.defchararray.replace(Pz,',','')).astype(float)
+    RA, DEC, weight, ZB = load('/Users/jia/weaklensing/CFHTLenS_downloads/2015-09-290split/ra_dec_weightz_xac.npy').T
+    cat_w0 = load('/Users/jia/weaklensing/CFHTLenS_downloads/CFHTLens_2015-08-18T04-37-45.npy').T
+    master_ra, master_dec, master_weight, Z_B,  MAG_i, MAG_y, MAG_u, MAG_g, MAG_r, MAG_z = cat_w0
+    MAGI = amin(array([abs(MAG_y), abs(MAG_i)]),axis=0)
+    
+    from pylab import *
+    figure()
+
+    for cut in (22,23,24):
+        
+        icolor=('r','b','c')[cut-22]
+        idx_master = where((MAGI>18)&(MAGI<cut)&(master_weight>0))[0]
+        idx_master_all = where((MAGI>18)&(MAGI<cut))[0]
+        masterradec=master_ra[idx_master]+1.0j*master_dec[idx_master]
+        masterradec_all=master_ra[idx_master_all]+1.0j*master_dec[idx_master_all]
+        idx_sub = where(in1d(RA+1.0j*DEC, masterradec)==True)[0]
+        idx_sub_all = where(in1d(RA+1.0j*DEC, masterradec_all)==True)[0]
+        iPz = mean(Pz[idx_sub],axis=0)
+        iPz_all = mean(Pz[idx_sub_all],axis=0)
+        iPz /= sum(iPz)*0.05
+        iPz_all /= sum(iPz_all)*0.05
+        plot(z_arr, iPz, color=icolor, label='i<%i (w>=0)'%(cut))
+        plot(z_arr, iPz_all, '--',color=icolor,label='i<%i (w>0)'%(cut))
+        save('/Users/jia/weaklensing/multiplicative/referee/dndz_0213_cut%s_noweight_lensfitWnonzero.npy'%(cut),array([z_arr,iPz]).T)
+    xlabel('z')
+    ylabel('dndz')
+    legend(frameon=0,fontsize=12)
+    show()
+    
+    
 #i=1
 #for Wx in range(1,5):
     #subplot(4,5,i)

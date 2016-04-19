@@ -733,7 +733,7 @@ def update_values_by_RaDec (new_ra, new_dec, master_ra, master_dec):
 centers = array([[34.5, -7.5], [134.5, -3.25],[214.5, 54.5],[ 332.75, 1.9]])
 sizes = (1330, 800, 1120, 950)
 rad2pix=lambda x, size: around(size/2.0-0.5 + x*PPR512).astype(int)
-def list2coords(radeclist, Wx, offset=False):
+def list2coords(radeclist, Wx, offset=False, convert2rad=True):
     '''For a list of radec, return their pixelized position for Wx field.
     '''
     size=sizes[Wx-1]
@@ -743,9 +743,11 @@ def list2coords(radeclist, Wx, offset=False):
     else:
         center = centers[Wx-1]
     f_Wx = gnom_fun(center)
-    xy = array(map(f_Wx,radeclist))
-    xy_pix = rad2pix(xy, size)
-    return xy_pix
+    #xy = array(map(f_Wx,radeclist))
+    xy = array(f_Wx(radeclist)).T
+    if convert2rad:
+        xy = rad2pix(xy, size)
+    return xy
 
 def interpGridpoints (xy, values, newxy, method='nearest'):
     newvalues = interpolate.griddata(xy, values, newxy, method=method)
