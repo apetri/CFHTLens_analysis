@@ -20,11 +20,11 @@ from scipy.integrate import quad
 import scipy.optimize as op
 import sys, os
 
-make_kappa_predict = 0
-if make_kappa_predict:
+make_kappaProj_cat = 0
+if make_kappaProj_cat:
     ######## for stampede #####
     from emcee.utils import MPIPool
-    obsPK_dir = '/home1/02977/jialiu/obsPK/'
+    obsPK_dir = '/work/02977/jialiu/obsPK/'
 else:
     ######## for laptop #####
     obsPK_dir = '/Users/jia/weaklensing/obsPK/'
@@ -56,7 +56,7 @@ maskGen = lambda Wx: load(obsPK_dir+'mask/Mask_W%i_0.5_sigmaG10.npy'%(Wx))
 
 kmapGen = lambda Wx, sigmaG: WLanalysis.readFits(obsPK_dir+'kappa_lens/W%i_KS_1.3_lo_sigmaG%02d.fit'%(Wx,sigmaG*10))*maskGen(Wx)
 
-cat_gen = lambda Wx: np.load(obsPK_dir+'CFHTLens_2016-03-16T13-41-52_W%i.npy'%(Wx))
+cat_gen = lambda Wx: np.load(obsPK_dir+'cat/CFHTLens_2016-03-16T13-41-52_W%i.npy'%(Wx))
 # columns: (0)ALPHA_J2000 (1)DELTA_J2000     
 # (2)e1 (3)e2 (4)weight (5)MASK (6)Z_B (7)m (8)c2 
 # (9)LP_Mr (10)LP_Mi (11)LP_Mz (12)LP_log10_SM_MED 
@@ -79,7 +79,7 @@ DL = lambda z: DC(z)*(1.0+z)
 ##rho_cz = lambda z: rho_c0*(OmegaM*(1+z)**3+(1-OmegaM))
 rho_cz = lambda z: 0.375*Hcgs(z)**2/pi/Gnewton#critical density
 
-########## update halo mass using L12
+########## update halo mass using L12, table 5 SIG_MOD1
 Mhalo_params_arr = [[12.520, 10.916, 0.457, 0.566, 1.53],
             [12.725, 11.038, 0.466, 0.610, 1.95],
             [12.722, 11.100, 0.470, 0.393, 2.51]]
@@ -87,6 +87,8 @@ Mhalo_params_arr = [[12.520, 10.916, 0.457, 0.566, 1.53],
 redshift_edges=[[0, 0.48], [0.48,0.74], [0.74, 1.30]]
 
 def Mstar2Mhalo (Mstar_arr, redshift_arr):
+    '''input log10 (Mstar_arr/Msun), return Mhalo with unit: log10(Mhalo/Mstar)
+    '''
     Mhalo_arr = zeros(len(Mstar_arr))
     for i in range(3):
         z0,z1 = redshift_edges[i]
@@ -96,8 +98,6 @@ def Mstar2Mhalo (Mstar_arr, redshift_arr):
         idx = where((redshift_arr>z0)&(redshift_arr<=z1))[0]
         Mhalo_arr[idx] = Mhalo_fcn(Mstar_arr[idx])
     return Mhalo_arr
-## Mhalo_L12 = 10**Mstar2Mhalo(iM_star, redshift)
-## Note: need to check the definition of M_halo vs. M_vir, also R_vir
 
 ##############################################
 ######### create kappa_proj map ##############
@@ -110,6 +110,7 @@ dd = lambda z: OmegaM*(1+z)**3/(OmegaM*(1+z)**3+OmegaV)
 Delta_vir = lambda z: 18.0*pi**2+82.0*dd(z)-39.0*dd(z)**2
 
 Rvir_fcn = lambda Mvir, z: (0.75/pi * Mvir*M_sun/(Delta_vir(z)*rho_cz(z)))**0.3333
+## Rvir in unit of cm
 
 def Gx_fcn (x, cNFW):#=5.0):
     '''projection function for a halo with cNFW, at location x=theta/theta_s.
@@ -151,31 +152,33 @@ def kappa_proj (Mvir, Rvir, z_fore, x_fore, y_fore, z_back, x_back, y_back, DC_f
     kappa_p = two_rhos_rs/SIGMAc*Gx
     return kappa_p
     
-if make_kappa_predict:
+if make_kappaProj_cat:
     from scipy.spatial import cKDTree
-    zcut = 0.2      #this is the lowest redshift for backgorund galaxies. use 0.2 to count for all galaxies.
-    r = 0.006       # 0.002 rad = 7arcmin, 
-            #within which I search for contributing halos
+    zcut = 0.4      #this is the lowest redshift for backgorund galaxies. use 0.2 to count for all galaxies.
+    r = radians(20.0/60.0) #within which radius I search for contributing halos
 
     Wx = int(sys.argv[1])
     center = centers[Wx-1]
-    icat = cat_gen(Wx).T
 
-    ra, dec, redshift, weight, MAGi, Mhalo, Rvir, DC_arr = icat
+    ra, dec, redshift, weight, log10Mstar = cat_gen(Wx).T[[0,1,6,4,12]]
+    Mhalo = 10**Mstar2Mhalo (log10Mstar, redshift)## unit of Msun
+    Mhalo[log10Mstar==-99]=0
+    Rvir = Rvir_fcn(Mhalo, redshift)
+    DC_arr = DC(redshift)
     ## varying DL
     #Mhalo[Mhalo>2e15] = 2e15#prevent halos to get crazy mass
     f_Wx = WLanalysis.gnom_fun(center)#turns to radians
-    xy = array(f_Wx(icat[:2])).T
+    xy = array(f_Wx(array([ra,dec]).T)).T
 
-    idx_back = where(redshift>zcut)[0]
+    idx_back = where((redshift>zcut)&(weight>0.001))[0]
     xy_back = xy[idx_back]
 
     kdt = cKDTree(xy)
-#nearestneighbors = kdt.query_ball_point(xy_back[:100], 0.002)
+    ## nearestneighbors = kdt.query_ball_point(xy_back[:100], 0.002)
     def kappa_individual_gal (i):
-        '''for individual background galaxies, find foreground galaxies within 20 arcmin and sum up the kappa contribution
+        '''for individual background galaxies, find foreground galaxies within 10 arcmin and sum up the kappa contribution
         '''
-        print i
+        
         iidx_fore = array(kdt.query_ball_point(xy_back[i], r))  
         x_back, y_back = xy_back[i]
         z_back, DC_back = redshift[idx_back][i], DC_arr[idx_back][i]
@@ -183,17 +186,19 @@ if make_kappa_predict:
         for jj in iidx_fore:
             x_fore, y_fore = xy[jj]
             jMvir, jRvir, z_fore, DC_fore = Mhalo[jj], Rvir[jj], redshift[jj], DC_arr[jj]
-            if z_fore >= z_back:
+            if z_fore >= z_back or jMvir==0:
                 kappa_temp = 0
             else:
-                kappa_temp = kappa_proj (jMvir, jRvir, z_fore, x_fore, y_fore, z_back, x_back, y_back, DC_fore, DC_back, cNFW=5.0)
+                #print jMvir, jRvir, z_fore, x_fore, y_fore, z_back, x_back, y_back, DC_fore, DC_back
+                kappa_temp = kappa_proj (jMvir, jRvir, z_fore, x_fore, y_fore, z_back, x_back, y_back, DC_fore, DC_back)
                 if isnan(kappa_temp):
                     kappa_temp = 0
             ikappa += kappa_temp
             
             if kappa_temp>0:
                 theta = sqrt((x_fore-x_back)**2+(y_fore-y_back)**2)
-                print '%i\t%s\t%.2f\t%.3f\t%.3f\t%.4f\t%.6f'%(i, jj,log10(jMvir), z_fore, z_back, rad2arcmin(theta), kappa_temp)    
+                print '%i\t%s\t%.2f\t%.3f\t%.3f\t%.4f\t%.6f'%(i, jj,log10(jMvir), z_fore, z_back, degrees(theta)*60, kappa_temp)  
+        print i, ikappa
         return ikappa
 
     #a=map(kappa_individual_gal, randint(0,len(idx_back)-1,5))
@@ -210,4 +215,4 @@ if make_kappa_predict:
     pool.map(temp, ix_arr)
     
     all_kappa_proj = concatenate([np.load(obsPK_dir+'temp/kappa_proj%i_%07d.npy'%(Wx, ix)) for ix in ix_arr])
-    np.save(obsPK_dir+'kappa_predict_W%i.npy'%(Wx), all_kappa_proj)
+    np.save(obsPK_dir+'cat_kappa_proj_W%i.npy'%(Wx), all_kappa_proj)
