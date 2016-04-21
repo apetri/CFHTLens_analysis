@@ -77,8 +77,8 @@ DA = lambda z: DC(z)/(1.0+z)
 DL = lambda z: DC(z)*(1.0+z)
 # find the rest magnitude at the galaxy, from observed magnitude cut
 #M_rest_fcn = lambda M_obs, z: M_obs - 5.0*log10(DL_interp(z)) - 25.0
-##rho_cz = lambda z: rho_c0*(OmegaM*(1+z)**3+(1-OmegaM))#critical density
-rho_cz = lambda z: 0.375*Hcgs(z)**2/pi/Gnewton
+##rho_cz = lambda z: rho_c0*(OmegaM*(1+z)**3+(1-OmegaM))
+rho_cz = lambda z: 0.375*Hcgs(z)**2/pi/Gnewton#critical density
 
 ##############################################
 ##################### MAG_z to M100 ##########
