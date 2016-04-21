@@ -20,7 +20,7 @@ from scipy.integrate import quad
 import scipy.optimize as op
 import sys, os
 
-make_kappaProj_cat = 0
+make_kappaProj_cat = 1
 if make_kappaProj_cat:
     ######## for stampede #####
     from emcee.utils import MPIPool
