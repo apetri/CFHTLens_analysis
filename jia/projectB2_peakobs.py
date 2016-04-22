@@ -211,8 +211,13 @@ if make_kappaProj_cat:
             kappa_all = map(kappa_individual_gal, arange(ix, amin([len(idx_back), ix+step])))
             np.save(temp_fn,kappa_all)
     pool = MPIPool()
+    if not pool.is_master():
+        pool.wait()
+        sys.exit(0)
     ix_arr = arange(0, len(idx_back), step)
     pool.map(temp, ix_arr)
     
     all_kappa_proj = concatenate([np.load(obsPK_dir+'temp/cat_kappa_proj%i_%07d.npy'%(Wx, ix)) for ix in ix_arr])
     np.save(obsPK_dir+'cat_kappa_proj_W%i.npy'%(Wx), all_kappa_proj)
+
+print 'DONE-DONE-DONE'
