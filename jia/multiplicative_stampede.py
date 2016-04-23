@@ -28,7 +28,7 @@ compute_data_points = 0
 compute_sim_err = 0
 compute_model = 0
 plot_omori_comp = 0
-compute_m_fit, bmodel = 1, 2#bmodels:0-constb, 1-b0(1+z), 2-b0(1+z)-z
+compute_m_fit, bmodel = 0, 2#bmodels:0-constb, 1-b0(1+z), 2-b0(1+z)-z
 ## official plots ########
 plot_cc = 0
 plot_contour = 0

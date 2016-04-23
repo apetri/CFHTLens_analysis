@@ -20,7 +20,10 @@ from scipy.integrate import quad
 import scipy.optimize as op
 import sys, os
 
-make_kappaProj_cat = 1
+make_kappaProj_cat = 0
+make_kappaProj_map = 0
+plot_maps = 0
+xcorr_kappaProj_kappaLens = 1
 if make_kappaProj_cat:
     ######## for stampede #####
     from emcee.utils import MPIPool
@@ -52,9 +55,12 @@ sigmaG_arr = (0.5, 1.0, 1.8, 3.5, 5.3, 8.9)
 
 ########### generate maps ##################
 
-maskGen = lambda Wx: load(obsPK_dir+'mask/Mask_W%i_0.5_sigmaG10.npy'%(Wx))
+maskGen = lambda Wx, sigmaG: load(obsPK_dir+'mask/Mask_W%i_0.5_sigmaG%02d.npy'%(Wx,sigmaG*10))
 
-kmapGen = lambda Wx, sigmaG: WLanalysis.readFits(obsPK_dir+'kappa_lens/W%i_KS_1.3_lo_sigmaG%02d.fit'%(Wx,sigmaG*10))*maskGen(Wx)
+#klensGen = lambda Wx, sigmaG: WLanalysis.readFits(obsPK_dir+'kappa_lens/W%i_KS_1.3_lo_sigmaG%02d.fit'%(Wx,sigmaG*10))
+klensGen = lambda Wx, sigmaG: WLanalysis.readFits(obsPK_dir+'kappa_lens/W%i_KS_0.4_hi_sigmaG%02d.fit'%(Wx,sigmaG*10))
+blensGen = lambda Wx, sigmaG: WLanalysis.readFits(obsPK_dir+'kappa_lens/W%i_Bmode_0.4_hi_sigmaG%02d.fit'%(Wx,sigmaG*10))
+kprojGen = lambda Wx, sigmaG: load(obsPK_dir+'kappa_proj/kproj_W%i_sigmaG%02d.npy'%(Wx, sigmaG*10))
 
 cat_gen = lambda Wx: np.load(obsPK_dir+'cat/CFHTLens_2016-03-16T13-41-52_W%i.npy'%(Wx))
 # columns: (0)ALPHA_J2000 (1)DELTA_J2000     
@@ -220,4 +226,105 @@ if make_kappaProj_cat:
     all_kappa_proj = concatenate([np.load(obsPK_dir+'temp/cat_kappa_proj%i_%07d.npy'%(Wx, ix)) for ix in ix_arr])
     np.save(obsPK_dir+'cat_kappa_proj_W%i.npy'%(Wx), all_kappa_proj)
 
-print 'DONE-DONE-DONE'
+    print 'DONE-DONE-DONE'
+
+if make_kappaProj_map:
+    zcut=0.4
+    for Wx in (1,):#range(2,5):
+        ik = load(obsPK_dir+'kappa_proj/cat_kappa_proj_W%i.npy'%(Wx))
+        ra, dec, redshift, weight = cat_gen(Wx).T[[0,1,6,4]]
+        idx_back = where((redshift>zcut)&(weight>0.001))[0]
+        #xy_back = xy[idx_back]
+        f_Wx = WLanalysis.gnom_fun(centers[Wx-1])
+        y, x = array(f_Wx(array([ra,dec]).T[idx_back]))
+        A, galn = WLanalysis.coords2grid(x, y, array([ik*weight[idx_back], weight[idx_back]]), size=sizes[Wx-1])
+        Mkw, Mw = A
+        for sigmaG in  (0.5, 1.0, 1.8, 3.5, 5.3, 8.9):
+            print Wx, sigmaG
+            #mask0 = maskGen(Wx, 0.5, sigmaG)
+            #mask = WLanalysis.smooth(mask0, 5.0)
+            ################ make maps ######################
+            kmap_proj = WLanalysis.weighted_smooth(Mkw, Mw, sigmaG=sigmaG)
+            #kmap_predict*=mask
+            np.save(obsPK_dir+'kappa_proj/kproj_W%i_sigmaG%02d.npy'%(Wx, sigmaG*10), kmap_proj)
+
+if plot_maps:
+    from zscale import zscale
+    for Wx in range(1,5):#(1,):# 
+        for sigmaG in (1.0, 1.8, 3.5, 5.3, 8.9):#(1.0,):# 
+            ikmap_lens = klensGen(Wx, sigmaG)
+            ikmap_proj = kprojGen(Wx, sigmaG)
+            imask = maskGen(Wx, sigmaG)
+            f=figure(figsize=(12,5))
+            subplot(121)
+            imean,istd=mean(ikmap_lens[imask>0]),std(ikmap_lens[imask>0])
+            ikmap_lens[imask==0]=nan
+            imshow(ikmap_lens*imask-imean,vmin=imean-3*istd,vmax=imean+3*istd,origin='lower')
+            colorbar()
+            title("W%i-lens, %.1f', std=%.3f"%(Wx,sigmaG,std(ikmap_lens[imask>0])))
+            subplot(122)
+            imean,istd=mean(ikmap_proj[imask>0]),std(ikmap_proj[imask>0])
+            ikmap_proj[imask==0]=nan
+            imshow(ikmap_proj*imask-imean,vmin=imean-3*istd,vmax=imean+3*istd,origin='lower')
+            colorbar()
+            title("W%i-proj, %.1f', std=%.3f"%(Wx,sigmaG,istd))
+            
+            plt.subplots_adjust(hspace=0,wspace=0.05, left=0.03, right=0.98)
+            savefig(plot_dir+'kmap_W%i_sigmaG%02d.png'%(Wx, sigmaG*10))
+            close()
+
+if xcorr_kappaProj_kappaLens:
+    #edgesGen = lambda Wx: logspace(0,log10(400),16)*sizes[Wx-1]/1330.0
+    edgesGen = lambda Wx: linspace(1,250,11)*sizes[Wx-1]/1330.0
+    ell_edges = edgesGen(1)*40
+    delta_ell = ell_edges[1:]-ell_edges[:-1]
+    sigmaG = 0.5
+    #for sigmaG in sigmaG_arr:
+    f=figure()
+    seed(16)
+    ax=f.add_subplot(111)
+    for Wx in range(1,5):#(1,):# 
+        #cc=rand(3)
+        iedge=edgesGen(Wx)
+        imask = maskGen(Wx, sigmaG)
+        fmask=sum(imask)/float(sizes[Wx-1]**2)
+        sizedeg = (sizes[Wx-1]/512.0)**2*12.25
+        fsky=fmask*sizedeg/41253.0
+        #for sigmaG in (, 1.8, 3.5, 5.3, 8.9):#(1.0,):# 
+        ikmap_lens = klensGen(Wx, sigmaG)
+        ikmap_proj = kprojGen(Wx, sigmaG)
+        ibmap = blensGen(Wx, sigmaG)
+        
+        #ell_arr = WLanalysis.edge2center(iedge)*360./sqrt(sizedeg)
+        #cc_proj_lens = WLanalysis.CrossCorrelate(ikmap_lens*imask, ikmap_proj*imask,edges=iedge)[1]/fmask
+        #cc_proj_bmode = WLanalysis.CrossCorrelate(ibmap*imask, ikmap_proj*imask,edges=iedge)[1]/fmask
+        #auto_lens = WLanalysis.CrossCorrelate(ikmap_lens*imask, ikmap_lens*imask,edges=iedge)[1]/fmask
+        #auto_proj = WLanalysis.CrossCorrelate(ikmap_proj*imask, ikmap_proj*imask,edges=iedge)[1]/fmask
+        
+        #save(obsPK_dir+'PS/PS_W%i_sigmaG%02d.npy'%(Wx, sigmaG*10),[ell_arr, cc_proj_lens, cc_proj_bmode, auto_lens, auto_proj])
+        
+        ell_arr, cc_proj_lens, cc_proj_bmode, auto_lens, auto_proj = load(obsPK_dir+'PS/PS_W%i_sigmaG%02d.npy'%(Wx, sigmaG*10))
+        
+        delta_CC = sqrt((auto_lens*auto_proj+cc_proj_lens**2)/((2*ell_arr+1)*delta_ell*fsky))
+        
+        if Wx==1:
+            
+            ax.errorbar(ell_arr+(Wx-2.5)*40, cc_proj_lens, delta_CC,fmt='ko',linewidth=1.2, capsize=0, label=r'$\kappa_{\rm proj}\times \kappa_{\rm lens}$')   
+            ax.errorbar(ell_arr+(Wx-2.5)*40, cc_proj_bmode, delta_CC, fmt='r*',linewidth=1.2, capsize=0, mec='r', label=r'$\kappa_{\rm proj}\times \kappa_{\rm B-mode}$')  
+        else:
+            ax.errorbar(ell_arr+(Wx-2.5)*60, cc_proj_lens, delta_CC,fmt='ko',linewidth=1.2, capsize=0) #ecolor=cc,mfc=cc, mec=cc,  
+            ax.errorbar(ell_arr+(Wx-2.5)*60, cc_proj_bmode, delta_CC, fmt='r*',linewidth=1.2, capsize=0, mec='r') # label=r'$\rm W%i$'%(Wx)
+        #ax.plot(ell_arr+(Wx-2.5)*50, auto_proj,'k-')
+        #ax.plot(ell_arr+(Wx-2.5)*50, auto_lens,'k--')
+    ax.plot([0,1e4],[0,0],'k--')
+    ax.legend(frameon=0,fontsize=16)
+    ax.set_ylabel(r'$\ell(\ell+1)/2\pi \times C_\ell$',fontsize=20)
+    ax.set_xlabel(r'$\ell$',fontsize=20)
+    plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+    plt.rc('font', size=14)
+    plt.subplots_adjust(hspace=0,wspace=0, left=0.16, right=0.9)
+    ax.tick_params(labelsize=14)
+    #show()
+    #savefig(plot_dir+'CC_W%i_sigmaG%02d.pdf'%(Wx, sigmaG*10))
+    savefig(plot_dir+'CC_W%i_sigmaG%02d.png'%(Wx, sigmaG*10))
+    close()
