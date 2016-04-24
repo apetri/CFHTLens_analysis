@@ -23,7 +23,9 @@ import sys, os
 make_kappaProj_cat = 0
 make_kappaProj_map = 0
 plot_maps = 0
-xcorr_kappaProj_kappaLens = 1
+xcorr_kappaProj_kappaLens = 0
+plot_overlapping_peaks = 1
+
 if make_kappaProj_cat:
     ######## for stampede #####
     from emcee.utils import MPIPool
@@ -37,6 +39,16 @@ else:
 
 sizes = (1330, 800, 1120, 950)
 centers = array([[34.5, -7.5], [134.5, -3.25],[214.5, 54.5],[ 332.75, 1.9]])
+RA1 =(30.0, 39.0)#starting RA for W1
+DEC1=(-11.5,-3.5)
+RA2 =(132.0, 137.0)
+DEC2=(-6.0,-0.5)
+RA3 =(208.0, 221.0)
+DEC3=(51.0, 58.0)
+RA4 =(329.5, 336.0)
+DEC4=(-1.2, 5.0)
+RAs=(RA1,RA2,RA3,RA4)
+DECs=(DEC1,DEC2,DEC3,DEC4)
 PPR512=8468.416479647716
 PPA512=2.4633625
 c = 299792.458#km/s
@@ -249,7 +261,7 @@ if make_kappaProj_map:
             np.save(obsPK_dir+'kappa_proj/kproj_W%i_sigmaG%02d.npy'%(Wx, sigmaG*10), kmap_proj)
 
 if plot_maps:
-    from zscale import zscale
+    #from zscale import zscale
     for Wx in range(1,5):#(1,):# 
         for sigmaG in (1.0, 1.8, 3.5, 5.3, 8.9):#(1.0,):# 
             ikmap_lens = klensGen(Wx, sigmaG)
@@ -309,11 +321,11 @@ if xcorr_kappaProj_kappaLens:
         
         if Wx==1:
             
-            ax.errorbar(ell_arr+(Wx-2.5)*40, cc_proj_lens, delta_CC,fmt='ko',linewidth=1.2, capsize=0, label=r'$\kappa_{\rm proj}\times \kappa_{\rm lens}$')   
-            ax.errorbar(ell_arr+(Wx-2.5)*40, cc_proj_bmode, delta_CC, fmt='r*',linewidth=1.2, capsize=0, mec='r', label=r'$\kappa_{\rm proj}\times \kappa_{\rm B-mode}$')  
+            ax.errorbar(ell_arr+(Wx-2.5)*40, cc_proj_lens, delta_CC,fmt='ko',linewidth=1, capsize=0, label=r'$\kappa_{\rm proj}\times \kappa_{\rm lens}$')   
+            ax.errorbar(ell_arr+(Wx-2.5)*40, cc_proj_bmode, delta_CC, fmt='rd',linewidth=1, capsize=0, mec='r', label=r'$\kappa_{\rm proj}\times \kappa_{\rm B-mode}$')  
         else:
-            ax.errorbar(ell_arr+(Wx-2.5)*60, cc_proj_lens, delta_CC,fmt='ko',linewidth=1.2, capsize=0) #ecolor=cc,mfc=cc, mec=cc,  
-            ax.errorbar(ell_arr+(Wx-2.5)*60, cc_proj_bmode, delta_CC, fmt='r*',linewidth=1.2, capsize=0, mec='r') # label=r'$\rm W%i$'%(Wx)
+            ax.errorbar(ell_arr+(Wx-2.5)*60, cc_proj_lens, delta_CC,fmt='ko',linewidth=1, capsize=0) #ecolor=cc,mfc=cc, mec=cc,  
+            ax.errorbar(ell_arr+(Wx-2.5)*60, cc_proj_bmode, delta_CC, fmt='rd',linewidth=1, capsize=0, mec='r') # label=r'$\rm W%i$'%(Wx)
         #ax.plot(ell_arr+(Wx-2.5)*50, auto_proj,'k-')
         #ax.plot(ell_arr+(Wx-2.5)*50, auto_lens,'k--')
     ax.plot([0,1e4],[0,0],'k--')
@@ -328,3 +340,44 @@ if xcorr_kappaProj_kappaLens:
     #savefig(plot_dir+'CC_W%i_sigmaG%02d.pdf'%(Wx, sigmaG*10))
     savefig(plot_dir+'CC_W%i_sigmaG%02d.png'%(Wx, sigmaG*10))
     close()
+    
+if plot_overlapping_peaks:
+    isigma = 5.3#3.5
+    f=figure(figsize=(10,8))
+    
+    for Wx in range(1,5):
+        ax=f.add_subplot(2,2,Wx)
+        kmap_lens = klensGen(Wx, 8.9)
+        kmap_proj = kprojGen(Wx, isigma)
+        imask = maskGen(Wx, isigma)
+        imask_nan = imask.copy()
+        imask_nan[imask_nan==0]=nan
+        #### find peaks in proj map
+        kproj_peak_mat = WLanalysis.peaks_mat(kmap_proj)
+        idx=where((kproj_peak_mat>0)&(imask>0))
+        kappa_arr = kproj_peak_mat[idx]
+        y0, x0 = idx
+        y=y0/float(sizes[Wx-1])*(DECs[Wx-1][1]-DECs[Wx-1][0])+DECs[Wx-1][0]
+        x=RAs[Wx-1][1]-x0/float(sizes[Wx-1])*(RAs[Wx-1][1]-RAs[Wx-1][0])
+        if Wx==1:
+            istd=std(kmap_lens[imask>0])
+            k1,k0=amax(kappa_arr),amin(kappa_arr)
+            dk=k1-k0
+            
+        #imshow(kmap_proj,origin='lower')
+        s_arr = (kappa_arr-k0)*100/dk#400**(kappa_arr-amin(kappa_arr))
+        im = ax.imshow(kmap_lens*imask_nan,origin='lower',vmin=-2*istd, vmax=2.5*istd,cmap='coolwarm',extent=[RAs[Wx-1][1],RAs[Wx-1][0],DECs[Wx-1][0],DECs[Wx-1][1]],aspect='auto')
+        #colorbar()
+        ax.scatter(x,y,s=s_arr,edgecolors='k',linewidths=1,facecolors='k')#'none')#
+        ax.tick_params(labelsize=14)
+    cbar_ax = f.add_axes([0.87, 0.1, 0.025, 0.85])#x0, y0, width, length
+    f.colorbar(im, cax=cbar_ax)
+    f.text(0.5, 0.02, r'$\rm {RA\,[deg]}$', ha='center', va='center',fontsize=20)
+    f.text(0.06, 0.5, r'$\rm {DEC\,[deg]}$', ha='center', va='center', rotation='vertical',fontsize=20)
+
+    plt.subplots_adjust(hspace=0.15,wspace=0.15, left=0.1, right=0.85,bottom=0.1,top=0.95)
+    #show()
+    savefig(plot_dir+'matching_peaks.png')
+    savefig(plot_dir+'matching_peaks.pdf')
+    close()
+        
