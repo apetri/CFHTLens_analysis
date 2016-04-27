@@ -465,7 +465,11 @@ if find_foreground_halos:
     out_arr = pool.map(loop_over_peaks, arange(int(len(yx_peaks)/2)))#arange(5))#
     save(obsPK_dir+'top20_halos_W%i_sigmaG%02d.npy'%(Wx, sigmaG*10), out_arr)
 
-    print 'DONE-DONE-DONE'
+    print 'DONE-DONE-DONE1'
+    
+    out_arr2 = pool.map(loop_over_peaks, arange(int(len(yx_peaks)/2),int(len(yx_peaks))))#arange(5))#
+    save(obsPK_dir+'top20_halos_W5_sigmaG%02d.npy'%(sigmaG*10), out_arr2)
+    print 'DONE-DONE-DONE222'
     pool.close()
     sys.exit(0)
 
