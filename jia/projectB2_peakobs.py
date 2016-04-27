@@ -392,10 +392,7 @@ if find_foreground_halos:
     ###### (3) calculate contribution from each ith source to the total weight
     ###### (4) for jth foreground halo's contribution to k_ij 
     from scipy.spatial import cKDTree
-    pool = MPIPool()
-    if not pool.is_master():
-        pool.wait()
-        sys.exit(0)
+
         
     sigmaG = 1.0
     r = radians(10.0/60.0)
@@ -454,6 +451,10 @@ if find_foreground_halos:
     #ikappa_mat_ij = loop_over_peaks(5)
     #source_contribute=ikappa_mat_ij.T[0]
     #print ikappa_arr[5], sum(sum(ikappa_mat_ij[:,1:],axis=1)*source_contribute)/sum(source_contribute)
+    pool = MPIPool()
+    if not pool.is_master():
+        pool.wait()
+        sys.exit(0)
     halos = pool.map(loop_over_peaks, arange(len(yx_peaks)))
     save(obsPK_dir+'cat_halos_W%i_sigmaG%02d.npy'%(Wx, sigmaG*10), halos)
 
