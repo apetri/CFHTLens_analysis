@@ -462,8 +462,30 @@ if find_foreground_halos:
     #from multiprocessing import Pool
     #pool = Pool(20)
 
-    out_arr = pool.map(loop_over_peaks, arange(len(yx_peaks)))#arange(5))#
+    out_arr = pool.map(loop_over_peaks, arange(int(len(yx_peaks)/2)))#arange(5))#
     save(obsPK_dir+'top20_halos_W%i_sigmaG%02d.npy'%(Wx, sigmaG*10), out_arr)
 
-print 'DONE-DONE-DONE'
-sys.exit(0)
+    print 'DONE-DONE-DONE'
+    pool.close()
+    sys.exit(0)
+
+#a=concatenate([load('top20_halos_W%i_sigmaG10.npy'%(i)) for i in (2,3,4)],axis=0)
+#kappa_peaks = a[:,0]
+#N_halos = sum((a[:,1:]<0.5),axis=1)+1
+#hist2d(kappa_peaks, N_halos,bins=(20,20),range=((amin(kappa_peaks),0.05),(1,21)))
+#xlabel(r'$\kappa_{\rm peak}$',fontsize=20)
+#ylabel(r'$N_{\rm halo}$',fontsize=20)
+#show()
+
+#N_mean, N_std = zeros((2,20))
+#kappa_edges = linspace(0.005, 0.05,21)
+#for i in range(20):
+    #k0,k1 = kappa_edges[i:i+2]
+    #iN_halos = N_halos[(kappa_peaks>k0) &(kappa_peaks<k1)]
+    #N_mean[i]=mean(iN_halos)
+    #N_std[i]=std(iN_halos)
+#errorbar(kappa_edges[:-1], N_mean, N_std)
+#xlim(0,0.05)
+#xlabel(r'$\kappa_{\rm peak}$',fontsize=20)
+#ylabel(r'$N_{\rm halo}$',fontsize=20)
+#show()
