@@ -401,59 +401,60 @@ if find_foreground_halos:
     r = radians(10.0/60.0)
     
     zcut=0.4
-    for Wx in (4,):#range(1,5):#
-        center = centers[Wx-1]
-        #### convert from pixel to radians
-        #rad2pix=lambda x: around(sizes[Wx-1]/2.0-0.5 + x*PPR512).astype(int)
-        pix2rad = lambda xpix: (xpix-sizes[Wx-1]/2.0+0.5)/PPR512
+    Wx = int(sys.argv[1])
+    #for Wx in (4,):#range(1,5):#
+    center = centers[Wx-1]
+    #### convert from pixel to radians
+    #rad2pix=lambda x: around(sizes[Wx-1]/2.0-0.5 + x*PPR512).astype(int)
+    pix2rad = lambda xpix: (xpix-sizes[Wx-1]/2.0+0.5)/PPR512
+    
+    ###### (1) identify peaks in the kappa_proj maps
+    ikmap_proj = kprojGen(Wx, sigmaG)
+    imask = maskGen(Wx, sigmaG)
+    kproj_peak_mat = WLanalysis.peaks_mat(ikmap_proj)
+    idx_peaks=where((kproj_peak_mat>0)&(imask>0))
+    ikappa_arr = kproj_peak_mat[idx_peaks]
+    yx_peaks = pix2rad(array(idx_peaks)).T ## or xy..
+    
+    ##### (2) identify background halos that're within double the smoothing scale
+    ra, dec, redshift, weight, log10Mstar = cat_gen(Wx).T[[0,1,6,4,12]]
+    Mhalo = 10**Mstar2Mhalo (log10Mstar, redshift)## unit of Msun
+    Mhalo[log10Mstar==-99]=0
+    Rvir_arr = Rvir_fcn(Mhalo, redshift)
+    DC_arr = DC(redshift)
+    f_Wx = WLanalysis.gnom_fun(center)#turns to radians
+    xy = array(f_Wx(array([ra,dec]).T)).T
+    
+    kdt = cKDTree(xy)
+    
+    ###### (3) calculate contribution from each ith source to the total weight
+    def loop_over_peaks(mm):
+        iyx = yx_peaks[mm]
+    #for iyx in (yx_peaks[mm],):#yx_peaks[5:7]:#yx_peaks:#
         
-        ###### (1) identify peaks in the kappa_proj maps
-        ikmap_proj = kprojGen(Wx, sigmaG)
-        imask = maskGen(Wx, sigmaG)
-        kproj_peak_mat = WLanalysis.peaks_mat(ikmap_proj)
-        idx_peaks=where((kproj_peak_mat>0)&(imask>0))
-        ikappa_arr = kproj_peak_mat[idx_peaks]
-        yx_peaks = pix2rad(array(idx_peaks)).T ## or xy..
-        
-        ##### (2) identify background halos that're within double the smoothing scale
-        ra, dec, redshift, weight, log10Mstar = cat_gen(Wx).T[[0,1,6,4,12]]
-        Mhalo = 10**Mstar2Mhalo (log10Mstar, redshift)## unit of Msun
-        Mhalo[log10Mstar==-99]=0
-        Rvir_arr = Rvir_fcn(Mhalo, redshift)
-        DC_arr = DC(redshift)
-        f_Wx = WLanalysis.gnom_fun(center)#turns to radians
-        xy = array(f_Wx(array([ra,dec]).T)).T
-        
-        kdt = cKDTree(xy)
-        
-        ###### (3) calculate contribution from each ith source to the total weight
-        def loop_over_peaks(mm):
-            iyx = yx_peaks[mm]
-        #for iyx in (yx_peaks[mm],):#yx_peaks[5:7]:#yx_peaks:#
-            
-            idx_all = array(kdt.query_ball_point(iyx[::-1], r/2))
-            idx_back = idx_all[(redshift[idx_all]>0.4) & (weight[idx_all]>0.0001)]
-            source_contribute = weight[idx_back]*exp(-0.5*sum((xy[idx_back]-iyx[::-1])**2,axis=1)/(radians(sigmaG/60.0))**2)
-            #iy, ix= iyx
-            ### make a matrix of ixj size, for ikappa at source i from lens j 
-            ikappa_mat_ij = zeros((len(idx_back), len(idx_all)+1))
-            ikappa_mat_ij[:,0]=source_contribute
-            icounter=0
-            for i in idx_back:
-                jcounter=1
-                for j in idx_all:
-                    #print icounter#,jcounter
-                    ikappa_mat_ij[icounter,jcounter] = kappa_proj (Mhalo[j], Rvir_arr[j], z_fore=redshift[j], x_fore=xy[j,0], y_fore=xy[j,1], z_back=redshift[i], x_back=xy[i,0], y_back=xy[i,1], DC_fore=DC_arr[j], DC_back=DC_arr[i])
-                    jcounter+=1
-                icounter+=1
-            print Wx, len(yx_peaks), mm, '%.4f %.4f'%(ikappa_arr[mm], sum(sum(ikappa_mat_ij[:,1:],axis=1)*source_contribute)/sum(source_contribute))
-            #halos.append(ikappa_mat_ij)
-            #kk+=1
-            return ikappa_mat_ij
-        #ikappa_mat_ij = loop_over_peaks(5)
-        #source_contribute=ikappa_mat_ij.T[0]
-        #print ikappa_arr[5], sum(sum(ikappa_mat_ij[:,1:],axis=1)*source_contribute)/sum(source_contribute)
-        halos = pool.map(loop_over_peaks, arange(len(yx_peaks)))
-        save(obsPK_dir+'cat_halos_W%i_sigmaG%02d.npy'%(Wx, sigmaG*10), halos)
+        idx_all = array(kdt.query_ball_point(iyx[::-1], r/2))
+        idx_back = idx_all[(redshift[idx_all]>0.4) & (weight[idx_all]>0.0001)]
+        source_contribute = weight[idx_back]*exp(-0.5*sum((xy[idx_back]-iyx[::-1])**2,axis=1)/(radians(sigmaG/60.0))**2)
+        #iy, ix= iyx
+        ### make a matrix of ixj size, for ikappa at source i from lens j 
+        ikappa_mat_ij = zeros((len(idx_back), len(idx_all)+1))
+        ikappa_mat_ij[:,0]=source_contribute
+        icounter=0
+        for i in idx_back:
+            jcounter=1
+            for j in idx_all:
+                #print icounter#,jcounter
+                ikappa_mat_ij[icounter,jcounter] = kappa_proj (Mhalo[j], Rvir_arr[j], z_fore=redshift[j], x_fore=xy[j,0], y_fore=xy[j,1], z_back=redshift[i], x_back=xy[i,0], y_back=xy[i,1], DC_fore=DC_arr[j], DC_back=DC_arr[i])
+                jcounter+=1
+            icounter+=1
+        print Wx, len(yx_peaks), mm, '%.4f %.4f'%(ikappa_arr[mm], sum(sum(ikappa_mat_ij[:,1:],axis=1)*source_contribute)/sum(source_contribute))
+        #halos.append(ikappa_mat_ij)
+        #kk+=1
+        return ikappa_mat_ij
+    #ikappa_mat_ij = loop_over_peaks(5)
+    #source_contribute=ikappa_mat_ij.T[0]
+    #print ikappa_arr[5], sum(sum(ikappa_mat_ij[:,1:],axis=1)*source_contribute)/sum(source_contribute)
+    halos = pool.map(loop_over_peaks, arange(len(yx_peaks)))
+    save(obsPK_dir+'cat_halos_W%i_sigmaG%02d.npy'%(Wx, sigmaG*10), halos)
 
 print 'DONE-DONE-DONE'
