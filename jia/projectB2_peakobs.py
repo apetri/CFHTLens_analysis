@@ -444,7 +444,7 @@ if find_foreground_halos:
                 ikappa_mat_ij[icounter,jcounter] = kappa_proj (Mhalo[j], Rvir_arr[j], z_fore=redshift[j], x_fore=xy[j,0], y_fore=xy[j,1], z_back=redshift[i], x_back=xy[i,0], y_back=xy[i,1], DC_fore=DC_arr[j], DC_back=DC_arr[i])
                 jcounter+=1
             icounter+=1
-        print Wx, len(yx_peaks), mm, '%.4f %.4f'%(ikappa_arr[mm], sum(sum(ikappa_mat_ij[:,1:],axis=1)*source_contribute)/sum(source_contribute))
+        print Wx, len(yx_peaks),'%04d %.4f %.4f'%(mm, ikappa_arr[mm], sum(sum(ikappa_mat_ij[:,1:],axis=1)*source_contribute)/sum(source_contribute))
         #halos.append(ikappa_mat_ij)
         #kk+=1
         return ikappa_mat_ij
