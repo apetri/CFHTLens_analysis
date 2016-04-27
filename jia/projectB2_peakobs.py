@@ -27,7 +27,7 @@ xcorr_kappaProj_kappaLens = 0
 plot_overlapping_peaks = 0
 find_foreground_halos = 1
 
-if make_kappaProj_cat or find_foreground_halos:
+if make_kappaProj_cat:# or find_foreground_halos:
     ######## for stampede #####
     from emcee.utils import MPIPool
     obsPK_dir = '/work/02977/jialiu/obsPK/'
@@ -395,7 +395,7 @@ if find_foreground_halos:
 
         
     sigmaG = 1.0
-    r = radians(10.0/60.0)
+    r = radians(10.0/60.0)#
     
     zcut=0.4
     Wx = int(sys.argv[1])
@@ -434,28 +434,35 @@ if find_foreground_halos:
         source_contribute = weight[idx_back]*exp(-0.5*sum((xy[idx_back]-iyx[::-1])**2,axis=1)/(radians(sigmaG/60.0))**2)
         #iy, ix= iyx
         ### make a matrix of ixj size, for ikappa at source i from lens j 
-        ikappa_mat_ij = zeros((len(idx_back), len(idx_all)+1))
-        ikappa_mat_ij[:,0]=source_contribute
+        ikappa_mat_ij = zeros((len(idx_back), len(idx_all)))
+        #ikappa_mat_ij[:,0]=source_contribute
         icounter=0
         for i in idx_back:
-            jcounter=1
+            jcounter=0
             for j in idx_all:
                 #print icounter#,jcounter
                 ikappa_mat_ij[icounter,jcounter] = kappa_proj (Mhalo[j], Rvir_arr[j], z_fore=redshift[j], x_fore=xy[j,0], y_fore=xy[j,1], z_back=redshift[i], x_back=xy[i,0], y_back=xy[i,1], DC_fore=DC_arr[j], DC_back=DC_arr[i])
                 jcounter+=1
             icounter+=1
-        print Wx, len(yx_peaks),'%04d %.4f %.4f'%(mm, ikappa_arr[mm], sum(sum(ikappa_mat_ij[:,1:],axis=1)*source_contribute)/sum(source_contribute))
-        #halos.append(ikappa_mat_ij)
-        #kk+=1
-        return ikappa_mat_ij
-    #ikappa_mat_ij = loop_over_peaks(5)
-    #source_contribute=ikappa_mat_ij.T[0]
-    #print ikappa_arr[5], sum(sum(ikappa_mat_ij[:,1:],axis=1)*source_contribute)/sum(source_contribute)
+        halos=sum(ikappa_mat_ij*source_contribute.reshape(-1,1),axis=0)/sum(source_contribute)
+        halos_contrib_comsum=cumsum(sort(halos)[::-1])/sum(halos)
+        out = zeros(21)
+        out[0]=sum(halos)
+        out[1:]=halos_contrib_comsum[:20]
+        print Wx, len(yx_peaks),'%04d %.4f %.4f'%(mm, ikappa_arr[mm],sum(halos))
+        return out#ikappa_mat_ij
+    #out = loop_over_peaks(5)
+    
+    
     pool = MPIPool()
     if not pool.is_master():
         pool.wait()
         sys.exit(0)
-    halos = pool.map(loop_over_peaks, arange(len(yx_peaks)))
-    save(obsPK_dir+'cat_halos_W%i_sigmaG%02d.npy'%(Wx, sigmaG*10), halos)
+    
+    #from multiprocessing import Pool
+    #pool = Pool(20)
+
+    out_arr = pool.map(loop_over_peaks, arange(len(yx_peaks)))#arange(5))#
+    save(obsPK_dir+'top20_halos_W%i_sigmaG%02d.npy'%(Wx, sigmaG*10), out_arr)
 
 print 'DONE-DONE-DONE'

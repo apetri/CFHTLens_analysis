@@ -77,8 +77,8 @@ DA = lambda z: DC(z)/(1.0+z)
 DL = lambda z: DC(z)*(1.0+z)
 # find the rest magnitude at the galaxy, from observed magnitude cut
 #M_rest_fcn = lambda M_obs, z: M_obs - 5.0*log10(DL_interp(z)) - 25.0
-##rho_cz = lambda z: rho_c0*(OmegaM*(1+z)**3+(1-OmegaM))
-rho_cz = lambda z: 0.375*Hcgs(z)**2/pi/Gnewton#critical density
+##rho_cz = lambda z: rho_c0*(OmegaM*(1+z)**3+(1-OmegaM))#critical density
+rho_cz = lambda z: 0.375*Hcgs(z)**2/pi/Gnewton
 
 ##############################################
 ##################### MAG_z to M100 ##########
@@ -170,7 +170,7 @@ Mhalo_params_arr = [[12.520, 10.916, 0.457, 0.566, 1.53],
 
 redshift_edges=[[0, 0.48], [0.48,0.74], [0.74, 1.30]]
 
-##master_ra, master_dec, w, M_star = genfromtxt('/Users/jia/CFHTLenS/catalogue/CFHTLens_2015-02-05T05-08-44.tsv', skip_header=1).T
+master_ra, master_dec, w, M_star = genfromtxt('/Users/jia/CFHTLenS/catalogue/CFHTLens_2015-02-05T05-08-44.tsv', skip_header=1).T
 
 def Mstar2Mhalo (Mstar_arr, redshift_arr):
 	Mhalo_arr = zeros(len(Mstar_arr))
