@@ -27,7 +27,7 @@ xcorr_kappaProj_kappaLens = 0
 plot_overlapping_peaks = 0
 find_foreground_halos = 1
 
-if make_kappaProj_cat:# or find_foreground_halos:
+if make_kappaProj_cat or find_foreground_halos:
     ######## for stampede #####
     from emcee.utils import MPIPool
     obsPK_dir = '/work/02977/jialiu/obsPK/'
@@ -466,3 +466,4 @@ if find_foreground_halos:
     save(obsPK_dir+'top20_halos_W%i_sigmaG%02d.npy'%(Wx, sigmaG*10), out_arr)
 
 print 'DONE-DONE-DONE'
+sys.exit(0)
