@@ -24,9 +24,10 @@ make_kappaProj_cat = 0
 make_kappaProj_map = 0
 plot_maps = 0
 xcorr_kappaProj_kappaLens = 0
-plot_overlapping_peaks = 1
+plot_overlapping_peaks = 0
+find_foreground_halos = 1
 
-if make_kappaProj_cat:
+if make_kappaProj_cat or find_foreground_halos:
     ######## for stampede #####
     from emcee.utils import MPIPool
     obsPK_dir = '/work/02977/jialiu/obsPK/'
@@ -111,7 +112,7 @@ def Mstar2Mhalo (Mstar_arr, redshift_arr):
     for i in range(3):
         z0,z1 = redshift_edges[i]
         log10M1, log10M0, beta, sig, gamma = Mhalo_params_arr[i]
-        print log10M1, log10M0, beta, sig, gamma 
+        #print log10M1, log10M0, beta, sig, gamma 
         Mhalo_fcn = lambda log10Mstar: log10M1+beta*(log10Mstar-log10M0)+10.0**(sig*(log10Mstar-log10M0))/(1+10.0**(-gamma*(log10Mstar-log10M0)))-0.5
         idx = where((redshift_arr>z0)&(redshift_arr<=z1))[0]
         Mhalo_arr[idx] = Mhalo_fcn(Mstar_arr[idx])
@@ -152,23 +153,27 @@ def kappa_proj (Mvir, Rvir, z_fore, x_fore, y_fore, z_back, x_back, y_back, DC_f
     ### cNFW = c0/(1+z_fore)*(Mvir/1e13)**(-beta)
     ### note 4/9/16, it was z_back before
     #cNFW=5.0
-    cNFW = cNFW_fcn(z_fore, Mvir)
-    f=1.0/(log(1.0+cNFW)-cNFW/(1.0+cNFW))# = 1.043 with cNFW=5.0
-    two_rhos_rs = Mvir*M_sun*f*cNFW**2/(2*pi*Rvir**2)#cgs, see LK2014 footnote
     
-    Dl_cm = 3.08567758e24*DC_fore/(1.0+z_fore)
-    ## note: 3.08567758e24cm = 1Mpc###    
-    SIGMAc = 347.29163*DC_back*(1+z_fore)/(DC_fore*(DC_back-DC_fore))
-    ## note: SIGMAc = 1.07163e+27/DlDlsDs
-    ## (c*1e5)**2/4.0/pi/Gnewton = 1.0716311756473212e+27
-    ## 347.2916311625792 = 1.07163e+27/3.08567758e24
-    theta = sqrt((x_fore-x_back)**2+(y_fore-y_back)**2)
-    x = cNFW*theta*Dl_cm/Rvir 
-    ## note: x=theta/theta_s, theta_s = theta_vir/c_NFW
-    ## theta_vir=Rvir/Dl_cm
-    Gx = Gx_fcn(x, cNFW)
-    kappa_p = two_rhos_rs/SIGMAc*Gx
-    return kappa_p
+    if z_fore>=z_back or Mvir==0:
+        return 0.0
+    else:
+        cNFW = cNFW_fcn(z_fore, Mvir)
+        f=1.0/(log(1.0+cNFW)-cNFW/(1.0+cNFW))# = 1.043 with cNFW=5.0
+        two_rhos_rs = Mvir*M_sun*f*cNFW**2/(2*pi*Rvir**2)#cgs, see LK2014 footnote
+        
+        Dl_cm = 3.08567758e24*DC_fore/(1.0+z_fore)
+        ## note: 3.08567758e24cm = 1Mpc###    
+        SIGMAc = 347.29163*DC_back*(1+z_fore)/(DC_fore*(DC_back-DC_fore))
+        ## note: SIGMAc = 1.07163e+27/DlDlsDs
+        ## (c*1e5)**2/4.0/pi/Gnewton = 1.0716311756473212e+27
+        ## 347.2916311625792 = 1.07163e+27/3.08567758e24
+        theta = sqrt((x_fore-x_back)**2+(y_fore-y_back)**2)
+        x = cNFW*theta*Dl_cm/Rvir 
+        ## note: x=theta/theta_s, theta_s = theta_vir/c_NFW
+        ## theta_vir=Rvir/Dl_cm
+        Gx = Gx_fcn(x, cNFW)
+        kappa_p = two_rhos_rs/SIGMAc*Gx
+        return kappa_p
     
 if make_kappaProj_cat:
     from scipy.spatial import cKDTree
@@ -378,6 +383,77 @@ if plot_overlapping_peaks:
     plt.subplots_adjust(hspace=0.15,wspace=0.15, left=0.1, right=0.85,bottom=0.1,top=0.95)
     #show()
     savefig(plot_dir+'matching_peaks.png')
-    savefig(plot_dir+'matching_peaks.pdf')
+    #savefig(plot_dir+'matching_peaks.pdf')
     close()
+
+if find_foreground_halos:
+    ###### (1) identify peaks in the kappa_proj maps
+    ###### (2) identify background halos that're within double the smoothing scale
+    ###### (3) calculate contribution from each ith source to the total weight
+    ###### (4) for jth foreground halo's contribution to k_ij 
+    from scipy.spatial import cKDTree
+    pool = MPIPool()
+    if not pool.is_master():
+        pool.wait()
+        sys.exit(0)
         
+    sigmaG = 1.0
+    r = radians(10.0/60.0)
+    
+    zcut=0.4
+    for Wx in (4,):#range(1,5):#
+        center = centers[Wx-1]
+        #### convert from pixel to radians
+        #rad2pix=lambda x: around(sizes[Wx-1]/2.0-0.5 + x*PPR512).astype(int)
+        pix2rad = lambda xpix: (xpix-sizes[Wx-1]/2.0+0.5)/PPR512
+        
+        ###### (1) identify peaks in the kappa_proj maps
+        ikmap_proj = kprojGen(Wx, sigmaG)
+        imask = maskGen(Wx, sigmaG)
+        kproj_peak_mat = WLanalysis.peaks_mat(ikmap_proj)
+        idx_peaks=where((kproj_peak_mat>0)&(imask>0))
+        ikappa_arr = kproj_peak_mat[idx_peaks]
+        yx_peaks = pix2rad(array(idx_peaks)).T ## or xy..
+        
+        ##### (2) identify background halos that're within double the smoothing scale
+        ra, dec, redshift, weight, log10Mstar = cat_gen(Wx).T[[0,1,6,4,12]]
+        Mhalo = 10**Mstar2Mhalo (log10Mstar, redshift)## unit of Msun
+        Mhalo[log10Mstar==-99]=0
+        Rvir_arr = Rvir_fcn(Mhalo, redshift)
+        DC_arr = DC(redshift)
+        f_Wx = WLanalysis.gnom_fun(center)#turns to radians
+        xy = array(f_Wx(array([ra,dec]).T)).T
+        
+        kdt = cKDTree(xy)
+        
+        ###### (3) calculate contribution from each ith source to the total weight
+        def loop_over_peaks(mm):
+            iyx = yx_peaks[mm]
+        #for iyx in (yx_peaks[mm],):#yx_peaks[5:7]:#yx_peaks:#
+            
+            idx_all = array(kdt.query_ball_point(iyx[::-1], r/2))
+            idx_back = idx_all[(redshift[idx_all]>0.4) & (weight[idx_all]>0.0001)]
+            source_contribute = weight[idx_back]*exp(-0.5*sum((xy[idx_back]-iyx[::-1])**2,axis=1)/(radians(sigmaG/60.0))**2)
+            #iy, ix= iyx
+            ### make a matrix of ixj size, for ikappa at source i from lens j 
+            ikappa_mat_ij = zeros((len(idx_back), len(idx_all)+1))
+            ikappa_mat_ij[:,0]=source_contribute
+            icounter=0
+            for i in idx_back:
+                jcounter=1
+                for j in idx_all:
+                    #print icounter#,jcounter
+                    ikappa_mat_ij[icounter,jcounter] = kappa_proj (Mhalo[j], Rvir_arr[j], z_fore=redshift[j], x_fore=xy[j,0], y_fore=xy[j,1], z_back=redshift[i], x_back=xy[i,0], y_back=xy[i,1], DC_fore=DC_arr[j], DC_back=DC_arr[i])
+                    jcounter+=1
+                icounter+=1
+            print Wx, len(yx_peaks), mm, '%.4f %.4f'%(ikappa_arr[mm], sum(sum(ikappa_mat_ij[:,1:],axis=1)*source_contribute)/sum(source_contribute))
+            #halos.append(ikappa_mat_ij)
+            #kk+=1
+            return ikappa_mat_ij
+        #ikappa_mat_ij = loop_over_peaks(5)
+        #source_contribute=ikappa_mat_ij.T[0]
+        #print ikappa_arr[5], sum(sum(ikappa_mat_ij[:,1:],axis=1)*source_contribute)/sum(source_contribute)
+        halos = pool.map(loop_over_peaks, arange(len(yx_peaks)))
+        save(obsPK_dir+'cat_halos_W%i_sigmaG%02d.npy'%(Wx, sigmaG*10), halos)
+
+print 'DONE-DONE-DONE'
