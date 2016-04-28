@@ -25,7 +25,7 @@ make_kappaProj_map = 0
 plot_maps = 0
 xcorr_kappaProj_kappaLens = 0
 plot_overlapping_peaks = 0
-find_foreground_halos = 1
+find_foreground_halos, random_direction = 1, 1
 
 if make_kappaProj_cat or find_foreground_halos:
     ######## for stampede #####
@@ -409,9 +409,19 @@ if find_foreground_halos:
     ikmap_proj = kprojGen(Wx, sigmaG)
     imask = maskGen(Wx, sigmaG)
     kproj_peak_mat = WLanalysis.peaks_mat(ikmap_proj)
-    idx_peaks=where((kproj_peak_mat>0)&(imask>0))
-    ikappa_arr = kproj_peak_mat[idx_peaks]
-    yx_peaks = pix2rad(array(idx_peaks)).T ## or xy..
+    if not random_direction:
+        idx_peaks=where((kproj_peak_mat>0)&(imask>0))
+        ikappa_arr = kproj_peak_mat[idx_peaks]
+        yx_peaks = pix2rad(array(idx_peaks)).T ## or xy..    
+    else:###### (1b) identify non peaks
+        idx_non_peaks=array(where(isnan(kproj_peak_mat)*imask>0)).T
+        seed(0)
+        sample_non_peaks = randint(0, len(idx_non_peaks), 1e4)
+        idx_peaks = list(idx_non_peaks[sample_non_peaks].T)
+        ikappa_arr = ikmap_proj[idx_peaks]
+        yx_peaks = pix2rad(array(idx_peaks)).T
+        
+    
     
     ##### (2) identify background halos that're within double the smoothing scale
     ra, dec, redshift, weight, log10Mstar = cat_gen(Wx).T[[0,1,6,4,12]]
@@ -461,26 +471,35 @@ if find_foreground_halos:
     
     #from multiprocessing import Pool
     #pool = Pool(20)
+    if not random_direction:
+        out_arr = pool.map(loop_over_peaks, arange(len(yx_peaks)))#arange(5))#
+        save(obsPK_dir+'top20_halos_W%i_sigmaG%02d.npy'%(Wx, sigmaG*10), out_arr)
 
-    out_arr = pool.map(loop_over_peaks, arange(int(len(yx_peaks)/2)))#arange(5))#
-    save(obsPK_dir+'top20_halos_W%i_sigmaG%02d.npy'%(Wx, sigmaG*10), out_arr)
+        ######## solve W1 problem, cut in half
+        #out_arr = pool.map(loop_over_peaks, arange(int(len(yx_peaks)/2)))#arange(5))#
+        #save(obsPK_dir+'top20_halos_W%i_sigmaG%02d.npy'%(Wx, sigmaG*10), out_arr)
+        #out_arr2 = pool.map(loop_over_peaks, arange(int(len(yx_peaks)/2),int(len(yx_peaks))))#arange(5))#
+        #save(obsPK_dir+'top20_halos_W5_sigmaG%02d.npy'%(sigmaG*10), out_arr2)
+       
+    else:
+        out_arr = pool.map(loop_over_peaks, arange(0,2500) )
+        save(obsPK_dir+'top20_random1_sigmaG%02d.npy'%(sigmaG*10), out_arr)
+        out_arr2 = pool.map(loop_over_peaks, arange(2500,5000) )
+        save(obsPK_dir+'top20_random2_sigmaG%02d.npy'%(sigmaG*10), out_arr2)
+        out_arr3 = pool.map(loop_over_peaks, arange(5000,7500) )
+        save(obsPK_dir+'top20_random3_sigmaG%02d.npy'%(sigmaG*10), out_arr3)
+        out_arr4 = pool.map(loop_over_peaks, arange(7500,10000) )
+        save(obsPK_dir+'top20_random4_sigmaG%02d.npy'%(sigmaG*10), out_arr4)
 
-    print 'DONE-DONE-DONE1'
     
-    out_arr2 = pool.map(loop_over_peaks, arange(int(len(yx_peaks)/2),int(len(yx_peaks))))#arange(5))#
-    save(obsPK_dir+'top20_halos_W5_sigmaG%02d.npy'%(sigmaG*10), out_arr2)
-    print 'DONE-DONE-DONE222'
+    print 'DONE-DONE-DONE'
     pool.close()
     sys.exit(0)
 
-#a=concatenate([load('top20_halos_W%i_sigmaG10.npy'%(i)) for i in (2,3,4)],axis=0)
+#a=concatenate([load('top20_halos_W%i_sigmaG10.npy'%(i)) for i in range(1,6)],axis=0)
 #kappa_peaks = a[:,0]
 #N_halos = sum((a[:,1:]<0.5),axis=1)+1
-#hist2d(kappa_peaks, N_halos,bins=(20,20),range=((amin(kappa_peaks),0.05),(1,21)))
-#xlabel(r'$\kappa_{\rm peak}$',fontsize=20)
-#ylabel(r'$N_{\rm halo}$',fontsize=20)
-#show()
-
+#hist2d(kappa_peaks, N_halos,bins=(20,20),range=((0.005,0.05),(0.5,20.5)),cmap='Greys')
 #N_mean, N_std = zeros((2,20))
 #kappa_edges = linspace(0.005, 0.05,21)
 #for i in range(20):
@@ -488,8 +507,9 @@ if find_foreground_halos:
     #iN_halos = N_halos[(kappa_peaks>k0) &(kappa_peaks<k1)]
     #N_mean[i]=mean(iN_halos)
     #N_std[i]=std(iN_halos)
-#errorbar(kappa_edges[:-1], N_mean, N_std)
-#xlim(0,0.05)
+#errorbar(WLanalysis.edge2center(kappa_edges), N_mean, N_std,lw=1)
+#xlim(0.003,0.05)
+#ylim(-1,14)
 #xlabel(r'$\kappa_{\rm peak}$',fontsize=20)
 #ylabel(r'$N_{\rm halo}$',fontsize=20)
 #show()
