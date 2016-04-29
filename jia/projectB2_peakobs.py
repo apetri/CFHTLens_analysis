@@ -25,8 +25,8 @@ make_kappaProj_map = 0
 plot_maps = 0
 xcorr_kappaProj_kappaLens = 0
 plot_overlapping_peaks = 0
-find_foreground_halos, random_direction = 1, 1
-
+find_foreground_halos, random_direction = 1, 0
+plot_N_peak = 0
 if make_kappaProj_cat or find_foreground_halos:
     ######## for stampede #####
     from emcee.utils import MPIPool
@@ -437,15 +437,11 @@ if find_foreground_halos:
     ###### (3) calculate contribution from each ith source to the total weight
     def loop_over_peaks(mm):
         iyx = yx_peaks[mm]
-    #for iyx in (yx_peaks[mm],):#yx_peaks[5:7]:#yx_peaks:#
-        
         idx_all = array(kdt.query_ball_point(iyx[::-1], r/2))
         idx_back = idx_all[(redshift[idx_all]>0.4) & (weight[idx_all]>0.0001)]
         source_contribute = weight[idx_back]*exp(-0.5*sum((xy[idx_back]-iyx[::-1])**2,axis=1)/(radians(sigmaG/60.0))**2)
-        #iy, ix= iyx
         ### make a matrix of ixj size, for ikappa at source i from lens j 
         ikappa_mat_ij = zeros((len(idx_back), len(idx_all)))
-        #ikappa_mat_ij[:,0]=source_contribute
         icounter=0
         for i in idx_back:
             jcounter=0
@@ -455,10 +451,16 @@ if find_foreground_halos:
                 jcounter+=1
             icounter+=1
         halos=sum(ikappa_mat_ij*source_contribute.reshape(-1,1),axis=0)/sum(source_contribute)
-        halos_contrib_comsum=cumsum(sort(halos)[::-1])/sum(halos)
-        out = zeros(21)
-        out[0]=sum(halos)
-        out[1:]=halos_contrib_comsum[:20]
+        
+        ###### actual comsum
+        #halos_contrib_comsum=cumsum(sort(halos)[::-1])/sum(halos)
+        #out = zeros(21)
+        #out[0]=sum(halos)
+        #out[1:]=halos_contrib_comsum[:20]
+        
+        ###### index of the top 20 halos
+        out = idx_all[argsort(halos)[::-1][:20]]
+        
         print Wx, len(yx_peaks),'%04d %.4f %.4f'%(mm, ikappa_arr[mm],sum(halos))
         return out#ikappa_mat_ij
     #out = loop_over_peaks(5)
@@ -471,15 +473,16 @@ if find_foreground_halos:
     
     #from multiprocessing import Pool
     #pool = Pool(20)
-    if not random_direction:
+    if not random_direction and Wx != 1:
         out_arr = pool.map(loop_over_peaks, arange(len(yx_peaks)))#arange(5))#
-        save(obsPK_dir+'top20_halos_W%i_sigmaG%02d.npy'%(Wx, sigmaG*10), out_arr)
+        save(obsPK_dir+'top20_halosidx_W%i_sigmaG%02d.npy'%(Wx, sigmaG*10), out_arr)
 
         ######## solve W1 problem, cut in half
-        #out_arr = pool.map(loop_over_peaks, arange(int(len(yx_peaks)/2)))#arange(5))#
-        #save(obsPK_dir+'top20_halos_W%i_sigmaG%02d.npy'%(Wx, sigmaG*10), out_arr)
-        #out_arr2 = pool.map(loop_over_peaks, arange(int(len(yx_peaks)/2),int(len(yx_peaks))))#arange(5))#
-        #save(obsPK_dir+'top20_halos_W5_sigmaG%02d.npy'%(sigmaG*10), out_arr2)
+    elif not random_direction and Wx == 1:
+        out_arr = pool.map(loop_over_peaks, arange(int(len(yx_peaks)/2)))#arange(5))#
+        save(obsPK_dir+'top20_halosidx_W%i_sigmaG%02d.npy'%(Wx, sigmaG*10), out_arr)
+        out_arr2 = pool.map(loop_over_peaks, arange(int(len(yx_peaks)/2),int(len(yx_peaks))))#arange(5))#
+        save(obsPK_dir+'top20_halosidx_W5_sigmaG%02d.npy'%(sigmaG*10), out_arr2)
        
     else:
         out_arr = pool.map(loop_over_peaks, arange(0,2500) )
@@ -496,20 +499,38 @@ if find_foreground_halos:
     pool.close()
     sys.exit(0)
 
-#a=concatenate([load('top20_halos_W%i_sigmaG10.npy'%(i)) for i in range(1,6)],axis=0)
-#kappa_peaks = a[:,0]
-#N_halos = sum((a[:,1:]<0.5),axis=1)+1
-#hist2d(kappa_peaks, N_halos,bins=(20,20),range=((0.005,0.05),(0.5,20.5)),cmap='Greys')
-#N_mean, N_std = zeros((2,20))
-#kappa_edges = linspace(0.005, 0.05,21)
-#for i in range(20):
-    #k0,k1 = kappa_edges[i:i+2]
-    #iN_halos = N_halos[(kappa_peaks>k0) &(kappa_peaks<k1)]
-    #N_mean[i]=mean(iN_halos)
-    #N_std[i]=std(iN_halos)
-#errorbar(WLanalysis.edge2center(kappa_edges), N_mean, N_std,lw=1)
-#xlim(0.003,0.05)
-#ylim(-1,14)
-#xlabel(r'$\kappa_{\rm peak}$',fontsize=20)
-#ylabel(r'$N_{\rm halo}$',fontsize=20)
-#show()
+if plot_N_peak:
+    a=concatenate([load('top20_halos_W%i_sigmaG10.npy'%(i)) for i in range(1,6)],axis=0)
+    b=concatenate([load('top20_random%i_sigmaG10.npy'%(i)) for i in range(1,5)],axis=0)
+
+    kappa_peaks = a[:,0]
+    N_halos = sum((a[:,1:]<0.5),axis=1)+1
+
+    rkappa_peaks = b[:,0]
+    rN_halos = sum((b[:,1:]<0.5),axis=1)+1
+
+    N_mean, N_std = zeros((2,20))
+    rN_mean, rN_std = zeros((2,20))
+
+    kappa_edges = linspace(0.005, 0.05,21)
+
+    for i in range(20):
+        k0,k1 = kappa_edges[i:i+2]
+        iN_halos = N_halos[(kappa_peaks>k0) &(kappa_peaks<k1)]
+        irN_halos = rN_halos[(rkappa_peaks>k0) &(rkappa_peaks<k1)]
+        
+        N_mean[i]=mean(iN_halos)
+        N_std[i]=std(iN_halos)
+        
+        rN_mean[i]=mean(irN_halos)
+        rN_std[i]=std(irN_halos)
+
+    hist2d(kappa_peaks, N_halos,bins=(20,20),range=((0.005,0.05),(0.5,20.5)),cmap='Greys')
+    errorbar(WLanalysis.edge2center(kappa_edges), N_mean, N_std,color='b',lw=1,label='peaks')
+    errorbar(WLanalysis.edge2center(kappa_edges), rN_mean, rN_std,color='r',lw=1,label='random')
+    xlim(0.003,0.05)
+    ylim(-1,14)
+    xlabel(r'$\kappa_{\rm peak}$',fontsize=20)
+    ylabel(r'$N_{\rm halo}$',fontsize=20)
+    legend(frameon=0)
+    show()
