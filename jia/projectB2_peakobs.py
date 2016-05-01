@@ -20,13 +20,15 @@ from scipy.integrate import quad
 import scipy.optimize as op
 import sys, os
 
-make_kappaProj_cat = 0
+make_kappaProj_cat = 1
 make_kappaProj_map = 0
 plot_maps = 0
 xcorr_kappaProj_kappaLens = 0
 plot_overlapping_peaks = 0
-find_foreground_halos, random_direction = 1, 0
+find_foreground_halos, random_direction = 0, 0
 plot_N_peak = 0
+halo_properties = 0
+
 if make_kappaProj_cat or find_foreground_halos:
     ######## for stampede #####
     from emcee.utils import MPIPool
@@ -157,7 +159,8 @@ def kappa_proj (Mvir, Rvir, z_fore, x_fore, y_fore, z_back, x_back, y_back, DC_f
     if z_fore>=z_back or Mvir==0:
         return 0.0
     else:
-        cNFW = cNFW_fcn(z_fore, Mvir)
+        #cNFW = cNFW_fcn(z_fore, Mvir)
+        cNFW = 1.5*cNFW_fcn(z_fore, Mvir)#####!!!test concentration
         f=1.0/(log(1.0+cNFW)-cNFW/(1.0+cNFW))# = 1.043 with cNFW=5.0
         two_rhos_rs = Mvir*M_sun*f*cNFW**2/(2*pi*Rvir**2)#cgs, see LK2014 footnote
         
@@ -241,10 +244,13 @@ if make_kappaProj_cat:
     pool.map(temp, ix_arr)
     
     all_kappa_proj = concatenate([np.load(obsPK_dir+'temp/cat_kappa_proj%i_%07d.npy'%(Wx, ix)) for ix in ix_arr])
-    np.save(obsPK_dir+'cat_kappa_proj_W%i.npy'%(Wx), all_kappa_proj)
+    #np.save(obsPK_dir+'cat_kappa_proj_W%i.npy'%(Wx), all_kappa_proj)
+    np.save(obsPK_dir+'cat15c_kappa_proj_W%i.npy'%(Wx), all_kappa_proj)
 
     print 'DONE-DONE-DONE'
-
+    pool.close()
+    sys.exit(0)
+    
 if make_kappaProj_map:
     zcut=0.4
     for Wx in (1,):#range(2,5):
@@ -266,28 +272,45 @@ if make_kappaProj_map:
             np.save(obsPK_dir+'kappa_proj/kproj_W%i_sigmaG%02d.npy'%(Wx, sigmaG*10), kmap_proj)
 
 if plot_maps:
+    from mpl_toolkits.axes_grid1 import make_axes_locatable
+    #left, width = .25, .5
+    #bottom, height = .25, .5
+    #right = left + width
+    #top = bottom + height
     #from zscale import zscale
-    for Wx in range(1,5):#(1,):# 
-        for sigmaG in (1.0, 1.8, 3.5, 5.3, 8.9):#(1.0,):# 
+    for Wx in (1,):#range(1,5):# 
+        for sigmaG in (8.9,):#(1.0, 1.8, 3.5, 5.3, 8.9):# 
             ikmap_lens = klensGen(Wx, sigmaG)
             ikmap_proj = kprojGen(Wx, sigmaG)
             imask = maskGen(Wx, sigmaG)
-            f=figure(figsize=(12,5))
-            subplot(121)
+            f=figure(figsize=(12,6))
+            ax=f.add_subplot(121)
             imean,istd=mean(ikmap_lens[imask>0]),std(ikmap_lens[imask>0])
             ikmap_lens[imask==0]=nan
-            imshow(ikmap_lens*imask-imean,vmin=imean-3*istd,vmax=imean+3*istd,origin='lower')
-            colorbar()
-            title("W%i-lens, %.1f', std=%.3f"%(Wx,sigmaG,std(ikmap_lens[imask>0])))
-            subplot(122)
-            imean,istd=mean(ikmap_proj[imask>0]),std(ikmap_proj[imask>0])
+            im=ax.imshow(ikmap_lens*imask-imean,vmin=imean-2*istd,vmax=imean+2.5*istd,origin='lower',cmap='coolwarm',extent=[RAs[Wx-1][1],RAs[Wx-1][0],DECs[Wx-1][0],DECs[Wx-1][1]],aspect='auto')
+            ipad=0.4
+            ax2=f.add_subplot(122)
+            imean2,istd2=mean(ikmap_proj[imask>0]),std(ikmap_proj[imask>0])
             ikmap_proj[imask==0]=nan
-            imshow(ikmap_proj*imask-imean,vmin=imean-3*istd,vmax=imean+3*istd,origin='lower')
-            colorbar()
-            title("W%i-proj, %.1f', std=%.3f"%(Wx,sigmaG,istd))
+            im2=ax2.imshow(ikmap_proj*imask-imean2,vmin=imean-2*istd,vmax=imean+2.5*istd,origin='lower',cmap='coolwarm',extent=[RAs[Wx-1][1],RAs[Wx-1][0],DECs[Wx-1][0],DECs[Wx-1][1]],aspect='auto')
+            #vmin=imean-3*istd,vmax=imean+3*istd
+            cbar_ax = f.add_axes([0.9, 0.15, 0.025, 0.77])#x0, y0, width, length
+            cbar_ax.tick_params(labelsize=14) 
+            f.colorbar(im, cax=cbar_ax)
+            ax.tick_params(labelsize=14)
+            ax2.tick_params(labelsize=14)
+            ax.set_ylim(DECs[Wx-1][0]+ipad,DECs[Wx-1][1]-ipad)
+            ax2.set_ylim(DECs[Wx-1][0]+ipad,DECs[Wx-1][1]-ipad)
+            plt.subplots_adjust(hspace=0,wspace=0.15, left=0.08, right=0.88,bottom=0.15,top=0.92)
             
-            plt.subplots_adjust(hspace=0,wspace=0.05, left=0.03, right=0.98)
-            savefig(plot_dir+'kmap_W%i_sigmaG%02d.png'%(Wx, sigmaG*10))
+            ax.text(0.8, 0.85, r'$\kappa_{\rm lens}$',fontsize=20,color='k',fontweight='bold',
+            transform=ax.transAxes)
+            ax2.text(0.8, 0.85, r'$\kappa_{\rm proj}$',fontsize=20,color='k',fontweight='bold',
+            transform=ax2.transAxes)
+            f.text(0.47, 0.03, r'$\rm {RA\,[deg]}$', ha='center', va='center',fontsize=20)
+            f.text(0.03, 0.5, r'$\rm {DEC\,[deg]}$', ha='center', va='center', rotation='vertical',fontsize=20)
+            #show()
+            savefig(plot_dir+'kmap_W%i_sigmaG%02d.pdf'%(Wx, sigmaG*10))
             close()
 
 if xcorr_kappaProj_kappaLens:
@@ -317,6 +340,7 @@ if xcorr_kappaProj_kappaLens:
         #cc_proj_bmode = WLanalysis.CrossCorrelate(ibmap*imask, ikmap_proj*imask,edges=iedge)[1]/fmask
         #auto_lens = WLanalysis.CrossCorrelate(ikmap_lens*imask, ikmap_lens*imask,edges=iedge)[1]/fmask
         #auto_proj = WLanalysis.CrossCorrelate(ikmap_proj*imask, ikmap_proj*imask,edges=iedge)[1]/fmask
+        auto_bmode = WLanalysis.CrossCorrelate(ibmap*imask, ibmap*imask,edges=iedge)[1]/fmask
         
         #save(obsPK_dir+'PS/PS_W%i_sigmaG%02d.npy'%(Wx, sigmaG*10),[ell_arr, cc_proj_lens, cc_proj_bmode, auto_lens, auto_proj])
         
@@ -324,13 +348,15 @@ if xcorr_kappaProj_kappaLens:
         
         delta_CC = sqrt((auto_lens*auto_proj+cc_proj_lens**2)/((2*ell_arr+1)*delta_ell*fsky))
         
+        delta_CC_b = sqrt((auto_bmode*auto_proj+cc_proj_bmode**2)/((2*ell_arr+1)*delta_ell*fsky))
+        
         if Wx==1:
             
-            ax.errorbar(ell_arr+(Wx-2.5)*40, cc_proj_lens, delta_CC,fmt='ko',linewidth=1, capsize=0, label=r'$\kappa_{\rm proj}\times \kappa_{\rm lens}$')   
-            ax.errorbar(ell_arr+(Wx-2.5)*40, cc_proj_bmode, delta_CC, fmt='rd',linewidth=1, capsize=0, mec='r', label=r'$\kappa_{\rm proj}\times \kappa_{\rm B-mode}$')  
+            ax.errorbar(ell_arr+(Wx-2.5)*40, cc_proj_lens, delta_CC,fmt='o',c='orangered',mec='orangered',linewidth=1, capsize=0, label=r'$\kappa_{\rm proj}\times \kappa_{\rm lens}$')   
+            ax.errorbar(ell_arr+(Wx-2.5)*40, cc_proj_bmode, delta_CC_b, fmt='kd',linewidth=1, capsize=0, mec='k', label=r'$\kappa_{\rm proj}\times \kappa_{\rm B-mode}$')  
         else:
-            ax.errorbar(ell_arr+(Wx-2.5)*60, cc_proj_lens, delta_CC,fmt='ko',linewidth=1, capsize=0) #ecolor=cc,mfc=cc, mec=cc,  
-            ax.errorbar(ell_arr+(Wx-2.5)*60, cc_proj_bmode, delta_CC, fmt='rd',linewidth=1, capsize=0, mec='r') # label=r'$\rm W%i$'%(Wx)
+            ax.errorbar(ell_arr+(Wx-2.5)*60, cc_proj_lens, delta_CC,fmt='o',c='orangered',mec='orangered',linewidth=1, capsize=0) #ecolor=cc,mfc=cc, mec=cc,  
+            ax.errorbar(ell_arr+(Wx-2.5)*60, cc_proj_bmode, delta_CC_b, fmt='kd',linewidth=1, capsize=0, mec='k') # label=r'$\rm W%i$'%(Wx)
         #ax.plot(ell_arr+(Wx-2.5)*50, auto_proj,'k-')
         #ax.plot(ell_arr+(Wx-2.5)*50, auto_lens,'k--')
     ax.plot([0,1e4],[0,0],'k--')
@@ -342,8 +368,8 @@ if xcorr_kappaProj_kappaLens:
     plt.subplots_adjust(hspace=0,wspace=0, left=0.16, right=0.9)
     ax.tick_params(labelsize=14)
     #show()
-    #savefig(plot_dir+'CC_W%i_sigmaG%02d.pdf'%(Wx, sigmaG*10))
-    savefig(plot_dir+'CC_W%i_sigmaG%02d.png'%(Wx, sigmaG*10))
+    savefig(plot_dir+'CC_sigmaG%02d.png'%(sigmaG*10))
+    savefig(plot_dir+'CC_sigmaG%02d.pdf'%(sigmaG*10))
     close()
     
 if plot_overlapping_peaks:
@@ -371,19 +397,23 @@ if plot_overlapping_peaks:
             
         #imshow(kmap_proj,origin='lower')
         s_arr = (kappa_arr-k0)*100/dk#400**(kappa_arr-amin(kappa_arr))
-        im = ax.imshow(kmap_lens*imask_nan,origin='lower',vmin=-2*istd, vmax=2.5*istd,cmap='coolwarm',extent=[RAs[Wx-1][1],RAs[Wx-1][0],DECs[Wx-1][0],DECs[Wx-1][1]],aspect='auto')
+        im = ax.imshow(kmap_lens*imask_nan,origin='lower',vmin=-2*istd, vmax=2.5*istd,cmap='coolwarm',extent=[RAs[Wx-1][1],RAs[Wx-1][0],DECs[Wx-1][0],DECs[Wx-1][1]],aspect='auto')#coolwarm
         #colorbar()
         ax.scatter(x,y,s=s_arr,edgecolors='k',linewidths=1,facecolors='k')#'none')#
         ax.tick_params(labelsize=14)
+        ipad = 0.1
+        ax.set_xlim(RAs[Wx-1][1]-ipad,RAs[Wx-1][0]+ipad)
+        ax.set_ylim(DECs[Wx-1][0]+ipad,DECs[Wx-1][1]-ipad)
     cbar_ax = f.add_axes([0.87, 0.1, 0.025, 0.85])#x0, y0, width, length
+    cbar_ax.tick_params(labelsize=14) 
     f.colorbar(im, cax=cbar_ax)
-    f.text(0.5, 0.02, r'$\rm {RA\,[deg]}$', ha='center', va='center',fontsize=20)
-    f.text(0.06, 0.5, r'$\rm {DEC\,[deg]}$', ha='center', va='center', rotation='vertical',fontsize=20)
+    f.text(0.5, 0.03, r'$\rm {RA\,[deg]}$', ha='center', va='center',fontsize=20)
+    f.text(0.03, 0.5, r'$\rm {DEC\,[deg]}$', ha='center', va='center', rotation='vertical',fontsize=20)
 
     plt.subplots_adjust(hspace=0.15,wspace=0.15, left=0.1, right=0.85,bottom=0.1,top=0.95)
     #show()
-    savefig(plot_dir+'matching_peaks.png')
-    #savefig(plot_dir+'matching_peaks.pdf')
+    #savefig(plot_dir+'matching_peaks.png')
+    savefig(plot_dir+'matching_peaks.pdf')
     close()
 
 if find_foreground_halos:
@@ -500,8 +530,8 @@ if find_foreground_halos:
     sys.exit(0)
 
 if plot_N_peak:
-    a=concatenate([load('top20_halos_W%i_sigmaG10.npy'%(i)) for i in range(1,6)],axis=0)
-    b=concatenate([load('top20_random%i_sigmaG10.npy'%(i)) for i in range(1,5)],axis=0)
+    a=concatenate([load(obsPK_dir+'top20_halos_W%i_sigmaG10.npy'%(i)) for i in range(1,6)],axis=0)
+    b=concatenate([load(obsPK_dir+'top20_random%i_sigmaG10.npy'%(i)) for i in range(1,5)],axis=0)
 
     kappa_peaks = a[:,0]
     N_halos = sum((a[:,1:]<0.5),axis=1)+1
@@ -524,13 +554,111 @@ if plot_N_peak:
         
         rN_mean[i]=mean(irN_halos)
         rN_std[i]=std(irN_halos)
+    np.random.seed(399)
+    cc,cc2=['orangered','green']#rand(2,3)
+    f=figure(figsize=(8,6))
+    ax=f.add_subplot(111)
+    ax.hist2d(kappa_peaks, N_halos,bins=(20,20),range=((0.005,0.05),(0.5,20.5)),cmap='Greys')
+    ax.errorbar(WLanalysis.edge2center(kappa_edges)-2e-4, N_mean, N_std,fmt='o',c=cc,ecolor=cc,mfc=cc, mec=cc,lw=1.5,capsize=0,label=r'${\rm peaks}$')
+    ax.errorbar(WLanalysis.edge2center(kappa_edges)+2e-4, rN_mean, rN_std,fmt='d',c=cc2,ecolor=cc2,mfc=cc2, mec=cc2,lw=1.5,capsize=0,label=r'${\rm non-peaks}$')
+    ax.tick_params(labelsize=16)
+    ax.set_xlim(0.00499,0.0499)
+    ax.set_ylim(-0.3,17)
+    ax.set_xlabel(r'$\kappa$',fontsize=22)
+    ax.set_ylabel(r'$N_{\rm halo}$',fontsize=22)
+    #ax.set_yscale('log')
+    ax.legend(frameon=0,fontsize=22,loc='center right')
+    plt.subplots_adjust(hspace=0,wspace=0.05, left=0.11, right=0.97,bottom=0.11,top=0.97)
+    #show()
+    savefig(plot_dir+'Nhalo_peak.pdf')
+    close()
 
-    hist2d(kappa_peaks, N_halos,bins=(20,20),range=((0.005,0.05),(0.5,20.5)),cmap='Greys')
-    errorbar(WLanalysis.edge2center(kappa_edges), N_mean, N_std,color='b',lw=1,label='peaks')
-    errorbar(WLanalysis.edge2center(kappa_edges), rN_mean, rN_std,color='r',lw=1,label='random')
-    xlim(0.003,0.05)
-    ylim(-1,14)
-    xlabel(r'$\kappa_{\rm peak}$',fontsize=20)
-    ylabel(r'$N_{\rm halo}$',fontsize=20)
-    legend(frameon=0)
-    show()
+if halo_properties:
+    sigmaG=1.0
+    def properties_fcn(Wx):
+        pix2rad = lambda xpix: (xpix-sizes[Wx-1]/2.0+0.5)/PPR512
+        ra, dec, redshift, weight, log10Mstar = cat_gen(Wx).T[[0,1,6,4,12]]
+        Mhalo = 10**Mstar2Mhalo (log10Mstar, redshift)## unit of Msun
+        Mhalo[log10Mstar==-99]=0
+        Rvir_arr = Rvir_fcn(Mhalo, redshift)
+        DC_arr = DC(redshift)
+        Rvir_theta_arr = Rvir_arr/(DC_arr*3.08567758e24/(1+redshift))
+        f_Wx = WLanalysis.gnom_fun(centers[Wx-1])#turns to radians
+        xy = array(f_Wx(array([ra,dec]).T)).T
+        
+        idx_halo=load(obsPK_dir+'top20_halosidx_W%i_sigmaG10.npy'%(Wx))
+        if Wx == 1:
+            idx_halo = concatenate([idx_halo,load(obsPK_dir+'top20_halosidx_W5_sigmaG10.npy')])
+
+        ikmap_proj = kprojGen(Wx, sigmaG)
+        imask = maskGen(Wx, sigmaG)
+        kproj_peak_mat = WLanalysis.peaks_mat(ikmap_proj)
+        idx_peaks=where((kproj_peak_mat>0)&(imask>0))
+        yx_peaks = pix2rad(array(idx_peaks)).T 
+        
+        ikappa_arr = kproj_peak_mat[idx_peaks]
+        
+        idistance_rad_arr = sqrt(sum((xy[idx_halo]-yx_peaks[:,::-1].reshape(-1,1,2))**2,axis=-1))
+        
+        idistance_rvir_arr = idistance_rad_arr/Rvir_theta_arr[idx_halo]
+        
+        imass_arr = Mhalo[idx_halo]
+        
+        iredshift_arr = redshift[idx_halo]
+        
+        return ikappa_arr, idistance_rad_arr, idistance_rvir_arr, imass_arr, iredshift_arr
+    #out = map(properties_fcn, range(1,5))
+    #ikappa_arr = concatenate([out[Wx][0] for Wx in range(4)])
+    #idistance_rad_arr = concatenate([out[Wx][1] for Wx in range(4)],axis=0)
+    #idistance_rvir_arr = concatenate([out[Wx][2] for Wx in range(4)],axis=0)
+    #imass_arr = concatenate([out[Wx][3] for Wx in range(4)],axis=0)
+    #iredshift_arr = concatenate([out[Wx][4] for Wx in range(4)],axis=0)
+    #save(obsPK_dir+'halo_properties.npy',[idistance_rad_arr, idistance_rvir_arr, imass_arr, iredshift_arr])
+    
+    kappa_halo = concatenate([load(obsPK_dir+'top20_halos_W%i_sigmaG10.npy'%(i)) for i in range(1,6)],axis=0)[:,1:]
+    ikappa_arr = concatenate([load(obsPK_dir+'top20_halos_W%i_sigmaG10.npy'%(i)) for i in range(1,6)],axis=0)[:,0]
+    idistance_rad_arr, idistance_rvir_arr, imass_arr, iredshift_arr = load(obsPK_dir+'halo_properties.npy')
+    
+    kappa_edges = linspace(0.0, 0.08,21)  
+    kappa_centers = WLanalysis.edge2center(kappa_edges)
+    N_halos = sum((kappa_halo<0.5),axis=1)+1
+    include_halo = (kappa_halo<0.5).astype(int)
+    include_halo[:,1:]=include_halo[:,:-1].copy()
+    include_halo[:,0]=1
+
+    f=figure(figsize=(10,8))
+    jj=0
+    labels=[r'$\log_{\rm 10} (M_{\rm halo}/M_{\odot})$',r'$\sigma_\chi\,{\rm [Mpc]}$',r'$\theta\, [{\rm arcmin}]$', r'$\theta / \theta_{vir} $']
+    cc = 'orangered'
+    for temp_arr in (log10(imass_arr), iredshift_arr, degrees(idistance_rad_arr)*60, idistance_rvir_arr):
+        ax=f.add_subplot(2,2,jj+1)
+        if jj==1:
+            t0=temp_arr*include_halo
+            #temp_avg = array([sum(unique(t0[_k])>0) for _k in arange(len(t0))])
+            #temp_avg = temp_avg/N_halos.astype(float)
+            temp_avg = array([std(DC(unique(t0[_k])[1:])) for _k in arange(len(t0))])
+        else:
+            temp_avg = sum(temp_arr*include_halo,axis=1)/N_halos
+        N_mean, N_std = zeros((2,20))
+        for i in range(20):
+            k0,k1 = kappa_edges[i:i+2]
+            itemp_avg=temp_avg[(ikappa_arr>k0) &(ikappa_arr<k1)]
+            N_mean[i]=mean(itemp_avg)
+            N_std[i]=std(itemp_avg)
+        ax.errorbar(kappa_centers, N_mean, N_std,fmt='o',c=cc,ecolor=cc,mfc=cc, mec=cc,lw=1.5,capsize=0)
+        
+        ax.text(0.85, 0.85, r'${\rm (%s)}$'%(['a','b','c','d'][jj]),fontsize=20,color='k',fontweight='bold',transform=ax.transAxes)
+        if jj==0:
+            ax.set_ylim(11.7, 15.5)
+        ax.set_ylabel(labels[jj],fontsize=20)#, labelpad=-12*(jj%2)+2)
+        ax.tick_params(labelsize=16)
+        ax.locator_params(tight=True, nbins=6)
+        ax.set_xlim(kappa_edges[0]-0.002, kappa_edges[-1]+0.002)
+        jj+=1
+    plt.subplots_adjust(hspace=0.15,wspace=0.25, left=0.1, right=0.97,bottom=0.11,top=0.95)
+    f.text(0.5, 0.03, r'$\kappa$', ha='center', va='center',fontsize=22)
+    savefig(plot_dir+'halo_properties.png')
+    savefig(plot_dir+'halo_properties.pdf')
+    close()
+    #show()       
+    
