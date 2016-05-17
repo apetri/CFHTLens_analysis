@@ -385,11 +385,18 @@ if plot_overlapping_peaks:
     
     for Wx in range(1,5):
         ax=f.add_subplot(2,2,Wx)
-        kmap_lens = klensGen(Wx, 8.9)
-        kmap_proj = kprojGen(Wx, isigma)
+        ############## swapped kmap_lens and kmap_proj as requested by zoltan
+        #kmap_lens = klensGen(Wx, 8.9)
+        #kmap_proj = kprojGen(Wx, isigma)
+        kmap_lens = kprojGen(Wx, 8.9)
+        kmap_proj = klensGen(Wx, isigma)
+        
         imask = maskGen(Wx, isigma)
         imask_nan = imask.copy()
         imask_nan[imask_nan==0]=nan
+        
+        kmap_lens -= mean(kmap_lens[imask>0])
+        kmap_proj *= WLanalysis.smooth(imask, 5)
         #### find peaks in proj map
         kproj_peak_mat = WLanalysis.peaks_mat(kmap_proj)
         idx=where((kproj_peak_mat>0)&(imask>0))
@@ -403,7 +410,8 @@ if plot_overlapping_peaks:
             dk=k1-k0
             
         #imshow(kmap_proj,origin='lower')
-        s_arr = (kappa_arr-k0)*100/dk#400**(kappa_arr-amin(kappa_arr))
+        s_arr = (kappa_arr-k0)*50/dk/2.0
+        #s_arr = (kappa_arr-k0)*100/dk#400**(kappa_arr-amin(kappa_arr))
         im = ax.imshow(kmap_lens*imask_nan,origin='lower',vmin=-2*istd, vmax=2.5*istd,cmap='coolwarm',extent=[RAs[Wx-1][1],RAs[Wx-1][0],DECs[Wx-1][0],DECs[Wx-1][1]],aspect='auto')#coolwarm
         #colorbar()
         ax.scatter(x,y,s=s_arr,edgecolors='k',linewidths=1,facecolors='k')#'none')#
@@ -419,8 +427,8 @@ if plot_overlapping_peaks:
 
     plt.subplots_adjust(hspace=0.15,wspace=0.15, left=0.1, right=0.85,bottom=0.1,top=0.95)
     #show()
-    #savefig(plot_dir+'matching_peaks.png')
-    savefig(plot_dir+'matching_peaks.pdf')
+    savefig(plot_dir+'matching_klenspeaks.png')
+    #savefig(plot_dir+'matching_peaks.pdf')
     close()
 
 if find_foreground_halos:
@@ -516,6 +524,16 @@ if find_foreground_halos:
     if not random_direction and Wx != 1:
         out_arr = pool.map(loop_over_peaks, arange(len(yx_peaks)))#arange(5))#
         save(obsPK_dir+'top20lens_halosidx_W%i_sigmaG%02d.npy'%(Wx, sigmaG*10), out_arr)
+        if Wx == 3:
+            istep=int(len(yx_peaks)/2)
+            allstep=int(len(yx_peaks))
+            
+            out_arr = pool.map(loop_over_peaks, arange(istep))#arange(5))#
+            save(obsPK_dir+'top20lens_halosidx_W3_sigmaG%02d.npy'%(sigmaG*10), out_arr)
+            
+            out_arr2 = pool.map(loop_over_peaks, arange(istep,allstep))#arange(5))#
+            save(obsPK_dir+'top20lens_halosidx_W8_sigmaG%02d.npy'%(sigmaG*10), out_arr2)
+
 
         ######## solve W1 problem, cut in half
     elif not random_direction and Wx == 1:
