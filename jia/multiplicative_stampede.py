@@ -780,7 +780,7 @@ if plot_contour:
         ax.tick_params(labelsize=16)
         ax.set_xlabel('$m$',fontsize=24)
         ax.set_ylabel([r'$b$',r'$b_0$',r'$\tilde{b}_0$'][bmodel],fontsize=24)
-        ax.grid(True)
+        #ax.grid(True)
         plt.subplots_adjust(hspace=0, wspace=0, left=0.13, right=0.96,bottom=0.13, top=0.95)
         #ax.set_ylim(0.45, 1.35)#(0.2,1.0)
         if cut==24:

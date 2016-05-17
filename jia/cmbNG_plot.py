@@ -27,7 +27,7 @@ fidu_cosmo=cosmo_arr[12]
 plot_design = 0
 plot_comp_nicaea = 0
 plot_noiseless_peaks_PDF = 0
-plot_sample_noiseless_noisy_map = 1
+plot_sample_noiseless_noisy_map = 0
 plot_noisy_peaks_PDF = 0
 plot_reconstruction_noise = 0
 plot_corr_mat = 0
@@ -54,7 +54,7 @@ if plot_design:
 if plot_comp_nicaea:
     ell_gadget = (WLanalysis.edge2center(logspace(log10(1.0),log10(1024),51))*360./sqrt(12.25))[:34]
 
-    ell_nicaea, ps_nicaea=genfromtxt('/Users/jia/weaklensing/CMBnonGaussian/Pkappa_nicaea/Pkappa_nicaea25_{0}_1100'.format(fidu_cosmo))[33:-5].T
+    ell_nicaea, ps_nicaea=genfromtxt('/Users/jia/weaklensing/CMBnonGaussian/Pkappa_nicaea/Pkappa_nicaea25_{0}_1100'.format(cosmo))[33:-5].T
     
     def get_1024(j):
         pspkPDFgadget=load('/Users/jia/weaklensing/CMBnonGaussian/Pkappa_gadget/kappa_{0}_ps_PDF_pk_z1100_{1}.npy'.format(fidu_cosmo, j))
@@ -440,6 +440,8 @@ def create_prob_plane(psPDFpk='pk', sigmaG_idx=0):
 #ylabel('om')
 #show()
 ###########################################
+
+
 
 if plot_contour_PDF_pk:
     for j in range(2):
