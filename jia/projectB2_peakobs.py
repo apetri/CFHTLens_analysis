@@ -520,10 +520,9 @@ if find_foreground_halos:
         sys.exit(0)
     
     #from multiprocessing import Pool
-    #pool = Pool(20)
+    #pool = Pool(3)
     if not random_direction and Wx != 1:
-        out_arr = pool.map(loop_over_peaks, arange(len(yx_peaks)))#arange(5))#
-        save(obsPK_dir+'top20lens_halosidx_W%i_sigmaG%02d.npy'%(Wx, sigmaG*10), out_arr)
+        
         if Wx == 3:
             istep=int(len(yx_peaks)/4)
             allstep=int(len(yx_peaks))
@@ -539,7 +538,9 @@ if find_foreground_halos:
             
             out_arr4 = pool.map(loop_over_peaks, arange(istep*3,allstep))#arange(5))#
             save(obsPK_dir+'top20lens_halosidx_W10_sigmaG%02d.npy'%(sigmaG*10), out_arr4)
-
+        else: 
+            out_arr = pool.map(loop_over_peaks, arange(len(yx_peaks)))#arange(5))#
+        save(obsPK_dir+'top20lens_halosidx_W%i_sigmaG%02d.npy'%(Wx, sigmaG*10), out_arr)
 
         ######## solve W1 problem, cut in half
     elif not random_direction and Wx == 1:
