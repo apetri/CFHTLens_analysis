@@ -520,18 +520,18 @@ if find_foreground_halos:
         ######## solve W1 problem, cut in half
     elif not random_direction and Wx == 1:
         istep=int(len(yx_peaks)/4)
-        allstep=int(len(yx_peaks)))
+        allstep=int(len(yx_peaks))
         
         out_arr = pool.map(loop_over_peaks, arange(istep))#arange(5))#
         save(obsPK_dir+'top20lens_halosidx_W1_sigmaG%02d.npy'%(sigmaG*10), out_arr)
         
-        out_arr2 = pool.map(loop_over_peaks, arange(istep,istep*2)#arange(5))#
+        out_arr2 = pool.map(loop_over_peaks, arange(istep,istep*2))#arange(5))#
         save(obsPK_dir+'top20lens_halosidx_W5_sigmaG%02d.npy'%(sigmaG*10), out_arr2)
         
-        out_arr3 = pool.map(loop_over_peaks, arange(istep*2,istep*3)#arange(5))#
+        out_arr3 = pool.map(loop_over_peaks, arange(istep*2,istep*3))#arange(5))#
         save(obsPK_dir+'top20lens_halosidx_W6_sigmaG%02d.npy'%(sigmaG*10), out_arr3)
         
-        out_arr4 = pool.map(loop_over_peaks, arange(istep*3,allstep)#arange(5))#
+        out_arr4 = pool.map(loop_over_peaks, arange(istep*3,allstep))#arange(5))#
         save(obsPK_dir+'top20lens_halosidx_W7_sigmaG%02d.npy'%(sigmaG*10), out_arr4)
        
     else:
