@@ -446,7 +446,7 @@ if find_foreground_halos:
     ## ikmap = kprojGen(Wx, sigmaG)###### using kappa_proj
     ikmap = klensGen(Wx, sigmaG) ## use kappa_lens
     imask = maskGen(Wx, sigmaG)
-    kappa_peak_mat = WLanalysis.peaks_mat(ikmap)
+    kproj_peak_mat = WLanalysis.peaks_mat(ikmap)
     if not random_direction:
         idx_peaks=where((kproj_peak_mat>0)&(imask>0))
         ikappa_arr = kproj_peak_mat[idx_peaks]
