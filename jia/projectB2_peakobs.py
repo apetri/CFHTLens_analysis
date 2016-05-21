@@ -25,13 +25,17 @@ make_kappaProj_map = 0
 plot_maps = 0
 xcorr_kappaProj_kappaLens = 0
 plot_overlapping_peaks = 0
-find_foreground_halos, random_direction = 1, 0
-plot_N_peak, ttest = 0,0
+find_foreground_halos, random_direction = 0, 0
+plot_N_peak, ttest = 0, 0## ttest is student t-test for probability
 plot_halo_properties = 0
 plot_concentration, plot_peaks_c15 = 0, 0
 compare_peak_noise = 0
 plot_hilo_peaks = 0
-
+plot_yang2011_fig5 = 0
+xcorr_peaks, peak_nob,clipped = 0, 0, 0#0=mapmpa, 1=peakmap, 2=peakpeak
+plot_xcorr_peaks = 0
+plot_peak_scatter = 0
+test_lo_hi_contour = 0
 
 if make_kappaProj_cat or find_foreground_halos:
     ######## for stampede #####
@@ -426,10 +430,10 @@ if plot_overlapping_peaks:
     f.text(0.03, 0.5, r'$\rm {DEC\,[deg]}$', ha='center', va='center', rotation='vertical',fontsize=20)
 
     plt.subplots_adjust(hspace=0.15,wspace=0.15, left=0.1, right=0.85,bottom=0.1,top=0.95)
-    #show()
-    savefig(plot_dir+'matching_klenspeaks.png')
+    show()
+    #savefig(plot_dir+'matching_klenspeaks.png')
     #savefig(plot_dir+'matching_peaks.pdf')
-    close()
+    #close()
 
 if find_foreground_halos:
     ###### (1) identify peaks in the kappa_proj maps
@@ -454,10 +458,10 @@ if find_foreground_halos:
     ## ikmap = kprojGen(Wx, sigmaG)###### using kappa_proj
     ikmap = klensGen(Wx, sigmaG) ## use kappa_lens
     imask = maskGen(Wx, sigmaG)
-    kproj_peak_mat = WLanalysis.peaks_mat(ikmap)
+    kappa_peak_mat = WLanalysis.peaks_mat(ikmap)
     if not random_direction:
-        idx_peaks=where((kproj_peak_mat>0)&(imask>0))
-        ikappa_arr = kproj_peak_mat[idx_peaks]
+        idx_peaks=where((kappa_peak_mat>0)&(imask>0))
+        ikappa_arr = kappa_peak_mat[idx_peaks]
         yx_peaks = pix2rad(array(idx_peaks)).T ## or xy..    
     else:###### (1b) identify non peaks
         idx_non_peaks=array(where(isnan(kappa_peak_mat)*imask>0)).T
@@ -573,21 +577,46 @@ if find_foreground_halos:
     print 'DONE-DONE-DONE'
     pool.close()
     sys.exit(0)
+def gen_peaks_list(Wx,sigmaG=1.0):
+    ikmap = klensGen(Wx, sigmaG) ## use kappa_lens
+    kmap_peak_mat = WLanalysis.peaks_mat(ikmap)
+    imask = maskGen(Wx, sigmaG)
+    ikappa_arr = ikmap[(kmap_peak_mat>0)&(imask>0)]
+    return ikappa_arr
 
 if plot_N_peak:
-    a=concatenate([load(obsPK_dir+'top20_halos_W%i_sigmaG10.npy'%(i)) for i in range(1,6)],axis=0)
+    do_lens = 1
+
     b=concatenate([load(obsPK_dir+'top20_random%i_sigmaG10.npy'%(i)) for i in range(1,5)],axis=0)
 
-    kappa_peaks = a[:,0]
+    if do_lens:### kappa_lens
+        a=concatenate([load(obsPK_dir+'top20lens_halosidx_W%i_sigmaG10.npy'%(i))[:,0] for i in range(1,5)],axis=0)
+        kappa_peaks = concatenate(map(gen_peaks_list,range(1,5)))### use klens bins
+        
+        kappa_peak_mat = WLanalysis.peaks_mat(kprojGen(1, 1.0))
+        imask = maskGen(1, 1.0)
+        idx_non_peaks=array(where(isnan(kappa_peak_mat)*imask>0)).T
+        seed(0)
+        sample_non_peaks = randint(0, len(idx_non_peaks), 1e4)
+        idx_peaks = list(idx_non_peaks[sample_non_peaks].T)
+        #ikappa_arr = ikmap_proj[idx_peaks]
+        
+        rkappa_peaks = klensGen(1,1.0)[idx_peaks]
+    else:### kappa_proj
+        a=concatenate([load(obsPK_dir+'top20_halos_W%i_sigmaG10.npy'%(i)) for i in range(1,6)],axis=0)
+        kappa_peaks = a[:,0]### use kproj bins
+        rkappa_peaks = b[:,0]
+        
+        
+
     N_halos = sum((a[:,1:]<0.5),axis=1)+1
 
-    rkappa_peaks = b[:,0]
     rN_halos = sum((b[:,1:]<0.5),axis=1)+1
 
     N_mean, N_std = zeros((2,20))
     rN_mean, rN_std = zeros((2,20))
-
-    kappa_edges = linspace(0.005, 0.05,21)
+    hi_kappa=0.2#0.5
+    kappa_edges = linspace(0.005, hi_kappa,21)
     
     from scipy import stats
     ttest_arr = []
@@ -604,31 +633,35 @@ if plot_N_peak:
 
         ittest=stats.ttest_ind(iN_halos,irN_halos)
         ttest_arr.append(ittest)
-        #print 0.5*(k1+k0), ittest[1]
+        print 0.5*(k1+k0), ittest[1]
         
     if not ttest:
         np.random.seed(399)
         cc,cc2=['orangered','green']#rand(2,3)
         f=figure(figsize=(6,4))
         ax=f.add_subplot(111)
-        ax.hist2d(kappa_peaks, N_halos,bins=(20,20),range=((0.005,0.05),(0.5,20.5)),cmap='Greys')
+        #ax.hist2d(kappa_peaks, N_halos,bins=(20,20),range=((0.005,hi_kappa),(0.5,20.5)),cmap='Greys')
+        ## xx,yy,zz=histogram2d(kappa_peaks, N_halos,bins=(15,20),range=((0.005,hi_kappa),(0.5,20.5)))
+        ## N_mean=sum(xx*WLanalysis.edge2center(zz).reshape(1,-1),axis=1)/sum(xx,axis=1)
         ax.errorbar(WLanalysis.edge2center(kappa_edges)-2e-4, N_mean, N_std,fmt='o',c=cc,ecolor=cc,mfc=cc, mec=cc,lw=1.5,capsize=0,label=r'${\rm peaks}$')
         ax.errorbar(WLanalysis.edge2center(kappa_edges)+2e-4, rN_mean, rN_std,fmt='d',c=cc2,ecolor=cc2,mfc=cc2, mec=cc2,lw=1.5,capsize=0,label=r'${\rm non-peaks}$')
         ax.tick_params(labelsize=16)
-        ax.set_xlim(0.00499,0.0499)
+        #ax.set_xlim(0.00499,0.0499)
         ax.set_ylim(-0.3,17)
         ax.set_xlabel(r'$\kappa$',fontsize=22)
         ax.set_ylabel(r'$N_{\rm halo}$',fontsize=22)
         #ax.set_yscale('log')
-        ax.legend(frameon=0,fontsize=20,loc='center right')
+        ax.legend(frameon=0,fontsize=20,loc='upper right')
         plt.subplots_adjust(hspace=0,wspace=0.05, left=0.13, right=0.95,bottom=0.16,top=0.92)
         #show()
-        savefig(plot_dir+'Nhalo_peak.pdf')
+        savefig(plot_dir+'Nhalo_peak_lens0.png')
         close()
 
 if plot_halo_properties:
     sigmaG=1.0
+    do_lens=1# 1=kappa_lens, else kappa_proj
     def properties_fcn(Wx):
+        print Wx
         pix2rad = lambda xpix: (xpix-sizes[Wx-1]/2.0+0.5)/PPR512
         ra, dec, redshift, weight, log10Mstar = cat_gen(Wx).T[[0,1,6,4,12]]
         Mhalo = 10**Mstar2Mhalo (log10Mstar, redshift)## unit of Msun
@@ -639,11 +672,18 @@ if plot_halo_properties:
         f_Wx = WLanalysis.gnom_fun(centers[Wx-1])#turns to radians
         xy = array(f_Wx(array([ra,dec]).T)).T
         
-        idx_halo=load(obsPK_dir+'top20_halosidx_W%i_sigmaG10.npy'%(Wx))
-        if Wx == 1:
-            idx_halo = concatenate([idx_halo,load(obsPK_dir+'top20_halosidx_W5_sigmaG10.npy')])
+        ########## kappa_proj peaks
+        if not do_lens:
+            idx_halo=load(obsPK_dir+'top20_halosidx_W%i_sigmaG10.npy'%(Wx))
+            if Wx == 1:
+                idx_halo = concatenate([idx_halo,load(obsPK_dir+'top20_halosidx_W5_sigmaG10.npy')])
+            ikmap_proj = kprojGen(Wx, sigmaG)
 
-        ikmap_proj = kprojGen(Wx, sigmaG)
+        ######### kappa_lens peaks
+        else:
+            idx_halo=load(obsPK_dir+'top20lens_halosidx_W%i_sigmaG10.npy'%(Wx))[:,1,1:].astype(int)
+            ikmap_proj = klensGen(Wx, sigmaG)
+
         imask = maskGen(Wx, sigmaG)
         kproj_peak_mat = WLanalysis.peaks_mat(ikmap_proj)
         idx_peaks=where((kproj_peak_mat>0)&(imask>0))
@@ -666,13 +706,22 @@ if plot_halo_properties:
     #idistance_rvir_arr = concatenate([out[Wx][2] for Wx in range(4)],axis=0)
     #imass_arr = concatenate([out[Wx][3] for Wx in range(4)],axis=0)
     #iredshift_arr = concatenate([out[Wx][4] for Wx in range(4)],axis=0)
-    #save(obsPK_dir+'halo_properties.npy',[idistance_rad_arr, idistance_rvir_arr, imass_arr, iredshift_arr])
+    #save(obsPK_dir+'halo_properties_lens.npy',[idistance_rad_arr, idistance_rvir_arr, imass_arr, iredshift_arr])
     
-    kappa_halo = concatenate([load(obsPK_dir+'top20_halos_W%i_sigmaG10.npy'%(i)) for i in range(1,6)],axis=0)[:,1:]
-    ikappa_arr = concatenate([load(obsPK_dir+'top20_halos_W%i_sigmaG10.npy'%(i)) for i in range(1,6)],axis=0)[:,0]
-    idistance_rad_arr, idistance_rvir_arr, imass_arr, iredshift_arr = load(obsPK_dir+'halo_properties.npy')
+    if not do_lens:
+        kappa_halo = concatenate([load(obsPK_dir+'top20_halos_W%i_sigmaG10.npy'%(i)) for i in range(1,5)],axis=0)[:,1:]
+        ikappa_arr = concatenate([load(obsPK_dir+'top20_halos_W%i_sigmaG10.npy'%(i)) for i in range(1,5)],axis=0)[:,0]
+        idistance_rad_arr, idistance_rvir_arr, imass_arr, iredshift_arr = load(obsPK_dir+'halo_properties.npy')
     
-    kappa_edges = linspace(0.0, 0.08,21)  
+    else:
+        kappa_halo = concatenate([load(obsPK_dir+'top20lens_halosidx_W%i_sigmaG10.npy'%(i)) for i in range(1,5)],axis=0)[:,0,1:]
+        ikappa_arr = concatenate([load(obsPK_dir+'top20lens_halosidx_W%i_sigmaG10.npy'%(i)) for i in range(1,5)],axis=0)[:,0,0]
+        sigmaG=1.0
+        
+        #ikappa_arr = concatenate(map(gen_peaks_list,range(1,5)))
+        idistance_rad_arr, idistance_rvir_arr, imass_arr, iredshift_arr = load(obsPK_dir+'halo_properties_lens.npy')
+
+    kappa_edges = linspace(0.0, 0.024*5, 21)  
     kappa_centers = WLanalysis.edge2center(kappa_edges)
     N_halos = sum((kappa_halo<0.5),axis=1)+1
     include_halo = (kappa_halo<0.5).astype(int)
@@ -702,18 +751,20 @@ if plot_halo_properties:
         
         ax.text(0.85, 0.85, r'${\rm (%s)}$'%(['a','b','c','d'][jj]),fontsize=20,color='k',fontweight='bold',transform=ax.transAxes)
         if jj==0:
-            ax.set_ylim(11.7, 15.5)
-        ax.set_ylabel(labels[jj],fontsize=20)#, labelpad=-12*(jj%2)+2)
+            ax.set_ylim(10.9, 16.5)
+        if jj==2 or jj==3:
+            ax.set_ylim(0.1, 3.7)
+        ax.set_ylabel(labels[jj],fontsize=20)#, labelpad=-10*int(jj==1))
         ax.tick_params(labelsize=16)
-        ax.locator_params(tight=True, nbins=6)
+        ax.locator_params(tight=1, nbins=6)
         ax.set_xlim(kappa_edges[0]-0.002, kappa_edges[-1]+0.002)
         jj+=1
     plt.subplots_adjust(hspace=0.15,wspace=0.25, left=0.1, right=0.97,bottom=0.11,top=0.95)
     f.text(0.5, 0.03, r'$\kappa$', ha='center', va='center',fontsize=22)
-    savefig(plot_dir+'halo_properties.png')
-    savefig(plot_dir+'halo_properties.pdf')
-    close()
-    #show()       
+    #show()
+    #savefig(plot_dir+'halo_properties_lens0.png')
+    savefig(plot_dir+'halo_properties_lens.pdf')
+    close()      
 
 if plot_concentration:
     #from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -847,4 +898,309 @@ if plot_hilo_peaks:
     savefig(plot_dir+'sample_peaks.pdf')
     close()
     
+if plot_yang2011_fig5:
+    skn=0.036## sigma_kappa halos_noisy
+    sknl=0.024## sigma_kappa noiseless
+    halos_noisy = concatenate([load(obsPK_dir+'top20lens_halosidx_W%i_sigmaG10.npy'%(i))[:,0] for i in range(1,5)],axis=0)
+    kappa_noisy = concatenate(map(gen_peaks_list,range(1,5)))
+    
+    halos_noiseless = concatenate([load(obsPK_dir+'top20_halos_W%i_sigmaG10.npy'%(i)) for i in range(1,6)],axis=0)
+    kappa_noiseless = halos_noiseless[:,0]#-0.019
+    
+    N_halos_noisy = sum((halos_noisy[:,1:]<0.5),axis=1)+1
+    N_halos_noiseless = sum((halos_noiseless[:,1:]<0.5),axis=1)+1
+    N_halos_arr = [N_halos_noisy[kappa_noisy>=3.5*skn], 
+                   N_halos_noisy[(kappa_noisy<3.5*skn)&(kappa_noisy>=skn)],
+                   N_halos_noisy[kappa_noisy<skn],
+                   N_halos_noiseless[kappa_noiseless>=3.5*sknl],
+                   N_halos_noiseless[(kappa_noiseless<3.5*sknl)&(kappa_noiseless>=sknl)],
+                   N_halos_noiseless[kappa_noiseless<sknl]]
+    f=figure(figsize=(10,6))
+    for jj in range(6):
+        ax=f.add_subplot(2,3,jj+1)
+        ax.hist(N_halos_arr[jj],bins=arange(0.5,21.5))
+        if jj>2:
+            ax.set_xlabel(r'$N_{\rm halo}$',fontsize=22)
+        if not jj%3:
+            ax.set_ylabel(r'$N_{\rm peaks}$',fontsize=22)
+        ax.set_xlim(0,20)
+        ax.text(0.3, 0.85, r'$\kappa_{\rm %s}\, ({\rm%s})}$'%(['lens','proj'][int(jj>2)],['high','medium','low'][jj%3]),fontsize=14,color='k',transform=ax.transAxes)#fontweight='bold'
+    #plt.subplots_adjust(hspace=0,wspace=0.05, left=0.13, right=0.95,bottom=0.16,top=0.92)
+    show()   
+
+def find_SNR (CC_arr, errK_arr):
+    weightK = 1/errK_arr**2/sum(1/errK_arr**2, axis=0)
+    CC_mean = sum(CC_arr*weightK,axis=0)
+    err_mean = sqrt(1.0/sum(1/errK_arr**2, axis=0))    
+    return CC_mean, err_mean
+
+if xcorr_peaks:
+    fn = ['mapmap','peakmap','peakpeak']## type of cross correlation
+    labels = [['\kappa','\kappa'],['\kappa','peak'],['peak','peak']]
+    l1,l2=labels[peak_nob]
+    #edgesGen = lambda Wx: logspace(0,log10(400),16)*sizes[Wx-1]/1330.0
+    edgesGen = lambda Wx: linspace(1,250,11)*sizes[Wx-1]/1330.0
+    ell_edges = edgesGen(1)*40
+    delta_ell = ell_edges[1:]-ell_edges[:-1]
+    sigmaG = 1.0
+    if not peak_nob:
+        sigmaG = 0.5
+    f=figure(figsize=(6,4))
+    seed(16)
+    ax=f.add_subplot(111)
+    SNR_sig=0
+    SNR_b=0
+    CC_arr = zeros(shape=(4,10))
+    err_arr = zeros(shape=(4,10))
+    CC_arrB = zeros(shape=(4,10))
+    err_arrB = zeros(shape=(4,10))
+    
+    for Wx in range(1,5):#(1,):# 
+        #cc=rand(3)
+        iedge=edgesGen(Wx)
+        imask = maskGen(Wx, sigmaG)
+        fmask=sum(imask)/float(sizes[Wx-1]**2)
+        sizedeg = (sizes[Wx-1]/512.0)**2*12.25
+        fsky=fmask*sizedeg/41253.0
+       
+        #ikmap_lens = klensGen(Wx, sigmaG)*imask
+        #ikmap_proj = kprojGen(Wx, sigmaG)*imask
+        #ikmap_proj -= mean(ikmap_proj[imask>0])
+        #ikmap_proj *= imask
+        #ibmap = blensGen(Wx, sigmaG)*imask
+        
+        ell_arr = WLanalysis.edge2center(iedge)*360./sqrt(sizedeg)
+        ########### maps
+        #if peak_nob==0:
+            #cc_proj_lens = WLanalysis.CrossCorrelate(ikmap_lens, ikmap_proj,edges=iedge)[1]/fmask
+            #cc_proj_bmode = WLanalysis.CrossCorrelate(ikmap_proj,ibmap,edges=iedge)[1]/fmask
+            #auto_lens = WLanalysis.CrossCorrelate(ikmap_lens,ikmap_lens,edges=iedge)[1]/fmask
+            #auto_proj = WLanalysis.CrossCorrelate(ikmap_proj,ikmap_proj,edges=iedge)[1]/fmask
+            #auto_bmode = WLanalysis.CrossCorrelate(ibmap,ibmap,edges=iedge)[1]/fmask
+
+        ########### peaks
+        #if peak_nob:#peakpeak or peakmap
+            #ipeakmat_lens = WLanalysis.peaks_mat(ikmap_lens)
+            #ipeakmat_proj = WLanalysis.peaks_mat(ikmap_proj)
+            #ipeakmat_bmode = WLanalysis.peaks_mat(ibmap)
+            #ipeakmat_lens[isnan(ipeakmat_lens)]=0
+            #ipeakmat_proj[isnan(ipeakmat_proj)]=0
+            #ipeakmat_bmode[isnan(ipeakmat_bmode)]=0
+            #ipeakmat_bmode*=imask
+            #ipeakmat_lens*=imask
+            #if peak_nob == 1:#peak map
+                #ipeakmat_proj = ikmap_proj
+            #ipeakmat_proj*=imask
+            #if clipped:
+                #ipeakmat_bmode[ipeakmat_bmode>3.5*std(ikmap_lens[imask>0])]=0
+                #ipeakmat_lens[ipeakmat_lens>3.5*std(ibmap[imask>0])]=0
+       
+            #cc_proj_lens = WLanalysis.CrossCorrelate(ipeakmat_lens, ipeakmat_proj,edges=iedge)[1]/fmask
+            #cc_proj_bmode = WLanalysis.CrossCorrelate(ipeakmat_bmode,ipeakmat_proj,edges=iedge)[1]/fmask
+            #auto_lens = WLanalysis.CrossCorrelate(ipeakmat_lens,ipeakmat_lens,edges=iedge)[1]/fmask
+            #auto_proj = WLanalysis.CrossCorrelate(ipeakmat_proj, ipeakmat_proj,edges=iedge)[1]/fmask
+            #auto_bmode = WLanalysis.CrossCorrelate(ipeakmat_bmode, ipeakmat_bmode,edges=iedge)[1]/fmask
+            
+        #save(obsPK_dir+'PS/PS_%s_W%i_sigmaG%02d%s.npy'%(fn[peak_nob], Wx, sigmaG*10, ['','_clipped'][clipped]),[ell_arr, cc_proj_lens, cc_proj_bmode, auto_lens, auto_proj, auto_bmode])
+        ####################################
+     
+        ell_arr, cc_proj_lens, cc_proj_bmode, auto_lens, auto_proj,auto_bmode = load(obsPK_dir+'PS/PS_%s_W%i_sigmaG%02d%s.npy'%(fn[peak_nob], Wx, sigmaG*10,['','_clipped'][clipped]))
+        
+        delta_CC = sqrt((auto_lens*auto_proj+cc_proj_lens**2)/((2*ell_arr+1)*delta_ell*fsky))
+        
+        delta_CC_b = sqrt((auto_bmode*auto_proj+cc_proj_bmode**2)/((2*ell_arr+1)*delta_ell*fsky))
+        
+        SNR_sig+=sum( ((cc_proj_lens/delta_CC)**2) )
+        SNR_b+=sum( ((cc_proj_bmode/delta_CC_b)**2) )
+        #if Wx==1:
+            
+            #ax.errorbar(ell_arr+(Wx-2.5)*40, cc_proj_lens, delta_CC,fmt='o',c='orangered',mec='orangered',linewidth=1, capsize=0, label=r'${\rm %s}_{\rm proj}\times\, {\rm %s}_{\rm lens}$'%(l1,l2))   
+            #ax.errorbar(ell_arr+(Wx-2.5)*40, cc_proj_bmode, delta_CC_b, fmt='kd',linewidth=1, capsize=0, mec='k', label=r'${\rm %s}_{\rm proj}\times \, {\rm %s}_{\rm B-mode}$'%(l1,l2))  
+        #else:
+            #ax.errorbar(ell_arr+(Wx-2.5)*60, cc_proj_lens, delta_CC,fmt='o',c='orangered',mec='orangered',linewidth=1, capsize=0) #ecolor=cc,mfc=cc, mec=cc,  
+            #ax.errorbar(ell_arr+(Wx-2.5)*60, cc_proj_bmode, delta_CC_b, fmt='kd',linewidth=1, capsize=0, mec='k') # label=r'$\rm W%i$'%(Wx)
+        
+        CC_arr[Wx-1]=cc_proj_lens
+        CC_arrB[Wx-1]=cc_proj_bmode
+        err_arr[Wx-1]=delta_CC
+        err_arrB[Wx-1]=delta_CC_b
+        
+    ########## add a bar for averaged points
+    
+    CC_avg, err_avg=find_SNR(CC_arr, err_arr)
+    CC_avgB, err_avgB=find_SNR(CC_arrB, err_arrB)
+    
+    #ax.bar(ell_arr, 2*err_avg, bottom=CC_avg-err_avg, width=ones(10)*980, align='center',ec='r',fc='none',linewidth=1.5,alpha=1.0)
+    #ax.bar(ell_arr, 2*err_avgB, bottom=CC_avgB-err_avgB, width=ones(10)*980, align='center',ec='k',fc='none',linewidth=1.5,alpha=1.0)
+    
+    ax.errorbar(ell_arr, CC_avg, err_avg,fmt='o',c='orangered',mec='orangered',linewidth=1.5, capsize=0, label=r'${\rm %s}_{\rm proj}\times\, {\rm %s}_{\rm lens}$'%(l1,l2))   
+    
+    ax.errorbar(ell_arr, CC_avgB, err_avgB, fmt='kd',linewidth=1.5, capsize=0, mec='k', label=r'${\rm %s}_{\rm proj}\times \, {\rm %s}_{\rm B-mode}$'%(l1,l2)) 
+    
+    ax.plot([0,1e4],[0,0],'k--')
+    ax.legend(frameon=1,fontsize=14,loc=0)#'upper left')
+    ax.set_ylabel(r'$\ell(\ell+1)/2\pi \times C_\ell$',fontsize=18)
+    ax.set_xlabel(r'$\ell$',fontsize=18)
+    plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+    plt.rc('font', size=14)
+    plt.subplots_adjust(hspace=0,wspace=0, left=0.15, right=0.94,bottom=0.16,top=0.92)
+    ax.tick_params(labelsize=14)
+    #ax.grid(True)
+    #show()
+    savefig(plot_dir+'CC%s_sigmaG%02d%s.pdf'%(fn[peak_nob],sigmaG*10,['','_clipped'][clipped]))
+    close()
+    #print 'SNR (%s, clipped=%i) = %.2f(lens) %.2f(bmode)'%(fn[peak_nob],clipped,sqrt(SNR_sig),sqrt(SNR_b))
+
+if plot_xcorr_peaks:
+    peak_nob = 2
+    
+    fn = ['mapmap','peakmap','peakpeak']## type of cross correlation
+    labels = [['\kappa','\kappa'],['\kappa','peak'],['peak','peak']]
+    l1,l2=labels[peak_nob]
+    
+    CC_arr = zeros(shape=(4,10))
+    err_arr = zeros(shape=(4,10))
+    CC_arrB = zeros(shape=(4,10))
+    err_arrB = zeros(shape=(4,10))
+    
+    CC_arr_clipped = zeros(shape=(4,10))
+    err_arr_clipped = zeros(shape=(4,10))
+    CC_arrB_clipped = zeros(shape=(4,10))
+    err_arrB_clipped = zeros(shape=(4,10)) 
+    
+    edgesGen = lambda Wx: linspace(1,250,11)*sizes[Wx-1]/1330.0
+    ell_edges = edgesGen(1)*40
+    delta_ell = ell_edges[1:]-ell_edges[:-1]
+    sigmaG = 1.0
+    
+    
+    f=figure(figsize=(6,4))
+    ax=f.add_subplot(111)
+    for Wx in range(1,5):#(1,):# 
+        #cc=rand(3)
+        iedge=edgesGen(Wx)
+        imask = maskGen(Wx, sigmaG)
+        fmask=sum(imask)/float(sizes[Wx-1]**2)
+        sizedeg = (sizes[Wx-1]/512.0)**2*12.25
+        fsky=fmask*sizedeg/41253.0
+        ell_arr = WLanalysis.edge2center(iedge)*360./sqrt(sizedeg)
+        
+        clipped=0
+        ell_arr, cc_proj_lens, cc_proj_bmode, auto_lens, auto_proj,auto_bmode = load(obsPK_dir+'PS/PS_%s_W%i_sigmaG%02d%s.npy'%(fn[peak_nob], Wx, sigmaG*10,['','_clipped'][clipped]))
+        
+        delta_CC = sqrt((auto_lens*auto_proj+cc_proj_lens**2)/((2*ell_arr+1)*delta_ell*fsky))
+        
+        delta_CC_b = sqrt((auto_bmode*auto_proj+cc_proj_bmode**2)/((2*ell_arr+1)*delta_ell*fsky))
+        
+        CC_arr[Wx-1]  = cc_proj_lens
+        err_arr[Wx-1] = delta_CC
+        CC_arrB[Wx-1] = cc_proj_bmode
+        err_arrB[Wx-1]= delta_CC_b
+        
+        clipped=1
+        ell_arr, cc_proj_lens, cc_proj_bmode, auto_lens, auto_proj,auto_bmode = load(obsPK_dir+'PS/PS_%s_W%i_sigmaG%02d%s.npy'%(fn[peak_nob], Wx, sigmaG*10,['','_clipped'][clipped]))
+        
+        delta_CC = sqrt((auto_lens*auto_proj+cc_proj_lens**2)/((2*ell_arr+1)*delta_ell*fsky))
+        
+        delta_CC_b = sqrt((auto_bmode*auto_proj+cc_proj_bmode**2)/((2*ell_arr+1)*delta_ell*fsky))
+ 
+ 
+        CC_arr_clipped        = cc_proj_lens
+        err_arr_clipped[Wx-1] = delta_CC
+        CC_arrB_clipped[Wx-1] = cc_proj_bmode
+        err_arrB_clipped[Wx-1]= delta_CC_b
+    
+    CC_avg, err_avg=find_SNR(CC_arr, err_arr)
+    CC_avgB, err_avgB=find_SNR(CC_arrB, err_arrB)
+    CC_avgclip, err_avgclip=find_SNR(CC_arr_clipped, err_arr_clipped)
+    CC_avgBclip, err_avgBclip=find_SNR(CC_arrB_clipped, err_arrB_clipped)
+        
+    ax.errorbar(ell_arr, CC_avgB, err_avgB, fmt='kd',linewidth=1.5, capsize=0, mec='k')#, label=r'${\rm %s}_{\rm proj}\times \, {\rm %s}_{\rm B-mode}$'%(l1,l2)) 
+
+    ax.errorbar(ell_arr+100, CC_avgBclip, err_avgBclip, fmt='kd',mfc='w',linewidth=1.5, capsize=0, mec='k')#, label=r'${\rm %s}_{\rm proj}\times \, {\rm %s}^{\rm lo}_{\rm B-mode}$'%(l1,l2)) 
+
+    ax.errorbar(ell_arr, CC_avg, err_avg,fmt='o',c='orangered',mec='orangered',linewidth=1.5, capsize=0, label=r'${\rm %s}_{\rm proj}\times\, {\rm %s}_{\rm lens}$'%(l1,l2))   
+    
+
+    ax.errorbar(ell_arr+100, CC_avgclip, err_avgclip,fmt='o',c='orangered',mec='orangered',mfc='w',linewidth=1.5, capsize=0, label=r'${\rm %s}_{\rm proj}\times\, {\rm %s}^{\rm low}_{\rm lens}$'%(l1,l2))   
+    
+    
+    ax.plot([0,1e4],[0,0],'k--')
+    ax.legend(frameon=1,framealpha=1.0,fontsize=14,loc=0)#'upper left')
+    ax.set_ylabel(r'$\ell(\ell+1)/2\pi \times C_\ell$',fontsize=18)
+    ax.set_xlabel(r'$\ell$',fontsize=18)
+    plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+    plt.rc('font', size=14)
+    plt.subplots_adjust(hspace=0,wspace=0, left=0.15, right=0.94,bottom=0.16,top=0.92)
+    ax.tick_params(labelsize=14)
+    ax.set_ylim(-3.6e-8, 8e-8)
+    #ax.grid(True)
+    #show()
+    
+    savefig(plot_dir+'CC%s_sigmaG%02d.pdf'%(fn[peak_nob],sigmaG*10))
+    close()
+        
+
+    
+if plot_peak_scatter:
+    sigmaG=1.0
+    mask_arr = [maskGen(Wx, sigmaG) for Wx in range(1,5)]
+    #klens_arr =[klensGen(Wx, sigmaG) for Wx in range(1,5)]
+    #kproj_arr =[kprojGen(Wx, sigmaG) for Wx in range(1,5)]
+    
+    klens_arr =[klensGen(Wx, sigmaG) - mean(klensGen(Wx, sigmaG)[mask_arr[Wx-1]>0]) for Wx in range(1,5)]
+    kproj_arr = [kprojGen(Wx, sigmaG) - mean(kprojGen(Wx, sigmaG)[mask_arr[Wx-1]>0]) for Wx in range(1,5)]
+    bmap_arr = [blensGen(Wx, sigmaG) - mean(blensGen(Wx, sigmaG)[mask_arr[Wx-1]>0]) for Wx in range(1,5)]
+    def gen_peak_loc (ikmap, Wx):
+        kmap_peak_mat = WLanalysis.peaks_mat(ikmap*mask_arr[Wx-1])
+        return where((~isnan(kmap_peak_mat))&(mask_arr[Wx-1]>0))
+    peaklens_lens_arr = concatenate([klens_arr[Wx-1][gen_peak_loc(klens_arr[Wx-1], Wx)] for Wx in range(1,5)]) 
+    peaklens_proj_arr = concatenate([kproj_arr[Wx-1][gen_peak_loc(klens_arr[Wx-1], Wx)] for Wx in range(1,5)]) 
+    peaklens_bmap_arr = concatenate([bmap_arr[Wx-1][gen_peak_loc(klens_arr[Wx-1], Wx)] for Wx in range(1,5)]) 
+    peakproj_proj_arr = concatenate([kproj_arr[Wx-1][gen_peak_loc(kproj_arr[Wx-1], Wx)] for Wx in range(1,5)]) 
+    peakproj_lens_arr = concatenate([klens_arr[Wx-1][gen_peak_loc(kproj_arr[Wx-1], Wx)] for Wx in range(1,5)])
+    peakproj_bmap_arr = concatenate([bmap_arr[Wx-1][gen_peak_loc(kproj_arr[Wx-1], Wx)] for Wx in range(1,5)])
+    
+    f=figure(figsize=(10,4))    
+    ax=f.add_subplot(121)
+    NN,xx,yy,zz=ax.hist2d(peaklens_proj_arr,peaklens_lens_arr, bins=(20,24),range=((-0.02,0.15),(-0.05,0.15)),cmap='Greys')
+    ybined=sum(NN*WLanalysis.edge2center(yy).reshape(1,-1),axis=1)/sum(NN,axis=1)
+    ax.plot(WLanalysis.edge2center(xx),ybined)
+    ax.set_ylabel(r'$\kappa_{\rm lens}$')
+    ax.set_xlabel(r'$\kappa_{\rm proj}$')
+    ax.set_title (r'${\rm peak}_{\rm lens}$')
+    ax2=f.add_subplot(122)
+    NN,xx,yy,zz=ax2.hist2d(peakproj_proj_arr, peakproj_lens_arr, bins=(20,24),range=((-0.02,0.15),(-0.05,0.15)),cmap='Greys')
+    
+    NNb,xxb,yyb=histogram2d(peakproj_proj_arr,peakproj_bmap_arr, bins=(20,24),range=((-0.02,0.15),(-0.05,0.15)))
+    
+    ybined=sum(NN*WLanalysis.edge2center(yy).reshape(1,-1),axis=1)/sum(NN,axis=1)
+    ybinedB=sum(NNb*WLanalysis.edge2center(yy).reshape(1,-1),axis=1)/sum(NNb,axis=1)
+    ax2.plot(WLanalysis.edge2center(xx),ybined,label='lens')
+    ax2.plot(WLanalysis.edge2center(xx),ybinedB,'r',label='B-mode')
+    ax2.legend(frameon=0,fontsize=12,loc=0)
+    ax2.set_ylabel(r'$\kappa_{\rm lens}$')
+    ax2.set_xlabel(r'$\kappa_{\rm proj}$')
+    ax2.set_title (r'${\rm peak}_{\rm proj}$')
+    ax.locator_params(tight=True, nbins=5)
+    ax2.locator_params(tight=True, nbins=5)
+    plt.subplots_adjust(hspace=0,wspace=0.25, left=0.12, right=0.95,bottom=0.15,top=0.9)
+    show()
+
+#if test_lo_hi_contour:
+    #kappa_center=WLanalysis.edge2center(linspace(-.04,.12,26))
+    #test_dir='/Users/jia/Documents/weaklensing/CFHTLenS/emulator/test_ps_bug/'
+    #pk_avg = load(test_dir+'ALL_pk_avg_sigmaG10.npy')
+    #pk_fidu = load(test_dir+'SIM_peaks_sigma18_emu1-512b240_Om0.305_Ol0.695_w-0.879_ns0.960_si0.765_025bins_ALL.npy')
+    #pk_CFHT = load(test_dir+'ALL_pk_CFHT_sigmaG10.npy')
+    #cosmo_params = genfromtxt(test_dir+'cosmo_params.txt')
+    #im, iw, s = cosmo_params.T
+    
+    #w_arr = linspace(0,-3, 10)
+    #om_arr = linspace(0, 1.2, 50)
+    #si8_arr = linspace(0, 1.6, 51)
+    
+    #cov_inv = mat(cov(pk_fidu,rowvar=0)).I
+    #cov_inv_hi=mat(cov(pk_fidu[:,22:],rowvar=0)).I
+    #cov_inv_lo=mat(cov(pk_fidu[:,:22],rowvar=0)).I
     
