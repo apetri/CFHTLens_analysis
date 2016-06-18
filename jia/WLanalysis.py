@@ -653,7 +653,7 @@ def buildInterpolator(obs_arr, cosmo_params):
         iinterp = interpolate.Rbf(m, w, s, model)
         spline_interps.append(iinterp)
     #return spline_interps
-    def interp_cosmo (params, method = 'multiquadric'):
+    def interp_cosmo (params):
         '''Interpolate the powspec for certain param.
         Params: list of 3 parameters = (om, w, si8)
         Method: "multiquadric" for spline (default), and "GP" for Gaussian process.
@@ -665,7 +665,7 @@ def buildInterpolator(obs_arr, cosmo_params):
         return ps_interp
     return interp_cosmo
 
-def buildInterpolator2D(obs_arr, cosmo_params):
+def buildInterpolator2D(obs_arr, cosmo_params, method='Rbf'):
     '''Build an interpolator:
     input:
     obs_arr = (points, Nbin), where # of points = # of models
@@ -680,10 +680,16 @@ def buildInterpolator2D(obs_arr, cosmo_params):
     spline_interps = list()
     for ibin in range(obs_arr.shape[-1]):
         model = obs_arr[:,ibin]
-        iinterp = interpolate.Rbf(m, s, model)
+        if method == 'Rbf':
+            iinterp = interpolate.Rbf(m, s, model)#
+        elif method == 'linear':
+            iinterp = interpolate.LinearNDInterpolator(cosmo_params,model)#
+        elif method == 'clough':
+            iinterp = interpolate.CloughTocher2DInterpolator(cosmo_params,model)#
+        #iinterp = interpolate.Rbf(m, s, model)
         spline_interps.append(iinterp)
     #return spline_interps
-    def interp_cosmo (params, method = 'multiquadric'):
+    def interp_cosmo (params):
         '''Interpolate the powspec for certain param.
         Params: list of 3 parameters = (om, w, si8)
         Method: "multiquadric" for spline (default), and "GP" for Gaussian process.

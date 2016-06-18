@@ -8,25 +8,45 @@ import random
 import pickle
 from pylab import *
 
+######## knobs ########
+filtered = 1
+compute_noisy_stats = 0
+load_noiseless_stats = 0
+load_nooisy_stats = 1
+compute_noisy_contour = 1
+
+
 #### stats77 comes from the fact noisy maps are 77 x 77 in size
+#### constants
 CMBlensing_dir ='/Users/jia/weaklensing/CMBnonGaussian/'
+bins=25
 all_points = genfromtxt(CMBlensing_dir+'model_point.txt')
+idx46=where(all_points.T[0]>0.14)
+all_points46 = all_points[idx46]
 cosmo_arr = array(['Om%.3f_Ol%.3f_w-1.000_si%.3f'%(cosmo[0],1-cosmo[0], cosmo[1]) for cosmo in all_points])
-cosmo_noisy_arr0 = os.listdir(CMBlensing_dir+'colin_noisy')[3:-1]
+cosmo_noisy_arr0 = os.listdir(CMBlensing_dir+'colin_noisy')#[3:-1]
 cosmo_noisy_arr0 =[cosmo[10:] for cosmo in cosmo_noisy_arr0]
 idx_noisy = where([cosmo in cosmo_noisy_arr0 for cosmo in cosmo_arr])[0]
 cosmo_noisy_arr = cosmo_arr[idx_noisy]
-#sigmaG_arr = array([0.5, 1.0, 2.0, 5.0, 8.0])
+cosmo_params_noisy = all_points[idx_noisy]
+sigmaG_arr = array([0.5, 1.0, 2.0, 5.0, 8.0])
 PDFbins = linspace(-0.12, 0.12, 101)
 peak_bins = linspace(-0.06,0.14,26)#linspace(-3*0.02,6*0.02,26)
 sizedeg = 3.5**2
+#ALratio=genfromtxt('ALratio.txt')
+ALratio_mat = ifftshift(load(CMBlensing_dir+'ALratio_mat.npy'))
+filter_mat =  ifftshift(load(CMBlensing_dir+'filter_mat.npy'))
+idx_not_nan = delete(range(25),(1,3,6))#where(~isnan(ps_all77[0,0]))[0]    
+ell_centers77 = WLanalysis.PowerSpectrum(rand(77,77), bins=bins)[0]
 
-bins=25
-#ell_arr2048=WLanalysis.PowerSpectrum(kmapGen(0), bins=50)[0]
-#ell_arr77 = WLanalysis.PowerSpectrum(zeros(shape=(77,77)), bins=bins)[0]
 
-FTmapGen_Gaus = lambda r: pickle.load(open(CMBlensing_dir+'kappaMapTT_10000sims/kappaMap%03dTT_3.pkl'%(r)))
-FTmapGen_fidu = lambda r: pickle.load(open(CMBlensing_dir+'kappaMapTT_Gauss_10000sims/kappaMap%03dTT_3.pkl'%(r)))
+ell_arr2048=WLanalysis.PowerSpectrum(zeros(shape=(2048,2048)), bins=50)[0]
+ell_arr77 = WLanalysis.PowerSpectrum(zeros(shape=(77,77)), bins=bins)[0]
+
+######### functions
+
+FTmapGen_fidu = lambda r: pickle.load(open(CMBlensing_dir+'colin_noisy/kappaMapTT_10000sims/kappaMap%03dTT_3.pkl'%(r)))
+FTmapGen_Gaus = lambda r: pickle.load(open(CMBlensing_dir+'colin_noisy/kappaMapTT_Gauss_10000sims/kappaMap%03dTT_3.pkl'%(r)))
 FTmapGen = lambda cosmo, r: pickle.load(open(CMBlensing_dir+'colin_noisy/reconMaps_%s/kappaMap%04dTT_3.pkl'%(cosmo, r)))#cosmo=Om0.406_Ol0.594_w-1.000_si0.847
 
 def FT_PowerSpectrum (cosmo, r, bins=10, return_ell_arr=0, Gaus=0):
@@ -47,10 +67,13 @@ def FT2real (cosmo, r, Gaus=0):
         a = FTmapGen_Gaus(r)
     else:
         a = FTmapGen(cosmo, r)
+    a/=ALratio_mat##### to correct the difference between Colin and Vanessa
+    if filtered:
+        a*=filter_mat
     areal = real(fftpack.ifft2(a))
     inorm = (2*pi*3.5/360.0)/(77.0**2)
     areal /= inorm
-    #areal = WLanalysis.smooth(areal, 2.93)#8/((3.5*60)/77)
+    areal = WLanalysis.smooth(areal, 2.93)#8/((3.5*60)/77)
     return areal
     
 def PDFGen (kmap, PDF_bins):
@@ -72,165 +95,149 @@ def compute_GRF_PDF_ps_pk (cosmo, r, Gaus=0):
     peaks = peaksGen(kmapsmooth8, peak_bins)
     return concatenate([ps, PDF, peaks])
 
-#### noiseless TT
-#all_stats = load(CMBlensing_dir+'pspkPDF_fidu_mat12.npy')#[:35]
-#ps_all = all_stats[:,:50]
-#PDF_all = all_stats[:, 450:550]
-#peaks_all = all_stats[:, -25:]
 
-#### noiseless GRF
-#mat_GRF=load(CMBlensing_dir+'plot/PDF_pk_600b_GRF.npy')
-#iPDF_GRF = array([mat_GRF[x][0][4] for x in range(1024)])
-#ipeak_GRF = array([mat_GRF[x][1][4] for x in range(1024)])
-
-### noisy TT
-#for cosmo in cosmo_noisy_arr:
-    #print cosmo
-    #all_stats77 = array([compute_GRF_PDF_ps_pk(cosmo,r,Gaus=0) for r in range(1000)])#1024 
-    #save(CMBlensing_dir+'Pkappa_gadget/noisy/noisy_z1100_stats77_kappa_%s.npy'%(cosmo), all_stats77)
-
-cosmo_noisy_arr=array(['Om0.222_Ol0.778_w-1.000_si0.867',
-       'Om0.296_Ol0.704_w-1.000_si0.786',
-       'Om0.406_Ol0.594_w-1.000_si0.847',
-       'Om0.198_Ol0.802_w-1.000_si0.806',
-       'Om0.149_Ol0.851_w-1.000_si0.898',
-       'Om0.320_Ol0.680_w-1.000_si0.857',
-       #'Om0.394_Ol0.606_w-1.000_si0.776',
-       'Om0.235_Ol0.765_w-1.000_si0.735', 'Om0.333_Ol0.667_w-1.000_si0.704'], 
-      dtype='|S31')
-idx_noisy=array([ 8, 18, 22, 24, 33, 39, 45, 48])#44, 
-all_stats77 = array([load (CMBlensing_dir+'Pkappa_gadget/noisy/noisy_z1100_stats77_kappa_%s.npy'%(cosmo))[:1000,:] for cosmo in cosmo_noisy_arr])
-ps_all77 = all_stats77[:,:,:bins]
-#ps_all77 = ps_all77[0,0,~isnan(ps_all77[0,0])]
-PDF_all77 = all_stats77[:, :,bins:bins+len(PDFbins)-1]
-peaks_all77 = all_stats77[:, :,bins+len(PDFbins)-1:]
-
-ell_centers77 = WLanalysis.PowerSpectrum(rand(77,77), bins=bins)[0]
-
-######### test powser spectrum ############
-#f=figure()
-#ell_centers77 = WLanalysis.PowerSpectrum(rand(77,77), bins=bins)[0]
-#ell_nicaea, ps_nicaea_fidu=genfromtxt('/Users/jia/weaklensing/CMBnonGaussian/Pkappa_nicaea/Pkappa_nicaea25_{0}_1100'.format(cosmo_noisy_arr[2]))[33:-5].T
-#for j in range(9):
-    #ax=f.add_subplot(3,3,j+1)
-    #ell_nicaea, ps_nicaea=genfromtxt('/Users/jia/weaklensing/CMBnonGaussian/Pkappa_nicaea/Pkappa_nicaea25_{0}_1100'.format(cosmo_noisy_arr[j]))[33:-5].T
-    ##ax.errorbar(ell_nicaea,0.5/pi/(1+ell_nicaea)*ps_nicaea)
-    ##ax.errorbar(ell_centers77,0.5/pi/(1+ell_centers77)*mean(ps_all77,axis=1)[j],0.5/pi/(1+ell_centers77)*std(ps_all77,axis=1)[j]) 
-    #ax.plot(ell_nicaea,ps_nicaea/ps_nicaea_fidu-1)
-    #ax.errorbar(ell_centers77,mean(ps_all77,axis=1)[j]/mean(ps_all77,axis=1)[2]-1,std(ps_all77,axis=1)[j]/mean(ps_all77,axis=1)[2]) 
-    #ax.set_xscale('log')
-    ##ax.set_yscale('log')
-    #ax.set_xlim(1e2,1e4)
-    #xlabel('$\ell$')
-    #ylabel('$\ell C_\ell$')
-#show()
-
-
-om_fidu, si8_fidu=all_points[18]
-del_om, del_si8 = 0.005, 0.005
-om0,om1,si80,si81=om_fidu-del_om, om_fidu+del_om, si8_fidu-del_si8, si8_fidu+del_si8
-jjj=30#250
-om_arr= linspace(om0,om1,jjj)
-si8_arr=linspace(si80,si81, jjj+1)
-
-
-figure(figsize=(10,4))
-isub=1
-for ips in [ps_all77, PDF_all77, peaks_all77, all_stats77]:#[:,:,~isnan(all_stats77[0,0])]]:
-          
-    fidu_mat = ips[1]
-    idx = where(~isnan(mean(fidu_mat,axis=0))&(mean(fidu_mat,axis=0)!=0))[0]
-    obs_arr = mean(ips,axis=1)[:,idx]
-    fidu_mat=fidu_mat[:,idx]
+if load_noiseless_stats:
+ 
+    fidu_stats = load(CMBlensing_dir+'Pkappa_gadget/noiseless/kappa_Om0.296_Ol0.704_w-1.000_si0.786_ps_PDF_pk_z1100_10240.npy')
+    ps_fidu_noiseless = array([fidu_stats[j][0] for j in range(1024,10240)]).squeeze() 
+    idx_cut2000 = where( (ell_arr2048<2100) & (~isnan(ps_fidu_noiseless[0])))[0]
     
-    interp_cosmo=WLanalysis.buildInterpolator2D(obs_arr, all_points[idx_noisy])
+    ps_fidu_noiseless = ps_fidu_noiseless[:,idx_cut2000]
+    PDF_fidu_noiseless = array([fidu_stats[j][1] for j in range(1024,10240)])
+    peaks_fidu_noiseless = array([fidu_stats[j][2] for j in range(1024,10240)])
+    
+    #### noiseless TT
+    all_stats46 = array([ load(CMBlensing_dir+'Pkappa_gadget/noiseless/kappa_%s_ps_PDF_pk_z1100.npy'%(cosmo))    for cosmo in cosmo_arr[idx46]])
+    
+    ps_noiseless46 = mean(array([ [all_stats46[icosmo][j][0] for icosmo in range(len(all_stats46))] for j in range(1000)])[:,:,idx_cut2000],axis=0)
+    
+    PDF_noiseless46 = mean(array([ [all_stats46[icosmo][j][1] for icosmo in range(len(all_stats46))] for j in range(1000)]),axis=0)
+    
+    peaks_noiseless46 = mean(array([ [all_stats46[icosmo][j][2] for icosmo in range(len(all_stats46))] for j in range(1000)]),axis=0)
 
+    
+    #### noiseless GRF
+    #mat_GRF=load(CMBlensing_dir+'plot/PDF_pk_600b_GRF.npy')
+    #iPDF_GRF = array([mat_GRF[x][0][4] for x in range(1024)])
+    #ipeak_GRF = array([mat_GRF[x][1][4] for x in range(1024)])
+
+### create stats for noisy TT
+if compute_noisy_stats:
+    #for cosmo in cosmo_noisy_arr:
+        #print cosmo
+        ##cosmo='Om0.394_Ol0.606_w-1.000_si0.776'#cosmo_noisy_arr[1]
+        #all_stats77 = array([compute_GRF_PDF_ps_pk(cosmo,r,Gaus=0) for r in range(1000)])#1024 
+        #save(CMBlensing_dir+'Pkappa_gadget/noisy/%snoisy_z1100_stats77_kappa_%s.npy'%(['','filtered_'][filtered],cosmo), all_stats77)
+    Gaus=0
+    morebins = 0
+    if morebins:
+        PDFbins = linspace(-0.24, 0.24, 201)#(-0.12, 0.12, 101)
+        peak_bins = linspace(-0.1,0.18,36)#(-0.06,0.14,26)
+    def compute_GRF_PDF_ps_pk_fidu (r,Gaus=Gaus,filtered=filtered):
+        if Gaus:
+            a = FTmapGen_Gaus(r)
+        else:
+            a = FTmapGen_fidu(r)
+        if filtered:
+            #print 'filtered'
+            a*=filter_mat
+        areal = real(fftpack.ifft2(a))
+        inorm = (2*pi*3.5/360.0)/(77.0**2)
+        areal /= inorm    
+        kmap = areal
+        ps = WLanalysis.PowerSpectrum(WLanalysis.smooth(kmap, 0.18), bins=bins)[1]#*2.0*pi/ell_arr**2
+        kmapsmooth8 = WLanalysis.smooth(kmap, 2.93)
+        PDF = PDFGen(kmapsmooth8, PDFbins)
+        peaks = peaksGen(kmapsmooth8, peak_bins)
+        return concatenate([ps, PDF, peaks])
+    fidu_stats77 = array([compute_GRF_PDF_ps_pk_fidu(r,Gaus=Gaus) for r in range(10000)])
+    save(CMBlensing_dir+'Pkappa_gadget/noisy/%snoisy_z1100_stats77_fidu_%s%s.npy'%(['','filtered_'][filtered],['kappa','gaus'][int(Gaus)], ['','_morebins'][morebins]), fidu_stats77)
+    
+if load_nooisy_stats:
+    all_stats77 = array([load (CMBlensing_dir+'Pkappa_gadget/noisy/%snoisy_z1100_stats77_kappa_%s.npy'%(['','filtered_'][filtered],cosmo))[:1000,:] for cosmo in cosmo_noisy_arr])
+    all_stats77 = mean(all_stats77,axis=1)
+
+    ps_all77 = all_stats77[:,idx_not_nan]#:bins]
+    PDF_all77 = all_stats77[:,bins:bins+len(PDFbins)-1]
+    peaks_all77 = all_stats77[:,bins+len(PDFbins)-1:]
+    #### bin PDF to smaller bins
+    #### PDF_all77=sum(PDF_all77.reshape(PDF_all77.shape[0],1000,20,-1),axis=-1)
+    
+    fidu_stats77 = load(CMBlensing_dir+'Pkappa_gadget/noisy/%snoisy_z1100_stats77_fidu_kappa.npy'%(['','filtered_'][filtered]))
+    ps_fidu = fidu_stats77[:,idx_not_nan]
+    PDF_fidu = fidu_stats77[:,bins:bins+len(PDFbins)-1]
+    peaks_fidu = fidu_stats77[:,bins+len(PDFbins)-1:]
+    
+    PDF_fidu=sum(PDF_fidu.reshape(PDF_fidu.shape[0],50,-1),axis=-1)
+    PDF_all77=sum(PDF_all77.reshape(PDF_all77.shape[0],50,-1),axis=-1)
+    if filtered: #### use ps before filtering
+        all_stats77_nofilter = array([load (CMBlensing_dir+'Pkappa_gadget/noisy/%snoisy_z1100_stats77_kappa_%s.npy'%(['','filtered_'][0],cosmo))[:1000,:] for cosmo in cosmo_noisy_arr])
+        ps_all77 = mean(all_stats77_nofilter[:,:,idx_not_nan],axis=1)
+        
+        fidu_stats77_nofilter = load(CMBlensing_dir+'Pkappa_gadget/noisy/%snoisy_z1100_stats77_fidu_kappa.npy'%(['','filtered_'][0]))
+        ps_fidu = fidu_stats77_nofilter[:,idx_not_nan]
+        
+        
+        idx_PDF=where(mean(PDF_fidu,axis=0)>1e-4)[0]
+        idx_peaks=where(mean(peaks_fidu,axis=0)>0)[0]
+
+        PDF_fidu=PDF_fidu[:,idx_PDF]
+        peaks_fidu=peaks_fidu[:,idx_peaks]
+        PDF_all77=PDF_all77[:,idx_PDF]
+        peaks_all77=peaks_all77[:,idx_peaks]
+        
+        
+############ contour
+def plane_gen (fidu_mat, ips_avg, obs_arr, cosmo_params, om_arr, si8_arr, method='linear'):
+    
+    interp_cosmo = WLanalysis.buildInterpolator2D(ips_avg, cosmo_params, method=method)
     cov_mat = cov(fidu_mat,rowvar=0)/(2e4/12.5)# area factor for AdvACT
     cov_inv = mat(cov_mat).I
 
     def chisq_fcn(param1, param2):
         model = interp_cosmo((param1,param2))
-        del_N = np.mat(model - mean(fidu_mat,axis=0))
+        del_N = np.mat(model - obs_arr)
         chisq = float(del_N*cov_inv*del_N.T)
         return chisq
-    
     prob_plane = WLanalysis.prob_plane(chisq_fcn, om_arr, si8_arr)[1]
-    subplot(1,4,isub)
-    imshow(prob_plane,origin='lower',extent=[si80,si81,om0,om1])
-    xlabel=('si8')
-    ylabel=('om')
-    colorbar()
-    isub+=1
-show()
+    return prob_plane
 
-### noisy GRF
-#all_stats77_GRF = array([compute_GRF_PDF_ps_pk(r,Gaus=1) for r in range(1024)])
-#save(CMBlensing_dir+'Pkappa_gadget/noisy_z1100_stats77_GRF.npy', all_stats77_GRF)
-#all_stats77_GRF = load(CMBlensing_dir+'Pkappa_gadget/noisy_z1100_stats77_GRF.npy')
-#ps_all77_GRF = all_stats77_GRF[:,:bins]
-#PDF_all77_GRF = all_stats77_GRF[:, bins:bins+len(PDFbins)-1]
-#peaks_all77_GRF = all_stats77_GRF[:, bins+len(PDFbins)-1:]
-
-
-##### plots (1) noiseless: GRF vs kappa
-##### (2) noiseless GRF vs noisy GRF
-##### (3) noisy GRF vs kappa
-
-#from pylab import *
-
-#def plot_3comparisons(ell_arr2048, ell_arr77, ps_all, ps_all77, PDF_all, PDF_all77, peaks_all, peaks_all77, label0, label77, fn, title):
-    #'''make a plot 3 panels [ps, pdf, peaks] top to bottom, comparing 2 sets of data.
-    #'''
-    #errscale=sqrt(12/30000.)
-    #f=figure(figsize=(6,10))
-    #ax=f.add_subplot(311)
-    #ax.errorbar(ell_arr2048, mean(ps_all,axis=0), errscale*std(ps_all, axis=0),label=label0)
-    #ax.errorbar(ell_arr77, mean(ps_all77,axis=0), errscale*std(ps_all77, axis=0),label=label77)
-
-    #ax.set_xlabel(r'$\ell$',fontsize=20)
-    ##ax.set_ylabel(r'$C \times 10^7$')
-    #ax.set_ylabel(r'$\ell(\ell+1)\rm{P(\ell)/2\pi}$', fontsize=20)
-    #ax.set_xscale('log')
-    #ax.set_yscale('log')
-    #ax.set_xlim(ell_arr77[0],ell_arr77[-1])
-    ##ax.set_ylim(-1, 3)
-    #ax.plot([0, 1e4],[0,0],'--')
-    #leg=ax.legend(prop={'size':10},loc=0, fontsize=20)
-    #leg.get_frame().set_visible(False)
-            
-    #ax2=f.add_subplot(312)
-    #ax2.errorbar(WLanalysis.edge2center(PDFbins), mean(PDF_all,axis=0), errscale*std(PDF_all, axis=0))
-    #ax2.errorbar(WLanalysis.edge2center(PDFbins), mean(PDF_all77,axis=0), errscale*std(PDF_all77, axis=0))
-
-    #ax2.set_xlabel(r'$\kappa$', fontsize=20)
-    #ax2.set_ylabel('PDF', fontsize=20)
-    ##ax.set_xscale('log')
-    #ax2.set_yscale('log')
-
-    #ax3=f.add_subplot(313)
-    #ax3.errorbar(WLanalysis.edge2center(peak_bins), mean(peaks_all,axis=0), errscale*std(peaks_all, axis=0))
-    #ax3.errorbar(WLanalysis.edge2center(peak_bins), mean(peaks_all77,axis=0), errscale*std(peaks_all77, axis=0))
-
-    #ax3.set_xlabel(r'$\kappa$', fontsize=20)
-    #ax3.set_ylabel('N_peaks', fontsize=20)
-    #ax3.set_yscale('log')
-    ##show()
+if compute_noisy_contour:
+    noise = 'noisy'#'noiseless'#
+    om_fidu, si8_fidu=all_points[18]
+    del_om, del_si8 = 0.05, 0.05
+    om0,om1,si80,si81=om_fidu-del_om, om_fidu+del_om, si8_fidu-del_si8, si8_fidu+del_si8
+    jjj=250
+    om_arr= linspace(om0,om1,jjj)
+    si8_arr=linspace(si80,si81, jjj+1)
     
-    ##covI_PDF = mat(cov(PDF_all, rowvar=0)*errscale**2).I
-    ##covI_peak = mat(cov(peaks_all[:,2:-1], rowvar=0)*errscale**2).I#[:,2:-1]
-    ##dN_PDF = mat(mean(PDF_all,axis=0)- mean(PDF_all77,axis=0))
-    ##dN_pk =  mat((mean(peaks_all,axis=0)- mean(peaks_all77,axis=0))[2:-1])#[2:-1]
-    ##chisq_PDF = dN_PDF*covI_PDF*dN_PDF.T
-    ##chisq_peak = dN_pk*covI_peak*dN_pk.T
-    ##print '%s SNR(PDF) = %.2f, SNR(peaks) = %.2f' % (fn, sqrt(chisq_PDF), sqrt(chisq_peak))
-    
-    #ax.set_title(title, fontsize=24)
-    #plt.subplots_adjust(hspace=0.25,left=0.18, right=0.95, bottom=0.06, top=0.95)
-    #savefig(CMBlensing_dir+'plot/%s.jpg'%(fn))
-    #close()
+    isub=1
+    ismooth=0#1-4 for 5 smoothing scales
+    for ismooth in (-1,):#range(1,5):## -1 is for noisy maps
+        for jj in (1,3):#range(1,4):#range(4):#
+            istat=['ps','PDF','peaks','all3'][jj]
+            for imethod in ('linear','clough','Rbf'):
+                print sigmaG_arr[ismooth],istat, imethod
+                
+                if noise == 'noisy':
+                    
+                    ips_fidu = [ps_fidu, PDF_fidu, peaks_fidu, concatenate([ps_fidu, PDF_fidu, peaks_fidu],axis=1)][jj]
+                    ips = [ps_all77, PDF_all77, peaks_all77, concatenate([ps_all77, PDF_all77, peaks_all77],axis=1)][jj]
+                    obs_arr=ips[1]
+                    #print ips_fidu.shape, obs_arr.shape, ips.shape
+                    prob_plane = plane_gen(ips_fidu, ips, obs_arr, cosmo_params_noisy, om_arr, si8_arr,method=imethod)
+                elif noise == 'noiseless':
+                    ips_fidu = [ps_fidu_noiseless, 
+                                PDF_fidu_noiseless[:,ismooth,:], 
+                                peaks_fidu_noiseless[:,ismooth,:], concatenate([ps_fidu_noiseless, PDF_fidu_noiseless[:,ismooth,:], peaks_fidu_noiseless[:,ismooth,:]],axis=1)][jj]
+                    ips = [ps_noiseless46, PDF_noiseless46[:,ismooth,:],
+                        peaks_noiseless46[:,ismooth,:], concatenate([ps_noiseless46, PDF_noiseless46[:,ismooth,:],
+                        peaks_noiseless46[:,ismooth,:]],axis=1)][jj]
+                    obs_arr=ips[16]
+                    if istat=='ps' and ismooth!=1:
+                        continue
+                    prob_plane = plane_gen(ips_fidu, ips, obs_arr, all_points46, om_arr, si8_arr,method=imethod)
+                
+                save(CMBlensing_dir+'mat/%sProb_%s_%s_%s_sigmaG%02d.npy'%(['','filtered_'][filtered],noise,istat, imethod, sigmaG_arr[ismooth]*10),prob_plane)
 
-#plot_3comparisons(ell_arr2048, ell_arr2048, ps_all, ps_all, PDF_all, iPDF_GRF, peaks_all, ipeak_GRF, 'noiseless TT', 'noiseless GRF', 'noiseless_TT_GRF','non-Gaussianity (noiseless)')
 
-#plot_3comparisons(ell_arr2048, ell_arr77, ps_all, ps_all77_GRF, iPDF_GRF, PDF_all77_GRF, ipeak_GRF, peaks_all77_GRF, 'noiseless GRF', 'noisy GRF', 'noiseless_noisy_GRF','effect of reconstruction')
-
-#plot_3comparisons(ell_arr77, ell_arr77, ps_all77, ps_all77_GRF, PDF_all77, PDF_all77_GRF, peaks_all77, peaks_all77_GRF, 'noisy TT', 'noisy GRF', 'noisy_TT_GRF','non-Gaussianity (noisy)')

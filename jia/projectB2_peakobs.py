@@ -22,7 +22,7 @@ import sys, os
 
 make_kappaProj_cat = 0
 make_kappaProj_map = 0
-plot_maps = 0
+plot_maps = 1
 xcorr_kappaProj_kappaLens = 0
 plot_overlapping_peaks = 0
 find_foreground_halos, random_direction = 0, 0
@@ -314,9 +314,11 @@ if plot_maps:
             plt.subplots_adjust(hspace=0,wspace=0.15, left=0.08, right=0.88,bottom=0.15,top=0.92)
             
             ax.text(0.8, 0.85, r'$\kappa_{\rm lens}$',fontsize=22,color='k',fontweight='bold',
-            transform=ax.transAxes)
+            transform=ax.transAxes,
+            bbox={'facecolor':'lightgrey', 'alpha':0.5})
             ax2.text(0.8, 0.85, r'$\kappa_{\rm proj}$',fontsize=22,color='k',fontweight='bold',
-            transform=ax2.transAxes)
+            transform=ax2.transAxes,
+            bbox={'facecolor':'lightgrey', 'alpha':0.5})
             f.text(0.47, 0.03, r'$\rm {RA\,[deg]}$', ha='center', va='center',fontsize=20)
             f.text(0.03, 0.5, r'$\rm {DEC\,[deg]}$', ha='center', va='center', rotation='vertical',fontsize=20)
             #show()
@@ -384,15 +386,15 @@ if xcorr_kappaProj_kappaLens:
     close()
     
 if plot_overlapping_peaks:
-    isigma = 5.3#3.5
+    isigma = 8.9#3.5
     f=figure(figsize=(10,8))
     
     for Wx in range(1,5):
         ax=f.add_subplot(2,2,Wx)
         ############## swapped kmap_lens and kmap_proj as requested by zoltan
-        #kmap_lens = klensGen(Wx, 8.9)
+        #kmap_lens = klensGen(Wx, isigma)
         #kmap_proj = kprojGen(Wx, isigma)
-        kmap_lens = kprojGen(Wx, 8.9)
+        kmap_lens = kprojGen(Wx, isigma)#8.9)
         kmap_proj = klensGen(Wx, isigma)
         
         imask = maskGen(Wx, isigma)
@@ -430,10 +432,10 @@ if plot_overlapping_peaks:
     f.text(0.03, 0.5, r'$\rm {DEC\,[deg]}$', ha='center', va='center', rotation='vertical',fontsize=20)
 
     plt.subplots_adjust(hspace=0.15,wspace=0.15, left=0.1, right=0.85,bottom=0.1,top=0.95)
-    show()
-    #savefig(plot_dir+'matching_klenspeaks.png')
-    #savefig(plot_dir+'matching_peaks.pdf')
-    #close()
+    #show()
+    savefig(plot_dir+'matching_klenspeaks_sigmaG%02d.pdf'%(isigma*10))
+    #savefig(plot_dir+'matching_peaks_sigmaG%02d.pdf'%(isigma*10))
+    close()
 
 if find_foreground_halos:
     ###### (1) identify peaks in the kappa_proj maps
@@ -870,19 +872,20 @@ if compare_peak_noise:
     ax2.locator_params('y',tight=True, nbins=5)
     ax2.locator_params('x',tight=True, nbins=6)
     plt.subplots_adjust(hspace=0.05,left=0.18, right=0.96,bottom=0.1,top=0.96)
-    #show()
-    savefig(plot_dir+'N_peaks.pdf')
-    savefig(plot_dir+'N_peaks.png')
-    close()
+    show()
+    #savefig(plot_dir+'N_peaks.pdf')
+    #savefig(plot_dir+'N_peaks.png')
+    #close()
     
        
 if plot_hilo_peaks:
-    kmap=kprojGen(1,1.0)#klensGen(1,1.0)
+    #kmap=kprojGen(1,1.0)
+    kmap=klensGen(1,1.0)
     mask=maskGen(1,1.0)
     peak_mat = WLanalysis.peaks_mat(kmap)
-    idx_hi=array(where((peak_mat>0.6)&(mask>0))).T
+    idx_hi=array(where((peak_mat>5*std(kmap[mask>0]))&(mask>0))).T
     idx_lo=array(where((peak_mat<0.02)&(mask>0))).T
-    seed(17)#10,4
+    seed(14)#10,4
     pos_arr = [idx_hi[randint(len(idx_hi))], idx_lo[randint(len(idx_lo))], idx_lo[randint(len(idx_lo))], idx_lo[randint(len(idx_lo))]]
     f=figure(figsize=(12,3.5))
     istamp=6
@@ -890,7 +893,7 @@ if plot_hilo_peaks:
         x,y=pos_arr[jj-1]
         ax=f.add_subplot(1,4,jj)
         ax.imshow(kmap[x-istamp:x+1+istamp, y-istamp:y+1+istamp],cmap='coolwarm',interpolation='nearest')
-        ax.text(0.41, 1.05, '%.3f'%(kmap[x,y]), fontsize=12,color='k',fontweight='bold',transform=ax.transAxes)
+        ax.text(0.32, 1.05, r'$\kappa_{\rm peak}=%.3f$'%(kmap[x,y]), fontsize=12,color='k',fontweight='bold',transform=ax.transAxes)
         plt.setp(ax.get_xticklabels(), visible=False) 
         plt.setp(ax.get_yticklabels(), visible=False) 
     plt.subplots_adjust(hspace=0.02,wspace=0.04,left=0.02, right=0.98,bottom=0.02,top=0.97)
@@ -962,6 +965,7 @@ if xcorr_peaks:
         fmask=sum(imask)/float(sizes[Wx-1]**2)
         sizedeg = (sizes[Wx-1]/512.0)**2*12.25
         fsky=fmask*sizedeg/41253.0
+        print fsky
        
         #ikmap_lens = klensGen(Wx, sigmaG)*imask
         #ikmap_proj = kprojGen(Wx, sigmaG)*imask
