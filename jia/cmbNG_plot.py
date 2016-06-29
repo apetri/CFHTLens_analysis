@@ -29,11 +29,11 @@ plot_design = 0
 plot_comp_nicaea = 0
 plot_noiseless_peaks_PDF = 0
 plot_sample_noiseless_noisy_map = 0
-plot_noisy_peaks_PDF, filtered = 0, 1
+plot_noisy_peaks_PDF, filtered = 1, 1
 plot_reconstruction_noise = 0
 plot_corr_mat, do_noisy = 0, 1
 plot_contour_PDF_pk = 0
-plot_contour_noisy = 1
+plot_contour_noisy = 0
 
 if plot_design:
     all_points=genfromtxt(CMBNG_dir+'model_point.txt')
@@ -230,21 +230,21 @@ if plot_sample_noiseless_noisy_map:
 if plot_noisy_peaks_PDF:
     import matplotlib.gridspec as gridspec 
     bins=25
-    PDFbins = linspace(-0.24, 0.24, 201)    
-    peak_bins = linspace(-0.1,0.18,36)
-    #PDFbins = linspace(-0.12, 0.12, 101)
-    #peak_bins = linspace(-0.06,0.14,26)
+    #PDFbins = linspace(-0.24, 0.24, 201)    
+    #peak_bins = linspace(-0.1,0.18,36)
+    PDFbins = linspace(-0.12, 0.12, 101)
+    peak_bins = linspace(-0.06,0.14,26)
     PDFbins = WLanalysis.edge2center(PDFbins)
     peak_bins = WLanalysis.edge2center(peak_bins)
     
     ell_gadget = (WLanalysis.edge2center(logspace(log10(1.0),log10(77/2.0),26))*360./sqrt(12.25))
 
-    all_stats77 = load (CMBNG_dir+'Pkappa_gadget/noisy/%snoisy_z1100_stats77_fidu_kappa_morebins.npy'%(['','filtered_'][filtered]))#_morebins
+    all_stats77 = load (CMBNG_dir+'Pkappa_gadget/noisy/%snoisy_z1100_stats77_fidu_kappa.npy'%(['','filtered_'][filtered]))#_morebins
     ps_all77 = all_stats77[:,:bins]
     PDF_all77 = all_stats77[:, bins:bins+len(PDFbins)]
     peaks_all77 = all_stats77[:, bins+len(PDFbins):]
 
-    all_stats77_GRF = load(CMBNG_dir+'Pkappa_gadget/noisy/%snoisy_z1100_stats77_fidu_gaus_morebins.npy'%(['','filtered_'][filtered]))#_morebins
+    all_stats77_GRF = load(CMBNG_dir+'Pkappa_gadget/noisy/%snoisy_z1100_stats77_fidu_gaus.npy'%(['','filtered_'][filtered]))#_morebins
     ps_all77_GRF = all_stats77_GRF[:,:bins]
     PDF_all77_GRF = all_stats77_GRF[:, bins:bins+len(PDFbins)]
     peaks_all77_GRF = all_stats77_GRF[:, bins+len(PDFbins):]
@@ -252,7 +252,8 @@ if plot_noisy_peaks_PDF:
     all_stats=[[ell_gadget, ps_all77, ps_all77_GRF],[PDFbins, PDF_all77, PDF_all77_GRF],[peak_bins, peaks_all77, peaks_all77_GRF]]
     
     gs = gridspec.GridSpec(2,1,height_ratios=[3,1])
-    for i in range(3):#(1,2):## 1 is PDF, 2 is peaks
+    for i in (1,2):#range(3):## 1 is PDF, 2 is peaks
+        print i
         stats = all_stats[i]
         x,y,z=stats
         if i==1:
@@ -274,7 +275,7 @@ if plot_noisy_peaks_PDF:
         leg=ax.legend(handles,labels0,ncol=1, prop={'size':24}, loc=8)
         leg.get_frame().set_visible(False)
         ax.set_ylabel([r'$\rm{PDF}$', r'$\rm{N_{peaks}\, (deg^{-2})}$'][i-1],fontsize=22)
-        #ax.set_ylim(amax([ax.get_ylim()[0],2e-4]), amax(mean(z,axis=0))*2)
+        
         ax.tick_params(labelsize=16)
         
         ax2.errorbar(x,mean(y,axis=0)/mean(z,axis=0)-1,std(y,axis=0)*sqrt(12/3e4)/mean(z,axis=0), color='k',fmt='-',capsize=0,label=r'$\kappa\,\rm{maps}$',lw=1)
@@ -285,9 +286,10 @@ if plot_noisy_peaks_PDF:
         ax2.locator_params(axis = 'y', nbins = 5)
         
         
-        if i>0:
-            ax2.set_xlim(-0.12, 0.12)
-            ax2.set_ylim([-0.25,0.25])
+        #if i>0:
+            #ax2.set_xlim(-0.12, 0.12)
+        ax.set_ylim(amax([ax.get_ylim()[0],2e-4]), amax(mean(z,axis=0))*2)
+        ax2.set_ylim([-0.25,0.25])
             #else:
                 #ax2.set_ylim([[-0.23,0.13],[-0.25,0.25]][i-1])
                 #ax2.set_xlim(x[0],[.18,x[-1]][i-1])
@@ -401,12 +403,7 @@ def getmat(cosmo, psPDFpk='ps', sigmaG_idx=0, avg=1):
 
 #[save(CMBNG_dir+'mat/mat_%s_sigmaG%i_fidu.npy'%(pk, isigmaG), getmat(fidu_cosmo, psPDFpk=pk, sigmaG_idx=isigmaG, avg=0)) for pk in ['PDF','pk'] for isigmaG in range(len(sigmaG_arr))] 
 
-om_fidu, si8_fidu=cosmo_params[12]
-del_om, del_si8 = 0.01, 0.01
-om0,om1,si80,si81=om_fidu-del_om, om_fidu+del_om, si8_fidu-del_si8, si8_fidu+del_si8
-jjj=250
-om_arr= linspace(om0,om1,jjj)
-si8_arr=linspace(si80,si81, jjj+1)
+
 ell_gadget = (WLanalysis.edge2center(logspace(log10(1.0),log10(1024),51))*360./sqrt(12.25))
 def create_prob_plane(psPDFpk='pk', sigmaG_idx=0):
     if psPDFpk =='ps':
@@ -458,27 +455,105 @@ def create_prob_plane(psPDFpk='pk', sigmaG_idx=0):
 
 
 if plot_contour_PDF_pk:
-    imethod='Rbf'#'clough'#'linear'
-    for j in range(2):
-        istat=['PDF','Peaks'][j]
+    om_fidu, si8_fidu=cosmo_params[12]
+    del_om, del_si8 =0.05, 0.05 # 0.01, 0.01
+    om0,om1,si80,si81=om_fidu-del_om, om_fidu+del_om, si8_fidu-del_si8, si8_fidu+del_si8
+    jjj=250
+    om_arr= linspace(om0,om1,jjj)
+    si8_arr=linspace(si80,si81, jjj+1)
+
+    for imethod in ('clough','Rbf','linear'):#imethod='Rbf'#'clough'#'linear'
+        for j in range(2):
+            istat=['PDF','Peaks'][j]
+            
+            seed(55)
+            X, Y = np.meshgrid(si8_arr, om_arr)
+            labels = [r"$\rm{%s\,(%s')}$"%(istat,sigmaG) for sigmaG in sigmaG_arr[[1,3,4]] ]
+            labels.append(r"$\rm{PS}(\ell<2,000)$")
+            #labels.append(r"$\rm{PS}(\ell<10,000)$")
+            lines=[]
+            f=figure(figsize=(8,6))
+            ax=f.add_subplot(111)
+            iextent=[si80,si81,om0,om1]
+            for sigmaG_idx in (1,3,4,5):#range(6):
+                if sigmaG_idx==5:
+                    prob=load(CMBNG_dir+'mat/Prob_noiseless_ps_%s_sigmaG10.npy'%(imethod))
+                else:
+                    prob=load(CMBNG_dir+'mat/Prob_noiseless_%s_%s_sigmaG%02d.npy'%(['PDF','peaks'][j], imethod, sigmaG_arr[sigmaG_idx]*10))
+                V=WLanalysis.findlevel(prob)
+                icolor=rand(3)
+                CS=ax.contour(X, Y, prob, levels=[V[0],], origin='lower', extent=iextent,linewidths=2, colors=[icolor, ])
+                lines.append(CS.collections[0])
+
+            leg=ax.legend(lines, labels, ncol=1, labelspacing=0.3, prop={'size':18},loc=0)
+            leg.get_frame().set_visible(False)
+            ax.tick_params(labelsize=16)
+            ax.locator_params(axis = 'both', nbins = 5)
+            ax.set_xlabel('$\sigma_8$',fontsize=22)
+            ax.set_ylabel('$\Omega_m$',fontsize=22)
+            ax.grid(True)
+            #ax.set_xlim(0.78,0.797)
+            #ax.set_xlim(0.782,0.791)#(0.78,0.797)
+            #ax.set_ylim(0.29,0.304)
+            ax.set_xlim(0.754,0.832)
+            ax.set_ylim(0.267,0.333)
+
+            plt.subplots_adjust(hspace=0.0,bottom=0.13,right=0.96,left=0.15)
+            #show()
         
+            savefig(CMBNG_dir+'plot_official/contour_noiseless_%s_%s.pdf'%(istat,imethod))
+            close()
+
+
+if plot_contour_noisy:
+    filtered = 0
+    noise = 'noiseless'#'noisy'#
+    om_fidu, si8_fidu=cosmo_params[12]
+    del_om, del_si8 =0.05, 0.05 # 0.01, 0.01
+    om0,om1,si80,si81=om_fidu-del_om, om_fidu+del_om, si8_fidu-del_si8, si8_fidu+del_si8
+    jjj=250
+    om_arr= linspace(om0,om1,jjj)
+    si8_arr=linspace(si80,si81, jjj+1)
+    iextent=[si80,si81,om0,om1]
+    
+    X, Y = np.meshgrid(si8_arr, om_arr)
+    #del_om_noisy, del_si8_noisy = 0.05, 0.05
+    #om0_noisy,om1_noisy,si80_noisy,si81_noisy=om_fidu-del_om_noisy, om_fidu+del_om_noisy, si8_fidu-del_si8_noisy, si8_fidu+del_si8_noisy
+    #jjj=250
+    #om_arr_noisy= linspace(om0_noisy,om1_noisy,jjj)
+    #si8_arr_noisy=linspace(si80_noisy,si81_noisy, jjj+1)
+    #iextent=[si80_noisy,si81_noisy,om0_noisy,om1_noisy]
+    
+    
+    for imethod in ('clough','Rbf','linear'):#imethod='clough'#'Rbf'#'linear'#
         seed(55)
-        X, Y = np.meshgrid(si8_arr, om_arr)
-        labels = [r"$\rm{%s\,(%s')}$"%(istat,sigmaG) for sigmaG in sigmaG_arr[[1,3,4]] ]
-        labels.append(r"$\rm{PS}(\ell<2,000)$")
-        #labels.append(r"$\rm{PS}(\ell<10,000)$")
+        
+        labels = [r"$\rm{%s}$"%(istat) for istat in ['Power\; Spectrum','PDF','Peaks','PS+PDF+Peaks'] ]
         lines=[]
         f=figure(figsize=(8,6))
         ax=f.add_subplot(111)
-        iextent=[si80,si81,om0,om1]
-        for sigmaG_idx in (1,3,4,5):#range(6):
-            if sigmaG_idx==5:
-                prob=load(CMBNG_dir+'mat/Prob_noiseless_ps_%s_sigmaG10.npy'%(imethod))
+        
+        for istat in ['ps','PDF','peaks','all3']:#['ps','peaks']:#
+            print istat
+            if noise == 'noisy':
+                                
+                if istat != 'ps':
+                    prob=load(CMBlensing_dir+'mat/%sProb_noisy_%s_%s_sigmaG80.npy'%(['','filtered_'][filtered],istat, imethod))
+                    
+                else:
+                    prob=load(CMBlensing_dir+'mat/Prob_noisy_%s_%s.npy'%(istat, imethod))
+                
             else:
-                prob=load(CMBNG_dir+'mat/Prob_noiseless_%s_%s_sigmaG%02d.npy'%(['PDF','peaks'][j], imethod, sigmaG_arr[sigmaG_idx]*10))
+                
+                if istat == 'ps':
+                    prob=load(CMBlensing_dir+'mat/Prob_noiseless_%s_%s_sigmaG10.npy'%(istat, imethod))
+                else:
+                    prob=load(CMBlensing_dir+'mat/Prob_noiseless_%s_%s_sigmaG80.npy'%(istat, imethod))
+                
+                        
             V=WLanalysis.findlevel(prob)
             icolor=rand(3)
-            CS=ax.contour(X, Y, prob, levels=[V[0],], origin='lower', extent=iextent,linewidths=2, colors=[icolor, ])
+            CS=ax.contour(X, Y, prob, levels=[V[0],], origin='lower',linewidths=2, colors=[icolor, ])#extent=iextent
             lines.append(CS.collections[0])
 
         leg=ax.legend(lines, labels, ncol=1, labelspacing=0.3, prop={'size':18},loc=0)
@@ -488,66 +563,14 @@ if plot_contour_PDF_pk:
         ax.set_xlabel('$\sigma_8$',fontsize=22)
         ax.set_ylabel('$\Omega_m$',fontsize=22)
         ax.grid(True)
-        #ax.set_xlim(0.78,0.797)
-        ax.set_xlim(0.782,0.791)#(0.78,0.797)
-        ax.set_ylim(0.29,0.304)
+        ax.set_xlim(0.754,0.832)#(0.78,0.797)
+        ax.set_ylim(0.267,0.333)
+        #ax.plot(0.786, 0.296,'ko'  )#0.29591837,  0.78571429
         plt.subplots_adjust(hspace=0.0,bottom=0.13,right=0.96,left=0.15)
         #show()
-       
-        savefig(CMBNG_dir+'plot_official/contour_noiseless_%s_%s.pdf'%(istat,imethod))
+        
+        savefig(CMBNG_dir+'plot_official/contour%s_%s_%s.pdf'%(['','_filtered'][filtered],noise,imethod))
         close()
-
-
-if plot_contour_noisy:
-    filtered = 0
-    noise = 'noisy'#'noiseless'#
-    imethod='clough'#'Rbf'#'linear'#
-    del_om_noisy, del_si8_noisy = 0.05, 0.05
-    om0_noisy,om1_noisy,si80_noisy,si81_noisy=om_fidu-del_om_noisy, om_fidu+del_om_noisy, si8_fidu-del_si8_noisy, si8_fidu+del_si8_noisy
-    jjj=250
-    om_arr_noisy= linspace(om0_noisy,om1_noisy,jjj)
-    si8_arr_noisy=linspace(si80_noisy,si81_noisy, jjj+1)
-
-    seed(55)
-    X, Y = np.meshgrid(si8_arr, om_arr)
-    labels = [r"$\rm{%s}$"%(istat) for istat in ['Power\; Spectrum','PDF','Peaks','PS+PDF+Peaks'] ]
-    lines=[]
-    f=figure(figsize=(8,6))
-    ax=f.add_subplot(111)
-    iextent=[si80_noisy,si81_noisy,om0_noisy,om1_noisy]
-    for istat in ['ps','PDF','peaks','all3']:#['ps','peaks']:#
-        print istat
-        if noise == 'noisy':
-            if istat != 'ps':
-                prob=load(CMBlensing_dir+'mat/%sProb_noisy_%s_%s_sigmaG80.npy'%(['','filtered_'][filtered],istat, imethod))
-            else:
-                prob=load(CMBlensing_dir+'mat/Prob_noisy_%s_%s.npy'%(istat, imethod))
-        else:
-            if istat == 'ps':
-                prob=load(CMBlensing_dir+'mat/Prob_noiseless_%s_%s_sigmaG10.npy'%(istat, imethod))
-            else:
-                prob=load(CMBlensing_dir+'mat/Prob_noiseless_%s_%s_sigmaG80.npy'%(istat, imethod))
-                      
-        V=WLanalysis.findlevel(prob)
-        icolor=rand(3)
-        CS=ax.contour(X, Y, prob, levels=[V[0],], origin='lower', extent=iextent,linewidths=2, colors=[icolor, ])
-        lines.append(CS.collections[0])
-
-    leg=ax.legend(lines, labels, ncol=1, labelspacing=0.3, prop={'size':18},loc=0)
-    leg.get_frame().set_visible(False)
-    ax.tick_params(labelsize=16)
-    ax.locator_params(axis = 'both', nbins = 5)
-    ax.set_xlabel('$\sigma_8$',fontsize=22)
-    ax.set_ylabel('$\Omega_m$',fontsize=22)
-    ax.grid(True)
-    ax.set_xlim(0.782,0.791)#(0.78,0.797)
-    ax.set_ylim(0.29,0.304)
-    #ax.plot(0.786, 0.296,'ko'  )#0.29591837,  0.78571429
-    plt.subplots_adjust(hspace=0.0,bottom=0.13,right=0.96,left=0.15)
-    #show()
-    
-    savefig(CMBNG_dir+'plot_official/contour%s_%s_%s.pdf'%(['','_filtered'][filtered],noise,imethod))
-    close()
 
 
 if plot_corr_mat:

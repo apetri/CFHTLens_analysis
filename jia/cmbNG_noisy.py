@@ -9,11 +9,11 @@ import pickle
 from pylab import *
 
 ######## knobs ########
-filtered = 1
-compute_noisy_stats = 0
+filtered = 0
+compute_noisy_stats = 1
 load_noiseless_stats = 0
-load_nooisy_stats = 1
-compute_noisy_contour = 1
+load_nooisy_stats = 0
+compute_noisy_contour = 0
 
 
 #### stats77 comes from the fact noisy maps are 77 x 77 in size
@@ -73,7 +73,10 @@ def FT2real (cosmo, r, Gaus=0):
     areal = real(fftpack.ifft2(a))
     inorm = (2*pi*3.5/360.0)/(77.0**2)
     areal /= inorm
-    areal = WLanalysis.smooth(areal, 2.93)#8/((3.5*60)/77)
+    if not filtered:
+        areal = WLanalysis.smooth(areal, 2.93)#8/((3.5*60)/77)
+    #else:
+        #areal = WLanalysis.smooth(areal, 0.18)
     return areal
     
 def PDFGen (kmap, PDF_bins):
@@ -128,7 +131,7 @@ if compute_noisy_stats:
         ##cosmo='Om0.394_Ol0.606_w-1.000_si0.776'#cosmo_noisy_arr[1]
         #all_stats77 = array([compute_GRF_PDF_ps_pk(cosmo,r,Gaus=0) for r in range(1000)])#1024 
         #save(CMBlensing_dir+'Pkappa_gadget/noisy/%snoisy_z1100_stats77_kappa_%s.npy'%(['','filtered_'][filtered],cosmo), all_stats77)
-    Gaus=0
+    Gaus=1
     morebins = 0
     if morebins:
         PDFbins = linspace(-0.24, 0.24, 201)#(-0.12, 0.12, 101)
@@ -146,7 +149,10 @@ if compute_noisy_stats:
         areal /= inorm    
         kmap = areal
         ps = WLanalysis.PowerSpectrum(WLanalysis.smooth(kmap, 0.18), bins=bins)[1]#*2.0*pi/ell_arr**2
-        kmapsmooth8 = WLanalysis.smooth(kmap, 2.93)
+        if not filtered:
+            kmapsmooth8 = WLanalysis.smooth(kmap, 2.93)
+        else:
+            kmapsmooth8 = areal
         PDF = PDFGen(kmapsmooth8, PDFbins)
         peaks = peaksGen(kmapsmooth8, peak_bins)
         return concatenate([ps, PDF, peaks])
@@ -210,11 +216,10 @@ if compute_noisy_contour:
     jjj=250
     om_arr= linspace(om0,om1,jjj)
     si8_arr=linspace(si80,si81, jjj+1)
-    
-    isub=1
-    ismooth=0#1-4 for 5 smoothing scales
+
     for ismooth in (-1,):#range(1,5):## -1 is for noisy maps
-        for jj in (1,3):#range(1,4):#range(4):#
+    #1-4 for 5 smoothing scales
+        for jj in (0,):#range(1,4):#range(4):#(0,2):#(1,3):#
             istat=['ps','PDF','peaks','all3'][jj]
             for imethod in ('linear','clough','Rbf'):
                 print sigmaG_arr[ismooth],istat, imethod
@@ -238,6 +243,6 @@ if compute_noisy_contour:
                         continue
                     prob_plane = plane_gen(ips_fidu, ips, obs_arr, all_points46, om_arr, si8_arr,method=imethod)
                 
-                save(CMBlensing_dir+'mat/%sProb_%s_%s_%s_sigmaG%02d.npy'%(['','filtered_'][filtered],noise,istat, imethod, sigmaG_arr[ismooth]*10),prob_plane)
+                save(CMBlensing_dir+'mat/%sProb_%s_%s_%s_sigmaG%02d_del%s.npy'%(['','filtered_'][filtered],noise,istat, imethod, sigmaG_arr[ismooth]*10, del_om),prob_plane)
 
 
