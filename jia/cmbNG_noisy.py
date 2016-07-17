@@ -9,12 +9,12 @@ import pickle
 from pylab import *
 
 ######## knobs ########
-filtered = 0
+filtered = 1
 compute_noisy_stats = 1
 load_noiseless_stats = 0
 load_nooisy_stats = 0
 compute_noisy_contour = 0
-
+fsky_deg=1000.0
 
 #### stats77 comes from the fact noisy maps are 77 x 77 in size
 #### constants
@@ -131,8 +131,8 @@ if compute_noisy_stats:
         ##cosmo='Om0.394_Ol0.606_w-1.000_si0.776'#cosmo_noisy_arr[1]
         #all_stats77 = array([compute_GRF_PDF_ps_pk(cosmo,r,Gaus=0) for r in range(1000)])#1024 
         #save(CMBlensing_dir+'Pkappa_gadget/noisy/%snoisy_z1100_stats77_kappa_%s.npy'%(['','filtered_'][filtered],cosmo), all_stats77)
-    Gaus=1
-    morebins = 0
+    Gaus=0
+    morebins = 1
     if morebins:
         PDFbins = linspace(-0.24, 0.24, 201)#(-0.12, 0.12, 101)
         peak_bins = linspace(-0.1,0.18,36)#(-0.06,0.14,26)
@@ -185,11 +185,17 @@ if load_nooisy_stats:
         
         
         idx_PDF=where(mean(PDF_fidu,axis=0)>1e-4)[0]
-        idx_peaks=where(mean(peaks_fidu,axis=0)>0)[0]
-
-        PDF_fidu=PDF_fidu[:,idx_PDF]
-        peaks_fidu=peaks_fidu[:,idx_peaks]
         PDF_all77=PDF_all77[:,idx_PDF]
+        
+        PDF_fidu=PDF_fidu[:,idx_PDF]
+        
+        #### no filter on peaks ########
+        #peaks_fidu = fidu_stats77_nofilter[:,bins+len(PDFbins)-1:]
+        #peaks_all77 = mean(all_stats77_nofilter[:,:,bins+len(PDFbins)-1:],axis=1)
+        
+        ########################
+        idx_peaks=where(mean(peaks_fidu,axis=0)>0)[0]
+        peaks_fidu=peaks_fidu[:,idx_peaks]
         peaks_all77=peaks_all77[:,idx_peaks]
         
         
@@ -197,7 +203,7 @@ if load_nooisy_stats:
 def plane_gen (fidu_mat, ips_avg, obs_arr, cosmo_params, om_arr, si8_arr, method='linear'):
     
     interp_cosmo = WLanalysis.buildInterpolator2D(ips_avg, cosmo_params, method=method)
-    cov_mat = cov(fidu_mat,rowvar=0)/(2e4/12.5)# area factor for AdvACT
+    cov_mat = cov(fidu_mat,rowvar=0)/(fsky_deg/12.5)#(2e4/12.5)# area factor for AdvACT
     cov_inv = mat(cov_mat).I
 
     def chisq_fcn(param1, param2):
@@ -211,17 +217,17 @@ def plane_gen (fidu_mat, ips_avg, obs_arr, cosmo_params, om_arr, si8_arr, method
 if compute_noisy_contour:
     noise = 'noisy'#'noiseless'#
     om_fidu, si8_fidu=all_points[18]
-    del_om, del_si8 = 0.05, 0.05
+    del_om, del_si8 = 0.15, 0.15
     om0,om1,si80,si81=om_fidu-del_om, om_fidu+del_om, si8_fidu-del_si8, si8_fidu+del_si8
-    jjj=250
+    jjj=100
     om_arr= linspace(om0,om1,jjj)
     si8_arr=linspace(si80,si81, jjj+1)
 
-    for ismooth in (-1,):#range(1,5):## -1 is for noisy maps
+    for ismooth in (-1,):#range(0,5):## -1 is for noisy maps
     #1-4 for 5 smoothing scales
-        for jj in (0,):#range(1,4):#range(4):#(0,2):#(1,3):#
+        for jj in (-1,):#range(1,4):#range(4):#range(4):#(0,2):#(1,3):#
             istat=['ps','PDF','peaks','all3'][jj]
-            for imethod in ('linear','clough','Rbf'):
+            for imethod in ('linear','clough','Rbf'):#('clough',):#
                 print sigmaG_arr[ismooth],istat, imethod
                 
                 if noise == 'noisy':
@@ -243,6 +249,12 @@ if compute_noisy_contour:
                         continue
                     prob_plane = plane_gen(ips_fidu, ips, obs_arr, all_points46, om_arr, si8_arr,method=imethod)
                 
-                save(CMBlensing_dir+'mat/%sProb_%s_%s_%s_sigmaG%02d_del%s.npy'%(['','filtered_'][filtered],noise,istat, imethod, sigmaG_arr[ismooth]*10, del_om),prob_plane)
+                save(CMBlensing_dir+'mat/optimize_%sProb_fsky%i_%s_%s_%s_sigmaG%02d_del%s.npy'%(['','filtered_'][filtered], fsky_deg, noise,istat, imethod, sigmaG_arr[ismooth]*10, del_om),prob_plane)
+                
+                imshow(prob_plane,origin='lower',interpolation='nearest',extent=[si80,si81,om0,om1])
+                title('%sProb_fsky%i_%s_%s_%s_sigmaG%02d'%(['','filtered_'][filtered], fsky_deg, noise,istat, imethod, sigmaG_arr[ismooth]*10),fontsize=10)
+                savefig(CMBlensing_dir+'plot/optimize_%sProb_fsky%i_%s_%s_%s_sigmaG%02d.png'%(['','filtered_'][filtered], fsky_deg, noise,istat, imethod, sigmaG_arr[ismooth]*10))
+                close()
+                
 
 

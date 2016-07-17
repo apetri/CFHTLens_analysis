@@ -892,7 +892,7 @@ def prob_plane (chisq_fcn, param1_arr, param2_arr):
         for j in range(len(param2_arr)):
             heatmap[i,j] = chisq_fcn(param1_arr[i], param2_arr[j])
     prob = exp(-0.5*heatmap)
-    prob /= sum(prob)
+    prob /= sum(prob[~isnan(prob)])
     return heatmap, prob
 
 def corr_mat (cov_mat):

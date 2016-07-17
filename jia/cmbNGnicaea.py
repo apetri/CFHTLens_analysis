@@ -4,9 +4,9 @@ import numpy as np
 from scipy import *
 from scipy import interpolate, stats, fftpack
 
-cosmo_arr = genfromtxt('/Users/jia/weaklensing/CMBnonGaussian/cosmo_arr.txt',dtype='string')
+#cosmo_arr = genfromtxt('/Users/jia/weaklensing/CMBnonGaussian/cosmo_arr.txt',dtype='string')
 ## e.g.Om0.145_Ol0.855_w-2.211_si1.303
-
+cosmo_arr = ['Om0.299_Ol0.701_w-1.000_si0.786','Om0.296_Ol0.704_w-1.000_si0.794']#'Om0.296_Ol0.704_w-1.000_si0.786', 
 def create_Nicaea_ps (cosmo):
 	param0 = float(cosmo[2:7])
 	param1 = 1-param0
@@ -65,9 +65,10 @@ a_min           0.1             # For late Universe stuff
 	f.close()
 	os.system('cd /Users/jia/Documents/code/nicaea_2.5/Demo; ./lensingdemo; cp P_kappa /Users/jia/weaklensing/CMBnonGaussian/Pkappa_nicaea/Pkappa_nicaea25_%s_1100; cp P_delta /Users/jia/weaklensing/CMBnonGaussian/Pkappa_nicaea/Pdelta_nicaea25_%s_1100'%(cosmo,cosmo))
 
-#map(create_Nicaea_ps, cosmo_arr)
-plot_dir='/Users/jia/weaklensing/CMBnonGaussian/plot/'
-ell_gadget=WLanalysis.PowerSpectrum(rand(2048,2048))[0][:34]
+map(create_Nicaea_ps, cosmo_arr)
+
+#plot_dir='/Users/jia/weaklensing/CMBnonGaussian/plot/'
+#ell_gadget=WLanalysis.PowerSpectrum(rand(2048,2048))[0][:34]
 
 ############ for vanessa comparison ##############
 #van_dir = '/Users/jia/weaklensing/CMBnonGaussian/to_vanessa/'
@@ -75,48 +76,48 @@ ell_gadget=WLanalysis.PowerSpectrum(rand(2048,2048))[0][:34]
 #create_Nicaea_ps(cosmo_arr[12])
 ##################################################
 
-from pylab import *
-for cosmo in cosmo_arr:#(cosmo_arr[12],):#(cosmo_arr[18],):
-	#create_Nicaea_ps(cosmo)
-	#pspkPDFgadget=load('/Users/jia/weaklensing/CMBnonGaussian/Pkappa_gadget/{0}_ps_PDF_pk_600b.npy'.format(cosmo))
-	pspkPDFgadget=load('/Users/jia/weaklensing/CMBnonGaussian/Pkappa_gadget/kappa_{0}_ps_PDF_pk_z1100.npy'.format(cosmo))
-	ps_gadget=array([pspkPDFgadget[i][0][:34] for i in range(len(pspkPDFgadget))])
-	##savetxt(van_dir+'Pkappa_gadget_{}'.format(cosmo),array([ell_gadget, mean(ps_gadget,axis=0),std(ps_gadget,axis=0)]).T, header='ell\tell(ell+1)/2pi*Pkappa\tsigma_(ell(ell+1)/2pi*Pkappa)')
-	###ps_gadget[331]=ps_gadget[332]
-	ell_nicaea, ps_nicaea=genfromtxt('/Users/jia/weaklensing/CMBnonGaussian/Pkappa_nicaea/Pkappa_nicaea25_{0}_1100'.format(cosmo))[33:-5].T
+#from pylab import *
+#for cosmo in cosmo_arr:#(cosmo_arr[12],):#(cosmo_arr[18],):
+	##create_Nicaea_ps(cosmo)
+	##pspkPDFgadget=load('/Users/jia/weaklensing/CMBnonGaussian/Pkappa_gadget/{0}_ps_PDF_pk_600b.npy'.format(cosmo))
+	#pspkPDFgadget=load('/Users/jia/weaklensing/CMBnonGaussian/Pkappa_gadget/kappa_{0}_ps_PDF_pk_z1100.npy'.format(cosmo))
+	#ps_gadget=array([pspkPDFgadget[i][0][:34] for i in range(len(pspkPDFgadget))])
+	###savetxt(van_dir+'Pkappa_gadget_{}'.format(cosmo),array([ell_gadget, mean(ps_gadget,axis=0),std(ps_gadget,axis=0)]).T, header='ell\tell(ell+1)/2pi*Pkappa\tsigma_(ell(ell+1)/2pi*Pkappa)')
+	####ps_gadget[331]=ps_gadget[332]
+	#ell_nicaea, ps_nicaea=genfromtxt('/Users/jia/weaklensing/CMBnonGaussian/Pkappa_nicaea/Pkappa_nicaea25_{0}_1100'.format(cosmo))[33:-5].T
 	
 
-	f=figure(figsize=(6,4.5))
-	ax=f.add_subplot(111)
-	ax.errorbar(ell_gadget, mean(ps_gadget,axis=0),std(ps_gadget,axis=0),label='gadget (z=1100)')
-	ax.plot(ell_nicaea, ps_nicaea,'--',lw=1,label='nicaea2.5 (z=1100)')
+	#f=figure(figsize=(6,4.5))
+	#ax=f.add_subplot(111)
+	#ax.errorbar(ell_gadget, mean(ps_gadget,axis=0),std(ps_gadget,axis=0),label='gadget (z=1100)')
+	#ax.plot(ell_nicaea, ps_nicaea,'--',lw=1,label='nicaea2.5 (z=1100)')
 	
 	        
-        ########### colin camb comparison ######
-        #ell_camb, ps_camb =genfromtxt( '/Users/jia/Desktop/Clkappa_camb_Jia_Om0.296_Ol0.704_w-1.000_si0.786_Ascorrectedbyme.dat').T
-        #ax.plot(ell_camb, ps_camb*ell_camb*(ell_camb+1)/2/pi, lw=1,label='camb')
-        ########################################
+        ############ colin camb comparison ######
+        ##ell_camb, ps_camb =genfromtxt( '/Users/jia/Desktop/Clkappa_camb_Jia_Om0.296_Ol0.704_w-1.000_si0.786_Ascorrectedbyme.dat').T
+        ##ax.plot(ell_camb, ps_camb*ell_camb*(ell_camb+1)/2/pi, lw=1,label='camb')
+        #########################################
         
-        ######## vanessa - 2 power spectrum traced at z=1100 #####
-        #ellxx,ps1,ps2=load('/Users/jia/Desktop/test_z1100.npy')
-        #ax.plot(ellxx,ps1,label='gadget (z=1100)')
-        #ax.plot(ellxx,ps2,label='gadget (z=1100)')
-        #ell_nicaea38, ps_nicaea38=genfromtxt('/Users/jia/weaklensing/CMBnonGaussian/Pkappa_nicaea/Pkappa_nicaea25_{0}'.format(cosmo))[33:-5].T
-        #ax.plot(ell_nicaea38, ps_nicaea38,'--',lw=1,label='nicaea2.5 (z=38)')
-        ###############################################
+        ######### vanessa - 2 power spectrum traced at z=1100 #####
+        ##ellxx,ps1,ps2=load('/Users/jia/Desktop/test_z1100.npy')
+        ##ax.plot(ellxx,ps1,label='gadget (z=1100)')
+        ##ax.plot(ellxx,ps2,label='gadget (z=1100)')
+        ##ell_nicaea38, ps_nicaea38=genfromtxt('/Users/jia/weaklensing/CMBnonGaussian/Pkappa_nicaea/Pkappa_nicaea25_{0}'.format(cosmo))[33:-5].T
+        ##ax.plot(ell_nicaea38, ps_nicaea38,'--',lw=1,label='nicaea2.5 (z=38)')
+        ################################################
         
-	ax.set_xscale('log')
-	ax.set_yscale('log')
-	ax.set_title(cosmo)
-	ax.set_xlabel(r'$\ell$')
-	ax.set_ylabel(r'$\ell(\ell+1)\rm{P(\ell)/2\pi}$')
-	ax.set_xlim(100,1e4)
-	legend(fontsize=10,loc=0)
-	ax.set_ylim(6e-5,1e-2)
-	plt.tight_layout()
-	#show()
-	savefig(plot_dir+'ps_z1100_{}.jpg'.format(cosmo))
-	close()
+	#ax.set_xscale('log')
+	#ax.set_yscale('log')
+	#ax.set_title(cosmo)
+	#ax.set_xlabel(r'$\ell$')
+	#ax.set_ylabel(r'$\ell(\ell+1)\rm{P(\ell)/2\pi}$')
+	#ax.set_xlim(100,1e4)
+	#legend(fontsize=10,loc=0)
+	#ax.set_ylim(6e-5,1e-2)
+	#plt.tight_layout()
+	##show()
+	#savefig(plot_dir+'ps_z1100_{}.jpg'.format(cosmo))
+	#close()
 	
 
 
