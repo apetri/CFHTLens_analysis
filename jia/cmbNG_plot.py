@@ -29,11 +29,14 @@ plot_design = 0
 plot_comp_nicaea = 0
 plot_noiseless_peaks_PDF = 0
 plot_sample_noiseless_noisy_map = 0
-plot_noisy_peaks_PDF, filtered = 0, 1
+plot_noisy_peaks_PDF, filtered = 0, 0
 plot_reconstruction_noise = 0
-plot_corr_mat, do_noisy = 1, 0
+plot_corr_mat, do_noisy = 0, 0
 plot_contour_PDF_pk, area_scaling, fsky_deg = 0, 0, 1000.0
-plot_contour_noisy, area_scaling_noisy, fsky_deg_noisy = 0, 0, 1000.0
+plot_contour_noisy_old, area_scaling_noisy, fsky_deg_noisy = 0, 0, 1000.0
+plot_contour_theory = 0
+plot_contour_PDF_pk_noisy = 1
+plot_contour_comb = 0
 
 if plot_design:
     all_points=genfromtxt(CMBNG_dir+'model_point.txt')
@@ -231,7 +234,7 @@ if plot_noisy_peaks_PDF:
     import matplotlib.gridspec as gridspec 
     bins=25
     morebins=1
-    filtered=1
+    filtered=0
     if morebins:
         PDFbins = linspace(-0.24, 0.24, 201)    
         peak_bins = linspace(-0.1,0.18,36)
@@ -252,7 +255,11 @@ if plot_noisy_peaks_PDF:
     ps_all77_GRF = all_stats77_GRF[:,:bins]
     PDF_all77_GRF = all_stats77_GRF[:, bins:bins+len(PDFbins)]
     peaks_all77_GRF = all_stats77_GRF[:, bins+len(PDFbins):]
-
+    
+    PDFbins = PDFbins[0::2]
+    PDF_all77 = sum(PDF_all77.reshape(all_stats77.shape[0],-1,2),axis=-1)
+    PDF_all77_GRF = sum(PDF_all77_GRF.reshape(all_stats77.shape[0],-1,2),axis=-1)
+    
     all_stats=[[ell_gadget, ps_all77, ps_all77_GRF],[PDFbins, PDF_all77, PDF_all77_GRF],[peak_bins, peaks_all77, peaks_all77_GRF]]
     
     gs = gridspec.GridSpec(2,1,height_ratios=[3,1])
@@ -464,29 +471,35 @@ def create_prob_plane(psPDFpk='pk', sigmaG_idx=0):
 
 if plot_contour_PDF_pk:
     om_fidu, si8_fidu=cosmo_params[12]
-    del_om, del_si8 =0.15, 0.15#0.05, 0.05 # 0.01, 0.01
+    #0.05, 0.05 # 0.01, 0.01
     if area_scaling:
+        del_om, del_si8 =0.15, 0.15
         del_om /= sqrt(2e4/fsky_deg)
         del_si8/= sqrt(2e4/fsky_deg)
+    else:
+        del_om, del_si8 =0.05, 0.05
     om0,om1,si80,si81=om_fidu-del_om, om_fidu+del_om, si8_fidu-del_si8, si8_fidu+del_si8
-    jjj=100#250
+    jjj=250#100#
     om_arr= linspace(om0,om1,jjj)
     si8_arr=linspace(si80,si81, jjj+1)
-
-    for imethod in ('clough','Rbf','linear'):#imethod='Rbf'#'clough'#'linear'
+    colors=[['darkorchid','plum','mediumvioletred','limegreen'],
+            ['steelblue','deepskyblue','dodgerblue','limegreen']]
+    for imethod in ('clough',):#'Rbf','linear'):#imethod='Rbf'#'clough'#'linear'
         for j in range(2):
             istat=['PDF','Peaks'][j]
             
             seed(55)
-            X, Y = np.meshgrid(si8_arr, om_arr)
+            X, Y = np.meshgrid(om_arr,si8_arr)
             labels = [r"$\rm{%s\,(%s')}$"%(istat,sigmaG) for sigmaG in sigmaG_arr[[1,3,4]] ]
-            labels.append(r"$\rm{PS}(\ell<2,000)$")
+            labels.append(r"$\rm{PS}\,(\ell<2,000)$")
             #labels.append(r"$\rm{PS}(\ell<10,000)$")
             lines=[]
             f=figure(figsize=(8,6))
             ax=f.add_subplot(111)
             iextent=[si80,si81,om0,om1]
+            jjj=-1
             for sigmaG_idx in (1,3,4,5):#range(6):
+                jjj+=1
                 if area_scaling:
                     if sigmaG_idx==5:
                         prob=load(CMBNG_dir+'mat/Prob_fsky%i_noiseless_ps_%s_sigmaG10_del0.15.npy'%(fsky_deg,imethod))
@@ -499,41 +512,42 @@ if plot_contour_PDF_pk:
                         prob=load(CMBNG_dir+'mat/Prob_noiseless_%s_%s_sigmaG%02d.npy'%(['PDF','peaks'][j], imethod, sigmaG_arr[sigmaG_idx]*10))
                 prob[isnan(prob)]=0
                 V=WLanalysis.findlevel(prob)
-                icolor=rand(3)
-                CS=ax.contour(X, Y, prob, levels=[V[0],], origin='lower', extent=iextent,linewidths=2, colors=[icolor, ])
+                icolor=colors[j][jjj]
+                CS=ax.contour( X, Y, prob.T, levels=[V[0],], origin='lower', extent=iextent,linewidths=4, colors=[icolor, ])
                 lines.append(CS.collections[0])
 
             leg=ax.legend(lines, labels, ncol=1, labelspacing=0.3, prop={'size':18},loc=0)
             leg.get_frame().set_visible(False)
             ax.tick_params(labelsize=16)
             ax.locator_params(axis = 'both', nbins = 5)
-            ax.set_xlabel('$\sigma_8$',fontsize=22)
-            ax.set_ylabel('$\Omega_m$',fontsize=22)
-            ax.grid(True)
-            #ax.set_xlim(0.78,0.797)
-            #ax.set_xlim(0.782,0.791)#(0.78,0.797)
-            #ax.set_ylim(0.29,0.304)
-            ax.set_xlim(0.754,0.832)
-            ax.set_ylim(0.267,0.333)
+            ax.set_ylabel('$\sigma_8$',fontsize=22)
+            ax.set_xlabel('$\Omega_m$',fontsize=22)
+            #ax.grid(True)
+            ax.set_xlim(0.276, 0.324)
+            ax.set_ylim(0.777, 0.797)
+            ax.plot(0.296, 0.786,'xk',markersize=5,mew=2)
 
             plt.subplots_adjust(hspace=0.0,bottom=0.13,right=0.96,left=0.15)
             #show()
         
-            #savefig(CMBNG_dir+'plot_official/contour_noiseless_%s_%s.pdf'%(istat,imethod))
-            savefig(CMBNG_dir+'plot_official/png/contour%s_noiseless_%s_%s.png'%(['','_areascale'][area_scaling],istat,imethod))
-            close()
+            savefig(CMBNG_dir+'plot_official/plot_contour_noiseless_%s_%s.pdf'%(istat,imethod));close()
+            #savefig(CMBNG_dir+'plot_official/png/contour%s_noiseless_%s_%s.png'%(['','_areascale'][area_scaling],istat,imethod))
+            #close()
 
 
-if plot_contour_noisy:
+if plot_contour_noisy_old:
     filtered = 0
-    noise = 'noisy'#'noiseless'#
+    noise = 'noiseless'#'noisy'#
     om_fidu, si8_fidu=cosmo_params[12]
-    del_om, del_si8 =0.15,0.15#0.05, 0.05 # 0.01, 0.01
+    #0.05, 0.05 # 0.01, 0.01
     if area_scaling_noisy:
+        del_om, del_si8 =0.15,0.15
         del_om /= sqrt(2e4/fsky_deg)
         del_si8/= sqrt(2e4/fsky_deg)
+    else:
+        del_om, del_si8 =0.05,0.05
     om0,om1,si80,si81=om_fidu-del_om, om_fidu+del_om, si8_fidu-del_si8, si8_fidu+del_si8
-    jjj=100#250
+    jjj=250#100#
     om_arr= linspace(om0,om1,jjj)
     si8_arr=linspace(si80,si81, jjj+1)
     iextent=[si80,si81,om0,om1]
@@ -555,7 +569,9 @@ if plot_contour_noisy:
         f=figure(figsize=(8,6))
         ax=f.add_subplot(111)
         
+        jjj=-1
         for istat in ['ps','PDF','peaks','all3']:#['ps','peaks']:#
+            jjj+=1
             print istat
             
             
@@ -579,7 +595,7 @@ if plot_contour_noisy:
                         prob=load(CMBlensing_dir+'mat/Prob_noiseless_%s_%s_sigmaG10.npy'%(istat, imethod))
                     else:
                         prob=load(CMBlensing_dir+'mat/Prob_noiseless_%s_%s_sigmaG80.npy'%(istat, imethod))
-            else:
+            else: ###### no area scaling
                 if noise == 'noisy':
                     if istat != 'ps':
                         prob=load(CMBlensing_dir+'mat/%sProb_noisy_%s_%s_sigmaG80.npy'%(['','filtered_'][filtered],istat, imethod))
@@ -597,7 +613,7 @@ if plot_contour_noisy:
             prob[isnan(prob)]=0.0
             V=WLanalysis.findlevel(prob)
             print 'N_pixels about 68%:',sum(prob>V[0])
-            icolor=rand(3)
+            icolor=['darkorchid','mediumvioletred','darkorange','limegreen'][jjj]
             CS=ax.contour(X, Y, prob, levels=[V[0],], origin='lower',linewidths=2, colors=[icolor, ])#extent=iextent
             lines.append(CS.collections[0])
 
@@ -612,11 +628,11 @@ if plot_contour_noisy:
         ax.set_ylim(0.267,0.333)
         #ax.plot(0.786, 0.296,'ko'  )#0.29591837,  0.78571429
         plt.subplots_adjust(hspace=0.0,bottom=0.13,right=0.96,left=0.15)
-        #show()
+        show()
         
         #savefig(CMBNG_dir+'plot_official/contour%s_%s_%s.pdf'%(['','_filtered'][filtered],noise,imethod))
-        savefig(CMBNG_dir+'plot_official/png/optimize_contour%s_fsky%i_%s_%s.png'%(['','_filtered'][filtered],fsky_deg_noisy,noise,imethod))
-        close()
+        #savefig(CMBNG_dir+'plot_official/png/optimize_contour%s_fsky%i_%s_%s.png'%(['','_filtered'][filtered],fsky_deg_noisy,noise,imethod))
+        #close()
 
 
 if plot_corr_mat:
@@ -699,8 +715,233 @@ if plot_corr_mat:
     savefig(CMBlensing_dir+'plot_official/corr_mat%s.pdf'%(['','_noisy'][do_noisy]))
     close()
 
+def plot_cov_ellipse(cov, pos, nstd=2, ax=None, lw=4, **kwargs):
+    def eigsorted(cov):
+        vals, vecs = np.linalg.eigh(cov)
+        order = vals.argsort()[::-1]
+        return vals[order], vecs[:,order]
 
+    if ax is None:
+        ax = plt.gca()
 
+    vals, vecs = eigsorted(cov)
+    theta = np.degrees(np.arctan2(*vecs[:,0][::-1]))
 
+    # Width and height are "full" widths, not radius
+    width, height = 2 * nstd * np.sqrt(vals)
+    ellip = Ellipse(xy=pos, width=width, height=height, angle=theta, fill=0, color='darkviolet', lw=lw)
 
+    CS=ax.add_artist(ellip)
+    return CS
+    
+if plot_contour_theory:
+    import pickle
+    import matplotlib.pyplot as plt
+    from matplotlib.patches import Ellipse
+    
+    Ls,NL=pickle.load(open('/Users/jia/Desktop/lensNoisePower6014_4000_SimCosmo.pkl','r'))
+    Nlkk = NL['TT'] * (Ls*(Ls+1)/2.0)**2
 
+    ell,Pfidu=genfromtxt(CMBlensing_dir+'Pkappa_nicaea/Pkappa_nicaea25_Om0.296_Ol0.704_w-1.000_si0.786_1100').T
+    ell, Pom =genfromtxt(CMBlensing_dir+'Pkappa_nicaea/Pkappa_nicaea25_Om0.299_Ol0.701_w-1.000_si0.786_1100').T
+    ell, Psi=genfromtxt(CMBlensing_dir+'Pkappa_nicaea/Pkappa_nicaea25_Om0.296_Ol0.704_w-1.000_si0.794_1100').T
+
+    Pfidu /= ell*(ell+1)/2/pi
+    Pom /=  ell*(ell+1)/2/pi
+    Psi /=  ell*(ell+1)/2/pi
+
+    fsky=20000./41253
+    dom=0.299-0.296
+    dsi=0.794-0.786
+    idx= where((ell<2000)&(ell>50))[0]
+    delta_ell= ell[idx]-ell[idx[0]-1:idx[-1]]
+    iNlkk=interpolate.interp1d(Ls, Nlkk)(ell[idx])
+
+    var_theory = (Pfidu[idx]+iNlkk)**2/fsky/(2.0*ell[idx]+1.0)/delta_ell
+    
+    cov_mat = zeros((len(idx),len(idx)))
+    for i in range(len(idx)):
+        cov_mat[i,i]=var_theory[i]
+    cov_inv = mat(cov_mat).I
+
+    Nom=mat(((Pom-Pfidu)/dom)[idx])
+    Nsi=mat(((Psi-Pfidu)/dsi)[idx])
+
+    F=mat(zeros((2,2)))
+    F[0,0]=0.5*trace(cov_inv*(2*Nom.T*Nom))
+    F[1,1]=0.5*trace(cov_inv*(2*Nsi.T*Nsi))
+    F[0,1]=0.5*trace(cov_inv*(Nom.T*Nsi+Nsi.T*Nom))
+    F[1,0]=0.5*trace(cov_inv*(Nsi.T*Nom+Nom.T*Nsi))
+    F_inv = F.I
+    
+    lines=[]
+    fidu_point=[0.296, 0.786]
+    f=figure(figsize=(8,6))
+    ax=f.add_subplot(111)
+    plot_cov_ellipse(F_inv, fidu_point,lw=4,ax=ax)
+    ax.set_xlim(0.283, 0.3125)
+    ax.set_ylim(0.772, 0.805)
+    ax.set_xlabel('$\Omega_m$',fontsize=24,weight='bold')
+    ax.set_ylabel('$\sigma_8$',fontsize=24,weight='bold')
+    ax.plot(fidu_point[0],fidu_point[1],'xk',markersize=12,mew=4)
+    
+    ax.annotate('Fisher', 
+                xy=(0.2913, 0.791),weight='bold', size=18,color='darkviolet',
+                xytext=(0.293, 0.796),
+                arrowprops=dict(facecolor='darkviolet', shrink=0.05,ec='none'),
+            )
+    ax.annotate('Simulation', 
+                xy=(0.301, 0.787), weight='bold',
+                size=18,color='limegreen',
+                xytext=(0.303, 0.7912),
+                arrowprops=dict(facecolor='limegreen', shrink=0.05,ec='none'),
+            )
+    
+    
+    ####### sim contour
+    om_fidu, si8_fidu=fidu_point
+    del_om, del_si8 =0.05,0.05
+    om0,om1,si80,si81=om_fidu-del_om, om_fidu+del_om, si8_fidu-del_si8, si8_fidu+del_si8
+    jjj=250
+    om_arr= linspace(om0,om1,jjj)
+    si8_arr=linspace(si80,si81, jjj+1)
+    iextent=[si80,si81,om0,om1]
+    X, Y = np.meshgrid(om_arr, si8_arr)
+    prob=load(CMBlensing_dir+'mat/Prob_noisy_ps_clough.npy').T
+    V=WLanalysis.findlevel(prob)
+
+    CS=ax.contour(X, Y, prob, levels=[V[0]], origin='lower',linewidths=4,colors='limegreen',label='sims')
+   
+    ax.tick_params(labelsize=16)
+    ax.locator_params(axis = 'both', nbins = 5)
+    #######
+    plt.subplots_adjust(left=0.14,bottom=0.14,right=0.96,top=0.96)
+    
+    #show()
+    savefig(CMBlensing_dir+'plot_official/plot_contour_fisher.pdf')
+    close()
+
+if plot_contour_PDF_pk_noisy:
+    om_fidu, si8_fidu=cosmo_params[12]
+    del_om, del_si8 =0.05, 0.05
+    om0,om1,si80,si81=om_fidu-del_om, om_fidu+del_om, si8_fidu-del_si8, si8_fidu+del_si8
+    
+    colors=[['darkorchid','plum','mediumvioletred','darkslategrey','limegreen'],
+            ['steelblue','deepskyblue','dodgerblue','darkslategrey','limegreen']]
+    for imethod in ('clough',):#'Rbf','linear'):#imethod='Rbf'#'clough'#'linear'
+        for j in range(2):
+            istat=['PDF','Peaks'][j]
+            
+            seed(55)
+            
+            labels = [r"$\rm{%s\,(%s')}$"%(istat,sigmaG) for sigmaG in sigmaG_arr[[1,3]] ]
+            labels.append(r"$\rm{%s\,(filtered)}$"%(istat))
+            labels.append(r"$\rm{PS}\,(\ell<2,000)$")
+            #labels.append(r"$\rm{PS}(\ell<10,000)$")
+            lines=[]
+            f=figure(figsize=(8,6))
+            ax=f.add_subplot(111)
+            iextent=[si80,si81,om0,om1]
+            jjj=-1
+            for sigmaG_idx in (1,3,4, 6, 5):#range(6):
+                jjj+=1
+                if sigmaG_idx==6:
+                    iii=100#250#
+                    prob=load(CMBNG_dir+'mat/filtered_Prob_fsky20000_noisy_%s_clough_del0.05.npy'%(['PDF','peaks'][j]))#_sigmaG80
+                elif sigmaG_idx==5:
+                    iii=250
+                    prob=load(CMBNG_dir+'mat/Prob_noisy_ps_clough.npy')
+                else:
+                    iii=100
+                    prob=load(CMBNG_dir+'mat/Prob_fsky20000_noisy_%s_clough_sigmaG%02d_del0.05.npy'%(['PDF','peaks'][j], sigmaG_arr[sigmaG_idx]*10))
+                om_arr= linspace(om0,om1,iii)
+                si8_arr=linspace(si80,si81, iii+1)
+                
+                X, Y = np.meshgrid(om_arr,si8_arr)
+                prob[isnan(prob)]=0
+                V=WLanalysis.findlevel(prob)
+                icolor=colors[j][jjj]
+                if sigmaG_idx!=4:
+                    #ax.contourf( X, Y, prob.T, levels=[V[0],V[1]], origin='lower', extent=iextent,linewidths=4, colors=[icolor, ])
+                    #if sigmaG_idx==6:
+                        #CS=ax.contour( X, Y, prob.T, levels=[V[0],], origin='lower', extent=iextent,linewidths=2, colors=[icolor, ],linestyles='dashed')
+                        
+                    #else:
+                    CS=ax.contour( X, Y, prob.T, levels=[V[0],], origin='lower', extent=iextent,linewidths=4, colors=[icolor, ])
+                    
+                    lines.append(CS.collections[0])
+
+            leg=ax.legend(lines, labels, ncol=1, labelspacing=0.3, prop={'size':18},loc=0)
+            leg.get_frame().set_visible(False)
+            ax.tick_params(labelsize=16)
+            ax.locator_params(axis = 'both', nbins = 6)
+            ax.set_ylabel('$\sigma_8$',fontsize=22)
+            ax.set_xlabel('$\Omega_m$',fontsize=22)
+            #ax.grid(True)
+            #ax.set_xlim(0.266, 0.343)
+            #ax.set_ylim(0.751, 0.819)
+            ax.set_xlim(0.263, 0.343)
+            ax.set_ylim(0.748, 0.829)
+            ax.plot(0.296, 0.786,'xk',markersize=5,mew=2)
+
+            plt.subplots_adjust(hspace=0.0,bottom=0.13,right=0.96,left=0.15)
+            #show()
+        
+            savefig(CMBNG_dir+'plot_official/plot_contour_noisy_%s_%s.pdf'%(istat,imethod))
+            close()
+
+if plot_contour_comb:
+    om_fidu, si8_fidu=cosmo_params[12]
+    del_om, del_si8 =0.05, 0.05
+    om0,om1,si80,si81=om_fidu-del_om, om_fidu+del_om, si8_fidu-del_si8, si8_fidu+del_si8
+    
+    colors=['limegreen','orchid','darkslategrey',]
+    imethod='clough'
+    labels = [r"$\rm{PS}\,(\ell<2,000)$",
+              r"$\rm{PS\,+\,PDF(5')\,+\,Peaks(5')}$",
+              r"$\rm{PS\,+\,PDF(filtered)\,+\,Peaks(5')}$"
+              ]
+    f=figure(figsize=(8,6))
+    ax=f.add_subplot(111)
+    iextent=[si80,si81,om0,om1]
+    prob_arr = [] 
+    prob_arr.append(load(CMBNG_dir+'mat/Prob_noisy_ps_clough.npy'))
+    prob_arr.append(load(CMBNG_dir+'mat/Prob_fsky20000_noisy_comb_clough_sigmaG50_del0.05.npy'))
+    prob_arr.append(load(CMBNG_dir+'mat/filtered_Prob_noisy_PDF_clough_sigmaG80.npy'))#optimize_Prob_fsky20000_noisy_comb_clough_sigmaG50_del0.05.npy'))
+    lines=[]           
+    for jjj in range(3):
+
+        if jjj==0 or jjj==2:
+            iii=250
+        else:
+            iii=100
+        prob=prob_arr[jjj]    
+        om_arr= linspace(om0,om1,iii)
+        si8_arr=linspace(si80,si81, iii+1)
+        
+        X, Y = np.meshgrid(om_arr,si8_arr)
+        prob[isnan(prob)]=0
+        V=WLanalysis.findlevel(prob)
+        
+        CS=ax.contour( X, Y, prob.T, levels=[V[0],], origin='lower', extent=iextent,linewidths=4, colors=colors[jjj])
+                
+        lines.append(CS.collections[0])
+
+    leg=ax.legend(lines, labels, ncol=1, labelspacing=0.3, prop={'size':18},loc=0)
+    leg.get_frame().set_visible(False)
+    ax.tick_params(labelsize=16)
+    ax.locator_params(axis = 'both', nbins = 6)
+    ax.set_ylabel('$\sigma_8$',fontsize=22)
+    ax.set_xlabel('$\Omega_m$',fontsize=22)
+    #ax.grid(True)
+    #ax.set_xlim(0.266, 0.343)
+    #ax.set_ylim(0.751, 0.819)
+    ax.set_xlim(0.263, 0.343)
+    ax.set_ylim(0.748, 0.829)
+    ax.plot(0.296, 0.786,'xk',markersize=5,mew=2)
+
+    plt.subplots_adjust(hspace=0.0,bottom=0.13,right=0.96,left=0.15)
+    show()
+    
+    #savefig(CMBNG_dir+'plot_official/plot_contour_noisy_comb_%s.pdf'%(imethod))
+    #close()
