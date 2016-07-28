@@ -91,7 +91,7 @@ for iPDF in (mean(PDF_noisy_GRF,axis=0), mean(PDF_noisy_kappa,axis=0), mean(PDF_
     
     x0=sum(iPDF*(PDFbincenter-mean(PDFbincenter)))
     xx=sum(iPDF*(PDFbincenter-mean(PDFbincenter))**2)/sum(iPDF)
-    print ['noisy_GRF','noisy_kappa','noiseless_kappa',][i], x0,xx
+    print ['noisy_GRF','noisy_kappa','noiseless_kappa',][i], x0, sqrt(xx)
     i+=1
 
 

@@ -13,7 +13,7 @@ filtered = 1
 compute_noisy_stats = 0
 load_noiseless_stats,optimizeit = 0,0
 load_nooisy_stats, sigmaG = 1, 5.0
-compute_noisy_contour = 1
+compute_noisy_contour = 0
 fsky_deg=2e4#1000.0
 
 #### stats77 comes from the fact noisy maps are 77 x 77 in size
@@ -90,9 +90,9 @@ def compute_GRF_PDF_ps_pk (cosmo, r, Gaus=0,sigmaG=8.0):
     kmap = FT2real(cosmo, r, Gaus=Gaus)
     ps = WLanalysis.PowerSpectrum(WLanalysis.smooth(kmap, 0.18), bins=bins)[1]#*2.0*pi/ell_arr**2
     if not filtered:
-        kmapsmooth8 = WLanalysis.smooth(kmap, 2.93*sigmaG/8.0)
-    PDF = PDFGen(kmapsmooth8, PDFbins)
-    peaks = peaksGen(kmapsmooth8, peak_bins)
+        kmap = WLanalysis.smooth(kmap, 2.93*sigmaG/8.0)
+    PDF = PDFGen(kmap, PDFbins)
+    peaks = peaksGen(kmap, peak_bins)
     return concatenate([ps, PDF, peaks])
 
 
@@ -124,11 +124,15 @@ if load_noiseless_stats:
 ### create stats for noisy TT
 if compute_noisy_stats:
     for cosmo in cosmo_noisy_arr:
-        for sigmaG in [1.0, 5.0, 8.0]:
-            print cosmo
-            #cosmo='Om0.394_Ol0.606_w-1.000_si0.776'#cosmo_noisy_arr[1]
-            all_stats77 = array([compute_GRF_PDF_ps_pk(cosmo,r,Gaus=0,sigmaG=sigmaG) for r in range(1000)])#1024 
-            save(CMBlensing_dir+'Pkappa_gadget/noisy/%snoisy_z1100_stats77_kappa_%s_sigmaG%02d.npy'%(['','filtered_'][filtered],cosmo,sigmaG*10), all_stats77)
+        if filtered:
+            all_stats77 = array([compute_GRF_PDF_ps_pk(cosmo,r,Gaus=0) for r in range(1000)])#1024 
+            save(CMBlensing_dir+'Pkappa_gadget/noisy/filtered_noisy_z1100_stats77_kappa_%s.npy'%(cosmo), all_stats77)
+        else:    
+            for sigmaG in [1.0, 5.0, 8.0]:
+                print cosmo
+                #cosmo='Om0.394_Ol0.606_w-1.000_si0.776'#cosmo_noisy_arr[1]
+                all_stats77 = array([compute_GRF_PDF_ps_pk(cosmo,r,Gaus=0,sigmaG=sigmaG) for r in range(1000)])#1024 
+                save(CMBlensing_dir+'Pkappa_gadget/noisy/%snoisy_z1100_stats77_kappa_%s_sigmaG%02d.npy'%(['','filtered_'][filtered],cosmo,sigmaG*10), all_stats77)
     #Gaus=0
     #morebins = 0
     #if morebins:
@@ -221,7 +225,7 @@ if compute_noisy_contour:
     for ismooth in (-1,):#(1,3,4):
     #-1 is for noisy maps
     #1-4 for 5 smoothing scales
-        for jj in (1,2):#range(1,4):#
+        for jj in (3,):#range(1,4):#
             istat=['ps','PDF','peaks','comb'][jj]
             for imethod in ('clough',):#('linear','clough','Rbf'):#
                                 
@@ -247,7 +251,7 @@ if compute_noisy_contour:
                     prob_plane = plane_gen(ips_fidu, ips, obs_arr, all_points46, om_arr, si8_arr,method=imethod)
                 
                 if filtered:
-                    save(CMBlensing_dir+'mat/filtered_Prob_fsky%i_%s_%s_%s_del%s.npy'%(fsky_deg, noise,istat, imethod, del_om),prob_plane)
+                    save(CMBlensing_dir+'mat/%sfiltered_Prob_fsky%i_%s_%s_%s_del%s.npy'%(['','optimize_'][optimizeit],fsky_deg, noise,istat, imethod, del_om),prob_plane)
                 else:
                     save(CMBlensing_dir+'mat/Prob_fsky%i_%s_%s_%s_sigmaG%02d_del%s.npy'%(fsky_deg, noise,istat, imethod, sigmaG*10, del_om),prob_plane)
                 

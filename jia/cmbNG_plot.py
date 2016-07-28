@@ -31,11 +31,11 @@ plot_noiseless_peaks_PDF = 0
 plot_sample_noiseless_noisy_map = 0
 plot_noisy_peaks_PDF, filtered = 0, 0
 plot_reconstruction_noise = 0
-plot_corr_mat, do_noisy = 0, 0
+plot_corr_mat, do_noisy = 1, 0
 plot_contour_PDF_pk, area_scaling, fsky_deg = 0, 0, 1000.0
 plot_contour_noisy_old, area_scaling_noisy, fsky_deg_noisy = 0, 0, 1000.0
 plot_contour_theory = 0
-plot_contour_PDF_pk_noisy = 1
+plot_contour_PDF_pk_noisy = 0
 plot_contour_comb = 0
 
 if plot_design:
@@ -234,7 +234,7 @@ if plot_noisy_peaks_PDF:
     import matplotlib.gridspec as gridspec 
     bins=25
     morebins=1
-    filtered=0
+    filtered=1
     if morebins:
         PDFbins = linspace(-0.24, 0.24, 201)    
         peak_bins = linspace(-0.1,0.18,36)
@@ -280,6 +280,12 @@ if plot_noisy_peaks_PDF:
         #ax=f.add_subplot(111)
         ax.errorbar(x,mean(y,axis=0),std(y,axis=0)*sqrt(12/2e4),color='k',fmt='-',capsize=0,label=r'$\kappa\,\rm{maps}$',lw=1)
         ax.errorbar(x,mean(z,axis=0),std(z,axis=0)*sqrt(12/2e4),color='k',fmt='--',capsize=0,label=r'$\rm{GRF}$',lw=2)
+        
+        ######## SNR ########
+        inside=((mean(y,axis=0)-mean(z,axis=0))/std(z,axis=0)/sqrt(12/2e4))**2
+        inside=inside[~isnan(inside)]
+        print sqrt(sum(inside))
+        
         ax.set_yscale('log')
         handles0, labels0 = ax.get_legend_handles_labels()
         handles=[h[0] for h in handles0]
@@ -312,8 +318,8 @@ if plot_noisy_peaks_PDF:
         plt.subplots_adjust(hspace=0.05,left=0.15)
         plt.setp(ax.get_xticklabels(), visible=False)
         #show()
-        savefig(CMBNG_dir+'plot_official/plot_noisy_%s%s%s.pdf'%(['ps','PDF','peaks'][i],['','_filtered'][filtered],['','_morebins'][morebins]))
-        savefig(CMBNG_dir+'plot_official/png/plot_noisy_%s%s%s.png'%(['ps','PDF','peaks'][i],['','_filtered'][filtered],['','_morebins'][morebins]))
+        #savefig(CMBNG_dir+'plot_official/plot_noisy_%s%s%s.pdf'%(['ps','PDF','peaks'][i],['','_filtered'][filtered],['','_morebins'][morebins]))
+        #savefig(CMBNG_dir+'plot_official/png/plot_noisy_%s%s%s.png'%(['ps','PDF','peaks'][i],['','_filtered'][filtered],['','_morebins'][morebins]))
         close()
 
 if plot_reconstruction_noise: 
@@ -677,6 +683,8 @@ if plot_corr_mat:
         fidu_stats77 = fidu_stats77[:,~isnan(fidu_stats77[0])]
         cov_mat = cov(fidu_stats77,rowvar=0)
         corr_mat = WLanalysis.corr_mat(cov_mat)
+    
+    from matplotlib.patches import FancyBboxPatch
     fig=figure(figsize=(7,6))
     ax=fig.add_subplot(111)
     im=ax.imshow(corr_mat,origin='lower',interpolation='nearest',cmap='PuOr',vmax=1,vmin=-1)
@@ -696,24 +704,40 @@ if plot_corr_mat:
     #plt.setp(ax.get_yticklabels(), visible=False)
     #plt.setp(ax.get_xticklabels(), visible=False)
     if do_noisy:
-        ax.text(0, 148, 'PS',  fontsize=14,
-            bbox={'width':80, 'facecolor':'thistle', 'alpha':1})
-        ax.text(23, 148, 'PDF', fontsize=14,
-            bbox={'width':255, 'facecolor':'lightsalmon', 'alpha':1})
-        ax.text(123, 148, 'Peaks',  fontsize=14,
-            bbox={'width':60, 'facecolor':'powderblue', 'alpha':1})
+        ax.text(0, 148, 'PS',  fontsize=14)#, 
+            #bbox=dict([[0,148],[5,148]],facecolor='thistle', alpha=1))
+        #bb=FancyBboxPatch((0,148),15,100,facecolor='thistle',ec='k',alpha=1,boxstyle='square')
+        #ax.set_ylim(0,150)
+        #ax.add_patch(bb)
+        #ax.text(23, 148, 'PDF', fontsize=14)#,
+            ##bbox={'width':255, 'facecolor':'lightsalmon', 'alpha':1})
+        #ax.text(123, 148, 'Peaks',  fontsize=14)#,
+            #bbox={'width':60, 'facecolor':'powderblue', 'alpha':1})
     
     else:
-        ax.text(0, 98, 'PS',  fontsize=14,
-            bbox={'width':90, 'facecolor':'thistle', 'alpha':1})
-        ax.text(20, 98, 'PDF', fontsize=14,
-            bbox={'width':230, 'facecolor':'lightsalmon', 'alpha':1})
-        ax.text(70, 98, 'Peaks',  fontsize=14,
-            bbox={'width':95, 'facecolor':'powderblue', 'alpha':1})
+        ax.text(0, 96, 'PS',  fontsize=14)
+        bb=FancyBboxPatch((-1,95), 25, 10, fc='thistle', alpha=1)
+        ax.set_ylim(0,100)
+        ax.add_patch(bb)
+        ax.text(20, 96, 'PDF', fontsize=14)
+        bb=FancyBboxPatch((20,95), 100, 10, fc='powderblue', alpha=1)
+        ax.add_patch(bb)
+        ax.text(70, 96, 'Peaks',  fontsize=14)
+        bb=FancyBboxPatch((70,95), 30, 10, fc='lightsalmon', alpha=1)
+        ax.add_patch(bb)
+        ax.set_yticks(ax.get_yticks()[:-1])
+        
+            #bbox={'width':95, 'facecolor':'powderblue', 'alpha':1})
+        #ax.text(0, 98, 'PS',  fontsize=14,
+            #bbox={'width':90, 'facecolor':'thistle', 'alpha':1})
+        #ax.text(20, 98, 'PDF', fontsize=14,
+            #bbox={'width':230, 'facecolor':'lightsalmon', 'alpha':1})
+        #ax.text(70, 98, 'Peaks',  fontsize=14,
+            #bbox={'width':95, 'facecolor':'powderblue', 'alpha':1})
     plt.subplots_adjust(hspace=0.0,wspace=0, left=0.04, right=0.97,bottom=0.08,top=0.9)
-    #show()
-    savefig(CMBlensing_dir+'plot_official/corr_mat%s.pdf'%(['','_noisy'][do_noisy]))
-    close()
+    show()
+    #savefig(CMBlensing_dir+'plot_official/corr_mat%stest.pdf'%(['','_noisy'][do_noisy]))
+    #close()
 
 def plot_cov_ellipse(cov, pos, nstd=2, ax=None, lw=4, **kwargs):
     def eigsorted(cov):
@@ -785,7 +809,7 @@ if plot_contour_theory:
     ax.set_ylabel('$\sigma_8$',fontsize=24,weight='bold')
     ax.plot(fidu_point[0],fidu_point[1],'xk',markersize=12,mew=4)
     
-    ax.annotate('Fisher', 
+    ax.annotate('Analytical Theory', 
                 xy=(0.2913, 0.791),weight='bold', size=18,color='darkviolet',
                 xytext=(0.293, 0.796),
                 arrowprops=dict(facecolor='darkviolet', shrink=0.05,ec='none'),
@@ -887,7 +911,7 @@ if plot_contour_PDF_pk_noisy:
             plt.subplots_adjust(hspace=0.0,bottom=0.13,right=0.96,left=0.15)
             #show()
         
-            savefig(CMBNG_dir+'plot_official/plot_contour_noisy_%s_%s.pdf'%(istat,imethod))
+            savefig(CMBNG_dir+'plot_official/plot_contour_noisy_%s_%s.png'%(istat,imethod))
             close()
 
 if plot_contour_comb:
@@ -895,11 +919,11 @@ if plot_contour_comb:
     del_om, del_si8 =0.05, 0.05
     om0,om1,si80,si81=om_fidu-del_om, om_fidu+del_om, si8_fidu-del_si8, si8_fidu+del_si8
     
-    colors=['limegreen','orchid','darkslategrey',]
+    colors=['limegreen','orchid','dodgerblue',]
     imethod='clough'
     labels = [r"$\rm{PS}\,(\ell<2,000)$",
               r"$\rm{PS\,+\,PDF(5')\,+\,Peaks(5')}$",
-              r"$\rm{PS\,+\,PDF(filtered)\,+\,Peaks(5')}$"
+              r"$\rm{PS\,+\,PDF(filtered)\,+\,Peaks(filtered)}$"
               ]
     f=figure(figsize=(8,6))
     ax=f.add_subplot(111)
@@ -907,11 +931,13 @@ if plot_contour_comb:
     prob_arr = [] 
     prob_arr.append(load(CMBNG_dir+'mat/Prob_noisy_ps_clough.npy'))
     prob_arr.append(load(CMBNG_dir+'mat/Prob_fsky20000_noisy_comb_clough_sigmaG50_del0.05.npy'))
-    prob_arr.append(load(CMBNG_dir+'mat/filtered_Prob_noisy_PDF_clough_sigmaG80.npy'))#optimize_Prob_fsky20000_noisy_comb_clough_sigmaG50_del0.05.npy'))
-    lines=[]           
+    prob_arr.append(load(CMBNG_dir+'mat/filtered_Prob_fsky20000_noisy_comb_clough_del0.05.npy'))#optimize_Prob_fsky20000_noisy_comb_clough_sigmaG50_del0.05.npy'))
+    lines=[]
+    lws=[4,2,3]
+    lss=['solid','solid','dashed']
     for jjj in range(3):
 
-        if jjj==0 or jjj==2:
+        if jjj==0:
             iii=250
         else:
             iii=100
@@ -923,7 +949,7 @@ if plot_contour_comb:
         prob[isnan(prob)]=0
         V=WLanalysis.findlevel(prob)
         
-        CS=ax.contour( X, Y, prob.T, levels=[V[0],], origin='lower', extent=iextent,linewidths=4, colors=colors[jjj])
+        CS=ax.contour( X, Y, prob.T, levels=[V[0],], origin='lower', extent=iextent,linewidths=lws[jjj],linestyles=lss[jjj], colors=colors[jjj])
                 
         lines.append(CS.collections[0])
 
@@ -933,15 +959,13 @@ if plot_contour_comb:
     ax.locator_params(axis = 'both', nbins = 6)
     ax.set_ylabel('$\sigma_8$',fontsize=22)
     ax.set_xlabel('$\Omega_m$',fontsize=22)
-    #ax.grid(True)
-    #ax.set_xlim(0.266, 0.343)
-    #ax.set_ylim(0.751, 0.819)
-    ax.set_xlim(0.263, 0.343)
-    ax.set_ylim(0.748, 0.829)
-    ax.plot(0.296, 0.786,'xk',markersize=5,mew=2)
+
+    ax.set_xlim(0.282, 0.314)
+    ax.set_ylim(0.768, 0.809)
+    ax.plot(0.296, 0.786,'xk',markersize=10,mew=4)
 
     plt.subplots_adjust(hspace=0.0,bottom=0.13,right=0.96,left=0.15)
-    show()
+    #show()
     
-    #savefig(CMBNG_dir+'plot_official/plot_contour_noisy_comb_%s.pdf'%(imethod))
-    #close()
+    savefig(CMBNG_dir+'plot_official/plot_contour_noisy_comb_%s.png'%(imethod))
+    close()
