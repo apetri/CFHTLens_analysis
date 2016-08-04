@@ -6,7 +6,8 @@ from scipy import interpolate, stats, fftpack
 
 #cosmo_arr = genfromtxt('/Users/jia/weaklensing/CMBnonGaussian/cosmo_arr.txt',dtype='string')
 ## e.g.Om0.145_Ol0.855_w-2.211_si1.303
-cosmo_arr = ['Om0.299_Ol0.701_w-1.000_si0.786','Om0.296_Ol0.704_w-1.000_si0.794']#'Om0.296_Ol0.704_w-1.000_si0.786', 
+cosmo_arr = ['Om0.296_Ol0.704_w-1.000_si0.786', ]
+#'Om0.299_Ol0.701_w-1.000_si0.786','Om0.296_Ol0.704_w-1.000_si0.794']#
 def create_Nicaea_ps (cosmo):
 	param0 = float(cosmo[2:7])
 	param1 = 1-param0

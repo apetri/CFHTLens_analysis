@@ -9,12 +9,14 @@ import pickle
 from pylab import *
 
 ######## knobs ########
-filtered = 1
+filtered = 0
 compute_noisy_stats = 0
 load_noiseless_stats,optimizeit = 0,0
-load_nooisy_stats, sigmaG = 1, 5.0
+load_nooisy_stats, sigmaG = 1, 8.0
 compute_noisy_contour = 0
 fsky_deg=2e4#1000.0
+compute_interp = 0
+make_noisy_maps = 0
 
 #### stats77 comes from the fact noisy maps are 77 x 77 in size
 #### constants
@@ -175,7 +177,7 @@ if load_nooisy_stats:
     peaks_all77 = all_stats77_mean[:,bins+len(PDFbins)-1:]
     
     ps_fidu = all_stats77[1,:][:,idx_not_nan]
-    PDF_fidu = all_stats77_filtered[1,:,bins:bins+len(PDFbins)-1]
+    PDF_fidu = all_stats77[1,:,bins:bins+len(PDFbins)-1]
     peaks_fidu = all_stats77[1,:,bins+len(PDFbins)-1:]
     
     if filtered:
@@ -199,7 +201,7 @@ if load_nooisy_stats:
         
         
 ############ contour
-def plane_gen (fidu_mat, ips_avg, obs_arr, cosmo_params, om_arr, si8_arr, method='linear'):
+def plane_gen (fidu_mat, ips_avg, obs_arr, cosmo_params, om_arr, si8_arr, method='clough'):
     
     interp_cosmo = WLanalysis.buildInterpolator2D(ips_avg, cosmo_params, method=method)
     cov_mat = cov(fidu_mat,rowvar=0)/(fsky_deg/12.5)# (2e4/12.5)#area factor for AdvACT
@@ -225,14 +227,16 @@ if compute_noisy_contour:
     for ismooth in (-1,):#(1,3,4):
     #-1 is for noisy maps
     #1-4 for 5 smoothing scales
-        for jj in (3,):#range(1,4):#
-            istat=['ps','PDF','peaks','comb'][jj]
+        for jj in (4,):#range(1,4):#
+            istat=['ps','PDF','peaks','comb','pkPDF'][jj]
             for imethod in ('clough',):#('linear','clough','Rbf'):#
                                 
                 if noise == 'noisy': 
                     print sigmaG,istat, imethod
-                    ips_fidu = [ps_fidu, PDF_fidu, peaks_fidu, concatenate([ps_fidu, PDF_fidu, peaks_fidu],axis=1)][jj]
-                    ips = [ps_all77, PDF_all77, peaks_all77, concatenate([ps_all77, PDF_all77, peaks_all77],axis=1)][jj]
+                    ips_fidu = [ps_fidu, PDF_fidu, peaks_fidu, concatenate([ps_fidu, PDF_fidu, peaks_fidu],axis=1),
+                                concatenate([PDF_fidu, peaks_fidu],axis=1)][jj]
+                    ips = [ps_all77, PDF_all77, peaks_all77, concatenate([ps_all77, PDF_all77, peaks_all77],axis=1), 
+                           concatenate([PDF_all77, peaks_all77],axis=1)][jj]
                     obs_arr=ips[1]
                     #print ips_fidu.shape, obs_arr.shape, ips.shape
                     prob_plane = plane_gen(ips_fidu, ips, obs_arr, cosmo_params_noisy, om_arr, si8_arr,method=imethod)
@@ -255,10 +259,45 @@ if compute_noisy_contour:
                 else:
                     save(CMBlensing_dir+'mat/Prob_fsky%i_%s_%s_%s_sigmaG%02d_del%s.npy'%(fsky_deg, noise,istat, imethod, sigmaG*10, del_om),prob_plane)
                 
-                #imshow(prob_plane,origin='lower',interpolation='nearest',extent=[si80,si81,om0,om1])
+                imshow(prob_plane,origin='lower',interpolation='nearest',extent=[si80,si81,om0,om1]);show()
                 #title('%sProb_fsky%i_%s_%s_%s_sigmaG%02d'%(['','filtered_'][filtered], fsky_deg, noise,istat, imethod, sigmaG_arr[ismooth]*10),fontsize=10)
                 #savefig(CMBlensing_dir+'plot/optimize_%sProb_fsky%i_%s_%s_%s_sigmaG%02d.png'%(['','filtered_'][filtered], fsky_deg, noise,istat, imethod, sigmaG_arr[ismooth]*10))
                 #close()
                 
 
 
+if compute_interp:
+    ismooth=3
+    om_fidu, si8_fidu=all_points[18]
+    ips = concatenate([ps_noiseless46, PDF_noiseless46[:,ismooth,:],
+                        peaks_noiseless46[:,ismooth,:]],axis=1)
+    ips_fidu = concatenate([ps_fidu_noiseless, PDF_fidu_noiseless[:,ismooth,:], peaks_fidu_noiseless[:,ismooth,:]],axis=1)
+    obs_arr=ips[1]
+    
+    interp_cosmo = WLanalysis.buildInterpolator2D(delete(ips,16,axis=0), delete(all_points46,16,axis=0), method='clough')
+    
+    save(CMBlensing_dir+'interp.npy',[mean(ips_fidu,axis=0),std(ips_fidu,axis=0),interp_cosmo(all_points46[16])])
+    
+
+if make_noisy_maps:
+    #for cosmo in cosmo_noisy_arr:
+        #print cosmo
+        #[save(CMBlensing_dir+'colin_noisy/maps4andrea/reconMaps_%s/recon_%s%s_r%04d.npy'%(cosmo,['','filtered_'][filtered],cosmo, r),FT2real(cosmo, r, Gaus=0)) for r in range(1000)]
+    def FT2real_fidu(r, Gaus=0):
+        if Gaus:
+            a = FTmapGen_Gaus(r)
+        else:
+            a = FTmapGen_fidu(r)
+        if filtered:
+            #print 'filtered'
+            a*=filter_mat
+        areal = real(fftpack.ifft2(a))
+        inorm = (2*pi*3.5/360.0)/(77.0**2)
+        areal /= inorm    
+        return areal
+    
+    cosmo=cosmo_noisy_arr[1]
+    ifilter = ['','_filtered'][filtered]
+    [save(CMBlensing_dir+'colin_noisy/maps4andrea/fidu_kappa%s/fidukappa%s_%s_r%04d.npy'%(ifilter, ifilter, cosmo, r),FT2real_fidu(r, Gaus=0)) for r in range(10000)]
+    print 'boo'
+    [save(CMBlensing_dir+'colin_noisy/maps4andrea/fidu_gauss%s/fidugauss%s_%s_r%04d.npy'%(ifilter, ifilter, cosmo, r),FT2real_fidu(r, Gaus=1)) for r in range(10000)]

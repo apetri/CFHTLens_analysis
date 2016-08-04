@@ -18,7 +18,7 @@ PPA = 2048.0/(sqrt(sizedeg)*60.0) #pixels per arcmin
 sigmaG_arr = array([0.5, 1.0, 2.0, 5.0, 8.0])
 sigmaP_arr = sigmaG_arr*PPA #smoothing scale in pixels
 
-#CMBlensing_dir = '/work/02977/jialiu/CMBnonGaussian/'
+CMBlensing_dir = '/work/02977/jialiu/CMBnonGaussian/'
 CMBNG_dir ='/Users/jia/weaklensing/CMBnonGaussian/'
 CMBlensing_dir = CMBNG_dir
 cosmo_arr = genfromtxt('/Users/jia/weaklensing/CMBnonGaussian/cosmo_arr.txt',dtype='string')
@@ -29,23 +29,38 @@ plot_design = 0
 plot_comp_nicaea = 0
 plot_noiseless_peaks_PDF = 0
 plot_sample_noiseless_noisy_map = 0
-plot_noisy_peaks_PDF, filtered = 0, 0
+plot_noisy_peaks_PDF, filtered = 0, 1
 plot_reconstruction_noise = 0
-plot_corr_mat, do_noisy = 1, 0
+plot_corr_mat, do_noisy = 0, 1
 plot_contour_PDF_pk, area_scaling, fsky_deg = 0, 0, 1000.0
 plot_contour_noisy_old, area_scaling_noisy, fsky_deg_noisy = 0, 0, 1000.0
-plot_contour_theory = 0
+plot_contour_theory = 0 
 plot_contour_PDF_pk_noisy = 0
 plot_contour_comb = 0
+plot_Cell_om_si = 0
+plot_interp = 0
+plot_skewness = 1
 
 if plot_design:
-    all_points=genfromtxt(CMBNG_dir+'model_point.txt')
-    idx = argsort(all_points.T[0])[4:]
-    om,si8=all_points[idx].T
+    all_points = genfromtxt(CMBlensing_dir+'model_point.txt')
+    idx46=where(all_points.T[0]>0.14)
+    all_points46 = all_points[idx46]
+    cosmo_arr = array(['Om%.3f_Ol%.3f_w-1.000_si%.3f'%(cosmo[0],1-cosmo[0], cosmo[1]) for cosmo in all_points])
+    cosmo_noisy_arr0 = os.listdir(CMBlensing_dir+'colin_noisy')#[3:-1]
+    cosmo_noisy_arr0 =[cosmo[10:] for cosmo in cosmo_noisy_arr0]
+    idx_noisy = where([cosmo in cosmo_noisy_arr0 for cosmo in cosmo_arr])[0]
+    cosmo_noisy_arr = cosmo_arr[idx_noisy]
+    cosmo_params_noisy = all_points[idx_noisy]
+    om, si8=all_points46.T
+    om0,si80=all_points46[16]
+    
     f=figure(figsize=(6,6))
     ax=f.add_subplot(111)
     ax.scatter(om,si8,marker='D',color='k')
-    ax.scatter(om[12],si8[12], s=300, marker='o',color='red', facecolors='none', edgecolors='r',lw=2)
+    ax.scatter(om0,si80, s=300, marker='o',color='orangered', facecolors='none', edgecolors='r',lw=2)
+    for iom, isi8 in cosmo_params_noisy:
+        if not iom==om0:
+            ax.scatter(iom,isi8, s=300, marker='o',color='deepskyblue', facecolors='none', edgecolors='deepskyblue',lw=2)
     ax.set_xlabel(r'$\Omega_m$',fontsize=22)
     ax.set_ylabel(r'$\sigma_8$',fontsize=22)
     ax.set_xlim(0.12,0.75)
@@ -57,12 +72,15 @@ if plot_design:
     close()
     
 if plot_comp_nicaea:
+    cosmo='Om0.296_Ol0.704_w-1.000_si0.786'
     ell_gadget = (WLanalysis.edge2center(logspace(log10(1.0),log10(1024),51))*360./sqrt(12.25))[:34]
 
     ell_nicaea, ps_nicaea=genfromtxt('/Users/jia/weaklensing/CMBnonGaussian/Pkappa_nicaea/Pkappa_nicaea25_{0}_1100'.format(cosmo))[33:-5].T
     
+    ell_nicaea2, ps_nicaea_linear=genfromtxt('/Users/jia/weaklensing/CMBnonGaussian/Pkappa_nicaea/Pkappa_nicaea25_{0}_1100_linear'.format(cosmo))[33:-5].T
+    
     def get_1024(j):
-        pspkPDFgadget=load('/Users/jia/weaklensing/CMBnonGaussian/Pkappa_gadget/kappa_{0}_ps_PDF_pk_z1100_{1}.npy'.format(fidu_cosmo, j))
+        pspkPDFgadget=load('/Users/jia/weaklensing/CMBnonGaussian/Pkappa_gadget/noiseless/kappa_{0}_ps_PDF_pk_z1100_{1}.npy'.format(fidu_cosmo, j))
         ps_gadget=array([pspkPDFgadget[i][0] for i in range(len(pspkPDFgadget))])
         ps_gadget=ps_gadget.squeeze()
         return ps_gadget
@@ -74,8 +92,9 @@ if plot_comp_nicaea:
     
     f=figure(figsize=(8,6))
     ax=f.add_subplot(111)
-    ax.errorbar(ell_gadget, mean(ps_gadget,axis=0),std(ps_gadget,axis=0),label=r'$\rm{Simulation}$',lw=1.0,color='k')
-    ax.plot(ell_nicaea, ps_nicaea,'k--',lw=2,label=r'$\rm{Smith03+Takahashi12}$')
+    ax.errorbar(ell_gadget, mean(ps_gadget,axis=0),std(ps_gadget,axis=0),label=r'$\rm{simulation}$',lw=2.0,color='k',capsize=0)
+    ax.plot(ell_nicaea, ps_nicaea,ls='-',lw=3,color='deepskyblue',label=r'$\rm{Smith03+Takahashi12}$')
+    ax.plot(ell_nicaea2, ps_nicaea_linear,ls='--',color='orangered',lw=4,label=r'$\rm{linear}$')
     ax.set_xscale('log')
     ax.set_yscale('log')
     #ax.set_title(cosmo)
@@ -90,13 +109,13 @@ if plot_comp_nicaea:
     plt.tight_layout()
     #show()
     savefig(CMBNG_dir+'plot_official/plot_theory_comparison.pdf')
-    savefig(CMBNG_dir+'plot/plot_theory_comparison.jpg')
+    #savefig(CMBNG_dir+'plot/plot_theory_comparison.jpg')
     close()
     
 
 if plot_noiseless_peaks_PDF:
-    mat_kappa=load('/Users/jia/weaklensing/CMBnonGaussian/Pkappa_gadget/kappa_{0}_ps_PDF_pk_z1100.npy'.format(fidu_cosmo))
-    mat_GRF=load('/Users/jia/weaklensing/CMBnonGaussian/Pkappa_gadget/GRF_{0}_ps_PDF_pk_z1100.npy'.format(fidu_cosmo))
+    mat_kappa=load('/Users/jia/weaklensing/CMBnonGaussian/Pkappa_gadget/noiseless/kappa_{0}_ps_PDF_pk_z1100.npy'.format(fidu_cosmo))
+    mat_GRF=load('/Users/jia/weaklensing/CMBnonGaussian/Pkappa_gadget/noiseless/GRF_{0}_ps_PDF_pk_z1100.npy'.format(fidu_cosmo))
     N=len(mat_kappa)
     
     ############ plot peaks and PDF ##########
@@ -122,7 +141,7 @@ if plot_noiseless_peaks_PDF:
             ##ax.errorbar(x_arr[i][1:], mean(iPDF_kappa, axis=0), std(iPDF_kappa, axis=0)/sqrt(3e4/12), label='kappa',capsize=0,)
             ##ax.errorbar(x_arr[i][1:], mean(iPDF_GRF, axis=0), std(iPDF_GRF, axis=0)/sqrt(3e4/12), fmt='--',label='GRF',capsize=0,)
 
-            #ax.locator_params(axis = 'x', nbins = 4)
+            #ax.locator_params(axis = 'x', nbins = 6)
             #ax.locator_params(axis = 'y', nbins = 2)
             #ax.annotate(r"$\theta_G=%.1f'$"%(sigmaG_arr[i]), xy=(0.025, 0.8), xycoords='axes fraction',fontsize=16)
             #ax.set_yscale('log')
@@ -168,7 +187,7 @@ if plot_noiseless_peaks_PDF:
             ax.errorbar(x_arr[i][1:], mean(iPDF_kappa, axis=0)/mean(iPDF_GRF, axis=0)-1, std(iPDF_kappa, axis=0)/sqrt(2e4/12)/mean(iPDF_GRF, axis=0), capsize=0,color='k')
 
             ax.locator_params(axis = 'x', nbins = 6)
-            locator_params(axis = 'y', nbins = 3)
+            locator_params(axis = 'y', nbins = 5)
             ax.annotate(r"$\theta_G=%.1f'$"%(sigmaG_arr[i]), xy=(0.025, 0.8), xycoords='axes fraction',fontsize=16)
             meanPDF = mean(iPDF_kappa, axis=0)
             if j==2:#peaks
@@ -179,19 +198,20 @@ if plot_noiseless_peaks_PDF:
             else:
                 #ax.set_ylim(amax([amin(meanPDF), 1e-6])*1.5, amax(meanPDF)*2.5)
                 x0=1.5*abs(x_arr[i][1:][where(meanPDF==WLanalysis.findlevel(meanPDF)[-1])[0]])
-                ax.set_xlim(-x0,x0)
+                ax.set_xlim(-x0,x0)#(-0.1,0.1)#
+                
 
             if i == 4:
                     ax.set_xlabel('$\kappa$',fontsize=22)
             ax.tick_params(labelsize=16)
-            ax.set_ylim(-0.5,0.5)
+            ax.set_ylim(-0.6,0.6)
             
         plt.tight_layout()
         plt.subplots_adjust(hspace=0.2,wspace=0, left=0.18, right=0.95)
-        #show()
+        show()
         #savefig(CMBNG_dir+'plot/plot_noiseless_%s.jpg'%(['PDF','peaks'][j-1]))
-        savefig(CMBNG_dir+'plot_official/plot_noiseless_%s_diff.pdf'%(['PDF','peaks'][j-1]))
-        close()
+        #savefig(CMBNG_dir+'plot_official/plot_noiseless_%s_diff.pdf'%(['PDF','peaks'][j-1]))
+        #close()
 
 if plot_sample_noiseless_noisy_map:
     import pickle
@@ -234,7 +254,7 @@ if plot_noisy_peaks_PDF:
     import matplotlib.gridspec as gridspec 
     bins=25
     morebins=1
-    filtered=1
+    #filtered=1
     if morebins:
         PDFbins = linspace(-0.24, 0.24, 201)    
         peak_bins = linspace(-0.1,0.18,36)
@@ -289,9 +309,10 @@ if plot_noisy_peaks_PDF:
         ax.set_yscale('log')
         handles0, labels0 = ax.get_legend_handles_labels()
         handles=[h[0] for h in handles0]
-        leg=ax.legend(handles,labels0,ncol=1, prop={'size':24}, loc=8)
-        leg.get_frame().set_visible(False)
-        ax.set_ylabel([r'$\rm{PDF}$', r'$\rm{N_{peaks}\, (deg^{-2})}$'][i-1],fontsize=22)
+        leg=ax.legend(handles,labels0, title=[r"$\rm{Gaussian\, (8')}$",r"$\rm{Wiener\, filter}$"][filtered],ncol=1, prop={'size':20}, loc=8, frameon=0)
+        leg.get_title().set_fontsize('18')
+        #plt.setp(leg.get_title(),fontsize='xx-small')
+        ax.set_ylabel([r'$\rm{PDF}$', r'$\rm{N_{peaks}\, (deg^{-2})}$'][i-1],fontsize=18)
         
         ax.tick_params(labelsize=16)
         
@@ -318,8 +339,8 @@ if plot_noisy_peaks_PDF:
         plt.subplots_adjust(hspace=0.05,left=0.15)
         plt.setp(ax.get_xticklabels(), visible=False)
         #show()
-        #savefig(CMBNG_dir+'plot_official/plot_noisy_%s%s%s.pdf'%(['ps','PDF','peaks'][i],['','_filtered'][filtered],['','_morebins'][morebins]))
-        #savefig(CMBNG_dir+'plot_official/png/plot_noisy_%s%s%s.png'%(['ps','PDF','peaks'][i],['','_filtered'][filtered],['','_morebins'][morebins]))
+        savefig(CMBNG_dir+'plot_official/plot_noisy_%s%s%s.pdf'%(['ps','PDF','peaks'][i],['','_filtered'][filtered],['','_morebins'][morebins]))
+        savefig(CMBNG_dir+'plot_official/png/plot_noisy_%s%s%s.png'%(['ps','PDF','peaks'][i],['','_filtered'][filtered],['','_morebins'][morebins]))
         close()
 
 if plot_reconstruction_noise: 
@@ -519,18 +540,21 @@ if plot_contour_PDF_pk:
                 prob[isnan(prob)]=0
                 V=WLanalysis.findlevel(prob)
                 icolor=colors[j][jjj]
-                CS=ax.contour( X, Y, prob.T, levels=[V[0],], origin='lower', extent=iextent,linewidths=4, colors=[icolor, ])
+                CS=ax.contour( X, Y, prob.T, levels=[V[0],], origin='lower', extent=iextent,linewidths=2, colors=[icolor, ])
                 lines.append(CS.collections[0])
 
-            leg=ax.legend(lines, labels, ncol=1, labelspacing=0.3, prop={'size':18},loc=0)
+            leg=ax.legend(lines, labels, ncol=1, labelspacing=0.3, prop={'size':18},loc=0)#,title=r'${\rm noisy}$')
             leg.get_frame().set_visible(False)
             ax.tick_params(labelsize=16)
+            ax.set_title(r'${\rm noiseless}$',fontsize=22)
             ax.locator_params(axis = 'both', nbins = 5)
             ax.set_ylabel('$\sigma_8$',fontsize=22)
             ax.set_xlabel('$\Omega_m$',fontsize=22)
             #ax.grid(True)
-            ax.set_xlim(0.276, 0.324)
-            ax.set_ylim(0.777, 0.797)
+            #ax.set_xlim(0.276, 0.324)
+            #ax.set_ylim(0.777, 0.797)
+            ax.set_xlim(0.263, 0.343)
+            ax.set_ylim(0.748, 0.829)
             ax.plot(0.296, 0.786,'xk',markersize=5,mew=2)
 
             plt.subplots_adjust(hspace=0.0,bottom=0.13,right=0.96,left=0.15)
@@ -680,8 +704,13 @@ if plot_corr_mat:
     else:
         filtered=0
         fidu_stats77 = load(CMBlensing_dir+'Pkappa_gadget/noisy/%snoisy_z1100_stats77_fidu_kappa.npy'%(['','filtered_'][filtered]))
-        fidu_stats77 = fidu_stats77[:,~isnan(fidu_stats77[0])]
-        cov_mat = cov(fidu_stats77,rowvar=0)
+        ps = fidu_stats77[:,:25]
+        ps = ps[:,~isnan(ps[0])][:,:20]
+        PDF = sum(fidu_stats77[:,25:125].reshape(-1,50,2),axis=-1)
+        peaks = fidu_stats77[:,125:]
+        all_stats = concatenate([ps,PDF,peaks],axis=1)
+        #fidu_stats77 = fidu_stats77[:,~isnan(fidu_stats77[0])]
+        cov_mat = cov(all_stats,rowvar=0)
         corr_mat = WLanalysis.corr_mat(cov_mat)
     
     from matplotlib.patches import FancyBboxPatch
@@ -703,41 +732,24 @@ if plot_corr_mat:
     )
     #plt.setp(ax.get_yticklabels(), visible=False)
     #plt.setp(ax.get_xticklabels(), visible=False)
-    if do_noisy:
-        ax.text(0, 148, 'PS',  fontsize=14)#, 
-            #bbox=dict([[0,148],[5,148]],facecolor='thistle', alpha=1))
-        #bb=FancyBboxPatch((0,148),15,100,facecolor='thistle',ec='k',alpha=1,boxstyle='square')
-        #ax.set_ylim(0,150)
-        #ax.add_patch(bb)
-        #ax.text(23, 148, 'PDF', fontsize=14)#,
-            ##bbox={'width':255, 'facecolor':'lightsalmon', 'alpha':1})
-        #ax.text(123, 148, 'Peaks',  fontsize=14)#,
-            #bbox={'width':60, 'facecolor':'powderblue', 'alpha':1})
+
+    ax.text(0, 96, 'PS',  fontsize=14)
+    bb=FancyBboxPatch((-1,95), 25, 10, fc='thistle', alpha=1)
+    ax.set_ylim(0,100)
+    ax.add_patch(bb)
+    ax.text(20, 96, 'PDF', fontsize=14)
+    bb=FancyBboxPatch((20,95), 100, 10, fc='powderblue', alpha=1)
+    ax.add_patch(bb)
+    ax.text(70, 96, 'Peaks',  fontsize=14)
+    bb=FancyBboxPatch((70,95), 30, 10, fc='lightsalmon', alpha=1)
+    ax.add_patch(bb)
+    ax.set_yticks(ax.get_yticks()[:-1])
+    ax.set_title(r'${\rm %s}$'%(['noiseless','noisy'][do_noisy]),fontsize=22)
     
-    else:
-        ax.text(0, 96, 'PS',  fontsize=14)
-        bb=FancyBboxPatch((-1,95), 25, 10, fc='thistle', alpha=1)
-        ax.set_ylim(0,100)
-        ax.add_patch(bb)
-        ax.text(20, 96, 'PDF', fontsize=14)
-        bb=FancyBboxPatch((20,95), 100, 10, fc='powderblue', alpha=1)
-        ax.add_patch(bb)
-        ax.text(70, 96, 'Peaks',  fontsize=14)
-        bb=FancyBboxPatch((70,95), 30, 10, fc='lightsalmon', alpha=1)
-        ax.add_patch(bb)
-        ax.set_yticks(ax.get_yticks()[:-1])
-        
-            #bbox={'width':95, 'facecolor':'powderblue', 'alpha':1})
-        #ax.text(0, 98, 'PS',  fontsize=14,
-            #bbox={'width':90, 'facecolor':'thistle', 'alpha':1})
-        #ax.text(20, 98, 'PDF', fontsize=14,
-            #bbox={'width':230, 'facecolor':'lightsalmon', 'alpha':1})
-        #ax.text(70, 98, 'Peaks',  fontsize=14,
-            #bbox={'width':95, 'facecolor':'powderblue', 'alpha':1})
     plt.subplots_adjust(hspace=0.0,wspace=0, left=0.04, right=0.97,bottom=0.08,top=0.9)
-    show()
-    #savefig(CMBlensing_dir+'plot_official/corr_mat%stest.pdf'%(['','_noisy'][do_noisy]))
-    #close()
+    #show()
+    savefig(CMBlensing_dir+'plot_official/corr_mat%s.pdf'%(['','_noisy'][do_noisy]))
+    close()
 
 def plot_cov_ellipse(cov, pos, nstd=2, ax=None, lw=4, **kwargs):
     def eigsorted(cov):
@@ -781,7 +793,7 @@ if plot_contour_theory:
     delta_ell= ell[idx]-ell[idx[0]-1:idx[-1]]
     iNlkk=interpolate.interp1d(Ls, Nlkk)(ell[idx])
 
-    var_theory = (Pfidu[idx]+iNlkk)**2/fsky/(2.0*ell[idx]+1.0)/delta_ell
+    var_theory = 2*(Pfidu[idx]+iNlkk)**2/fsky/(2.0*ell[idx]+1.0)/delta_ell
     
     cov_mat = zeros((len(idx),len(idx)))
     for i in range(len(idx)):
@@ -809,16 +821,16 @@ if plot_contour_theory:
     ax.set_ylabel('$\sigma_8$',fontsize=24,weight='bold')
     ax.plot(fidu_point[0],fidu_point[1],'xk',markersize=12,mew=4)
     
-    ax.annotate('Analytical Theory', 
-                xy=(0.2913, 0.791),weight='bold', size=18,color='darkviolet',
-                xytext=(0.293, 0.796),
-                arrowprops=dict(facecolor='darkviolet', shrink=0.05,ec='none'),
-            )
     ax.annotate('Simulation', 
-                xy=(0.301, 0.787), weight='bold',
-                size=18,color='limegreen',
-                xytext=(0.303, 0.7912),
+                xy=(0.288, 0.7935),weight='bold', size=18,color='limegreen',
+                xytext=(0.289, 0.797),
                 arrowprops=dict(facecolor='limegreen', shrink=0.05,ec='none'),
+            )
+    ax.annotate('Analytical Theory', 
+                xy=(0.303, 0.787), weight='bold',
+                size=18,color='darkviolet',
+                xytext=(0.30, 0.7915),
+                arrowprops=dict(facecolor='darkviolet', shrink=0.05,ec='none'),
             )
     
     
@@ -907,11 +919,11 @@ if plot_contour_PDF_pk_noisy:
             ax.set_xlim(0.263, 0.343)
             ax.set_ylim(0.748, 0.829)
             ax.plot(0.296, 0.786,'xk',markersize=5,mew=2)
-
+            ax.set_title(r'${\rm noisy}$',fontsize=22)
             plt.subplots_adjust(hspace=0.0,bottom=0.13,right=0.96,left=0.15)
             #show()
-        
-            savefig(CMBNG_dir+'plot_official/plot_contour_noisy_%s_%s.png'%(istat,imethod))
+            
+            savefig(CMBNG_dir+'plot_official/plot_contour_noisy_%s_%s.pdf'%(istat,imethod))
             close()
 
 if plot_contour_comb:
@@ -922,16 +934,19 @@ if plot_contour_comb:
     colors=['limegreen','orchid','dodgerblue',]
     imethod='clough'
     labels = [r"$\rm{PS}\,(\ell<2,000)$",
+              #r"$\rm{PS\,+\,PDF(5')\,+\,Peaks(5')}$",
+              r"$\rm{PDF(5')\,+\,Peaks(5')}$",
               r"$\rm{PS\,+\,PDF(5')\,+\,Peaks(5')}$",
-              r"$\rm{PS\,+\,PDF(filtered)\,+\,Peaks(filtered)}$"
+              #r"$\rm{PS\,+\,PDF(filtered)\,+\,Peaks(filtered)}$"
               ]
     f=figure(figsize=(8,6))
     ax=f.add_subplot(111)
     iextent=[si80,si81,om0,om1]
     prob_arr = [] 
     prob_arr.append(load(CMBNG_dir+'mat/Prob_noisy_ps_clough.npy'))
+    prob_arr.append(load(CMBNG_dir+'mat/Prob_fsky20000_noisy_pkPDF_clough_sigmaG50_del0.05.npy'))
     prob_arr.append(load(CMBNG_dir+'mat/Prob_fsky20000_noisy_comb_clough_sigmaG50_del0.05.npy'))
-    prob_arr.append(load(CMBNG_dir+'mat/filtered_Prob_fsky20000_noisy_comb_clough_del0.05.npy'))#optimize_Prob_fsky20000_noisy_comb_clough_sigmaG50_del0.05.npy'))
+    #prob_arr.append(load(CMBNG_dir+'mat/filtered_Prob_fsky20000_noisy_comb_clough_del0.05.npy'))#optimize_Prob_fsky20000_noisy_comb_clough_sigmaG50_del0.05.npy'))
     lines=[]
     lws=[4,2,3]
     lss=['solid','solid','dashed']
@@ -967,5 +982,123 @@ if plot_contour_comb:
     plt.subplots_adjust(hspace=0.0,bottom=0.13,right=0.96,left=0.15)
     #show()
     
-    savefig(CMBNG_dir+'plot_official/plot_contour_noisy_comb_%s.png'%(imethod))
+    savefig(CMBNG_dir+'plot_official/plot_contour_noisy_comb_%s.pdf'%(imethod))
     close()
+    
+if plot_Cell_om_si:
+    ell,Pfidu=genfromtxt(CMBNG_dir+'Pkappa_nicaea/Pkappa_nicaea25_Om0.296_Ol0.704_w-1.000_si0.786_1100').T
+    ell, Pom =genfromtxt(CMBNG_dir+'Pkappa_nicaea/Pkappa_nicaea25_Om0.299_Ol0.701_w-1.000_si0.786_1100').T
+    ell, Psi=genfromtxt(CMBNG_dir+'Pkappa_nicaea/Pkappa_nicaea25_Om0.296_Ol0.704_w-1.000_si0.794_1100').T
+    f=figure()
+    ax=f.add_subplot(111)
+    ax.plot(ell, zeros(len(ell)), '--', color='k',lw=2, label=r'${\rm Fiducial}$')
+    ax.plot(ell, Pom/Pfidu-1, '-', color='darkorchid',lw=4, label=r'$+1\%\; \Omega_m$')
+    ax.plot(ell, Psi/Pfidu-1, '-', color='mediumvioletred',lw=2, label=r'$+1\%\; \sigma_8$')
+    legend(loc=2,frameon=0,fontsize=22)
+    ax.set_xlabel(r'$\ell$',fontsize=22)
+    ax.set_ylabel(r'$\Delta C_{\ell}/ C_{\ell}^{\rm fiducial}$',fontsize=22)
+    ax.set_xlim(10,2500)
+    ax.set_ylim(-0.024, 0.05)
+    #ax.set_yscale('log')
+    ax.set_xscale('log')
+    ax.tick_params(labelsize=16)
+    plt.subplots_adjust(hspace=0.0, wspace=0.2, left=0.15, right=0.95, bottom=0.15, top=0.95)
+    #show()
+    ax.locator_params(axis = 'y', nbins = 5)
+    savefig(CMBNG_dir+'plot_official/plot_Cell_diff.pdf')
+    close()
+
+if plot_interp:
+    ips_mean, ips_std, ips_interp = load(CMBlensing_dir+'interp.npy')
+    ips_std *= 1/sqrt(1000)
+    ell_arr2048=array([   110.50448683,    126.93632224,    145.81154455,    167.49348136,
+          192.39948651,    221.00897366,    253.87264448,    291.62308909,
+          334.98696272,    384.79897302,    442.01794731,    507.74528896,
+          583.24617818,    669.97392544,    769.59794604,    884.03589463,
+         1015.49057792,   1166.49235637,   1339.94785088,   1539.19589208,
+         1768.07178925,   2030.98115583,   2332.98471274,   2679.89570175,
+         3078.39178417,   3536.14357851,   4061.96231167,   4665.96942547,
+         5359.79140351,   6156.78356833,   7072.28715702,   8123.92462333,
+         9331.93885094,  10719.58280701,  12313.56713667,  14144.57431404,
+        16247.84924667,  18663.87770189,  21439.16561402,  24627.13427334,
+        28289.14862808,  32495.69849334,  37327.75540378,  42878.33122805,
+        49254.26854668,  56578.29725615,  64991.39698667,  74655.51080755,
+        85756.6624561 ,  98508.53709335])
+    
+    idx_cut2000 = array([ 0,  2,  5,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,  21])
+    xbins=[ell_arr2048[idx_cut2000],PDFbin_arr[3][1:],peak_bins_arr[3][4:-4]]
+    idx_arr = [arange(18), arange(18,18+100),arange(118+3,143-4)] #arange(118,143)]
+    
+    f=figure(figsize=(6,8))
+    for i in arange(3):
+        x = xbins[i]
+        y = ips_mean[idx_arr[i]]
+        ystd = ips_std[idx_arr[i]]/y
+        yinterp = ips_interp[idx_arr[i]]
+        if i==1:
+            x=x[::2]
+            y=mean(y.reshape(-1,2),axis=-1)
+            ystd=mean(ystd.reshape(-1,2),axis=-1)
+            yinterp=mean(yinterp.reshape(-1,2),axis=-1)
+        
+        ax=f.add_subplot(3, 1, i+1)
+        
+        ax.errorbar(x, zeros(len(x)),ystd,lw=1,ls='--',color='k')
+        ax.plot(x, yinterp/y-1, 'k',lw=2)
+
+        #ax.locator_params(axis = 'x', nbins = 4)
+        ax.locator_params(axis = 'y', nbins = 5)
+        ax.set_ylim(-0.06,0.06)
+        if i ==0:
+            
+            ax.set_xscale('log')
+            ax.set_xlabel('$\ell$',fontsize=22)
+            ax.set_ylabel(r'$\Delta C_{\ell} / C_\ell$',fontsize=20)
+            ax.set_xlim(100,2e3)
+        elif i==1:
+            ax.set_xlabel('$\kappa$',fontsize=22)
+            ax.set_ylabel(r'$\Delta\rm{PDF} / {\rm{PDF}}$',fontsize=20)
+            ax.set_xlim(x[0],x[-1])
+        else:
+            ax.set_xlabel(r'$\kappa$',fontsize=22)
+            ax.set_ylabel(r'$\Delta N_{\rm peaks}/N_{\rm peaks}$',fontsize=20)
+            ax.set_xlim(x[0],x[-1])
+            ax.set_ylim(-0.14,0.141)
+        ax.tick_params(labelsize=16)
+        
+    plt.tight_layout()
+    plt.subplots_adjust(hspace=0.4,bottom=0.1,right=0.96)#hspace=0.2,wspace=0, left=0.18, right=0.95)
+    #show()
+    savefig(CMBNG_dir+'plot_official/plot_interp.pdf')
+    close()
+
+if plot_skewness:
+    ends = [0.22, 0.1, 0.08]# [0.5, 0.22, 0.18, 0.1, 0.08]
+    PDFbins_noiseless = [linspace(-end, end, 101) for end in ends]
+    PDFbins_noisy = linspace(-0.12, 0.12, 101)
+    
+    fidu_stats_noiseless = load(CMBlensing_dir+'Pkappa_gadget/noiseless/kappa_Om0.296_Ol0.704_w-1.000_si0.786_ps_PDF_pk_z1100_10240.npy')
+    PDF_fidu_noiseless = array([fidu_stats_noiseless[j][1] for j in range(1024,10240)])[:,[1,3,4],:]
+    
+    fidu_stats77 = array([load (CMBlensing_dir+'Pkappa_gadget/noisy/noisy_z1100_stats77_kappa_Om0.296_Ol0.704_w-1.000_si0.786_sigmaG%02d.npy'%(sigmaG*10))[:1000,:] for sigmaG in (1,5,8)])
+    PDF_noisy = fidu_stats77[:,:,25:25+len(PDFbins_noisy)-1]
+    
+    skewness = zeros([3,2]) # noiseless, noisy
+    center_noisy = WLanalysis.edge2center(PDFbins_noisy)
+    from scipy import stats
+    for i in range(3):
+        #center_nl = WLanalysis.edge2center(PDFbins_noiseless[i])
+        iPDFnl = PDF_fidu_noiseless[:,i,:]
+        iPDFnoisy = PDF_noisy[i]
+        #mean_nl = sum(center_nl * iPDFnl,axis=1)/sum(iPDFnl, axis=1) 
+        #mean_noisy = sum(center_noisy * iPDFnoisy,axis=1)/sum(iPDFnoisy, axis=1) 
+        #std_nl = sqrt(sum(center_nl**2 * iPDFnl,axis=1)/sum(iPDFnl, axis=1) )
+        #std_noisy = sqrt(sum(center_noisy**2 * iPDFnoisy,axis=1)/sum(iPDFnoisy, axis=1) )
+        
+        #skews_nl = sum(iPDFnl*((center_nl-mean_nl)/std_nl)**3,axis=1)/sum(PDF_fidu_noiseless[:,i,:],axis=1)
+        
+        #skews_noisy = sum(iPDFnoisy*center_noisy**3,axis=1)/sum(PDF_noisy[i],axis=1)
+        
+        skewness[i][0] = mean(stats.skew(iPDFnl,axis=1))
+        skewness[i][1] = mean(stats.skew(iPDFnoisy,axis=1))
+    print skewness
