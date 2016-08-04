@@ -18,5 +18,5 @@ def iskew (i):
     skewness_NOISY = [skew(WLanalysis.smooth(ikmap_NOISY, ismooth).flatten() ) for ismooth in sigmaG_arr*PPA_NOISY]
     return [skewness_NL, skewness_NOISY]
 
-skew_arr = array(pool.map(iskew, range(1,1000))
+skew_arr = array(pool.map(iskew, range(1,1000)))
 save('/work/02977/jialiu/CMBL_skewness.npy',skew_arr)
