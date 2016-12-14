@@ -22,11 +22,11 @@ import sys, os
 
 make_kappaProj_cat = 0
 make_kappaProj_map = 0
-plot_maps = 1
+plot_maps = 0
 xcorr_kappaProj_kappaLens = 0
 plot_overlapping_peaks = 0
 find_foreground_halos, random_direction = 0, 0
-plot_N_peak, ttest = 0, 0## ttest is student t-test for probability
+plot_N_peak, ttest = 1, 0## ttest is student t-test for probability
 plot_halo_properties = 0
 plot_concentration, plot_peaks_c15 = 0, 0
 compare_peak_noise = 0
@@ -617,7 +617,7 @@ if plot_N_peak:
 
     N_mean, N_std = zeros((2,20))
     rN_mean, rN_std = zeros((2,20))
-    hi_kappa=0.2#0.5
+    hi_kappa=0.05#0.2
     kappa_edges = linspace(0.005, hi_kappa,21)
     
     from scipy import stats
@@ -635,7 +635,7 @@ if plot_N_peak:
 
         ittest=stats.ttest_ind(iN_halos,irN_halos)
         ttest_arr.append(ittest)
-        print 0.5*(k1+k0), ittest[1]
+        print 0.5*(k1+k0), ittest[1], N_mean[i], rN_mean[i]
         
     if not ttest:
         np.random.seed(399)

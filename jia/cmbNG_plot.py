@@ -31,15 +31,15 @@ plot_noiseless_peaks_PDF = 0
 plot_sample_noiseless_noisy_map = 0
 plot_noisy_peaks_PDF, filtered = 0, 1
 plot_reconstruction_noise = 0
-plot_corr_mat, do_noisy = 0, 1
+plot_corr_mat, do_noisy = 1, 0
 plot_contour_PDF_pk, area_scaling, fsky_deg = 0, 0, 1000.0
 plot_contour_noisy_old, area_scaling_noisy, fsky_deg_noisy = 0, 0, 1000.0
-plot_contour_theory = 0 
+plot_contour_theory = 0
 plot_contour_PDF_pk_noisy = 0
 plot_contour_comb = 0
 plot_Cell_om_si = 0
 plot_interp = 0
-plot_skewness = 1
+plot_skewness = 0
 
 if plot_design:
     all_points = genfromtxt(CMBlensing_dir+'model_point.txt')
@@ -303,7 +303,7 @@ if plot_noisy_peaks_PDF:
         
         ######## SNR ########
         inside=((mean(y,axis=0)-mean(z,axis=0))/std(z,axis=0)/sqrt(12/2e4))**2
-        inside=inside[~isnan(inside)]
+        inside=inside[~isnan(inside) & isfinite(inside)]
         print sqrt(sum(inside))
         
         ax.set_yscale('log')
@@ -339,8 +339,8 @@ if plot_noisy_peaks_PDF:
         plt.subplots_adjust(hspace=0.05,left=0.15)
         plt.setp(ax.get_xticklabels(), visible=False)
         #show()
-        savefig(CMBNG_dir+'plot_official/plot_noisy_%s%s%s.pdf'%(['ps','PDF','peaks'][i],['','_filtered'][filtered],['','_morebins'][morebins]))
-        savefig(CMBNG_dir+'plot_official/png/plot_noisy_%s%s%s.png'%(['ps','PDF','peaks'][i],['','_filtered'][filtered],['','_morebins'][morebins]))
+        #savefig(CMBNG_dir+'plot_official/plot_noisy_%s%s%s.pdf'%(['ps','PDF','peaks'][i],['','_filtered'][filtered],['','_morebins'][morebins]))
+        #savefig(CMBNG_dir+'plot_official/png/plot_noisy_%s%s%s.png'%(['ps','PDF','peaks'][i],['','_filtered'][filtered],['','_morebins'][morebins]))
         close()
 
 if plot_reconstruction_noise: 
@@ -393,7 +393,7 @@ if plot_reconstruction_noise:
             ax.set_xscale('log')
             ax.set_xlabel('$\ell$',fontsize=22)
             ax.set_ylabel(r'$\ell(\ell+1)C_{\ell}/2\pi$',fontsize=20)
-            ax.set_xlim(130,2e4)
+            ax.set_xlim(90,3e3)
         elif i==1:
             leg=ax.legend(ncol=1, labelspacing=0.3, prop={'size':16},loc=8)
             leg.get_frame().set_visible(False)
@@ -716,7 +716,7 @@ if plot_corr_mat:
     from matplotlib.patches import FancyBboxPatch
     fig=figure(figsize=(7,6))
     ax=fig.add_subplot(111)
-    im=ax.imshow(corr_mat,origin='lower',interpolation='nearest',cmap='PuOr',vmax=1,vmin=-1)
+    im=ax.imshow(corr_mat,origin='lower',interpolation='nearest',cmap='PuOr',vmax=0.1,vmin=-0.1)
     cbar = fig.colorbar(im)
     cbar.ax.tick_params(labelsize=16)
     plt.xticks(fontsize=16)
@@ -747,9 +747,9 @@ if plot_corr_mat:
     ax.set_title(r'${\rm %s}$'%(['noiseless','noisy'][do_noisy]),fontsize=22)
     
     plt.subplots_adjust(hspace=0.0,wspace=0, left=0.04, right=0.97,bottom=0.08,top=0.9)
-    #show()
-    savefig(CMBlensing_dir+'plot_official/corr_mat%s.pdf'%(['','_noisy'][do_noisy]))
-    close()
+    show()
+    #savefig(CMBlensing_dir+'plot_official/corr_mat%s.pdf'%(['','_noisy'][do_noisy]))
+    #close()
 
 def plot_cov_ellipse(cov, pos, nstd=2, ax=None, lw=4, **kwargs):
     def eigsorted(cov):
@@ -853,9 +853,9 @@ if plot_contour_theory:
     #######
     plt.subplots_adjust(left=0.14,bottom=0.14,right=0.96,top=0.96)
     
-    #show()
-    savefig(CMBlensing_dir+'plot_official/plot_contour_fisher.pdf')
-    close()
+    show()
+    #savefig(CMBlensing_dir+'plot_official/plot_contour_fisher.pdf')
+    #close()
 
 if plot_contour_PDF_pk_noisy:
     om_fidu, si8_fidu=cosmo_params[12]
@@ -960,6 +960,13 @@ if plot_contour_comb:
         om_arr= linspace(om0,om1,iii)
         si8_arr=linspace(si80,si81, iii+1)
         
+        ############ marginalized error #############
+        prob_om = sum(prob, axis=1)
+        prob_si8 = sum(prob, axis=0)
+        delta_oms = om_arr[prob_om>WLanalysis.findlevel(prob_om)[0]]
+        delta_si8s = si8_arr[prob_si8>WLanalysis.findlevel(prob_si8)[0]]
+        print ['PS','PDF+Peaks','PS+PDF+Peaks'][jjj], 'delta_om', delta_oms[-1]-delta_oms[0], 'delta_si8',  delta_si8s[-1]-delta_si8s[0]
+        
         X, Y = np.meshgrid(om_arr,si8_arr)
         prob[isnan(prob)]=0
         V=WLanalysis.findlevel(prob)
@@ -982,7 +989,7 @@ if plot_contour_comb:
     plt.subplots_adjust(hspace=0.0,bottom=0.13,right=0.96,left=0.15)
     #show()
     
-    savefig(CMBNG_dir+'plot_official/plot_contour_noisy_comb_%s.pdf'%(imethod))
+    #savefig(CMBNG_dir+'plot_official/plot_contour_noisy_comb_%s.pdf'%(imethod))
     close()
     
 if plot_Cell_om_si:
@@ -1073,32 +1080,44 @@ if plot_interp:
     close()
 
 if plot_skewness:
-    ends = [0.22, 0.1, 0.08]# [0.5, 0.22, 0.18, 0.1, 0.08]
-    PDFbins_noiseless = [linspace(-end, end, 101) for end in ends]
-    PDFbins_noisy = linspace(-0.12, 0.12, 101)
+    skew_GRF_mean = array([-0.29340457, -0.33032634, -0.75293509, -0.4970827 , -0.3324177 ])
+    skew_GRF_std = array([ 0.0718468 ,  0.07587833,  0.11654383,  0.17339482,  0.22071048])
+    labels = [r"$%s'$"%(sigmaG) for sigmaG in [0.5, 1.0, 2.0, 5.0, 8.0]]
     
-    fidu_stats_noiseless = load(CMBlensing_dir+'Pkappa_gadget/noiseless/kappa_Om0.296_Ol0.704_w-1.000_si0.786_ps_PDF_pk_z1100_10240.npy')
-    PDF_fidu_noiseless = array([fidu_stats_noiseless[j][1] for j in range(1024,10240)])[:,[1,3,4],:]
+    skews = load(CMBlensing_dir+'CMBL_skewness.npy')
+    skews_mean = mean(skews, axis=0)
+    skews_std = std(skews, axis=0)
     
-    fidu_stats77 = array([load (CMBlensing_dir+'Pkappa_gadget/noisy/noisy_z1100_stats77_kappa_Om0.296_Ol0.704_w-1.000_si0.786_sigmaG%02d.npy'%(sigmaG*10))[:1000,:] for sigmaG in (1,5,8)])
-    PDF_noisy = fidu_stats77[:,:,25:25+len(PDFbins_noisy)-1]
+    f=figure(figsize=(7,8))
+    ax=f.add_subplot(211)
+    ax2=f.add_subplot(212)
     
-    skewness = zeros([3,2]) # noiseless, noisy
-    center_noisy = WLanalysis.edge2center(PDFbins_noisy)
-    from scipy import stats
-    for i in range(3):
-        #center_nl = WLanalysis.edge2center(PDFbins_noiseless[i])
-        iPDFnl = PDF_fidu_noiseless[:,i,:]
-        iPDFnoisy = PDF_noisy[i]
-        #mean_nl = sum(center_nl * iPDFnl,axis=1)/sum(iPDFnl, axis=1) 
-        #mean_noisy = sum(center_noisy * iPDFnoisy,axis=1)/sum(iPDFnoisy, axis=1) 
-        #std_nl = sqrt(sum(center_nl**2 * iPDFnl,axis=1)/sum(iPDFnl, axis=1) )
-        #std_noisy = sqrt(sum(center_noisy**2 * iPDFnoisy,axis=1)/sum(iPDFnoisy, axis=1) )
-        
-        #skews_nl = sum(iPDFnl*((center_nl-mean_nl)/std_nl)**3,axis=1)/sum(PDF_fidu_noiseless[:,i,:],axis=1)
-        
-        #skews_noisy = sum(iPDFnoisy*center_noisy**3,axis=1)/sum(PDF_noisy[i],axis=1)
-        
-        skewness[i][0] = mean(stats.skew(iPDFnl,axis=1))
-        skewness[i][1] = mean(stats.skew(iPDFnoisy,axis=1))
-    print skewness
+    ax.errorbar(arange(5), skews_mean[0],skews_std[0],capsize=0, fmt= '^',lw=1.5, mfc='deepskyblue',mec='deepskyblue',label=r'${\rm noiseless \; \kappa}$',ms=10,color='deepskyblue')
+    ax.errorbar(arange(5)-0.03, skews_mean[1], skews_std[1],capsize=0, fmt='d',lw=1.5, mec='orangered',mfc='orangered',label=r'${\rm noisy \;\kappa}$',ms=10,color='orangered')
+    ax.errorbar(arange(5)+0.03, skew_GRF_mean, skew_GRF_std,capsize=0, fmt= 'o',lw=1.5, mec='darkorchid',mfc='darkorchid',label=r'${\rm noisy \;{\rm GRF}}$',ms=10,color='darkorchid')
+    ax.plot((-1,6),(0,0),'k--')
+    
+    
+    ax.set_ylabel(r'$S$', fontsize=20)
+    ax.set_ylim(-1,1.3)
+    ax.set_xlim(-0.7, 4.5)
+    ax.legend(frameon=1,fontsize=18,ncol=1,numpoints=1)
+    
+    ax2.plot(arange(5), skews_mean[1]/skew_GRF_mean-1, 'd',lw=1.5, mec='orangered',mfc='orangered',label=r'${\rm noisy \;(\kappa)}$',ms=10,color='orangered')#capsize=0,
+    ax2.set_ylabel(r'$S^{\kappa}_{\rm noisy}/S^{\rm GRF}_{\rm noisy}-1$', fontsize=20)
+    ax2.set_xlabel(r'${\rm smoothing\;\;scale}$', fontsize=22)
+    ax2.set_xlim(-0.7, 4.5)
+    ax2.locator_params(axis = 'y', nbins = 3)
+    ax2.set_ylim(-0.041, 0.003)
+    ax.tick_params(axis='y', labelsize=16)
+    plt.setp(ax.get_xticklabels(), visible=False)
+    ax2.tick_params(axis='y', labelsize=16)
+    ax2.set_yticks([-0.04, -0.03,-0.02,-0.01])
+    plt.xticks(range(5), labels, rotation=15, fontsize=18)
+    plt.subplots_adjust(hspace=0.05, wspace=0., left=0.18, right=0.96, bottom=0.13, top=0.96)
+    #show()
+    
+    
+    savefig(CMBNG_dir+'plot_official/plot_skewness3.pdf')
+    close()
+ 

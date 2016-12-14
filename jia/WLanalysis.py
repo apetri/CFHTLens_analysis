@@ -587,7 +587,7 @@ def PowerSpectrum_Pell_binning(img, sizedeg = 12.25, edges = None, logbins = Tru
 ########## end: power spectrum ############################
 
 
-def CrossCorrelate(img1, img2, edges = None, logbins = True, sigmaG1=0, sigmaG2=0,sizedeg=False):#edges should be pixels
+def CrossCorrelate(img1, img2, edges = None, logbins = True, sigmaG1=0, sigmaG2=0,sizedeg=False,PPA=PPA512):#edges should be pixels
     '''Calculate the power spectrum for a square image, with normalization.
     Input:
     img1, img2 = input square image in numpy array.
@@ -606,7 +606,7 @@ def CrossCorrelate(img1, img2, edges = None, logbins = True, sigmaG1=0, sigmaG2=
     F1 = fftshift(fftpack.fft2(img1))
     F2 = fftshift(fftpack.fft2(img2))
     psd2D = np.conj(F1)*F2#calculate cross correlation
-    psd2D /= bell_2D(size, sigmaG1*PPA512)*bell_2D(size, sigmaG2*PPA512)
+    psd2D /= bell_2D(size, sigmaG1*PPA)*bell_2D(size, sigmaG2*PPA)
     ell_arr, psd1D = azimuthalAverage(psd2D, center=None, edges = edges,logbins = logbins)
     ell_arr = edge2center(ell_arr)
     ell_arr *= 360./sqrt(sizedeg)# normalized to our current map size

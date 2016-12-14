@@ -13,8 +13,8 @@ filtered = 0
 compute_noisy_stats = 0
 load_noiseless_stats,optimizeit = 0,0
 load_nooisy_stats, sigmaG = 1, 8.0
-compute_noisy_contour = 0
-fsky_deg=2e4#1000.0
+compute_noisy_contour = 1
+fsky_deg=2e4#1000.0#
 compute_interp = 0
 make_noisy_maps = 0
 
@@ -220,14 +220,14 @@ if compute_noisy_contour:
     om_fidu, si8_fidu=all_points[18]
     del_om, del_si8 = 0.05,0.05#0.15, 0.15
     om0,om1,si80,si81=om_fidu-del_om, om_fidu+del_om, si8_fidu-del_si8, si8_fidu+del_si8
-    jjj=100
+    jjj=100#50#
     om_arr= linspace(om0,om1,jjj)
     si8_arr=linspace(si80,si81, jjj+1)
 
     for ismooth in (-1,):#(1,3,4):
     #-1 is for noisy maps
     #1-4 for 5 smoothing scales
-        for jj in (4,):#range(1,4):#
+        for jj in (3,):#
             istat=['ps','PDF','peaks','comb','pkPDF'][jj]
             for imethod in ('clough',):#('linear','clough','Rbf'):#
                                 
@@ -237,7 +237,13 @@ if compute_noisy_contour:
                                 concatenate([PDF_fidu, peaks_fidu],axis=1)][jj]
                     ips = [ps_all77, PDF_all77, peaks_all77, concatenate([ps_all77, PDF_all77, peaks_all77],axis=1), 
                            concatenate([PDF_all77, peaks_all77],axis=1)][jj]
-                    obs_arr=ips[1]
+                    
+                    obs_arr=ips[1].copy()
+                    ####### test interpolation and gaussian assumption ########
+                    ##ips = delete(ips,1,axis=0)
+                    ##cosmo_params_noisy = delete(cosmo_params_noisy,1,axis=0)
+                    
+                    
                     #print ips_fidu.shape, obs_arr.shape, ips.shape
                     prob_plane = plane_gen(ips_fidu, ips, obs_arr, cosmo_params_noisy, om_arr, si8_arr,method=imethod)
                 elif noise == 'noiseless':
@@ -254,12 +260,12 @@ if compute_noisy_contour:
                         continue
                     prob_plane = plane_gen(ips_fidu, ips, obs_arr, all_points46, om_arr, si8_arr,method=imethod)
                 
-                if filtered:
-                    save(CMBlensing_dir+'mat/%sfiltered_Prob_fsky%i_%s_%s_%s_del%s.npy'%(['','optimize_'][optimizeit],fsky_deg, noise,istat, imethod, del_om),prob_plane)
-                else:
-                    save(CMBlensing_dir+'mat/Prob_fsky%i_%s_%s_%s_sigmaG%02d_del%s.npy'%(fsky_deg, noise,istat, imethod, sigmaG*10, del_om),prob_plane)
+                #if filtered:
+                    #save(CMBlensing_dir+'mat/%sfiltered_Prob_fsky%i_%s_%s_%s_del%s.npy'%(['','optimize_'][optimizeit],fsky_deg, noise,istat, imethod, del_om),prob_plane)
+                #else:
+                    #save(CMBlensing_dir+'mat/Prob_fsky%i_%s_%s_%s_sigmaG%02d_del%s.npy'%(fsky_deg, noise,istat, imethod, sigmaG*10, del_om),prob_plane)
                 
-                imshow(prob_plane,origin='lower',interpolation='nearest',extent=[si80,si81,om0,om1]);show()
+                #imshow(prob_plane,origin='lower',interpolation='nearest',extent=[si80,si81,om0,om1])#;show()
                 #title('%sProb_fsky%i_%s_%s_%s_sigmaG%02d'%(['','filtered_'][filtered], fsky_deg, noise,istat, imethod, sigmaG_arr[ismooth]*10),fontsize=10)
                 #savefig(CMBlensing_dir+'plot/optimize_%sProb_fsky%i_%s_%s_%s_sigmaG%02d.png'%(['','filtered_'][filtered], fsky_deg, noise,istat, imethod, sigmaG_arr[ismooth]*10))
                 #close()
