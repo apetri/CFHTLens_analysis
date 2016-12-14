@@ -41,7 +41,7 @@ pool=MPIPool()
 if not pool.is_master():
     pool.wait()
     sys.exit(0)
-a=pool.map(BispecGen, range(1000))
+a=pool.map(BispecGen, arange(1,1025))
 save(main_dir+'%s_BS.npy'%(fidu_cosmo), a)
 pool.close()
 print '---DONE---DONE---'
