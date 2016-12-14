@@ -29,7 +29,7 @@ def BispecGen (r, cosmo = fidu_cosmo, R_arr = [1.0, 2.0, 5.0]):
     print cosmo, r
     ikmap = kmapGen(cosmo, r)
     ikmap -= mean(ikmap) ## set mean to 0
-    bs_arr = zeros(shape(3,50))
+    bs_arr = zeros(shape=(3,50))
     
     for i in range(len(R_arr)):
         ikmap_smooth = WLanalysis.smooth(ikmap,  R_arr[i]*PPA)
