@@ -33,7 +33,7 @@ def BispecGen (r, cosmo = fidu_cosmo, R_arr = [1.0, 2.0, 5.0]):
     
     for i in range(len(R_arr)):
         ikmap_smooth = WLanalysis.smooth(ikmap,  R_arr[i]*PPA)
-        bs_arr[i] = CrossCorrelate(ikmap**2, ikmap, sizedeg = 12.25, PPA=PPA)[1]
+        bs_arr[i] = WLanalysis.CrossCorrelate(ikmap**2, ikmap, sizedeg = 12.25, PPA=PPA)[1]
     return bs_arr
 
 
