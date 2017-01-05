@@ -51,43 +51,60 @@ if machine == 'stampede':
     if not pool.is_master():
         pool.wait()
         sys.exit(0)
-    a=pool.map(BispecGen, arange(1,1025))
-    save(main_dir+'%s_BS.npy'%(fidu_cosmo), a)
+    cosmo = cosmo_arr[int(sys.argv[1])]
+    print cosmo
+    fn = main_dir+'%s_BS.npy'%(cosmo)
+    if not os.path.isfile(n):
+        iBispecGen = lambda r: BispecGen (r, cosmo)
+        a=pool.map(BispecGen, arange(1,1025))
+        save(fn, a)
     pool.close()
     print '---DONE---DONE---'
 
 else:
+
+#kappakappa_sq_linlog_full_new_theta_1e-2_nlPS_Bfit_Jias_Simulation_kmin7.560000e-03_kmax3.528000e+01_Filter_1_R1arcmin.pkl
     ell_arr2048=WLanalysis.PowerSpectrum(zeros(shape=(2048,2048)), bins=50)[0]
     BS_sims = load(main_dir+'Om0.296_Ol0.704_w-1.000_si0.786_BS.npy')
-    BS_sims_R1_mean,  BS_sims_R2_mean, BS_sims_R5_mean= mean(BS_sims,axis=0) *2*pi/ell_arr2048**2
-    BS_sims_R1_std,  BS_sims_R2_std, BS_sims_R5_std= std(BS_sims,axis=0)*2*pi/ell_arr2048**2
-
-    ell_theo1, BS_R1_theory = pickle.load(open(main_dir+'reintegratedbispectrum/kappakappa_sq_linlog_full_new_theta_1e-2_nlPS_Bfit_Jias_Simulation_kmin7.560000e-03_kmax3.528000e 01_Filter_1_R1arcmin.pkl'))[1:]
-    BS_R2_theory = pickle.load(open(main_dir+'reintegratedbispectrum/kappakappa_sq_linlog_full_new_theta_1e-2_nlPS_Bfit_Jias_Simulation_kmin7.560000e-03_kmax3.528000e 01_Filter_1_R2arcmin.pkl'))[2]
-    BS_R5_theory = pickle.load(open(main_dir+'reintegratedbispectrum/kappakappa_sq_linlog_full_new_theta_1e-2_nlPS_Bfit_Jias_Simulation_kmin7.560000e-03_kmax3.528000e 01_Filter_1_R5arcmin.pkl'))[2]
-    BS_R1_PBtheory = pickle.load(open(main_dir+'reintegratedbispectrum/kappakappa_sq_linlog_full_new_theta_1e-2_nlPS_Bfit_Jias_Simulation_kmin7.560000e-03_kmax3.528000e 01_Filter_1_postBorn_R1arcmin.pkl'))[2]
-    BS_R2_PBtheory = pickle.load(open(main_dir+'reintegratedbispectrum/kappakappa_sq_linlog_full_new_theta_1e-2_nlPS_Bfit_Jias_Simulation_kmin7.560000e-03_kmax3.528000e 01_Filter_1_postBorn_R2arcmin.pkl'))[2]
-    BS_R5_PBtheory = pickle.load(open(main_dir+'reintegratedbispectrum/kappakappa_sq_linlog_full_new_theta_1e-2_nlPS_Bfit_Jias_Simulation_kmin7.560000e-03_kmax3.528000e 01_Filter_1_postBorn_R5arcmin.pkl'))[2]
+    BS_sims_R1_mean,  BS_sims_R2_mean, BS_sims_R5_mean= mean(BS_sims,axis=0) *2*pi/ell_arr2048/(ell_arr2048+1.0)
+    BS_sims_R1_std,  BS_sims_R2_std, BS_sims_R5_std= std(BS_sims,axis=0)*2*pi/ell_arr2048/(ell_arr2048+1.0)
+#kappakappa_sq_linlog_full_new_theta_1e-2_nlPS_Bfit_Jias_Simulation_kmin7.560000e-03_kmax3.528000e+01_Filter_1_postBorn_R1arcmin.pkl
+    ell_theo1, BS_R1_theory = pickle.load(open(main_dir+'reintegratedbispectrum/kappakappa_sq_linlog_full_new_theta_1e-2_nlPS_Bfit_Jias_Simulation_kmin7.560000e-03_kmax3.528000e+01_Filter_1_R1arcmin.pkl'))[1:]
+    BS_R2_theory = pickle.load(open(main_dir+'reintegratedbispectrum/kappakappa_sq_linlog_full_new_theta_1e-2_nlPS_Bfit_Jias_Simulation_kmin7.560000e-03_kmax3.528000e+01_Filter_1_R2arcmin.pkl'))[2]
+    
+    BS_R2_theory_junk = pickle.load(open(main_dir+'reintegratedbispectrum_junk/kappakappa_sq_linlog_full_new_theta_1e-2_nlPS_Bfit_Jias_Simulation_kmin7.560000e-03_kmax3.528000e 01_Filter_1_R2arcmin.pkl'))[2]
+    
+    BS_R5_theory = pickle.load(open(main_dir+'reintegratedbispectrum/kappakappa_sq_linlog_full_new_theta_1e-2_nlPS_Bfit_Jias_Simulation_kmin7.560000e-03_kmax3.528000e+01_Filter_1_R5arcmin.pkl'))[2]
+    BS_R1_PBtheory = pickle.load(open(main_dir+'reintegratedbispectrum/kappakappa_sq_linlog_full_new_theta_1e-2_nlPS_Bfit_Jias_Simulation_kmin7.560000e-03_kmax3.528000e+01_Filter_1_postBorn_R1arcmin.pkl'))[2]
+    BS_R2_PBtheory = pickle.load(open(main_dir+'reintegratedbispectrum/kappakappa_sq_linlog_full_new_theta_1e-2_nlPS_Bfit_Jias_Simulation_kmin7.560000e-03_kmax3.528000e+01_Filter_1_postBorn_R2arcmin.pkl'))[2]
+    BS_R5_PBtheory = pickle.load(open(main_dir+'reintegratedbispectrum/kappakappa_sq_linlog_full_new_theta_1e-2_nlPS_Bfit_Jias_Simulation_kmin7.560000e-03_kmax3.528000e+01_Filter_1_postBorn_R5arcmin.pkl'))[2]
     
     f=figure(figsize=(8,6))
     ax=f.add_subplot(111)
-    ax.errorbar(ell_arr2048, BS_sims_R1_mean, BS_sims_R1_std, color='b', label = 'sim R1')
-    ax.errorbar(ell_arr2048, BS_sims_R2_mean, BS_sims_R2_std, color='g', label = 'sim R2')
-    ax.errorbar(ell_arr2048, BS_sims_R5_mean, BS_sims_R5_std, color='r', label = 'sim R5')
+    idx = where(~isnan(BS_sims_R1_mean))[0]
+    ifactor = BS_R2_theory/BS_R2_theory_junk
+    ax.plot(ell_arr2048[idx], BS_sims_R1_mean[idx],label = 'sim R1')
+    ax.plot(ell_arr2048[idx], BS_sims_R2_mean[idx],label = 'sim R2')
+    ax.plot(ell_arr2048[idx], BS_sims_R5_mean[idx],label = 'sim R5')
+    #ax.errorbar(ell_arr2048[idx], BS_sims_R1_mean[idx], BS_sims_R1_std[idx], color='b', label = 'sim R1')
+    #ax.errorbar(ell_arr2048[idx], BS_sims_R2_mean[idx], BS_sims_R2_std[idx], color='g', label = 'sim R2')
+    #ax.errorbar(ell_arr2048[idx], BS_sims_R5_mean[idx], BS_sims_R5_std[idx], color='r', label = 'sim R5')
     
     ax.plot(ell_theo1, BS_R1_theory, 'b--', label='theory R1')
     ax.plot(ell_theo1, BS_R2_theory, 'g--', label='theory R2')
     ax.plot(ell_theo1, BS_R5_theory, 'r--', label='theory R5')
     
-    ax.plot(ell_theo1, BS_R1_PBtheory, 'b:', label='theory R1 (PostBorn)')
-    ax.plot(ell_theo1, BS_R2_PBtheory, 'g:', label='theory R2 (PostBorn)')
-    ax.plot(ell_theo1, BS_R5_PBtheory, 'r:', label='theory R5 (PostBorn)')
+    ax.plot(ell_theo1, BS_R1_PBtheory, 'b-', lw=2, label='theory R1 (PostBorn)')
+    ax.plot(ell_theo1, BS_R2_PBtheory, 'g-', lw=2, label='theory R2 (PostBorn)')
+    ax.plot(ell_theo1, BS_R5_PBtheory, 'r-', lw=2, label='theory R5 (PostBorn)')
     
     ax.set_xlabel(r'$\ell$')
     ax.set_ylabel(r'$C_\ell ^{\kappa^2 \times \kappa}$')
     ax.set_xscale('log')
     ax.set_yscale('log')
-    ax.set_xlim(1e2, 1e4)
-    savefig(main_dir+'compare_theory_sim.png')
+    ax.set_xlim(70, 5e3)
+    ax.set_ylim(1e-14, 1e-8)
+    ax.legend(frameon=0,fontsize=10,loc=0)
+    savefig(main_dir+'compare_theory_sim_updated2.png')
     close()
     
