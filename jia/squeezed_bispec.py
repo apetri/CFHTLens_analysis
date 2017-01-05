@@ -55,7 +55,7 @@ if machine == 'stampede':
     cosmo = cosmo_arr[n]
     print cosmo
     fn = main_dir+'%s_BS.npy'%(cosmo)
-    if not os.path.isfile(n):
+    if not os.path.isfile(fn):
         iBispecGen = lambda r: BispecGen (r, cosmo)
         a=pool.map(BispecGen, arange(1,1025))
         save(fn, a)
