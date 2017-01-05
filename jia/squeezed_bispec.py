@@ -17,12 +17,17 @@ import random
 
 machine ='stampede'# 'local'#
 if machine == 'stampede':
+    
     from emcee.utils import MPIPool
     main_dir = '/work/02977/jialiu/squeeze/'
     file_dir = '/work/02977/jialiu/CMBL_maps_46cosmo/'
     all_points = genfromtxt(file_dir+'model_point.txt')
     cosmo_arr = array(['Om%.3f_Ol%.3f_w-1.000_si%.3f'%(cosmo[0],1-cosmo[0], cosmo[1]) for cosmo in all_points])  
     kmapGen = lambda cosmo, r: WLanalysis.readFits(file_dir+'%s/WLconv_z1100.00_%04dr.fits'%(cosmo, r))
+
+    n = int(sys.argv[1])
+    cosmo = cosmo_arr[n]
+    print cosmo
 
 else:
     main_dir = '/Users/jia/Documents/weaklensing/sqeeze/'
@@ -33,7 +38,7 @@ fidu_cosmo = 'Om0.296_Ol0.704_w-1.000_si0.786'
 
 PPA=2048.0/3.5/60.0
 
-def BispecGen (r, cosmo = fidu_cosmo, R_arr = [1.0, 2.0, 5.0]):
+def BispecGen (r, cosmo = cosmo, R_arr = [1.0, 2.0, 5.0]):
     '''Generate the squeezed bispectrum, with smoothing scales R_arr
     '''
     print cosmo, r
@@ -47,17 +52,13 @@ def BispecGen (r, cosmo = fidu_cosmo, R_arr = [1.0, 2.0, 5.0]):
     return bs_arr
 
 if machine == 'stampede':
-    n = int(sys.argv[1])
     pool=MPIPool()
     if not pool.is_master():
         pool.wait()
         sys.exit(0)
-    cosmo = cosmo_arr[n]
-    print cosmo
     fn = main_dir+'%s_BS.npy'%(cosmo)
     if not os.path.isfile(fn):
-        iBispecGen = lambda r: BispecGen (r, cosmo)
-        a=pool.map(iBispecGen, arange(1,1025))
+        a=pool.map(BispecGen, arange(1,1025))
         save(fn, a)
     pool.close()
     print '---DONE---DONE---'
