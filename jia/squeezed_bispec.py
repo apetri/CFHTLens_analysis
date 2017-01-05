@@ -47,11 +47,12 @@ def BispecGen (r, cosmo = fidu_cosmo, R_arr = [1.0, 2.0, 5.0]):
     return bs_arr
 
 if machine == 'stampede':
+    n = int(sys.argv[1])
     pool=MPIPool()
     if not pool.is_master():
         pool.wait()
         sys.exit(0)
-    cosmo = cosmo_arr[int(sys.argv[1])]
+    cosmo = cosmo_arr[n]
     print cosmo
     fn = main_dir+'%s_BS.npy'%(cosmo)
     if not os.path.isfile(n):
