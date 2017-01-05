@@ -57,7 +57,7 @@ if machine == 'stampede':
     fn = main_dir+'%s_BS.npy'%(cosmo)
     if not os.path.isfile(fn):
         iBispecGen = lambda r: BispecGen (r, cosmo)
-        a=pool.map(BispecGen, arange(1,1025))
+        a=pool.map(iBispecGen, arange(1,1025))
         save(fn, a)
     pool.close()
     print '---DONE---DONE---'
