@@ -533,6 +533,70 @@ def azimuthalAverage(image, center = None, edges = None, logbins = True, bins = 
 
 edge2center = lambda x: x[:-1]+0.5*(x[1:]-x[:-1])
 
+def azimuthalAverage3D(grid, edges = None, logbins = True, bins = 50, return_num_modes=0):
+    z, y, x = np.indices(grid.shape)
+    icenter=(x.max()-x.min())/2.0
+    center = np.array([icenter, icenter, icenter])
+    
+    ## added below on oct/31/2014, 
+    ## since nyquist freqnecy is not centered for even # mapsize
+
+    if grid.shape[0]%2 == 0:
+        center+=0.5
+    
+    r = sqrt((x - center[0])**2 + (y - center[1])**2 + (z - center[2])**2)#distance to center pixel, for each pixel
+
+    # Get sorted radii
+    ind = np.argsort(r.flat)
+    r_sorted = r.flat[ind] # the index to sort by r
+    i_sorted = grid.flat[ind] # the index of the images sorted by r
+
+    # find index that's corresponding to the lower edge of each bin
+    kmin=1.0
+    kmax=grid.shape[0]/2.0
+    if edges == None:
+        if logbins:
+            edges = logspace(log10(kmin),log10(kmax),bins+1)
+        else:
+            #edges = linspace(kmin,kmax+0.001,bins+1)    
+            edges = linspace(kmin,kmax,bins+1)
+    if edges[0] > 0:
+        edges = append([0],edges)
+        
+    hist_ind = np.histogram(r_sorted,bins = edges)[0] # hist_ind: the number in each ell bins, sum them up is the index of lower edge of each bin, first bin spans from 0 to left of first bin edge.    
+    hist_sum = np.cumsum(hist_ind)
+    csim = np.cumsum(i_sorted, dtype=float)
+    tbin = csim[hist_sum[1:]] - csim[hist_sum[:-1]]
+    radial_prof = tbin/hist_ind[1:]
+    if return_num_modes:
+        #where N=hist_sum[1:]-hist_sum[:-1] is the number of modes in each bin, but note N/2 is the num of independent modes
+        return edges[1:], radial_prof, (hist_sum[1:]-hist_sum[:-1])/2.0
+    else:
+        return edges[1:], radial_prof
+    
+def PowerSpectrum3D(grid, logbins = True, bins=50):#edges should be pixels
+    '''Calculate the power spectrum for a square image, with normalization.
+    Input:
+    img = input square image in numpy array.
+    sizedeg = image real size in deg^2
+    edges = ell bin edges, length = nbin + 1, if not provided, then do 1000 bins.
+    sigmaG = smoothing scale in arcmin
+    Output:
+    powspec = the power at the bins
+    ell_arr = lower bound of the binedges
+    '''
+    isize = grid.shape[0]
+    #F = fftpack.fftshift(fftpack.fft2(img))
+    F = fftshift(fftpack.fftn(grid))
+    psd3D = np.abs(F)**2
+
+    k_arr, psd1D = azimuthalAverage3D(psd3D, logbins = logbins, bins=bins)
+    k_arr = edge2center(k_arr)
+    #ell_arr *= 360./sqrt(sizedeg)# normalized to our current map size
+    #norm = ((2*pi*sqrt(sizedeg)/360.0)**2)/(size**2)**2
+    #powspec = ell_arr*(ell_arr+1)/(2*pi) * norm * psd1D
+    return k_arr, psd1D
+
 def PowerSpectrum(img, sizedeg = 12.25, edges = None, logbins = True, sigmaG=0, bins=50):#edges should be pixels
     '''Calculate the power spectrum for a square image, with normalization.
     Input:
